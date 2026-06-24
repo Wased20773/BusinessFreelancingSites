@@ -2,7 +2,7 @@
 title: Technology Stack
 
 last-verified: 2026-06-24
-status: draft
+status: planned
 ---
 
 # Technology Stack

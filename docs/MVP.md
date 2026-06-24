@@ -2,7 +2,7 @@
 title: MVP
 
 last-verified: 2026-06-24
-status: draft
+status: planned
 ---
 
 # Minimal Viable Product
