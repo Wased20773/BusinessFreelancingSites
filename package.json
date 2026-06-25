@@ -12,5 +12,16 @@
     "dev:tacos-el-guero": "npm run dev --workspace=tacos-el-guero -- --port 3001",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "dotenv": "^17.4.2",
+    "pg": "^8.22.0",
+    "prisma": "^7.8.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.20.0",
+    "tsx": "^4.22.4"
   }
 }

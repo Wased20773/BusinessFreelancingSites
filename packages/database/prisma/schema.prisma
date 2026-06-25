@@ -1,0 +1,175 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AccessLevel {
+  owner
+  admin
+  staff
+}
+
+model Business {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  domain    String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users      BusinessUser[]
+  categories Category[]
+  contacts   Contact[]
+  socials    Social[]
+  locations  Location[]
+  items      Item[]
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String?
+  username     String?
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  businesses BusinessUser[]
+}
+
+model BusinessUser {
+  id         String @id @default(uuid())
+  businessId String
+  userId     String
+  roleId     String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, userId])
+}
+
+model Role {
+  id          String      @id @default(uuid())
+  accessLevel AccessLevel
+  description String
+
+  users BusinessUser[]
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  businessId  String
+  name        String
+  description String?
+  order       Int
+  isVisible   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  items    Item[]
+
+  @@unique([businessId, name])
+}
+
+model Contact {
+  id          String   @id @default(uuid())
+  businessId  String
+  phoneNumber String?
+  email       String?
+  isPersonal  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model Social {
+  id          String @id @default(uuid())
+  businessId  String
+  name        String
+  profileName String
+  url         String
+  icon        String
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, name])
+}
+
+model Location {
+  id         String   @id @default(uuid())
+  businessId String
+  address    String
+  zip        String?
+  country    String?
+  state      String?
+  city       String?
+  parking    Boolean  @default(false)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  hours    LocationHour[]
+}
+
+model LocationHour {
+  id         String  @id @default(uuid())
+  locationId String
+  dayOfWeek  String
+  openTime   String?
+  closeTime  String?
+  isClosed   Boolean @default(false)
+
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+}
+
+model Item {
+  id           String   @id @default(uuid())
+  businessId   String
+  categoryId   String
+  name         String
+  description  String?
+  containsList String[]
+  calories     Int?
+  price        Decimal? @db.Decimal(10, 2)
+  order        Int
+  isAvailable  Boolean  @default(true)
+  slug         String
+  imageKey     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  business Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  options  ItemOption[]
+
+  @@unique([businessId, slug])
+}
+
+model ItemOption {
+  id          String   @id @default(uuid())
+  itemId      String
+  name        String
+  price       Decimal  @db.Decimal(10, 2)
+  order       Int
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, name])
+}

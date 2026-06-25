@@ -1,0 +1,42 @@
+- apps\
+    - businesses\
+        - ...
+    
+    - platform
+        - ...
+
+- docs\
+    - images\
+        - basic-workflow.svg
+    
+    - MVP.md
+    - technology-stack.md
+
+- node_modules\
+    - ...
+
+- packages\
+    - database\
+        - docs\
+            - database-models.md
+
+        - generated\
+            - prisma
+                - ...
+
+        - prisma\
+            - migrations\
+                - ...
+
+            - schema.prisma
+
+        - scripts\
+            - demo_seed_tacos-el-guero.ts
+
+        - .gitignore
+        - prisma.config.ts
+
+- .gitignore
+- package-lock.json
+- package.json
+- structure.txt
