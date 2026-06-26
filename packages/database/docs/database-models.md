@@ -3,7 +3,7 @@ title: DatabaseModels
 code-paths:
   - packages/database/prisma/schema.prisma
 
-last-verified: 2026-06-24
+last-verified: 2026-06-25
 status: planned
 ---
 
@@ -18,25 +18,25 @@ A shared PostgreSQL database stores business information for all client websites
 | Field | Type | Notes |
 | --- | --- | --- |
 | id | UUID | Primary key |
-| name | string | Business name |
+| name | String | Business name |
 | users | [BusinessUser[]](#businessuser) | User connections for this business, including each user's role for this business |
 | categories | [Category[]](#category) | Menu categories owned by this business to help organize frontend menu page/s |
 | contacts | [Contact[]](#contact) | Optional Contact records for the business |
 | socials | [Social[]](#social) | Optional Social record media links |
 | locations | [Location[]](#location) | Exact locations; used for frontend world mapping |
 | items | [Item[]](#item) | All items owned by this business, even though items are also organized by category |
-| slug | string | Globally unique, system-generated URL-safe business identifier. Used to fetch business-specific data; business-name |
-| domain | string? | Optional production domain per business app; business-name.com |
+| slug | String | Globally unique, system-generated URL-safe business identifier. Used to fetch business-specific data; business-name |
+| domain | String? | Optional production domain per business app; business-name.com |
 
 ### User
 
 | Field | Type | Notes |
 | --- | --- | --- |
 | id | UUID | Primary key |
-| name | string? | Optional user's name |
-| username | string? | Optional user's username |
-| email | string | Globally unique email/login identifier |
-| passwordHash | string | Password hash, not plain text |
+| name | String? | Optional user's name |
+| username | String? | Optional user's username |
+| email | String | Globally unique email/login identifier |
+| passwordHash | String | Password hash, not plain text |
 | businesses | [BusinessUser[]](#businessuser) | Businesses this user is connected to |
 
 ### BusinessUser
@@ -54,7 +54,7 @@ A shared PostgreSQL database stores business information for all client websites
 | --- | --- | --- |
 | id | UUID | Primary key |
 | accessLevel | [AccessLevel](#access-level-choices) | owner, admin, staff |
-| description | string | Predefined description to help the user understand the access level permissions |
+| description | String | Predefined description to help the user understand the access level permissions |
 | users | [BusinessUser[]](#businessuser) | Business-user connections using this role |
 
 ### Access Level Choices
@@ -71,9 +71,9 @@ A shared PostgreSQL database stores business information for all client websites
 | --- | --- | --- |
 | id | UUID | Primary key |
 | businessId | FK → [Business](#business) | The Business this category belongs to |
-| name | string | User defined Category name; Drinks, Orders, Beverages, Alcohol, Toppings, etc. |
-| description | string? | Optional category description |
-| order | number | Helps display the Category in a specific order in the frontend; Orders(1) -> Toppings(2) -> Drinks(3) |
+| name | String | User defined Category name; Drinks, Orders, Beverages, Alcohol, Toppings, etc. |
+| description | String? | Optional category description |
+| order | Int | Helps display the Category in a specific order in the frontend; Orders(1) -> Toppings(2) -> Drinks(3) |
 | isVisible | boolean | Whether the category appears on the public website (example; weekend special category) |
 | items | [Item[]](#item) | Items inside this Category |
 
@@ -83,8 +83,8 @@ A shared PostgreSQL database stores business information for all client websites
 | --- | --- | --- |
 | id | UUID | Primary key |
 | businessId | FK → [Business](#business) | The Business this contact belongs to |
-| phoneNumber | string? | Optional phone number to contact the business |
-| email | string? | Optional email address to the business for any inquiries |
+| phoneNumber | String? | Optional phone number to contact the business |
+| email | String? | Optional email address to the business for any inquiries |
 | isPersonal | boolean | Whether the contact is business owned or their personal contact. Helps determine calling hours |
 
 ### Social
@@ -93,10 +93,10 @@ A shared PostgreSQL database stores business information for all client websites
 | --- | --- | --- |
 | id | UUID | Primary key |
 | businessId | FK → [Business](#business) | The Business record this social link belongs to |
-| name | string | Predefined Social platform name; instagram, twitter, facebook, etc. |
-| profileName | string | Business Social platform account name |
-| url | string | Predefined domain for Social URL profile; instagram.com/business-social-name |
-| icon | string | Predefined Icon images, must be supported |
+| name | String | Predefined Social platform name; instagram, twitter, facebook, etc. |
+| profileName | String | Business Social platform account name |
+| url | String | Predefined domain for Social URL profile; instagram.com/business-social-name |
+| icon | String | Predefined Icon images, must be supported |
 
 ### Location
 
@@ -104,11 +104,11 @@ A shared PostgreSQL database stores business information for all client websites
 | --- | --- | --- |
 | id | UUID | Primary key |
 | businessId | FK → [Business](#business) | The Business this location belongs to |
-| address | string | Street address |
-| zip | string? | Optional ZIP/postal code |
-| country | string? | Optional country |
-| state | string? | Optional state |
-| city | string? | Optional city |
+| address | String | Street address |
+| zip | String? | Optional ZIP/postal code |
+| country | String? | Optional country |
+| state | String? | Optional state |
+| city | String? | Optional city |
 | parking | boolean | Whether parking is available |
 | hours | [LocationHour[]](#locationhour) | Days and hours this location is open |
 | isActive | boolean | Is this location serving customers? Has this location temporarily closed? |
@@ -119,9 +119,9 @@ A shared PostgreSQL database stores business information for all client websites
 | --- | --- | --- |
 | id | UUID | Primary key |
 | locationId | FK → [Location](#location) | The Location these hours belong to |
-| dayOfWeek | string | Predefined days of the week; monday, tuesday, wednesday, etc. |
-| openTime | string? | Opening time; 09:00 |
-| closeTime | string? | Closing time; 21:00 |
+| dayOfWeek | String | Predefined days of the week; monday, tuesday, wednesday, etc. |
+| openTime | String? | Opening time; 09:00 |
+| closeTime | String? | Closing time; 21:00 |
 | isClosed | boolean | Whether the location is closed on this day |
 
 ### Item
@@ -132,24 +132,24 @@ A shared PostgreSQL database stores business information for all client websites
 | businessId | FK → [Business](#business) | The Business this item belongs to |
 | categoryId | FK → [Category](#category) | The Category this item belongs to |
 | options | [ItemOptions[]](#itemoptions) | When there are multiple options for this item (e.g. different meat prices; small, medium, or large prices), activate through frontend to enable options |
-| name | string | Item name; Bottle Water |
-| description | string? | Optional item description |
+| name | String | Item name; Bottle Water |
+| description | String? | Optional item description |
 | containsList | string[] | List of what the item contains to help with the frontend; tomato, onions, salt, pepper, etc. |
-| calories | number? | Optional calorie count |
+| calories | Int? | Optional calorie count |
 | price | decimal | The price of the Item which should not include the "$" sign; 1.99, 5, 2.49 |
-| order | number | Helps display the Item in a specific order in the frontend; Cheese Burger(1) -> Double Cheese Burger(2) -> Combo(3) |
+| order | Int | Helps display the Item in a specific order in the frontend; Cheese Burger(1) -> Double Cheese Burger(2) -> Combo(3) |
 | isAvailable | boolean | Whether the item is available/displayed (example; seasonal items) |
-| slug | string | System-generated URL-safe identifier. Must be unique inside the business; bottle-water |
-| imageKey | string? | Optional image storage key that uses AWS S3 Buckets; businesses/business-1/menu-items/bottle-water.webp |
+| slug | String | System-generated URL-safe identifier. Must be unique inside the business; bottle-water |
+| imageKey | String? | Optional image storage key that uses AWS S3 Buckets; businesses/business-1/menu-items/bottle-water.webp |
 
 ### ItemOptions
 | Field | Type | Notes |
 | --- | --- | --- |
 | id | UUID | Primary key |
 | itemId | FK → [Item](#item) | The Item this option belongs to |
-| name | string | Option name; small, medium, large |
-| price | number | The individual price for this option (overides the price from item.price) |
-| order | number | Helps display the ItemOption in a specific order in the frontend; small(1) -> medium(2) -> large(3) |
+| name | String | Option name; small, medium, large |
+| price | Int | The individual price for this option (overides the price from item.price) |
+| order | Int | Helps display the ItemOption in a specific order in the frontend; small(1) -> medium(2) -> large(3) |
 | isAvailable | boolean | Whether the option is available/displayed (example; out of stock) |
 
 ## Design Decisions

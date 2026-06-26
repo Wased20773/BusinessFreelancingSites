@@ -3,7 +3,41 @@
         - ...
     
     - platform
-        - ...
+        - app\
+            - api\
+                - business\
+                    - menu\
+                        - route.ts
+                    - route.ts
+        
+            - docs\
+                - response\
+                    - publicAPI.md
+
+                - adminAPI.md
+                - publicAPI.md
+
+            - favicon.ico
+            - globals.css
+            - layout.tsx
+            - page.tsx
+
+        - public\
+            - ...
+
+        - src\
+            - lib\
+                - prisma.ts
+
+        - .gitignore
+        - AGENTS.md
+        - CLAUDE.md
+        - eslint.config.mjs
+        - next.config.ts
+        - package.json
+        - postcss.config.mjs
+        - README.md
+        - tsconfig.json
 
 - docs\
     - images\
@@ -19,10 +53,6 @@
     - database\
         - docs\
             - database-models.md
-
-        - generated\
-            - prisma
-                - ...
 
         - prisma\
             - migrations\
