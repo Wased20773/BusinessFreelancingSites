@@ -3,29 +3,35 @@
         - ...
     
     - platform
-        - app\
-            - api\
-                - business\
-                    - menu\
-                        - route.ts
-                    - route.ts
-        
-            - docs\
+        - docs\
+            - api_routes\
                 - response\
                     - publicAPI.md
 
                 - adminAPI.md
                 - publicAPI.md
-
-            - favicon.ico
-            - globals.css
-            - layout.tsx
-            - page.tsx
-
+                    
         - public\
             - ...
 
         - src\
+            - app\
+                - api\
+                    - admin\
+                        - route.ts
+
+                    - business\
+                        - menu\
+                            - route.ts
+                        - route.ts
+            
+                
+
+                - favicon.ico
+                - globals.css
+                - layout.tsx
+                - page.tsx
+
             - lib\
                 - prisma.ts
 

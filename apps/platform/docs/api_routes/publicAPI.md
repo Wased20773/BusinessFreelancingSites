@@ -1,8 +1,8 @@
 ---
 title: Public API
 code-paths:
-  - apps/platform/app/api/business
-  - apps/platform/app/api/business/menu
+  - apps/platform/app/api/business/route.ts
+  - apps/platform/app/api/business/menu/route.ts
   
 last-verified: 2026-06-25
 status: draft
@@ -14,7 +14,7 @@ Used by custom business website to read corresponding business data.
 
 These routes should not add/update/delete the data in the database. To view how data modifications through routes, go to [adminAPI.md](./adminAPI.md)
 
-To view the full JSON return values per route, go to []()
+To view the full JSON return value types per route, go to [docs\api_routes\response\publicAPI.json](../api_routes/response/publicAPI.md)
 
 ## GET /api/business (ROUTE #1)
 

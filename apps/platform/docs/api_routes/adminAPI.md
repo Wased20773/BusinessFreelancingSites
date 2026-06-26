@@ -3,7 +3,7 @@ title: Admin API
 code-paths:
   - 
   
-last-verified: 2026-06-25
+last-verified: 2026-06-26
 status: draft
 ---
 
@@ -13,7 +13,7 @@ Used by the platform admin dashboard to create, update, and delete business data
 
 These routes should require authentication and business access checks later.
 
-To view the full JSON return values per route, go to []()
+To view the full JSON return values per route, go to [docs\api_routes\response\publicAPI.json](../api_routes/response/adminAPI.md)
 
 ## GET /api/admin/business
 
