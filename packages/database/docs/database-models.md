@@ -95,8 +95,8 @@ A shared PostgreSQL database stores business information for all client websites
 | businessId | FK → [Business](#business) | The Business record this social link belongs to |
 | name | String | Predefined Social platform name; instagram, twitter, facebook, etc. |
 | profileName | String | Business Social platform account name |
-| url | String | Predefined domain for Social URL profile; instagram.com/business-social-name |
-| icon | String | Predefined Icon images, must be supported |
+| url | String | Predefined domain for Social URL profile; business-social-name |
+| icon | String | Predefined Icon images, must be supported; businesses/icons/socials/facebook.webp |
 
 ### Location
 
@@ -140,7 +140,7 @@ A shared PostgreSQL database stores business information for all client websites
 | order | Int | Helps display the Item in a specific order in the frontend; Cheese Burger(1) -> Double Cheese Burger(2) -> Combo(3) |
 | isAvailable | boolean | Whether the item is available/displayed (example; seasonal items) |
 | slug | String | System-generated URL-safe identifier. Must be unique inside the business; bottle-water |
-| imageKey | String? | Optional image storage key that uses AWS S3 Buckets; businesses/business-1/menu-items/bottle-water.webp |
+| imageKey | String? | Optional image storage key that uses AWS S3 Buckets; businesses/business-slug/menu-items/bottle-water-ITEM_UUID.webp |
 
 ### ItemOptions
 | Field | Type | Notes |
@@ -221,6 +221,7 @@ Business
 │     └── Role
 ├── Category[]
 │     └── Item[]
+|       └── ItemOption[]
 ├── Contact[]
 ├── Social[]
 ├── Location[]

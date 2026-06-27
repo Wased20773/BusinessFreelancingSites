@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// #2. GET /api/business/menu
+// GET /api/business/menu
 export async function GET(request: Request) {
     // Get the URL from the request
     const { searchParams } = new URL(request.url);

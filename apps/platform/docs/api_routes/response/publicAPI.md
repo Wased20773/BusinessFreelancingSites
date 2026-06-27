@@ -1,43 +1,78 @@
 # Public API JSON Response Structure
 
-### GET /api/business (ROUTE #1)
+## Response Rules
+
+Public routes should only return the data needed for the page or component using the route.
+
+Avoid returning unrelated relationship data from a single route. For example, the business route should not also return contacts, socials, locations, and menu data.
+
+Public routes are read-only. They should not create, update, or delete database records.
+
+---
+
+## Business
+
+### GET /api/business
 
 ```json
 {
     "id": "UUID",
     "name": "String",
     "slug": "String",
-    "domain": "String | null",
-    "createdAt": "DateTime",
-    "updatedAt": "DateTime",
+    "domain": "String | null"
+}
+```
 
+---
+
+## Contacts
+
+### GET /api/business/contacts
+
+```json
+{
     "contacts": [
         {
             "id": "UUID",
-            "businessId": "UUID",
             "phoneNumber": "String | null",
             "email": "String | null",
-            "isPersonal": "Boolean",
-            "createdAt": "DateTime",
-            "updatedAt": "DateTime"
+            "isPersonal": "Boolean"
         }
-    ],
+    ]
+}
+```
 
+---
+
+## Socials
+
+### GET /api/business/socials
+
+```json
+{
     "socials": [
         {
             "id": "UUID",
-            "businessId": "UUID",
             "name": "String",
             "profileName": "String",
             "url": "String",
             "icon": "String"
         }
-    ],
+    ]
+}
+```
 
+---
+
+## Locations
+
+### GET /api/business/locations
+
+```json
+{
     "locations": [
         {
             "id": "UUID",
-            "businessId": "UUID",
             "address": "String",
             "zip": "String | null",
             "country": "String | null",
@@ -45,12 +80,9 @@
             "city": "String | null",
             "parking": "Boolean",
             "isActive": "Boolean",
-            "createdAt": "DateTime",
-            "updatedAt": "DateTime",
             "hours": [
                 {
                     "id": "UUID",
-                    "locationId": "UUID",
                     "dayOfWeek": "String",
                     "openTime": "String | null",
                     "closeTime": "String | null",
@@ -62,8 +94,13 @@
 }
 ```
 
-### GET /api/business/menu (ROUTE #2)
-``` json
+---
+
+## Menu
+
+### GET /api/business/menu
+
+```json
 {
     "id": "UUID",
     "name": "String",
@@ -71,17 +108,13 @@
     "categories": [
         {
             "id": "UUID",
-            "businessId": "UUID",
             "name": "String",
             "description": "String | null",
             "order": "Int",
             "isVisible": "Boolean",
-            "createdAt": "DateTime",
-            "updatedAt": "DateTime",
             "items": [
                 {
                     "id": "UUID",
-                    "businessId": "UUID",
                     "categoryId": "UUID",
                     "name": "String",
                     "description": "String | null",
@@ -92,22 +125,48 @@
                     "isAvailable": "Boolean",
                     "slug": "String",
                     "imageKey": "String | null",
-                    "createdAt": "DateTime",
-                    "updatedAt": "DateTime",
                     "options": [
                         {
                             "id": "UUID",
-                            "itemId": "UUID",
                             "name": "String",
                             "price": "Decimal",
                             "order": "Int",
-                            "isAvailable": "Boolean",
-                            "createdAt": "DateTime",
-                            "updatedAt": "DateTime"
+                            "isAvailable": "Boolean"
                         }
                     ]
                 }
             ]
+        }
+    ]
+}
+```
+
+---
+
+## Menu Item
+
+### GET /api/business/menu/items/[itemSlug]
+
+```json
+{
+    "id": "UUID",
+    "categoryId": "UUID",
+    "name": "String",
+    "description": "String | null",
+    "containsList": "String[]",
+    "calories": "Int | null",
+    "price": "Decimal | null",
+    "order": "Int",
+    "isAvailable": "Boolean",
+    "slug": "String",
+    "imageKey": "String | null",
+    "options": [
+        {
+            "id": "UUID",
+            "name": "String",
+            "price": "Decimal",
+            "order": "Int",
+            "isAvailable": "Boolean"
         }
     ]
 }

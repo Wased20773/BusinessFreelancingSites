@@ -33,5 +33,6 @@ Each business remains a custom-built frontend with its own design, domain, brand
 ## Out of Scope
 
 - Browser-level end-to-end testing
-- Multiple admin roles
+- Multiple user roles
 - Custom per-business database schemas
+- API key for outside systems to call on admin API routes
