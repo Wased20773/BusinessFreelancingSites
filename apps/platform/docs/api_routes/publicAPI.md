@@ -1,13 +1,13 @@
 ---
 title: Public API
 code-paths:
-  - apps/platform/app/api/business/route.ts
-  - apps/platform/app/api/business/contacts/route.ts
-  - apps/platform/app/api/business/socials/route.ts
-  - apps/platform/app/api/business/categories/route.ts
-  - apps/platform/app/api/business/locations/route.ts
-  - apps/platform/app/api/business/menu/route.ts
-  - apps/platform/app/api/business/menu/items/[itemSlug]/route.ts
+  - apps/platform/src/app/api/business/route.ts
+  - apps/platform/src/app/api/business/contacts/route.ts
+  - apps/platform/src/app/api/business/socials/route.ts
+  - apps/platform/src/app/api/business/categories/route.ts
+  - apps/platform/src/app/api/business/locations/route.ts
+  - apps/platform/src/app/api/business/menu/route.ts
+  - apps/platform/src/app/api/business/menu/items/[itemSlug]/route.ts
 last-verified: 2026-06-27
 status: draft
 ---
@@ -155,9 +155,6 @@ This route returns categories, items, and item options because the public menu p
 
 #### Returns
 
-- Business id
-- Business name
-- Business slug
 - [Category](../../../../packages/database/docs/database-models.md#category)
 - [Item](../../../../packages/database/docs/database-models.md#item)
   - [ItemOptions](../../../../packages/database/docs/database-models.md#itemoptions)

@@ -1,18 +1,22 @@
 import { NextResponse } from 'next/server';
-import { getBusinessResponse, getSlug } from '../route_helper';
+import { getBusinessResponse, getSlug } from '../../route_helper';
 
-// GET /api/business
+// GET /api/business/contacts
 export async function GET(request: Request): Promise<NextResponse> {
     try {
         const slug: string = getSlug(request);
-    
+
         return await getBusinessResponse(
             slug,
             {
-                id: true,
-                name: true,
-                slug: true, 
-                domain: true
+                contacts: {
+                    select: {
+                        id: true,
+                        phoneNumber: true,
+                        email: true,
+                        isPersonal: true
+                    },
+                },
             },
         )
     } catch (error) {

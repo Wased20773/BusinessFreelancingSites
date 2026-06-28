@@ -1,46 +1,53 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getBusinessResponse, getSlug } from '../../route_helper';
 
 // GET /api/business/menu
 export async function GET(request: Request) {
-    // Get the URL from the request
-    const { searchParams } = new URL(request.url);
-    const slug = searchParams.get('slug');
+    try {
+        const slug: string = getSlug(request);
 
-    if (!slug) {
-        return NextResponse.json(
-            { error: 'Missing business slug' },
-            { status: 400 }
-        );
-    }
-
-    // Query database to capture business data, categories, items and their options
-    const business = await prisma.business.findUnique({
-        where: {
-            slug: slug,
-        },
-        select: {
-            id: true,
-            name: true,
-            slug: true,
-            categories: {
-                include: {
-                    items: {
-                        include: { options: true },
+        return await getBusinessResponse(
+            slug,
+            {
+                categories: {
+                    select: {
+                        id: true,
+                        name: true,
+                        description: true,
+                        order: true,
+                        isVisible: true,
+                        items: {
+                            select: {
+                                id: true,
+                                categoryId: true,
+                                name: true,
+                                description: true,
+                                containsList: true,
+                                calories: true,
+                                price: true,
+                                order: true,
+                                isAvailable: true,
+                                slug: true,
+                                imageKey: true,
+                                options: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        price: true,
+                                        order: true,
+                                        isAvailable: true
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             },
-        },
-    });
-
-    // Check for existence
-    if (!business) {
+        )
+    } catch (error) {
         return NextResponse.json(
-            { error: 'Business not found' },
-            { status: 404 }
-        );
+            { error: `Missing business slug parameter: ${error}` },
+            { status: 400 }
+        )
     }
-
-    // Otherwise, return the data result as JSON
-    return Response.json(business);
 }

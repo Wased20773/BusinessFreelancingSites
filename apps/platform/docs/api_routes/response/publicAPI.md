@@ -102,9 +102,6 @@ Public routes are read-only. They should not create, update, or delete database 
 
 ```json
 {
-    "id": "UUID",
-    "name": "String",
-    "slug": "String",
     "categories": [
         {
             "id": "UUID",
