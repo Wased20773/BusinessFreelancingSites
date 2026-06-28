@@ -21,12 +21,26 @@
                         - route.ts
 
                     - business\
-                        - menu\
+                        - categories\
                             - route.ts
-                        - route.ts
-            
-                
 
+                        - contacts\
+                            - route.ts
+
+                        - locations\
+                            - route.ts
+
+                        - menu\
+                            - items\
+                                - route.ts
+
+                            route.ts
+                        
+                        - social\
+                            - route.ts
+                        
+                        route.ts
+            
                 - favicon.ico
                 - globals.css
                 - layout.tsx
