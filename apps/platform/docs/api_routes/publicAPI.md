@@ -24,6 +24,8 @@ To view the full JSON return value types per route, go to [docs\api_routes\respo
 
 ### GET /api/business
 
+(1 OPERATION)
+
 Fetches basic public business information by slug.
 
 This route should only return the business model fields needed to identify and display the business. It should not return contacts, socials, locations, hours, or menu data.
@@ -52,6 +54,8 @@ This route should only return the business model fields needed to identify and d
 
 ### GET /api/business/contacts
 
+(2 OPERATIONS)
+
 Fetches public contact information for a business.
 
 #### Query Params
@@ -74,6 +78,8 @@ Fetches public contact information for a business.
 
 ### GET /api/business/socials
 
+(2 OPERATIONS)
+
 Fetches public social media links for a business.
 
 #### Query Params
@@ -95,6 +101,8 @@ Fetches public social media links for a business.
 ## Locations
 
 ### GET /api/business/locations
+
+(3 OPERATIONS)
 
 Fetches active public locations for a business, including each location's hours.
 
@@ -121,6 +129,8 @@ Fetches active public locations for a business, including each location's hours.
 
 ### GET /api/business/categories
 
+(2 OPERATIONS)
+
 Fetches all visible categories for a business.
 
 #### Query Params
@@ -142,6 +152,8 @@ Fetches all visible categories for a business.
 ## Menu
 
 ### GET /api/business/menu
+
+(4 OPERATIONS)
 
 Fetches public menu data for a business.
 
@@ -168,6 +180,8 @@ This route returns categories, items, and item options because the public menu p
 ## Menu Item
 
 ### GET /api/business/menu/items/[itemSlug]
+
+(2 OPERATIONS)
 
 Fetches one public menu item by its item slug.
 
