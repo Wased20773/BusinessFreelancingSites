@@ -32,7 +32,8 @@
 
                         - menu\
                             - items\
-                                - route.ts
+                                - [itemSlug]\
+                                    - route.ts
 
                             route.ts
                         

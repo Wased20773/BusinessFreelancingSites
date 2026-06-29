@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
-import { getBusinessResponse, getSlug } from '../../../route_helper';
+import { getSlug } from '../../../../route_helper';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/business/menu/items/[itemSlug]
-export async function GET(request: Request): Promise<NextResponse> {
+export async function GET(
+    request: Request,
+    { params }: { params: { itemSlug: string }}
+): Promise<NextResponse> {
     try {
         const slug: string = getSlug(request);
-        const { searchParams } = new URL(request.url);
-        const itemSlug = searchParams.get('itemSlug');
+        const { itemSlug } = await params;
     
         if (!itemSlug) {
             return NextResponse.json(
