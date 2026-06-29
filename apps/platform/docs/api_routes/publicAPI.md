@@ -8,7 +8,7 @@ code-paths:
   - apps/platform/src/app/api/business/locations/route.ts
   - apps/platform/src/app/api/business/menu/route.ts
   - apps/platform/src/app/api/business/menu/items/[itemSlug]/route.ts
-last-verified: 2026-06-27
+last-verified: 2026-06-29
 status: draft
 ---
 
