@@ -18,6 +18,7 @@ export async function GET(request: Request): Promise<NextResponse> {
                         state: true,
                         city: true,
                         parking: true,
+                        isActive: true,
                         hours: {
                             select: {
                                 id: true,

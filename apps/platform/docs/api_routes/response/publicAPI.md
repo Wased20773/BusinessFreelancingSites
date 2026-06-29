@@ -83,6 +83,7 @@ Public routes are read-only. They should not create, update, or delete database 
             "hours": [
                 {
                     "id": "UUID",
+                    "locationId": "UUID",
                     "dayOfWeek": "String",
                     "openTime": "String | null",
                     "closeTime": "String | null",
@@ -125,6 +126,7 @@ Public routes are read-only. They should not create, update, or delete database 
                     "options": [
                         {
                             "id": "UUID",
+                            "itemId": "UUID",
                             "name": "String",
                             "price": "Decimal",
                             "order": "Int",
@@ -160,6 +162,7 @@ Public routes are read-only. They should not create, update, or delete database 
     "options": [
         {
             "id": "UUID",
+            "itemId": "UUID",
             "name": "String",
             "price": "Decimal",
             "order": "Int",
