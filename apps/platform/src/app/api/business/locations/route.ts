@@ -26,17 +26,17 @@ export async function GET(request: Request): Promise<NextResponse> {
                                 dayOfWeek: true,
                                 openTime: true,
                                 closeTime: true,
-                                isClosed: true
+                                isClosed: true,
                             },
                         },
                     },
                 },
             },
-        )
+        );
     } catch (error) {
         return NextResponse.json(
-            { error: `Missing business slug parameter: ${error}` },
+            { error: `Failed to fetch business locations: ${error}` },
             { status: 400 }
-        )
+        );
     }
 }

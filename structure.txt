@@ -18,7 +18,85 @@
             - app\
                 - api\
                     - admin\
-                        - route.ts
+                        - account\
+                            - search\
+                                - route.ts
+
+                            route.ts
+                        
+                        - business-users\
+                            - [businessUserId]\
+                                - route.ts
+
+                            - route.ts
+
+                        - categories\
+                            - [categoryId]\
+                                - items\
+                                    - [itemId]\
+                                        - move-down\
+                                            - route.ts
+                                        - move-up\
+                                            - route.ts
+                                
+                                    - route.ts
+
+                                - move-down\
+                                    - route.ts
+
+                                - move-up\
+                                    - route.ts
+
+                                - route.ts
+
+                            - route.ts
+
+                        - contacts\
+                            - [contactId]\
+                                - route.ts
+
+                            - route.ts
+
+                        - items\
+                            - [itemId]\
+                                - image\
+                                    - route.ts
+                                
+                                - options\
+                                    - [optionId]\
+                                        - move-down\    
+                                            - route.ts
+                                        
+                                        - move-up\
+                                            - route.ts
+
+                                        - route.ts
+                                    
+                                    - route.ts
+
+                                - route.ts
+
+                        - locations\
+                            - [locationId]\
+                                - hours\
+                                    - [hourId]\
+                                        - route.ts
+
+                                    - route.ts
+                                
+                                - route.ts
+
+                            - route.ts
+
+                        - socials\
+                            - [socialId]
+                                - route.ts
+
+                            - route.ts    
+
+                    - auth\
+                        - [...nextauth]\
+                            - route.ts
 
                     - business\
                         - categories\
@@ -42,16 +120,28 @@
                         
                         route.ts
             
+                    - route_helper.ts
+
+                - login\
+                    - page.tsx
+
                 - favicon.ico
                 - globals.css
                 - layout.tsx
                 - page.tsx
+            
+            - components\
+                - sign-out.tsx
 
             - lib\
+                - auth\
+                    - authenticateBusinessAccess.ts
+
                 - prisma.ts
 
         - .gitignore
         - AGENTS.md
+        - auth.ts
         - CLAUDE.md
         - eslint.config.mjs
         - next.config.ts
@@ -75,6 +165,20 @@
         - docs\
             - database-models.md
 
+        - generated\
+            - prisma\
+                - internal\
+                    - ...
+                
+                - models\
+                    - ...
+                
+                - browser.ts
+                - client.ts
+                - commonInputTypes.ts
+                - enums.ts
+                - models.ts
+
         - prisma\
             - migrations\
                 - ...
@@ -85,7 +189,10 @@
             - demo_seed_tacos-el-guero.ts
 
         - .gitignore
+        - index.ts
+        - package.json
         - prisma.config.ts
+        - tsconfig.json
 
 - .gitignore
 - package-lock.json

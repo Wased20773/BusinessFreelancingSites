@@ -14,15 +14,15 @@ export async function GET(request: Request): Promise<NextResponse> {
                         id: true,
                         phoneNumber: true,
                         email: true,
-                        isPersonal: true
+                        isPersonal: true,
                     },
                 },
             },
-        )
+        );
     } catch (error) {
         return NextResponse.json(
-            { error: `Missing business slug parameter: ${error}` },
+            { error: `Failed to fetch business contacts: ${error}` },
             { status: 400 }
-        )
+        );
     }
 }

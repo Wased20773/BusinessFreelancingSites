@@ -36,3 +36,7 @@ Each business remains a custom-built frontend with its own design, domain, brand
 - Multiple user roles
 - Custom per-business database schemas
 - API key for outside systems to call on admin API routes
+- Onboarding clients via invitation
+  - Adding new database entry
+- Logging service like Sentry, Logtail, Datadog, etc.
+  - For checking issues from clients from a deeper perspective

@@ -123,6 +123,8 @@ Public routes are read-only. They should not create, update, or delete database 
                     "isAvailable": "Boolean",
                     "slug": "String",
                     "imageKey": "String | null",
+                    "createdAt": "DateTime",
+                    "updatedAt": "DateTime",
                     "options": [
                         {
                             "id": "UUID",

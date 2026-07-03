@@ -10,20 +10,23 @@ export async function GET(request: Request): Promise<NextResponse> {
             slug,
             {
                 categories: {
+                    orderBy: {
+                        order: 'asc',
+                    },
                     select: {
                         id: true,
                         name: true,
                         description: true,
                         order: true,
-                        isVisible: true
+                        isVisible: true,
                     },
                 },
             },
-        )
+        );
     } catch (error) {
         return NextResponse.json(
-            { error: `Missing business slug parameter: ${error}` },
+            { error: `Failed to fetch business menu categories: ${error}` },
             { status: 400 }
-        )
+        );
     }
 }

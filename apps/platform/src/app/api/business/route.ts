@@ -3,22 +3,15 @@ import { getBusinessResponse, getSlug } from '../route_helper';
 
 // GET /api/business
 export async function GET(request: Request): Promise<NextResponse> {
-    try {
-        const slug: string = getSlug(request);
-    
-        return await getBusinessResponse(
-            slug,
-            {
-                id: true,
-                name: true,
-                slug: true, 
-                domain: true
-            },
-        )
-    } catch (error) {
-        return NextResponse.json(
-            { error: `Missing business slug parameter: ${error}` },
-            { status: 400 }
-        )
-    }
+    const slug: string = getSlug(request);
+
+    return await getBusinessResponse(
+        slug,
+        {
+            id: true,
+            name: true,
+            slug: true, 
+            domain: true,
+        },
+    );
 }

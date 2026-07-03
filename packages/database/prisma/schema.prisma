@@ -18,6 +18,16 @@ enum AccessLevel {
   staff
 }
 
+enum DayOfWeek {
+  Monday
+  Tuesday
+  Wednesday
+  Thursday
+  Friday
+  Saturday
+  Sunday
+}
+
 model Business {
   id        String   @id @default(uuid())
   name      String
@@ -35,15 +45,18 @@ model Business {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  name         String?
-  username     String?
-  email        String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String   @id @default(uuid())
+  name          String?
+  username      String?
+  email         String   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   businesses BusinessUser[]
+  accounts   Account[]
+  sessions   Session[]
 }
 
 model BusinessUser {
@@ -65,6 +78,42 @@ model Role {
   description String
 
   users BusinessUser[]
+}
+
+model Account {
+  id                String @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String @id @default(uuid())
+  sessionToken String @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 model Category {
@@ -98,14 +147,14 @@ model Contact {
 model Social {
   id          String @id @default(uuid())
   businessId  String
-  name        String
+  dns         String
   profileName String
   url         String
   icon        String
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  @@unique([businessId, name])
+  @@unique([businessId, dns, profileName])
 }
 
 model Location {
@@ -128,7 +177,7 @@ model Location {
 model LocationHour {
   id         String  @id @default(uuid())
   locationId String
-  dayOfWeek  String
+  dayOfWeek  DayOfWeek
   openTime   String?
   closeTime  String?
   isClosed   Boolean @default(false)
@@ -144,7 +193,7 @@ model Item {
   description  String?
   containsList String[]
   calories     Int?
-  price        Decimal? @db.Decimal(10, 2)
+  price        Decimal @db.Decimal(10, 2)
   order        Int
   isAvailable  Boolean  @default(true)
   slug         String

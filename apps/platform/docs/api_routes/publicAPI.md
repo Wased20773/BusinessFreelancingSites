@@ -8,7 +8,7 @@ code-paths:
   - apps/platform/src/app/api/business/locations/route.ts
   - apps/platform/src/app/api/business/menu/route.ts
   - apps/platform/src/app/api/business/menu/items/[itemSlug]/route.ts
-last-verified: 2026-06-29
+last-verified: 2026-07-02
 status: draft
 ---
 
@@ -20,6 +20,14 @@ These routes should not add, update, or delete data in the database. Go to [docs
 
 To view the full JSON return value types per route, go to [docs\api_routes\response\publicAPI.md](../../docs/api_routes/response/publicAPI.md).
 
+#### Query Params
+
+All request require:
+
+| Param | Type | Required | Example |
+| --- | --- | --- | --- |
+| slug | string | yes | tacos-el-guero |
+
 ## Business
 
 ### GET /api/business
@@ -29,12 +37,6 @@ To view the full JSON return value types per route, go to [docs\api_routes\respo
 Fetches basic public business information by slug.
 
 This route should only return the business model fields needed to identify and display the business. It should not return contacts, socials, locations, hours, or menu data.
-
-#### Query Params
-
-| Param | Type | Required | Example |
-| --- | --- | --- | --- |
-| slug | string | yes | tacos-el-guero |
 
 #### Returns
 
@@ -58,12 +60,6 @@ This route should only return the business model fields needed to identify and d
 
 Fetches public contact information for a business.
 
-#### Query Params
-
-| Param | Type | Required | Example |
-| --- | --- | --- | --- |
-| slug | string | yes | tacos-el-guero |
-
 #### Returns
 
 - [Contact](../../../../packages/database/docs/database-models.md#contact)
@@ -82,12 +78,6 @@ Fetches public contact information for a business.
 
 Fetches public social media links for a business.
 
-#### Query Params
-
-| Param | Type | Required | Example |
-| --- | --- | --- | --- |
-| slug | string | yes | tacos-el-guero |
-
 #### Returns
 
 - [Social](../../../../packages/database/docs/database-models.md#social)
@@ -105,12 +95,6 @@ Fetches public social media links for a business.
 (3 OPERATIONS)
 
 Fetches active public locations for a business, including each location's hours.
-
-#### Query Params
-
-| Param | Type | Required | Example |
-| --- | --- | --- | --- |
-| slug | string | yes | tacos-el-guero |
 
 #### Returns
 
@@ -133,12 +117,6 @@ Fetches active public locations for a business, including each location's hours.
 
 Fetches all visible categories for a business.
 
-#### Query Params
-
-| Param | Type | Required | Example |
-| --- | --- | --- | --- |
-| slug | string | yes | tacos-el-guero |
-
 #### Returns
 
 - [Category](../../../../packages/database/docs/database-models.md#category)
@@ -158,12 +136,6 @@ Fetches all visible categories for a business.
 Fetches public menu data for a business.
 
 This route returns categories, items, and item options because the public menu page usually needs the full menu tree.
-
-#### Query Params
-
-| Param | Type | Required | Example |
-| --- | --- | --- | --- |
-| slug | string | yes | tacos-el-guero |
 
 #### Returns
 
@@ -186,12 +158,6 @@ This route returns categories, items, and item options because the public menu p
 Fetches one public menu item by its item slug.
 
 This route is only needed if the public business site has individual item detail pages.
-
-#### Query Params
-
-| Param | Type | Required | Example |
-| --- | --- | --- | --- |
-| slug | string | yes | tacos-el-guero |
 
 #### Route Params
 

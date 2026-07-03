@@ -8,7 +8,6 @@
     "packages/*"
   ],
   "scripts": {
-    "platform:dev": "next dev apps/platform",
     "dev:platform": "npm run dev --workspace=platform -- --port 3000",
     "dev:tacos-el-guero": "npm run dev --workspace=tacos-el-guero -- --port 3001",
     "db:generate": "npx prisma generate --schema packages/database/prisma/schema.prisma",

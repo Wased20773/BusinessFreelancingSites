@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 // GET /api/business/menu/items/[itemSlug]
 export async function GET(
     request: Request,
-    { params }: { params: { itemSlug: string }}
+    { params }: { params: Promise<{ itemSlug: string }> }
 ): Promise<NextResponse> {
     try {
         const slug: string = getSlug(request);
@@ -44,7 +44,7 @@ export async function GET(
                         name: true,
                         price: true,
                         order: true,
-                        isAvailable: true
+                        isAvailable: true,
                     },
                 },
             },
@@ -54,14 +54,14 @@ export async function GET(
             return NextResponse.json(
                 { error: 'Item not found' },
                 { status: 404 }
-            )
+            );
         }
 
-        return NextResponse.json(item);
+        return NextResponse.json(item, { status: 200 });
     } catch (error) {
         return NextResponse.json(
-            { error: `Missing business slug parameter: ${error}` },
-            { status: 400 }
-        )
+            { error: `Failed to connect to servers when fetching for the specified business item: ${error}` },
+            { status: 500 }
+        );
     }
 }

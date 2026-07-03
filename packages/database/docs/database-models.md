@@ -3,7 +3,7 @@ title: DatabaseModels
 code-paths:
   - packages/database/prisma/schema.prisma
 
-last-verified: 2026-06-25
+last-verified: 2026-07-02
 status: planned
 ---
 
@@ -93,9 +93,9 @@ A shared PostgreSQL database stores business information for all client websites
 | --- | --- | --- |
 | id | UUID | Primary key |
 | businessId | FK → [Business](#business) | The Business record this social link belongs to |
-| name | String | Predefined Social platform name; instagram, twitter, facebook, etc. |
-| profileName | String | Business Social platform account name |
-| url | String | Predefined domain for Social URL profile; business-social-name |
+| dns | String | Predefined Social platform name; `https://instagram.com`, `https://twitter.com`, `https://facebook.com`, etc. |
+| profileName | String | Business Social platform account name; used at the end of the dns in url |
+| url | String | Predefined domain for Social URL profile; `${dns}/${profileName}` |
 | icon | String | Predefined Icon images, must be supported; businesses/icons/socials/facebook.webp |
 
 ### Location
@@ -160,6 +160,7 @@ A shared PostgreSQL database stores business information for all client websites
 - **Contacts Info:** A business can be self owned, which in most cases they might just use their mobile phone. Another business might be using a dedicated business number which is only accessible in the business location (e.g. landline). Providing this information would allow the frontend to demonstrate calling hours that would link to the location hours.
 - **Menu Ordering:** Every business should have one or many categories to organize their menu items and each category has one or many items in them. The field `order` allows for manual organization to tell where each set goes. They might want drinks to go before alcohol, or they might want to switch the order a menu item is displayed to show more popular items first. There should be a button to manually change the order number which will swap the two sets (categories or items).
 - **Social Media Linkage:** Not all businesses have a social media to promote their own business. But when they do they will be able to select from a predefined set of data for the social media we provide. This is to avoid malicious redirects to an unsafe site where the user could write to a phishing link.
+- **Social Media URL Field:** When creating a Social model it must include a `url` value for its field. However, the url itself is not created entirly by the user. The DNS (predefined values) is used for the url which the user has no control of modifying. For example, `dns=https://instagram.com`, then url will be the complete url for the businesses social media profile at `${dns}/${profileName}`. At times, this can be wrong, so the user must validate first before confirming the changes.
 - **Location Hours:** Every business should have one or many locations and each location should have one or more hours to show when the business is available at that location. Open and close times are required for each day set unless it is typically closed on that specified day where open and close times will be disabled. If there is a split in hours, provide the same day with a different open and close time; there should be no overlap.
 - **Contains List:** `containsList` is stored as a list of strings so the frontend can render item contents individually instead of parsing one long text field.
 

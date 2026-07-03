@@ -6,6 +6,10 @@
 
 No request body.
 
+### GET /api/admin/account/search?email
+
+No request body.
+
 ### PATCH /api/admin/account
 
 ```json
@@ -15,7 +19,7 @@ No request body.
 }
 ```
 
-### PATCH /api/admin/account/email
+### PATCH /api/admin/account/email (DEPRECATED)
 
 ```json
 {
@@ -24,7 +28,7 @@ No request body.
 }
 ```
 
-### PATCH /api/admin/account/password
+### PATCH /api/admin/account/password (DEPRECATED)
 
 ```json
 {
@@ -45,10 +49,7 @@ No request body.
 
 ```json
 {
-    "name": "String | null",
-    "username": "String | null",
     "email": "String",
-    "password": "String",
     "accessLevel": "owner | admin | staff"
 }
 ```
@@ -57,6 +58,7 @@ No request body.
 
 ```json
 {
+    "email": "String",
     "accessLevel": "owner | admin | staff"
 }
 ```
@@ -107,6 +109,8 @@ No request body.
     "calories": "Int | null",
     "price": "Decimal | null",
     "isAvailable": "Boolean",
+    "slug": "String",
+    "imageKey": "String"
 }
 ```
 
@@ -118,7 +122,6 @@ No request body.
 
 ```json
 {
-    "categoryId": "UUID",
     "name": "String",
     "description": "String | null",
     "containsList": "String[]",
@@ -126,6 +129,14 @@ No request body.
     "price": "Decimal | null",
     "isAvailable": "Boolean"
 }
+```
+
+### PATCH /api/admin/items/[itemId]/image
+
+```txt
+multipart/form-data
+
+image: File
 ```
 
 ### DELETE /api/admin/items/[itemId]
@@ -154,14 +165,6 @@ No request body.
     "price": "Decimal",
     "isAvailable": "Boolean"
 }
-```
-
-### PATCH /api/admin/items/[itemId]/options/[optionId]
-
-```txt
-multipart/form-data
-
-image: File
 ```
 
 ### DELETE /api/admin/items/[itemId]/options/[optionId]
@@ -264,6 +267,7 @@ No request body.
 
 ```json
 {
+    "locationId": "String",
     "dayOfWeek": "String",
     "openTime": "String | null",
     "closeTime": "String | null",

@@ -3,7 +3,7 @@ title: Admin API
 code-paths:
   - 
 
-last-verified: 2026-06-26
+last-verified: 2026-07-02
 status: draft
 ---
 
@@ -15,21 +15,26 @@ These routes should require authentication and business access checks later.
 
 To view the full JSON return values per route, go to [Admin API Responses](../../docs/api_routes/response/adminAPI.md).
 
+#### Query Params
+
+All request require:
+
+| Param | Type | Required | Example |
+| --- | --- | --- | --- |
+| slug | string | yes | tacos-el-guero |
+
 ## Account
 
 ### GET /api/admin/account
 
 Fetches the logged-in user's account information and access level for the current business.
 
-#### Query Params
-
-None
-
 #### Returns
 
 - Name
 - Username
 - Email
+- image
 - BusinessUserId
 - [AccessLevel](../../../../packages/database/docs/database-models.md#access-level-choices)
 - Access Level Description
@@ -38,6 +43,27 @@ None
 
 - Admin Dashboard
   - Settings
+
+### GET /api/admin/account/search?email
+
+Fetches a user by email.
+
+#### Required Params
+
+| Param | Type | Required | Example |
+| --- | --- | --- | --- |
+| email | string | yes | `test@gmail.com` |
+
+#### Returns
+
+- Name
+- Username
+- email
+- image
+
+#### Used For
+
+- Finding users to add to your business
 
 ### PATCH /api/admin/account
 
@@ -55,6 +81,8 @@ Example request body:
 
 ### PATCH /api/admin/account/email
 
+(Deprecated: OAuth logins would no longer match correctly)
+
 Updates the logged-in user's email.
 
 The user must provide their current password before the email can be changed.
@@ -71,6 +99,8 @@ Example request body:
 ```
 
 ### PATCH /api/admin/account/password
+
+(Deprecated: User does not control their own password as its managed by OAuth providers)
 
 Updates the logged-in user's password.
 
@@ -93,10 +123,6 @@ Example request body:
 
 Fetches all users linked to the business in a list
 
-#### Query Params
-
-None
-
 The authenticated user session determines which business users are returned
 
 #### Returns
@@ -115,17 +141,18 @@ The authenticated user session determines which business users are returned
 
 ### POST /api/admin/business-users
 
-Adds user account and links it to the authenticated business through a BusinessUser record.
+Adds businessUser entry to link the User with the current business and giving them a Role.
+
+NOTE: Auth.js adds a User record to the database, this route helps link the created user with the business
 
 Example request body:
 
-> Creating a user
+> Adding user John to the business
 
 ```json
 {
-  "name": "John",
   "email": "John@email.com",
-  "password": "password_123"
+  "accessLevel": "admin"
 }
 ```
 
@@ -134,6 +161,12 @@ Example request body:
 Updates a user's access level for the current business.
 
 This route only updates the role assigned to the BusinessUser record. It does not update the user's account information.
+
+#### Route Param Required
+
+| Param | Type | Required | Note | Example |
+| --- | --- | --- | --- | --- |
+| businessUserId | UUID | Yes | The ID of the `BusinessUser` join record to delete. | /api/admin/business-users/789ef05f-562e-4d1d-ac3a-e9e093f5d453?slug=tacos-el-guero |
 
 Example request body:
 
@@ -147,7 +180,17 @@ Example request body:
 
 ### DELETE /api/admin/business-users/[businessUserId]
 
-Deletes a user row that is linked to the business by `businessUserId`.
+Deletes a businessUser record to remove the connection between the user and that business via `businessUserId`. This does not delete a User record, or any other record tied to a businessUser record.
+
+#### Frontend Note
+
+When rendering the list of business users, attach the `businessUserId` to the delete action (for example, as a data attribute or within the component's state). When the user confirms deletion, pass that `businessUserId` to this route.
+
+#### Route Param Required
+
+| Param | Type | Required | Note | Example |
+| --- | --- | --- | --- | --- |
+| businessUserId | UUID | Yes | The ID of the `BusinessUser` join record to delete. | /api/admin/business-users/789ef05f-562e-4d1d-ac3a-e9e093f5d453?slug=tacos-el-guero |
 
 ## Categories
 
@@ -168,7 +211,13 @@ Example request body:
 
 ### PATCH /api/admin/categories/[categoryId]
 
-Updates a category row by its `categoryId`.
+Updates a category row by its `categoryId`. This cannot update the order value. This can only be done by move-up or move-down routes.
+
+#### Route Param Required
+
+| Param | Type | Required | Note | Example |
+| --- | --- | --- | --- | --- |
+| categoryId | UUID | Yes | The ID of the `Category` record to update. | /api/admin/categories/789ef05f-562e-4d1d-ac3a-e9e093f5d453?slug=tacos-el-guero |
 
 Example request body:
 
@@ -184,11 +233,59 @@ Example request body:
 
 Moves a category one position up within the current business.
 
+Moving up means swapping the selected category's `order` value with the category directly above it.
+
+[ Order: 1 | Drinks ]
+
+[ Order: 2 | Orders ]
+
+[ Order: 3 | Toppings ]
+
+If `Orders` moves up, it swaps order values with `Drinks`.
+
+--- TO ---
+
+[ Order: 1 | Orders ]
+
+[ Order: 2 | Drinks ]
+
+[ Order: 3 | Toppings ]
+
+#### Route Param Required
+
+| Param | Type | Required | Note | Example |
+| --- | --- | --- | --- | --- |
+| categoryId | UUID | Yes | The ID of the `Category` record to update. | /api/admin/categories/789ef05f-562e-4d1d-ac3a-e9e093f5d453?slug=tacos-el-guero |
+
 No body request
 
 ### PATCH /api/admin/categories/[categoryId]/move-down
 
 Moves a category one position down within the current business.
+
+Moving down means swapping the selected category's `order` value with the category directly below it.
+
+[ Order: 1 | Drinks ]
+
+[ Order: 2 | Orders ]
+
+[ Order: 3 | Toppings ]
+
+If `Orders` moves down, it swaps order values with `Toppings`.
+
+--- TO ---
+
+[ Order: 1 | Drinks ]
+
+[ Order: 2 | Toppings ]
+
+[ Order: 3 | Orders ]
+
+#### Route Param Required
+
+| Param | Type | Required | Note | Example |
+| --- | --- | --- | --- | --- |
+| categoryId | UUID | Yes | The ID of the `Category` record to update. | /api/admin/categories/789ef05f-562e-4d1d-ac3a-e9e093f5d453?slug=tacos-el-guero |
 
 No body request
 
@@ -206,6 +303,12 @@ Adds a new item row to the category by `categoryId`.
 
 A Category can exist without items, but an item can't exist without being attached to a category.
 
+#### Route Param Required
+
+| Param | Type | Required | Note | Example |
+| --- | --- | --- | --- | --- |
+| categoryId | UUID | Yes | The ID of the `Category` record to update. | /api/admin/categories/789ef05f-562e-4d1d-ac3a-e9e093f5d453?slug=tacos-el-guero |
+
 Example request body:
 
 > Adding the Taco item
@@ -222,13 +325,25 @@ Example request body:
 
 Moves an item one position up within its current category.
 
+#### Route Param Required
+
+| Param | Type | Required | Note | Example |
+| --- | --- | --- | --- | --- |
+| categoryId | UUID | Yes | The ID of the `Category` record to find the item. | /api/admin/categories/789ef05f-562e-4d1d-ac3a-e9e093f5d453/...?slug=tacos-el-guero |
+| itemId | UUID | Yes | The Id of the `Item` record to move up | /api/admin/categories/.../60e6e05c-c1b8-423f-8266-bd116bc66898?slug=tacos-el-guero |
+
 No body request
 
 ### PATCH /api/admin/categories/[categoryId]/items/[itemId]/move-down
 
 Moves an item one position down within its current category.
 
-Example request body:
+#### Route Param Required
+
+| Param | Type | Required | Note | Example |
+| --- | --- | --- | --- | --- |
+| categoryId | UUID | Yes | The ID of the `Category` record to find the item. | /api/admin/categories/789ef05f-562e-4d1d-ac3a-e9e093f5d453/...?slug=tacos-el-guero |
+| itemId | UUID | Yes | The Id of the `Item` record to move up | /api/admin/categories/.../60e6e05c-c1b8-423f-8266-bd116bc66898?slug=tacos-el-guero |
 
 No body request
 
@@ -238,6 +353,14 @@ No body request
 ### PATCH /api/admin/items/[itemId]
 
 Updates an item row by its `itemId`.
+
+This does not allow for order, slug, or imageKey to be updated. These are handled in separate routes, except for slug; slugs are not editable.
+
+#### Route Param Required
+
+| Param | Type | Required | Note | Example |
+| --- | --- | --- | --- | --- |
+| itemId | UUID | Yes | The ID of the `Item` record to update. | /api/admin/items/789ef05f-562e-4d1d-ac3a-e9e093f5d453?slug=tacos-el-guero |
 
 Example request body:
 
@@ -271,11 +394,23 @@ Deletes an item row by its `itemId`.
 
 When deleting an item, all item options will also be deleted. Warn the user before allowing the action.
 
+#### Route Param Required
+
+| Param | Type | Required | Note | Example |
+| --- | --- | --- | --- | --- |
+| itemId | UUID | Yes | The ID of the `Item` record to delete. | /api/admin/items/789ef05f-562e-4d1d-ac3a-e9e093f5d453?slug=tacos-el-guero |
+
 ## Item Options
 
 ### POST /api/admin/items/[itemId]/options
 
 Adds an option row to the item by `itemId`.
+
+#### Route Param Required
+
+| Param | Type | Required | Note | Example |
+| --- | --- | --- | --- | --- |
+| itemId | UUID | Yes | The ID of the `Item` record to add the option to. | /api/admin/items/789ef05f-562e-4d1d-ac3a-e9e093f5d453/options?slug=tacos-el-guero |
 
 Example request body:
 
@@ -292,6 +427,13 @@ Example request body:
 
 Updates an item option row by its `optionId`.
 
+#### Route Param Required
+
+| Param | Type | Required | Note | Example |
+| --- | --- | --- | --- | --- |
+| itemId | UUID | Yes | The ID of the `Item` record where the option is located. | /api/admin/categories/789ef05f-562e-4d1d-ac3a-e9e093f5d453/options/...?slug=tacos-el-guero |
+| optionId | UUID | Yes | The Id of the `ItemOption` record to update | /api/admin/items/.../options/60e6e05c-c1b8-423f-8266-bd116bc66898?slug=tacos-el-guero |
+
 Example request body:
 
 > Updating the items option price
@@ -306,11 +448,25 @@ Example request body:
 
 Moves an item option one position up within its current item.
 
+#### Route Param Required
+
+| Param | Type | Required | Note | Example |
+| --- | --- | --- | --- | --- |
+| itemId | UUID | Yes | The ID of the `Item` record where the option is located. | /api/admin/categories/789ef05f-562e-4d1d-ac3a-e9e093f5d453/options/.../move-up?slug=tacos-el-guero |
+| optionId | UUID | Yes | The Id of the `ItemOption` record to move up | /api/admin/items/.../options/60e6e05c-c1b8-423f-8266-bd116bc66898/move-up?slug=tacos-el-guero |
+
 No body request
 
 ### PATCH /api/admin/items/[itemId]/options/[optionId]/move-down
 
 Moves an item option one position down within its current item.
+
+#### Route Param Required
+
+| Param | Type | Required | Note | Example |
+| --- | --- | --- | --- | --- |
+| itemId | UUID | Yes | The ID of the `Item` record where the option is located. | /api/admin/categories/789ef05f-562e-4d1d-ac3a-e9e093f5d453/options/.../move-down?slug=tacos-el-guero |
+| optionId | UUID | Yes | The Id of the `ItemOption` record to move down | /api/admin/items/.../options/60e6e05c-c1b8-423f-8266-bd116bc66898/move-down?slug=tacos-el-guero |
 
 No body request
 
@@ -359,15 +515,17 @@ Deletes a contact row by its `contactId`.
 
 Adds a social row to the business.
 
+`url` and `icon` are supplied by the system. It uses the contacts `profileName` for the url , and the icon comes from a stored bucket inside of S3 Buckets (must be supported through a dropdown selection). If the url is not correct then the user should be allowed to edit the URL to the correct location (cannot change DNS of social media platform).
+
 Example request body:
 
 > Adding Instagram as a social media link
 
 ```json
 {
-  "name": "Instagram",
-  "profileName": "tacoselguero",
-  "url": "business-social-name",
+  "dns": "https://instagram",
+  "profileName": "Tacos El Guero",
+  "url": "https://instagram/tacos-el-guero",
   "icon": "businesses/icons/socials/instagram.webp"
 }
 ```

@@ -19,8 +19,25 @@ DELETE routes return a small confirmation object instead of the full deleted mod
     "name": "String | null",
     "username": "String | null",
     "email": "String",
+    "image": "String",
     "accessLevel": "owner | admin | staff",
-    "accessLevelDescription": "String"
+    "description": "String",
+    "createdAt": "DateTime",
+    "updatedAt": "DateTime"
+}
+```
+
+### GET /api/admin/account/search?email
+
+```json
+{
+    "id": "UUID",
+    "name": "String | null",
+    "username": "String | null",
+    "email": "String",
+    "emailVerified": "String",
+    "image": "String | null",
+    "createdAt": "DateTime"
 }
 ```
 
@@ -35,7 +52,7 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 }
 ```
 
-### PATCH /api/admin/account/email
+### PATCH /api/admin/account/email (DEPRECATED)
 
 ```json
 {
@@ -44,7 +61,7 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 }
 ```
 
-### PATCH /api/admin/account/password
+### PATCH /api/admin/account/password (DEPRECATED)
 
 ```json
 {
@@ -58,30 +75,41 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 ### GET /api/admin/business-users
 
 ```json
-{
-    "businessUsers": [
+[
+    {
         {
-            "businessUserId": "UUID",
-            "name": "String | null",
-            "username": "String | null",
-            "email": "String",
-            "accessLevel": "owner | admin | staff",
-            "accessLevelDescription": "String"
+            "id": "UUID",
+            "businessId": "UUID",
+            "userId": "UUID",
+            "roleId": "UUID",
+            "user": {
+                "id": "UUID",
+                "name": "String | null",
+                "username": "String | null",
+                "email": "String",
+            },
+            "role": {
+                "id": "UUID",
+                "accessLevel": "owner | admin | staff",
+                "description": "String"
+            }
         }
-    ]
-}
+    }
+]
 ```
 
 ### POST /api/admin/business-users
 
 ```json
 {
-    "businessUserId": "UUID",
-    "name": "String | null",
-    "username": "String | null",
-    "email": "String",
-    "accessLevel": "owner | admin | staff",
-    "accessLevelDescription": "String"
+    "id": "UUID",
+    "user": {
+        "updatedAt": "DateTime"
+    },
+    "role": {
+        "accessLevel": "owner | admin | staff",
+        "description": "String"
+    }
 }
 ```
 
@@ -91,7 +119,7 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 {
     "businessUserId": "UUID",
     "accessLevel": "owner | admin | staff",
-    "accessLevelDescription": "String"
+    "description": "String"
 }
 ```
 
@@ -99,7 +127,6 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 
 ```json
 {
-    "deletedBusinessUserId": "UUID",
     "message": "String"
 }
 ```
@@ -165,7 +192,6 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 
 ```json
 {
-    "deletedCategoryId": "UUID",
     "message": "String"
 }
 ```
@@ -185,8 +211,8 @@ DELETE routes return a small confirmation object instead of the full deleted mod
     "price": "Decimal | null",
     "order": "Int",
     "isAvailable": "Boolean",
+    "slug": "String",
     "imageKey": "String | null",
-    "createdAt": "DateTime",
     "updatedAt": "DateTime"
 }
 ```
@@ -229,15 +255,12 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 ```json
 {
     "id": "UUID",
-    "categoryId": "UUID",
     "name": "String",
     "description": "String | null",
     "containsList": "String[]",
     "calories": "Int | null",
     "price": "Decimal | null",
-    "order": "Int",
     "isAvailable": "Boolean",
-    "ImageKey": "String | null",
     "updatedAt": "DateTime",
 }
 ```
@@ -255,7 +278,6 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 
 ```json
 {
-    "deletedItemId": "UUID",
     "message": "String"
 }
 ```
@@ -323,7 +345,6 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 
 ```json
 {
-    "deletedOptionId": "UUID",
     "message": "String"
 }
 ```
@@ -371,7 +392,7 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 ```json
 {
     "id": "UUID",
-    "name": "String",
+    "dns": "String",
     "profileName": "String",
     "url": "String",
     "icon": "String"
@@ -383,7 +404,7 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 ```json
 {
     "id": "UUID",
-    "name": "String",
+    "dns": "String",
     "profileName": "String",
     "url": "String",
     "icon": "String"
@@ -394,7 +415,6 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 
 ```json
 {
-    "deletedSocialId": "UUID",
     "message": "String"
 }
 ```
