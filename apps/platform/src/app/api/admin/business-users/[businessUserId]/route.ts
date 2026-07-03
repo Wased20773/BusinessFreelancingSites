@@ -105,7 +105,7 @@ export async function PATCH(
 // DELETE /api/admin/business-users/[businessUserId]
 export async function DELETE(
     request: Request,
-    { params }: { params: { businessUserId: string }}
+    { params }: { params: Promise<{ businessUserId: string }> }
 ): Promise<NextResponse> {
     try {
         const authResult = await authenticateBusinessAccess(
