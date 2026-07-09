@@ -78,12 +78,18 @@
 
                         - locations\
                             - [locationId]\
-                                - hours\
-                                    - [hourId]\
+                                - days\
+                                    - [dayId]\
+                                        - hours\
+                                            - [hourId]\
+                                                - route.ts
+
+                                            - route.ts
+
                                         - route.ts
 
                                     - route.ts
-                                
+
                                 - route.ts
 
                             - route.ts

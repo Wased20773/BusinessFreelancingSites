@@ -158,17 +158,18 @@ model Social {
 }
 
 model Location {
-  id         String   @id @default(uuid())
-  businessId String
-  address    String
-  zip        String?
-  country    String?
-  state      String?
-  city       String?
-  parking    Boolean  @default(false)
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(uuid())
+  businessId  String
+  address     String
+  zip         String?
+  country     String?
+  state       String?
+  city        String?
+  parking     Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  enableHours Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   business Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   days     LocationDay[]
@@ -189,10 +190,10 @@ model LocationDay {
 model Hour {
   id            String  @id @default(uuid())
   locationDayId String
+  openTime      String
+  closeTime     String
   title         String?
   note          String?
-  openTime      String?
-  closeTime     String?
   isDisabled    Boolean @default(false)
 
   locationDay LocationDay @relation(fields: [locationDayId], references: [id], onDelete: Cascade)

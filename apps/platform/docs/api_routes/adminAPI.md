@@ -3,8 +3,8 @@ title: Admin API
 code-paths:
   - 
 
-last-verified: 2026-07-02
-status: draft
+last-verified: 2026-07-08
+status: in-progress
 ---
 
 # Admin API Routes

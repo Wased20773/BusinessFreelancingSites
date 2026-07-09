@@ -131,6 +131,7 @@ A shared PostgreSQL database stores business information for all client websites
 | city | String? | Optional city |
 | parking | boolean | Whether parking is available |
 | isActive | boolean | Is this location serving customers? Has this location temporarily closed? |
+| enableHours | boolean | defaulted to false, allows an hourly formate for rendering the locations hours for its days, else it just renders the locations opening days (can only be enabled when hours have been set for all days) |
 | hours | [LocationDay[]](#locationday) | Days and hours this location is open |
 
 ### LocationDay
@@ -239,7 +240,7 @@ This schema supports structures like:
 ```
 
 - **isClosed field in LocationDay:** This field determines if the location is open on the day specified via `dayOfWeek`. This should only grey out the hours on the specified day to prevent there deletion incase the business decides to open back on that day (using the previously set hours).
-- **Location & Hours Frontend:** For every location, there is a location hours. When rendered in the frontend, it should have already populated all weekdays in a table (not like a month calender). From that table, the user should be able to click a button to expand a days hours or they can continue to view all weekdays hours as normally. The user should be able to click a button that ask for which weekday, if they would like to title the hour (Happy Hour, etc.), a note of what this hours mean (if necessary) and to set its hours. By clicking on one of the weekday hours, they can edit the title, note, hours, disable it or delete the record. In addition to changing the hours, they can also use the hold and drag interaction to extend or shorten the hour (no overlap or closeTime<=0 or openTime>=closeTime).
+- **Locations Frontend:** For every location, there is a location hours for each day created. When rendered in the frontend, it should only populate cards were days are created in a table in weekday format (not like a month calender). From that table, the user should be able to click a button to expand a days hours or they can continue to view all weekdays hours as normally. The user should be able to click a button that ask for which weekday, if they would like to title the hour (Happy Hour, etc.), a note of what this hours mean (if necessary) and to set its hours. By clicking on one of the weekday hour cards they can edit the title, note, hours, disable it or delete the record. In addition to changing the hours, they can also use the hold and drag interaction to extend or shorten the hour (no overlap or closeTime<=openTime or openTime>=closeTime).
 - **Contains List:** `containsList` is stored as a list of strings so the frontend can render item contents individually instead of parsing one long text field.
 
 ## Slug Design Choice
