@@ -3,10 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
-// PATCH /api/admin/locations/[locationId]
+// PATCH /api/admin/locations/[locationId]/days/[dayId]
 export async function PATCH(
     request: Request,
-    { params }: { params: Promise<{ locationId: string }> }
+    { params }: { params: Promise<{ locationId: string; dayId: string }> }
 ): Promise<NextResponse> {
     try {
         const authResult = await authenticateBusinessAccess(
@@ -17,7 +17,7 @@ export async function PATCH(
         if (authResult instanceof NextResponse) return authResult;
 
         const { businessId } = authResult;
-        const { locationId } = await params;
+        const { locationId, dayId } = await params;
         const body = await request.json();
 
         if (!locationId) {
@@ -27,64 +27,58 @@ export async function PATCH(
             );
         }
 
-        const location = await prisma.location.findFirst({
+        if (!dayId) {
+            return NextResponse.json(
+                { error: "Missing dayId" },
+                { status: 400 }
+            );
+        }
+
+        const updatedDayResult = await prisma.locationDay.updateMany({
             where: {
-                id: locationId,
-                businessId: businessId,
+                id: dayId,
+                locationId: locationId,
+                location: {
+                    businessId: businessId,
+                },
             },
-            select: {
-                id: true,
+            data: {
+                isClosed: body.isClosed,
             },
         });
 
-        if (!location) {
+        if (updatedDayResult.count === 0) {
             return NextResponse.json(
-                { error: "This location does not exist in our records" },
+                { error: "This location day does not exist in our records" },
                 { status: 404 }
             );
         }
 
-        const updatedLocation = await prisma.location.update({
+        const updatedDay = await prisma.locationDay.findUnique({
             where: {
-                id: location.id,
-            },
-            data: {
-                address: body.address,
-                zip: body.zip,
-                country: body.country,
-                state: body.state,
-                city: body.city,
-                parking: body.parking,
-                isActive: body.isActive,
-                enableHours: body.enableHours,
+                id: dayId,
             },
             select: {
                 id: true,
-                address: true,
-                zip: true,
-                country: true,
-                state: true,
-                city: true,
-                parking: true,
-                isActive: true,
-                enableHours: true,
-                updatedAt: true,
+                locationId: true,
+                dayOfWeek: true,
+                isClosed: true,
             },
         });
 
-        return NextResponse.json(updatedLocation, { status: 200 });
+        return NextResponse.json(updatedDay, { status: 200 });
     } catch (error) {
         return NextResponse.json(
-            { error: `Failed to update location: ${error}` },
+            { error: `Failed to update location day: ${error}` },
             { status: 500 }
         );
     }
 }
 
-// DELETE /api/admin/locations/[locationId]
+// DELETE /api/admin/locations/[locationId]/days/[dayId]
 export async function DELETE(
     request: Request,
-    { params }: { params: Promise<{ locationId: string }> }
+    { params }: { params: Promise<{ locationId: string; dayId: string }> }
 ): Promise<NextResponse> {
     try {
         const authResult = await authenticateBusinessAccess(
@@ -95,7 +89,7 @@ export async function DELETE(
         if (authResult instanceof NextResponse) return authResult;
 
         const { businessId } = authResult;
-        const { locationId } = await params;
+        const { locationId, dayId } = await params;
 
         if (!locationId) {
             return NextResponse.json(
@@ -104,27 +98,37 @@ export async function DELETE(
             );
         }
 
-        const deletedLocation = await prisma.location.deleteMany({
+        if (!dayId) {
+            return NextResponse.json(
+                { error: "Missing dayId" },
+                { status: 400 }
+            );
+        }
+
+        const deletedDay = await prisma.locationDay.deleteMany({
             where: {
-                id: locationId,
-                businessId: businessId,
+                id: dayId,
+                locationId: locationId,
+                location: {
+                    businessId: businessId,
+                },
             },
         });
 
-        if (deletedLocation.count === 0) {
+        if (deletedDay.count === 0) {
             return NextResponse.json(
-                { error: "This location does not exist in our records" },
+                { error: "This location day does not exist in our records" },
                 { status: 404 }
             );
         }
 
         return NextResponse.json(
-            { message: "Location deleted successfully" },
+            { message: "Location day deleted successfully" },
             { status: 200 }
         );
     } catch (error) {
         return NextResponse.json(
-            { error: `Failed to delete location: ${error}` },
+            { error: `Failed to delete location day: ${error}` },
             { status: 500 }
         );
     }

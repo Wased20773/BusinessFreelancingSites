@@ -31,8 +31,8 @@ export async function POST(request: Request): Promise<NextResponse> {
                 country: body.country,
                 state: body.state,
                 city: body.city,
-                parking: body.parking ?? false,
-                isActive: body.isActive ?? true,
+                parking: body.parking,
+                isActive: body.isActive,
             },
             select: {
                 id: true,
@@ -43,6 +43,7 @@ export async function POST(request: Request): Promise<NextResponse> {
                 city: true,
                 parking: true,
                 isActive: true,
+                enableHours: true,
                 createdAt: true,
                 updatedAt: true,
             },

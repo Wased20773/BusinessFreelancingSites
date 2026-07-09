@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
-// POST /api/admin/locations/[locationId]/hours
+// POST /api/admin/locations/[locationId]/days
 export async function POST(
     request: Request,
     { params }: { params: Promise<{ locationId: string }> }
@@ -59,28 +59,24 @@ export async function POST(
             );
         }
 
-        const hour = await prisma.locationHour.create({
+        const day = await prisma.locationDay.create({
             data: {
                 locationId: location.id,
                 dayOfWeek: dayOfWeek,
-                openTime: body.openTime,
-                closeTime: body.closeTime,
-                isClosed: body.isClosed ?? false,
+                isClosed: body.isClosed,
             },
             select: {
                 id: true,
                 locationId: true,
                 dayOfWeek: true,
-                openTime: true,
-                closeTime: true,
                 isClosed: true,
             },
         });
 
-        return NextResponse.json(hour, { status: 201 });
+        return NextResponse.json(day, { status: 201 });
     } catch (error) {
         return NextResponse.json(
-            { error: `Failed to create location hour: ${error}` },
+            { error: `Failed to create location day: ${error}` },
             { status: 500 }
         );
     }

@@ -1,13 +1,12 @@
-import { normalizeDayOfWeek } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
-import { AccessLevel, DayOfWeek } from "@business-freelancer/database";
+import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
-// PATCH /api/admin/locations/[locationId]/hours/[hourId]
+// PATCH /api/admin/locations/[locationId]/days/[dayId]/hours/[hourId]
 export async function PATCH(
     request: Request,
-    { params }: { params: Promise<{ locationId: string; hourId: string }> }
+    { params }: { params: Promise<{ locationId: string; dayId: string; hourId: string }> }
 ): Promise<NextResponse> {
     try {
         const authResult = await authenticateBusinessAccess(
@@ -18,7 +17,7 @@ export async function PATCH(
         if (authResult instanceof NextResponse) return authResult;
 
         const { businessId } = authResult;
-        const { locationId, hourId } = await params;
+        const { locationId, dayId, hourId } = await params;
         const body = await request.json();
 
         if (!locationId) {
@@ -28,81 +27,74 @@ export async function PATCH(
             );
         }
 
+        if (!dayId) {
+            return NextResponse.json(
+                { error: "Missing dayId" },
+                { status: 400 }
+            );
+        }
+
         if (!hourId) {
             return NextResponse.json(
                 { error: "Missing hourId" },
                 { status: 400 }
             );
         }
-        
-        let dayOfWeek: DayOfWeek | undefined = undefined;
 
-        if (body.dayOfWeek !== undefined){
-            const normalizedDay = normalizeDayOfWeek(body.dayOfWeek);
-
-            if (!normalizedDay) {
-                return NextResponse.json(
-                    { error: "Invalid dayOfWeek" },
-                    { status: 400 }
-                );
-            }
-
-            dayOfWeek = normalizedDay;
-        }
-
-        const hour = await prisma.locationHour.findFirst({
+        const updatedHourResult = await prisma.hour.updateMany({
             where: {
                 id: hourId,
-                locationId: locationId,
-                location: {
-                    businessId: businessId,
+                locationDayId: dayId,
+                locationDay: {
+                    locationId: locationId,
+                    location: {
+                        businessId: businessId,
+                    },
                 },
             },
-            select: {
-                id: true,
+            data: {
+                openTime: body.openTime,
+                closeTime: body.closeTime,
+                title: body.title,
+                note: body.note,
+                isDisabled: body.isDisabled,
             },
         });
 
-        if (!hour) {
+        if (updatedHourResult.count === 0) {
             return NextResponse.json(
                 { error: "This location hour does not exist in our records" },
                 { status: 404 }
             );
         }
 
-        const updatedHour = await prisma.locationHour.update({
+        const updatedHour = await prisma.hour.findUnique({
             where: {
-                id: hour.id,
-            },
-            data: {
-                dayOfWeek: dayOfWeek,
-                openTime: body.openTime,
-                closeTime: body.closeTime,
-                isClosed: body.isClosed,
+                id: hourId,
             },
             select: {
                 id: true,
-                locationId: true,
-                dayOfWeek: true,
                 openTime: true,
                 closeTime: true,
-                isClosed: true,
+                title: true,
+                note: true,
+                isDisabled: true,
             },
         });
 
         return NextResponse.json(updatedHour, { status: 200 });
     } catch (error) {
         return NextResponse.json(
-            { error: `Failed to update location hour: ${error}` },
+            { error: `Failed to update location hours: ${error}` },
             { status: 500 }
-        );
+        )
     }
 }
 
-// DELETE /api/admin/locations/[locationId]/hours/[hourId]
+// DELETE /api/admin/locations/[locationId]/days/[dayId]/hours/[hourId]
 export async function DELETE(
     request: Request,
-    { params }: { params: Promise<{ locationId: string; hourId: string }> }
+    { params }: { params: Promise<{ locationId: string; dayId: string; hourId: string }> }
 ): Promise<NextResponse> {
     try {
         const authResult = await authenticateBusinessAccess(
@@ -113,11 +105,18 @@ export async function DELETE(
         if (authResult instanceof NextResponse) return authResult;
 
         const { businessId } = authResult;
-        const { locationId, hourId } = await params;
+        const { locationId, dayId, hourId } = await params;
 
         if (!locationId) {
             return NextResponse.json(
                 { error: "Missing locationId" },
+                { status: 400 }
+            );
+        }
+
+        if (!dayId) {
+            return NextResponse.json(
+                { error: "Missing dayId" },
                 { status: 400 }
             );
         }
@@ -129,12 +128,15 @@ export async function DELETE(
             );
         }
 
-        const deletedHour = await prisma.locationHour.deleteMany({
+        const deletedHour = await prisma.hour.deleteMany({
             where: {
                 id: hourId,
-                locationId: locationId,
-                location: {
-                    businessId: businessId,
+                locationDayId: dayId,
+                locationDay: {
+                    locationId: locationId,
+                    location: {
+                        businessId: businessId,
+                    },
                 },
             },
         });

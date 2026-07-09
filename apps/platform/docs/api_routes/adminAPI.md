@@ -585,13 +585,13 @@ Deletes a location row by its `locationId`.
 
 When deleting a location, all location hours will also be deleted. Warn the user before allowing the action
 
-## Location Hours
+## Location Days
 
-### POST /api/admin/locations/[locationId]/hours
+### POST /api/admin/locations/[locationId]/days
 
-Adds a location hour row to the location by `locationId`.
+Adds a location day row to the location by `locationId`.
 
-A location can exist without hours, but location hours cannot exist without being attached to a location.
+A location does not need location days, this is to help with the frontend to display opening days. Each day has hours attached if added. In the frontend, a location day is created alongside its hours as separate routes (if provided).
 
 Example request body:
 
@@ -599,19 +599,17 @@ Example request body:
 
 ```json
 {
-  "dayOfWeek": "Monday",
-  "openTime": "09:00",
-  "closeTime": "18:00"
+  "dayOfWeek": "Monday"
 }
 ```
 
-### PATCH /api/admin/locations/[locationId]/hours/[hourId]
+### PATCH /api/admin/locations/[locationId]/days/[dayId]
 
-Updates a location hour row by its `hourId`.
+Updates a locations day row contents by its `dayId`.
 
 Example request body:
 
-> Update a locations hours as closed (for temporary closure or no longer serving on that day)
+> Update a locations status to closed (for temporary closure or no longer serving on that day)
 
 ```json
 {
@@ -619,6 +617,47 @@ Example request body:
 }
 ```
 
-### DELETE /api/admin/locations/[locationId]/hours/[hourId]
+### DELETE /api/admin/locations/[locationId]/days/[dayId]
 
-Deletes a location hour row by its `hourId`.
+Deletes a location day row by its `dayId`.
+
+When deleting a locations day, all location hours will also be deleted. Warn the user before allowing the action.
+
+## Hours
+
+### POST /api/admin/locations/[locationId]/days/[dayId]/hours
+
+Adds an hour row to days by its `dayId`.
+
+Hours are not required to present a days availability (you can turn on and off the hourly format through location.enableHours)
+
+Example request body:
+
+> Creating an hour for Happy Hour
+
+```json
+{
+  "openTime": "16:00",
+  "closeTime": "20:00",
+  "title": "Happy Hour",
+  "note": "Serving special dishes!"
+}
+```
+
+### PATCH /api/admin/locations/[locationId]/days/[dayId]/hours/[hourId]
+
+Updates an hours contents by its `hourId`.
+
+Example request body:
+
+> Disabling the hour
+
+```json
+{
+  "isDisabled": true
+}
+```
+
+### DELETE /api/admin/locations/[locationId]/days/[dayId]/hours/[hourId]
+
+Delete an hour row by its `hourId`.
