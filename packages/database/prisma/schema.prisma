@@ -45,14 +45,14 @@ model Business {
 }
 
 model User {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   name          String?
   username      String?
-  email         String   @unique
+  email         String    @unique
   emailVerified DateTime?
   image         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   businesses BusinessUser[]
   accounts   Account[]
@@ -81,7 +81,7 @@ model Role {
 }
 
 model Account {
-  id                String @id @default(uuid())
+  id                String  @id @default(uuid())
   userId            String
   type              String
   provider          String
@@ -100,8 +100,8 @@ model Account {
 }
 
 model Session {
-  id           String @id @default(uuid())
-  sessionToken String @unique
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
   userId       String
   expires      DateTime
 
@@ -121,7 +121,7 @@ model Category {
   businessId  String
   name        String
   description String?
-  order       Int
+  order       Int      @default(1)
   isVisible   Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -170,19 +170,34 @@ model Location {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  business Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  hours    LocationHour[]
+  business Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  days     LocationDay[]
 }
 
-model LocationHour {
-  id         String  @id @default(uuid())
+model LocationDay {
+  id         String    @id @default(uuid())
   locationId String
   dayOfWeek  DayOfWeek
-  openTime   String?
-  closeTime  String?
-  isClosed   Boolean @default(false)
+  isClosed   Boolean   @default(true)
 
   location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  hours    Hour[]
+
+  @@unique([locationId, dayOfWeek])
+}
+
+model Hour {
+  id            String  @id @default(uuid())
+  locationDayId String
+  title         String?
+  note          String?
+  openTime      String?
+  closeTime     String?
+  isDisabled    Boolean @default(false)
+
+  locationDay LocationDay @relation(fields: [locationDayId], references: [id], onDelete: Cascade)
+
+  @@unique([locationDayId, openTime, closeTime])
 }
 
 model Item {
@@ -193,8 +208,8 @@ model Item {
   description  String?
   containsList String[]
   calories     Int?
-  price        Decimal @db.Decimal(10, 2)
-  order        Int
+  price        Decimal  @db.Decimal(10, 2)
+  order        Int      @default(1)
   isAvailable  Boolean  @default(true)
   slug         String
   imageKey     String?
@@ -213,7 +228,7 @@ model ItemOption {
   itemId      String
   name        String
   price       Decimal  @db.Decimal(10, 2)
-  order       Int
+  order       Int      @default(1)
   isAvailable Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

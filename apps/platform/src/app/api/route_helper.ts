@@ -54,7 +54,6 @@ export async function getBusinessResponse<T extends Prisma.BusinessSelect>(
             { status: 500 }
         );
     }
-
 }
 
 export async function getNextOrder(
@@ -79,7 +78,6 @@ export async function getNextOrder(
             { status: 500 }
         )
     }
-
 }
 
 export function createSlug(value: string): string {

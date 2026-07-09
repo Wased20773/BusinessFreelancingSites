@@ -3,7 +3,7 @@ title: DatabaseModels
 code-paths:
   - packages/database/prisma/schema.prisma
 
-last-verified: 2026-07-02
+last-verified: 2026-07-08
 status: planned
 ---
 
@@ -36,17 +36,10 @@ A shared PostgreSQL database stores business information for all client websites
 | name | String? | Optional user's name |
 | username | String? | Optional user's username |
 | email | String | Globally unique email/login identifier |
-| passwordHash | String | Password hash, not plain text |
+| emailVerified | DateTime? | Optional timestamp for when the user's email was verified |
 | businesses | [BusinessUser[]](#businessuser) | Businesses this user is connected to |
-
-### BusinessUser
-
-| Field | Type | Notes |
-| --- | --- | --- |
-| id | UUID | Primary key |
-| businessId | FK → [Business](#business) | The business this user connection belongs to |
-| userId | FK → [User](#user) | The user connected to the business |
-| roleId | FK → [Role](#role) | The role this user has inside this specific business |
+| accounts | [Account[]](#account) | OAuth/provider accounts connected to this user |
+| sessions | [Session[]](#session) | Active or saved login sessions for this user |
 
 ### Role
 
@@ -57,13 +50,40 @@ A shared PostgreSQL database stores business information for all client websites
 | description | String | Predefined description to help the user understand the access level permissions |
 | users | [BusinessUser[]](#businessuser) | Business-user connections using this role |
 
-### Access Level Choices
+### Account
 
-| Value | Label | Meaning |
+| Field | Type | Notes |
 | --- | --- | --- |
-| owner | Owner | Full business-level access. Can add, update, and change business content, manage users/roles, and transfer ownership. |
-| admin | Admin | Can add, update, and delete business content. Can manage general user information, but cannot remove an owner, or transfer ownership. |
-| staff | Staff | View-only access. Can view business information but cannot add, update, or delete business content. Free to update their credentials but not role. |
+| id | UUID | Primary key |
+| userId | FK → [User](#user) | Foreign key referencing the user who owns this provider account |
+| type | String | Account type used by Auth.js, such as oauth |
+| provider | String | OAuth provider name, such as google, twitter, facebook, etc. |
+| providerAccountId | String | Unique account ID from the OAuth provider |
+| refresh_token | String? | Optional refresh token from the provider |
+| access_token | String? | Optional access token from the provider |
+| expires_at | Int? | Optional expiration timestamp for the access token |
+| token_type | String? | Optional token type, usually Bearer |
+| scope | String? | Optional OAuth permission scopes granted by the provider |
+| id_token | String? | Optional ID token from the provider |
+| session_state | String? | Optional provider-specific session state |
+
+### Session
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| id | UUID | Primary key |
+| userId | FK → [User](#user) | Foreign key referencing the logged-in user |
+| sessionToken | String | Unique session token used by Auth.js |
+| expires | DateTime | Timestamp for when the session expires |
+
+### BusinessUser
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| id | UUID | Primary key |
+| businessId | FK → [Business](#business) | The business this user connection belongs to |
+| userId | FK → [User](#user) | The user connected to the business |
+| roleId | FK → [Role](#role) | The role this user has inside this specific business |
 
 ### Category
 
@@ -110,19 +130,30 @@ A shared PostgreSQL database stores business information for all client websites
 | state | String? | Optional state |
 | city | String? | Optional city |
 | parking | boolean | Whether parking is available |
-| hours | [LocationHour[]](#locationhour) | Days and hours this location is open |
 | isActive | boolean | Is this location serving customers? Has this location temporarily closed? |
+| hours | [LocationDay[]](#locationday) | Days and hours this location is open |
 
-### LocationHour
+### LocationDay
 
 | Field | Type | Notes |
 | --- | --- | --- |
 | id | UUID | Primary key |
-| locationId | FK → [Location](#location) | The Location these hours belong to |
-| dayOfWeek | String | Predefined days of the week; monday, tuesday, wednesday, etc. |
+| locationId | FK → [Location](#location) | The Location the days belong to |
+| dayOfWeek | DayOfWeek | Predefined days of the week; Monday, Tuesday, Wednesday, etc. |
+| isClosed | Boolean | Whether the location is closed on this day |
+| hours | [Hour[]](#hour) | All the hours for this day, there should be no overlap |
+
+### Hour
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| id | UUID | Primary key |
+| locationDayId | FK -> [LocationDay](#locationday) | The Days the hours belong to |
+| title | String? | Optional title for the hours set (Happy Hour) |
+| note | String? | Optional note about the hours (selling specials only at this hour) |
 | openTime | String? | Opening time; 09:00 |
 | closeTime | String? | Closing time; 21:00 |
-| isClosed | boolean | Whether the location is closed on this day |
+| isDisabled | boolean | Disables the hours set (prevents full deletion) |
 
 ### Item
 
@@ -136,13 +167,14 @@ A shared PostgreSQL database stores business information for all client websites
 | description | String? | Optional item description |
 | containsList | string[] | List of what the item contains to help with the frontend; tomato, onions, salt, pepper, etc. |
 | calories | Int? | Optional calorie count |
-| price | decimal | The price of the Item which should not include the "$" sign; 1.99, 5, 2.49 |
+| price | decimal | The price of the Item which should not include the "$" sign; 1.99, 5, 2.5 |
 | order | Int | Helps display the Item in a specific order in the frontend; Cheese Burger(1) -> Double Cheese Burger(2) -> Combo(3) |
 | isAvailable | boolean | Whether the item is available/displayed (example; seasonal items) |
 | slug | String | System-generated URL-safe identifier. Must be unique inside the business; bottle-water |
 | imageKey | String? | Optional image storage key that uses AWS S3 Buckets; businesses/business-slug/menu-items/bottle-water-ITEM_UUID.webp |
 
 ### ItemOptions
+
 | Field | Type | Notes |
 | --- | --- | --- |
 | id | UUID | Primary key |
@@ -151,6 +183,28 @@ A shared PostgreSQL database stores business information for all client websites
 | price | Int | The individual price for this option (overides the price from item.price) |
 | order | Int | Helps display the ItemOption in a specific order in the frontend; small(1) -> medium(2) -> large(3) |
 | isAvailable | boolean | Whether the option is available/displayed (example; out of stock) |
+
+## Enums
+
+### AccessLevel
+
+| Value | Label | Meaning |
+| --- | --- | --- |
+| owner | Owner | Full business-level access. Can add, update, and change business content, manage users/roles, and transfer ownership. |
+| admin | Admin | Can add, update, and delete business content. Can manage general user information, but cannot remove an owner, or transfer ownership. |
+| staff | Staff | View-only access. Can view business information but cannot add, update, or delete business content. Free to update their credentials but not role. |
+
+### DayOfWeek
+
+| Value | Label |
+| --- | --- |
+| Monday | Monday |
+| Tuesday | Tuesday |
+| Wednesday | Wednesday |
+| Thursday | Thursday |
+| Friday | Friday |
+| Saturday | Saturday |
+| Sunday | Sunday |
 
 ## Design Decisions
 
@@ -161,7 +215,31 @@ A shared PostgreSQL database stores business information for all client websites
 - **Menu Ordering:** Every business should have one or many categories to organize their menu items and each category has one or many items in them. The field `order` allows for manual organization to tell where each set goes. They might want drinks to go before alcohol, or they might want to switch the order a menu item is displayed to show more popular items first. There should be a button to manually change the order number which will swap the two sets (categories or items).
 - **Social Media Linkage:** Not all businesses have a social media to promote their own business. But when they do they will be able to select from a predefined set of data for the social media we provide. This is to avoid malicious redirects to an unsafe site where the user could write to a phishing link.
 - **Social Media URL Field:** When creating a Social model it must include a `url` value for its field. However, the url itself is not created entirly by the user. The DNS (predefined values) is used for the url which the user has no control of modifying. For example, `dns=https://instagram.com`, then url will be the complete url for the businesses social media profile at `${dns}/${profileName}`. At times, this can be wrong, so the user must validate first before confirming the changes.
-- **Location Hours:** Every business should have one or many locations and each location should have one or more hours to show when the business is available at that location. Open and close times are required for each day set unless it is typically closed on that specified day where open and close times will be disabled. If there is a split in hours, provide the same day with a different open and close time; there should be no overlap.
+- **Location Hours:** Every business should have one or many locations and each location should have one or more hours to show per day of the week when the business is available at that location. Open and close times are required for each day set unless it is typically closed on that specified day through `isClosed` where open and close times will be disabled. If there is a split in hours, provide the same day with a different open and close time; there should be no overlap.
+
+This schema supports structures like:
+
+```json
+"business": {
+  "locations": [
+    {
+      "addressOne": "Example St.",
+      "days": [
+        {
+          "dayOfWeek": "Monday",
+          "hours": {
+            "openTime": "9:00",
+            "closeTime": "20:00"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+- **isClosed field in LocationDay:** This field determines if the location is open on the day specified via `dayOfWeek`. This should only grey out the hours on the specified day to prevent there deletion incase the business decides to open back on that day (using the previously set hours).
+- **Location & Hours Frontend:** For every location, there is a location hours. When rendered in the frontend, it should have already populated all weekdays in a table (not like a month calender). From that table, the user should be able to click a button to expand a days hours or they can continue to view all weekdays hours as normally. The user should be able to click a button that ask for which weekday, if they would like to title the hour (Happy Hour, etc.), a note of what this hours mean (if necessary) and to set its hours. By clicking on one of the weekday hours, they can edit the title, note, hours, disable it or delete the record. In addition to changing the hours, they can also use the hold and drag interaction to extend or shorten the hour (no overlap or closeTime<=0 or openTime>=closeTime).
 - **Contains List:** `containsList` is stored as a list of strings so the frontend can render item contents individually instead of parsing one long text field.
 
 ## Slug Design Choice
@@ -226,7 +304,8 @@ Business
 ├── Contact[]
 ├── Social[]
 ├── Location[]
-│     └── LocationHour[]
+│     └── LocationDay[]
+|           └── Hours[]
 └── Item[]
       └── ItemOption[]
 ```
@@ -241,7 +320,8 @@ Category.businessId     → Business.id
 Contact.businessId      → Business.id
 Social.businessId       → Business.id
 Location.businessId     → Business.id
-LocationHour.locationId → Location.id
+LocationDay.locationId  → Location.id
+Hour.locationDay        → locationDay.id
 Item.businessId         → Business.id
 Item.categoryId         → Category.id
 ItemOption.itemId       → Item.id
