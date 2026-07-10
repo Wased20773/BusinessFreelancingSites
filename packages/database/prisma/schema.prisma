@@ -60,10 +60,12 @@ model User {
 }
 
 model BusinessUser {
-  id         String @id @default(uuid())
+  id         String   @id @default(uuid())
   businessId String
   userId     String
   roleId     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -76,12 +78,14 @@ model Role {
   id          String      @id @default(uuid())
   accessLevel AccessLevel
   description String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   users BusinessUser[]
 }
 
 model Account {
-  id                String  @id @default(uuid())
+  id                String   @id @default(uuid())
   userId            String
   type              String
   provider          String
@@ -93,6 +97,8 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -145,12 +151,14 @@ model Contact {
 }
 
 model Social {
-  id          String @id @default(uuid())
+  id          String   @id @default(uuid())
   businessId  String
   dns         String
   profileName String
   url         String
   icon        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
@@ -180,6 +188,8 @@ model LocationDay {
   locationId String
   dayOfWeek  DayOfWeek
   isClosed   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
   hours    Hour[]
@@ -194,7 +204,9 @@ model Hour {
   closeTime     String
   title         String?
   note          String?
-  isDisabled    Boolean @default(false)
+  isDisabled    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   locationDay LocationDay @relation(fields: [locationDayId], references: [id], onDelete: Cascade)
 
