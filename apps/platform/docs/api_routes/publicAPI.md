@@ -8,7 +8,7 @@ code-paths:
   - apps/platform/src/app/api/business/locations/route.ts
   - apps/platform/src/app/api/business/menu/route.ts
   - apps/platform/src/app/api/business/menu/items/[itemSlug]/route.ts
-last-verified: 2026-07-02
+last-verified: 2026-07-10
 status: draft
 ---
 
@@ -94,12 +94,13 @@ Fetches public social media links for a business.
 
 (3 OPERATIONS)
 
-Fetches active public locations for a business, including each location's hours.
+Fetches active public locations for a business, including each location's working days and hours.
 
 #### Returns
 
 - [Location](../../../../packages/database/docs/database-models.md#location)
-  - [LocationHour](../../../../packages/database/docs/database-models.md#locationhour)
+  - [LocationDay](../../../../packages/database/docs/database-models.md#locationday)
+    - [Hour](../../../../packages/database/docs/database-models.md#hour)
 
 #### Used For
 
@@ -115,7 +116,7 @@ Fetches active public locations for a business, including each location's hours.
 
 (2 OPERATIONS)
 
-Fetches all visible categories for a business.
+Fetches all visible categories for a business, this does not include the items that come with it.
 
 #### Returns
 

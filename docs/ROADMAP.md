@@ -36,7 +36,7 @@ Primary goal:
 
 - [ ] Test every public API endpoint
 - [ ] Test every admin API endpoint
-- [ ] Test image upload, replacement, removal, and failure handling
+- [ ] Test image upload/type/size(2MB), replacement, removal, and failure handling
 - [ ] Test authentication and authorization
 - [ ] Test validation and error response
 
