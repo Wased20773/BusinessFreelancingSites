@@ -347,7 +347,6 @@ Moves an item one position down within its current category.
 
 No body request
 
-
 ## Items
 
 ### PATCH /api/admin/items/[itemId]
