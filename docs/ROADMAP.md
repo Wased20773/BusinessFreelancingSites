@@ -17,11 +17,11 @@ Primary goal:
 
 ### API
 
-- [ ] Finish remaining public routes (locations)
+- [x] Finish remaining public routes (locations)
+- [x] Seed realistic demo data (roles, users, categories, items, locations, etc.)
 - [ ] Verify response consistency through documentation
 - [ ] Document both response and body strucutres for both public and admin routes
 - [ ] Test edge cases
-- [ ] Seed realistic demo data (roles, users, categories, items, locations, etc.)
 
 ### Backend Images
 

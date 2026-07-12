@@ -11,10 +11,12 @@ export async function GET(request: Request): Promise<NextResponse> {
             socials: {
                 select: {
                     id: true,
-                    name: true,
+                    dns: true,
                     profileName: true,
                     url: true,
                     icon: true,
+                    createdAt: true,
+                    updatedAt: true,
                 },
             },
         },

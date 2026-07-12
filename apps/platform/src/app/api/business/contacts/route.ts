@@ -15,6 +15,8 @@ export async function GET(request: Request): Promise<NextResponse> {
                         phoneNumber: true,
                         email: true,
                         isPersonal: true,
+                        createdAt: true,
+                        updatedAt: true,
                     },
                 },
             },

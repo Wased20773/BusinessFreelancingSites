@@ -3,7 +3,7 @@ title: Admin API
 code-paths:
   - 
 
-last-verified: 2026-07-08
+last-verified: 2026-07-12
 status: in-progress
 ---
 
@@ -206,6 +206,27 @@ Example request body:
 {
   "name": "Tacos",
   "description": "Traditional street tacos"
+}
+```
+
+### POST /api/admin/categories/[categoryId]/subcategory
+
+Adds a subcategory row to an existing category through `categoryId` and add it as a parentId.
+
+#### Route Param Required
+
+| Param | Type | Required | Note | Example |
+| --- | --- | --- | --- | --- |
+| categoryId | UUID | Yes | The ID of the `Category` record to update. | /api/admin/categories/789ef05f-562e-4d1d-ac3a-e9e093f5d453?slug=tacos-el-guero |
+
+Example request body:
+
+> Creating a subcategory for Drinks, like cans
+
+```json
+{
+  "name": "cans",
+  "description": "(12oz) can drinks"
 }
 ```
 

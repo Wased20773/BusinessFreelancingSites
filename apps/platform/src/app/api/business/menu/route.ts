@@ -17,6 +17,8 @@ export async function GET(request: Request) {
                     description: true,
                     order: true,
                     isVisible: true,
+                    createdAt: true,
+                    updatedAt: true,
                     items: {
                         orderBy: {
                             order: 'asc',
@@ -45,6 +47,8 @@ export async function GET(request: Request) {
                                     price: true,
                                     order: true,
                                     isAvailable: true,
+                                    createdAt: true,
+                                    updatedAt: true,
                                 },
                             },
                         },

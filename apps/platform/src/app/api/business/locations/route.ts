@@ -19,14 +19,30 @@ export async function GET(request: Request): Promise<NextResponse> {
                         city: true,
                         parking: true,
                         isActive: true,
-                        hours: {
+                        enableHours: true,
+                        createdAt: true,
+                        updatedAt: true,
+                        days: {
                             select: {
                                 id: true,
                                 locationId: true,
                                 dayOfWeek: true,
-                                openTime: true,
-                                closeTime: true,
                                 isClosed: true,
+                                createdAt: true,
+                                updatedAt: true,
+                                hours: {
+                                    select: {
+                                        id: true,
+                                        locationDayId: true,
+                                        openTime: true,
+                                        closeTime: true,
+                                        title: true,
+                                        note: true,
+                                        isDisabled: true,
+                                        createdAt: true,
+                                        updatedAt: true,
+                                    },
+                                },
                             },
                         },
                     },

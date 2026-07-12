@@ -37,6 +37,8 @@ export async function GET(
                 isAvailable: true,
                 slug: true,
                 imageKey: true,
+                createdAt: true,
+                updatedAt: true,
                 options: {
                     select: {
                         id: true,
@@ -45,6 +47,8 @@ export async function GET(
                         price: true,
                         order: true,
                         isAvailable: true,
+                        createdAt: true,
+                        updatedAt: true,
                     },
                 },
             },

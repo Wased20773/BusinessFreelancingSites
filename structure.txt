@@ -57,6 +57,9 @@
 
                             - route.ts
 
+                        - full\
+                            - route.ts
+
                         - items\
                             - [itemId]\
                                 - image\
@@ -171,6 +174,10 @@
         - docs\
             - database-models.md
 
+        - dummy_data\
+            - hours.ts
+            - items.ts
+
         - generated\
             - prisma\
                 - internal\
@@ -192,7 +199,10 @@
             - schema.prisma
 
         - scripts\
-            - demo_seed_tacos-el-guero.ts
+            - demo_seed.ts
+            - role-seed.ts
+            - seed_helper.ts
+            - types.ts
 
         - .gitignore
         - index.ts

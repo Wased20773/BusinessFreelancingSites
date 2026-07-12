@@ -12,6 +12,8 @@ export async function GET(request: Request): Promise<NextResponse> {
             name: true,
             slug: true, 
             domain: true,
+            createdAt: true,
+            updatedAt: true,
         },
     );
 }

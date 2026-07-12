@@ -125,6 +125,7 @@ model VerificationToken {
 model Category {
   id          String   @id @default(uuid())
   businessId  String
+  parentId    String?
   name        String
   description String?
   order       Int      @default(1)
@@ -132,10 +133,13 @@ model Category {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  items    Item[]
+  business      Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  parent        Category?  @relation("CategorySubcategories", fields: [parentId], references: [id], onDelete: Restrict)
+  subcategories Category[] @relation("CategorySubcategories")
+  items         Item[]
 
-  @@unique([businessId, name])
+  @@unique([businessId, parentId, name])
+  @@index([businessId, parentId])
 }
 
 model Contact {
