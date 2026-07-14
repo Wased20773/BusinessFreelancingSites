@@ -8,6 +8,7 @@ export async function GET(request: Request) {
         slug,
         {
             categories: {
+                where: { parentId: null },
                 orderBy: {
                     order: 'asc',
                 },

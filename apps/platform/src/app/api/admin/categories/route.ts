@@ -35,9 +35,8 @@ export async function POST(request: Request): Promise<NextResponse> {
             data: {
                 businessId: businessId,
                 name: body.name,
-                description: body.description ?? null,
-                order: nextOrder,
-                isVisible: body.isVisible ?? true,
+                description: body.description,
+                order: nextOrder
             },
             select: {
                 id: true,

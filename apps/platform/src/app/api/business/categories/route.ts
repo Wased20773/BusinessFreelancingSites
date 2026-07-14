@@ -10,6 +10,7 @@ export async function GET(request: Request): Promise<NextResponse> {
             slug,
             {
                 categories: {
+                    where: { parentId: null },
                     orderBy: {
                         order: 'asc',
                     },

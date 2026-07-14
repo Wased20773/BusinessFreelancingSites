@@ -25,9 +25,7 @@ export async function GET(request: Request): Promise<NextResponse> {
                     },
                 },
                 categories: {
-                    where: {
-                        parentId: null,
-                    },
+                    where: { parentId: null },
                     include: {
                         items: {
                             include: {
