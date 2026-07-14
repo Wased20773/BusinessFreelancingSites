@@ -14,18 +14,6 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-    // ################################
-    // ##### Check For Email Argv #####
-    // ################################
-    console.log("\nChecking for email argv...")
-    const email = process.argv[2];
-
-    if (!email) {
-        throw new Error(
-            "[x] Missing email.\n\tUsage: npx tsx ./scripts/role-seed.ts your-email@gmail.com"
-        );
-    }
-
     // ###########################
     // ##### Check For Roles #####
     // ###########################
@@ -116,12 +104,6 @@ async function main() {
         email: "mark@example.com"
     });
 
-    const personalUser = await createUser({
-        prisma,
-        name: "change my name",
-        email,
-    });
-
     const staffUsers = [staffUser_One, staffUser_Two, staffUser_Three];
 
     // ##################################################
@@ -158,13 +140,6 @@ async function main() {
         prisma,
         businessId: business.id,
         user: adminUser,
-        roleId: adminRole.id,
-    });
-
-    await createBusinessUser({
-        prisma,
-        businessId: business.id,
-        user: personalUser,
         roleId: adminRole.id,
     });
 
@@ -690,7 +665,8 @@ async function main() {
     console.log("##################################################");
     console.log("\nTo begin, run the platform app through the root folder and run:");
     console.log("\n\tnpm run dev:platform");
-    console.log(`\nYour login is: \n\n\temail: ${email}\n`);
+    console.log('\nOnce you enter make sure to make a note of the email used to login, you will need that same email for linking your account with the business.');
+    console.log('Make sure to run this command after logging in:\n\n\tnpx tsx .\\scripts\\linkUser-seed.ts your-email@address.com');
 }
 
 main()
