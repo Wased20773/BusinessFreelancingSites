@@ -1,13 +1,13 @@
 ---
 title: Admin API
 code-paths:
-  - \platform\src\api\admin\account
-  - \platform\src\api\admin\business-user
-  - \platform\src\api\admin\categories
-  - \platform\src\api\admin\contacts
-  - \platform\src\api\admin\items\[itemId]
-  - \platform\src\api\admin\locations
-  - \platform\src\api\admin\socials
+  - /platform/src/api/admin/account
+  - /platform/src/api/admin/business-user
+  - /platform/src/api/admin/categories
+  - /platform/src/api/admin/contacts
+  - /platform/src/api/admin/items/[itemId]
+  - /platform/src/api/admin/locations
+  - /platform/src/api/admin/socials
 
 last-verified: 2026-07-15
 status: planned

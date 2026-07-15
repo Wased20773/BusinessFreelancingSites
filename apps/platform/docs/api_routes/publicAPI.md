@@ -16,9 +16,9 @@ status: planned
 
 Used by custom business websites to read corresponding business data.
 
-These routes should not add, update, or delete data in the database. Go to [docs\api_routes\adminAPI.md](../../docs/api_routes/adminAPI.md) to view the admin route documentation.
+These routes should not add, update, or delete data in the database. Go to [docs/api_routes/adminAPI.md](../../docs/api_routes/adminAPI.md) to view the admin route documentation.
 
-To view the full JSON return value types per route, go to [docs\api_routes\response\publicAPI.md](../../docs/api_routes/response/publicAPI.md).
+To view the full JSON return value types per route, go to [docs/api_routes/response/publicAPI.md](../../docs/api_routes/response/publicAPI.md).
 
 #### Query Params
 
