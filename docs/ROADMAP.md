@@ -1,7 +1,7 @@
 ---
 title: ROADMAP
 
-last-verified: 2026-7-14
+last-verified: 2026-7-15
 status: planned
 ---
 
@@ -25,9 +25,9 @@ Primary goal:
 
 ### Backend Images
 
-- [ ] Configure S3 bucket
-- [ ] Configure CloudFront image delivery
-- [ ] Create image upload route using multipart/form-data
+- [x] Configure S3 bucket
+- [x] Validate connection with S3 bucket with backend platform
+- [x] Create image upload route using multipart/form-data
 - [ ] Create image replace route (deletes previous S3 image after a successful replacement)
 - [ ] Create image removal route
 - [ ] Return image URLs from public routes

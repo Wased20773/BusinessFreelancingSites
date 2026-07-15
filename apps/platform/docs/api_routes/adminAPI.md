@@ -9,7 +9,7 @@ code-paths:
   - \platform\src\api\admin\locations
   - \platform\src\api\admin\socials
 
-last-verified: 2026-07-14
+last-verified: 2026-07-15
 status: planned
 ---
 
@@ -366,6 +366,26 @@ Example request body:
 }
 ```
 
+### POST /api/admin/items/[itemId]/image
+
+Adds an image to the item by its `itemId`.
+
+Image uploads must be 2 MB or less to upload. If an image is uploaded to an item with an existing `imageKey`, the operation is canceled. Supported image types are image/jpeg, image/png, and image/webp. The image must be uploaded first to the S3 bucket before adding the `imageKey` to the item.
+
+#### Route Param Required
+
+| Param | Type | Required | Note |
+| --- | --- | --- | --- |
+| itemId | UUID | Yes | The ID of the `Item` record to add the image for. |
+
+Example request multipart/form-data body:
+
+> Adding an image to an item
+
+| Key | Value |
+| --- | --- |
+| image: File | Image Upload Path |
+
 ### PATCH /api/admin/items/[itemId]/image
 
 Replaces an item's image by its `itemId`.
@@ -378,15 +398,25 @@ This route accepts an image file upload. The admin does not send an `imageKey` m
 | --- | --- | --- | --- |
 | itemId | UUID | Yes | The ID of the `Item` record to update the image for. |
 
-Example request body:
+Example request multipart/form-data body:
 
 > Replacing an item's image
 
-```txt
-multipart/form-data
+| Key | Value |
+| --- | --- |
+| image: File | Image Upload Path |
 
-image: File
-```
+### DELETE /api/admin/items/[itemId]/image
+
+Deletes the image for an item by its `itemId`.
+
+#### Route Param Required
+
+| Param | Type | Required | Note |
+| --- | --- | --- | --- |
+| itemId | UUID | Yes | The ID of the `Item` record to update the image for. |
+
+No body request.
 
 ### DELETE /api/admin/items/[itemId]
 

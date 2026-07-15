@@ -9,7 +9,7 @@ code-paths:
   - \platform\src\api\admin\locations
   - \platform\src\api\admin\socials
 
-last-verified: 2026-07-14
+last-verified: 2026-07-15
 status: planned
 ---
 
@@ -295,14 +295,29 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 }
 ```
 
+### POST /api/admin/items/[itemId]/image
+
+```json
+{
+    "message": "String",
+    "item": {
+        "id": "UUID",
+        "imageKey": "String"
+    }
+}
+```
+
 ### PATCH /api/admin/items/[itemId]/image
 
 (NOT VERIFIED YET)
 
 ```json
 {
-  "id": "UUID",
-  "imageKey": "String"
+    "message": "String",
+    "item": {
+        "id": "UUID",
+        "imageKey": "String"
+    }
 }
 ```
 

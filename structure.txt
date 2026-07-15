@@ -149,8 +149,12 @@
                 - auth\
                     - authenticateBusinessAccess.ts
 
+                - s3\
+                    - client.ts
+                    - keys.ts
+                    - upload.ts
+
                 - prisma.ts
-                - s3.ts
 
         - .gitignore
         - AGENTS.md

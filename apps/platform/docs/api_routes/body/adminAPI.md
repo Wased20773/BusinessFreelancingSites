@@ -9,7 +9,7 @@ code-paths:
   - \platform\src\api\admin\locations
   - \platform\src\api\admin\socials
 
-last-verified: 2026-07-14
+last-verified: 2026-07-15
 status: planned
 ---
 
@@ -31,24 +31,6 @@ No request body.
 {
     "name": "String | null",
     "username": "String | null"
-}
-```
-
-### PATCH /api/admin/account/email (DEPRECATED)
-
-```json
-{
-    "newEmail": "String",
-    "password": "String"
-}
-```
-
-### PATCH /api/admin/account/password (DEPRECATED)
-
-```json
-{
-    "currentPassword": "String",
-    "newPassword": "String"
 }
 ```
 
@@ -151,6 +133,14 @@ No request body.
     "price": "Decimal | null",
     "isAvailable": "Boolean"
 }
+```
+
+### POST /api/admin/items/[itemId]/image
+
+```txt
+multipart/form-data
+
+image: File
 ```
 
 ### PATCH /api/admin/items/[itemId]/image
