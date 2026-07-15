@@ -1,3 +1,18 @@
+---
+title: Admin API
+code-paths:
+  - \platform\src\api\admin\account
+  - \platform\src\api\admin\business-user
+  - \platform\src\api\admin\categories
+  - \platform\src\api\admin\contacts
+  - \platform\src\api\admin\items\[itemId]
+  - \platform\src\api\admin\locations
+  - \platform\src\api\admin\socials
+
+last-verified: 2026-07-14
+status: planned
+---
+
 # Admin API JSON Body Structure
 
 ## Account
@@ -37,8 +52,6 @@ No request body.
 }
 ```
 
----
-
 ## Business Users
 
 ### GET /api/admin/business-users
@@ -58,7 +71,6 @@ No request body.
 
 ```json
 {
-    "email": "String",
     "accessLevel": "owner | admin | staff"
 }
 ```
@@ -67,8 +79,6 @@ No request body.
 
 No request body.
 
----
-
 ## Categories
 
 ### POST /api/admin/categories
@@ -76,8 +86,16 @@ No request body.
 ```json
 {
     "name": "String",
-    "description": "String | null",
-    "isVisible": "Boolean"
+    "description": "String | null"
+}
+```
+
+### POST /api/admin/categories/[categoryId]/subcategory
+
+```json
+{
+    "name": "String",
+    "description": "String | null"
 }
 ```
 
@@ -91,11 +109,17 @@ No request body.
 }
 ```
 
-### DELETE /api/admin/categories/[categoryId]
+### PATCH /api/admin/categories[categoryId]/move-up
 
 No request body.
 
----
+### PATCH /api/admin/categories[categoryId]/move-down
+
+No request body.
+
+### DELETE /api/admin/categories/[categoryId]
+
+No request body.
 
 ## Category Items
 
@@ -114,8 +138,6 @@ No request body.
 }
 ```
 
----
-
 ## Items
 
 ### PATCH /api/admin/items/[itemId]
@@ -133,6 +155,8 @@ No request body.
 
 ### PATCH /api/admin/items/[itemId]/image
 
+(NOT VERIFIED YET)
+
 ```txt
 multipart/form-data
 
@@ -143,8 +167,6 @@ image: File
 
 No request body.
 
----
-
 ## Item Options
 
 ### POST /api/admin/items/[itemId]/options
@@ -152,8 +174,7 @@ No request body.
 ```json
 {
     "name": "String",
-    "price": "Decimal",
-    "isAvailable": "Boolean"
+    "price": "Decimal"
 }
 ```
 
@@ -166,6 +187,14 @@ No request body.
     "isAvailable": "Boolean"
 }
 ```
+
+### PATCH /api/admin/items/[itemId]/options/[optionId]/move-up
+
+No request body.
+
+### PATCH /api/admin/items/[itemId]/options/[optionId]/move-down
+
+No request body.
 
 ### DELETE /api/admin/items/[itemId]/options/[optionId]
 
@@ -205,7 +234,6 @@ No request body.
 {
     "name": "String",
     "profileName": "String",
-    "url": "String",
     "icon": "String"
 }
 ```
@@ -216,7 +244,6 @@ No request body.
 {
     "name": "String",
     "profileName": "String",
-    "url": "String",
     "icon": "String"
 }
 ```
@@ -236,8 +263,7 @@ No request body.
     "country": "String | null",
     "state": "String | null",
     "city": "String | null",
-    "parking": "Boolean",
-    "isActive": "Boolean"
+    "parking": "Boolean"
 }
 ```
 
@@ -251,7 +277,8 @@ No request body.
     "state": "String | null",
     "city": "String | null",
     "parking": "Boolean",
-    "isActive": "Boolean"
+    "isActive": "Boolean",
+    "enableHours": "Boolean"
 }
 ```
 
@@ -259,33 +286,53 @@ No request body.
 
 No request body.
 
----
+## Location Days
+
+### POST /api/admin/locations/[locationId]/days
+
+```json
+{
+    "dayOfWeek": "Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday"
+}
+```
+
+### PATCH /api/admin/locations[locationId]/days/[dayId]
+
+```json
+{
+    "isClosed": "Boolean"
+}
+```
+
+### DELETE /api/admin/locations/[locationId]/days/[dayId]
+
+No response body.
 
 ## Location Hours
 
-### POST /api/admin/locations/[locationId]/hours
+### POST /api/admin/locations/[locationId]/days/[dayId]/hours
 
 ```json
 {
-    "locationId": "String",
-    "dayOfWeek": "String",
-    "openTime": "String | null",
-    "closeTime": "String | null",
-    "isClosed": "Boolean"
+    "openTime": "String",
+    "closeTime": "String",
+    "title": "String | null",
+    "note": "String | null"
 }
 ```
 
-### PATCH /api/admin/locations/[locationId]/hours/[hourId]
+### PATCH /api/admin/locations/[locationId]/days/[dayId]/hours/[hourId]
 
 ```json
 {
-    "dayOfWeek": "String",
     "openTime": "String | null",
     "closeTime": "String | null",
-    "isClosed": "Boolean"
+    "title": "String | null",
+    "note": "String | null",
+    "isDisabled": "Boolean"
 }
 ```
 
-### DELETE /api/admin/locations/[locationId]/hours/[hourId]
+### DELETE /api/admin/locations/[locationId]/days/[dayId]/hours/[hourId]
 
 No request body.

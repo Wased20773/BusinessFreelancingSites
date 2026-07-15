@@ -98,6 +98,7 @@ export async function PATCH(
                     description: true,
                     order: true,
                     isVisible: true,
+                    updatedAt: true,
                 },
             }),
             prisma.category.update({

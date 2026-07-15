@@ -1,3 +1,18 @@
+---
+title: public API
+code-paths:
+  - apps/platform/src/app/api/business/categories
+  - apps/platform/src/app/api/business/contacts
+  - apps/platform/src/app/api/business/locations
+  - apps/platform/src/app/api/business/menu
+  - apps/platform/src/app/api/business/socials
+  - apps/platform/src/app/api/business/route.ts
+
+last-verified: 2026-07-14
+status: planned
+---
+
+
 # Public API JSON Response Structure
 
 ## Response Rules

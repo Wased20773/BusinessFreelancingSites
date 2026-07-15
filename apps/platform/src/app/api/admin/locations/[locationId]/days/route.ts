@@ -70,6 +70,8 @@ export async function POST(
                 locationId: true,
                 dayOfWeek: true,
                 isClosed: true,
+                createdAt: true,
+                updatedAt: true,
             },
         });
 

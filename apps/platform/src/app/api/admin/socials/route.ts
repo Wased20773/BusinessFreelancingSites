@@ -17,9 +17,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         const { businessId } = authResult;
         const body = await request.json();
 
-        if (!body.dns) {
+        if (!body.domain) {
             return NextResponse.json(
-                { error: "Missing DNS" },
+                { error: "Missing Domain Name" },
                 { status: 400 }
             );
         }
@@ -31,7 +31,7 @@ export async function POST(request: Request): Promise<NextResponse> {
             );
         }
         
-        const url = `${body.dns}/${(createSlug(body.profileName))}`;
+        const url = `https://${body.domain}/${(createSlug(body.profileName))}`;
 
         if (!body.icon) {
             return NextResponse.json(
@@ -43,14 +43,14 @@ export async function POST(request: Request): Promise<NextResponse> {
         const social = await prisma.social.create({
             data: {
                 businessId: businessId,
-                dns: body.dns,
+                domain: body.domain,
                 profileName: body.profileName,
                 url: url,
                 icon: body.icon,
             },
             select: {
                 id: true,
-                dns: true,
+                domain: true,
                 profileName: true,
                 url: true,
                 icon: true,

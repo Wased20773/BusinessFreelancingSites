@@ -63,6 +63,7 @@ export async function PATCH(
                 locationId: true,
                 dayOfWeek: true,
                 isClosed: true,
+                updatedAt: true,
             },
         });
 

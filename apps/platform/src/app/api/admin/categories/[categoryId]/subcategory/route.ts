@@ -56,7 +56,7 @@ export async function POST(
         
         const nextOrder = await getNextOrder(
             prisma.category,
-            { businessId: businessId }
+            { businessId: businessId, parentId: parentCategory.id }
         );
 
         if (nextOrder instanceof NextResponse) return nextOrder;
@@ -68,6 +68,16 @@ export async function POST(
                 name: body.name,
                 description: body.description,
                 order: nextOrder,
+            },
+            select: {
+                id: true,
+                parentId: true,
+                name: true,
+                description: true,
+                order: true,
+                isVisible: true,
+                createdAt: true,
+                updatedAt: true,
             },
         });
 

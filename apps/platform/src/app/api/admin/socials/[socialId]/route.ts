@@ -35,7 +35,7 @@ export async function PATCH(
             },
             select: {
                 id: true,
-                dns: true,
+                domain: true,
                 profileName: true,
             },
         });
@@ -48,7 +48,7 @@ export async function PATCH(
         }
 
         // Temps to help with assignment
-        const dns = body.dns ?? social.dns;
+        const domain = body.domain ?? social.domain;
         const profileName = body.profileName ?? social.profileName;
 
         const updatedSocial = await prisma.social.update({
@@ -56,14 +56,14 @@ export async function PATCH(
                 id: social.id,
             },
             data: {
-                dns: body.dns,
+                domain: body.domain,
                 profileName: body.profileName,
-                url: `${dns}/${createSlug(profileName)}`,
+                url: `${domain}/${createSlug(profileName)}`,
                 icon: body.icon,
             },
             select: {
                 id: true,
-                dns: true,
+                domain: true,
                 profileName: true,
                 url: true,
                 icon: true,

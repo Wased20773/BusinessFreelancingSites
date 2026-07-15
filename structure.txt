@@ -47,6 +47,9 @@
                                 - move-up\
                                     - route.ts
 
+                                - subcategory\
+                                    -route.ts
+
                                 - route.ts
 
                             - route.ts

@@ -68,7 +68,6 @@ export async function PATCH(
                 itemId: true,
                 name: true,
                 price: true,
-                order: true,
                 isAvailable: true,
                 updatedAt: true,
             },

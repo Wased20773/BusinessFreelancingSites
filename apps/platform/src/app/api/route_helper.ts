@@ -98,3 +98,23 @@ export function normalizeDayOfWeek(value: string): DayOfWeek | null {
 
     return normalized as DayOfWeek;
 }
+
+export function timeToMinutes(time: string): number {
+    const [hours, minutes] = time.split(":").map(Number);
+
+    return hours * 60 + minutes;
+}
+
+export function checkTimeOverlap(
+    newOpenTime: string,
+    newCloseTime: string,
+    existingOpenTime: string,
+    existingCloseTime: string
+): boolean {
+    const newOpen = timeToMinutes(newOpenTime);
+    const newClose = timeToMinutes(newCloseTime);
+    const existingOpen = timeToMinutes(existingOpenTime);
+    const existingClose = timeToMinutes(existingCloseTime);
+
+    return newOpen < existingClose && newClose > existingOpen;
+}

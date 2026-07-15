@@ -1,3 +1,4 @@
+import { checkTimeOverlap, timeToMinutes } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
@@ -41,45 +42,90 @@ export async function PATCH(
             );
         }
 
-        const updatedHourResult = await prisma.hour.updateMany({
+        const existingHour = await prisma.hour.findFirst({
             where: {
                 id: hourId,
                 locationDayId: dayId,
                 locationDay: {
                     locationId: locationId,
-                    location: {
-                        businessId: businessId,
-                    },
+                    location: { businessId: businessId },
                 },
             },
-            data: {
-                openTime: body.openTime,
-                closeTime: body.closeTime,
-                title: body.title,
-                note: body.note,
-                isDisabled: body.isDisabled,
+            select: {
+                id: true,
+                openTime: true,
+                closeTime: true,
             },
         });
 
-        if (updatedHourResult.count === 0) {
+        if (!existingHour) {
             return NextResponse.json(
                 { error: "This location hour does not exist in our records" },
                 { status: 404 }
             );
         }
 
-        const updatedHour = await prisma.hour.findUnique({
+        const updatedOpenTime = body.openTime ?? existingHour.openTime;
+        const updatedCloseTime = body.closeTime ?? existingHour.closeTime;
+
+        if (timeToMinutes(updatedOpenTime) >= timeToMinutes(updatedCloseTime)) {
+            return NextResponse.json(
+                { error: "Open time must be earlier than close time" },
+                { status: 400 }
+            );
+        }
+
+        const otherHours = await prisma.hour.findMany({
             where: {
-                id: hourId,
+                locationDayId: dayId,
+                id: {
+                    not: hourId,
+                },
             },
             select: {
                 id: true,
                 openTime: true,
                 closeTime: true,
+            },
+        });
+
+        const conflictingHour = otherHours.find((hour) =>
+            checkTimeOverlap(
+                updatedOpenTime,
+                updatedCloseTime,
+                hour.openTime,
+                hour.closeTime
+            )
+        );
+
+        if (conflictingHour) {
+            return NextResponse.json(
+                { error: `The selected time conflicts with the existing hours ${conflictingHour.openTime} - ${conflictingHour.closeTime}` },
+                { status: 409 }
+            );
+        }
+
+        const updatedHour = await prisma.hour.update({
+            where: {
+                id: hourId,
+            },
+            data: {
+                openTime: updatedOpenTime,
+                closeTime: updatedCloseTime,
+                title: body.title,
+                note: body.note,
+                isDisabled: body.isDisabled,
+            },
+            select: {
+                id: true,
+                locationDayId: true,
+                openTime: true,
+                closeTime: true,
                 title: true,
                 note: true,
                 isDisabled: true,
-            },
+                updatedAt: true,
+            }
         });
 
         return NextResponse.json(updatedHour, { status: 200 });

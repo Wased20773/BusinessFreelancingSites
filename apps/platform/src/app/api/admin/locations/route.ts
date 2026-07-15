@@ -31,8 +31,7 @@ export async function POST(request: Request): Promise<NextResponse> {
                 country: body.country,
                 state: body.state,
                 city: body.city,
-                parking: body.parking,
-                isActive: body.isActive,
+                parking: body.parking
             },
             select: {
                 id: true,

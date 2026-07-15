@@ -1,3 +1,4 @@
+import { checkTimeOverlap, timeToMinutes } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
@@ -40,7 +41,14 @@ export async function POST(
                 { status: 400 }
             );
         }
-        
+
+        if (timeToMinutes(body.openTime) >= timeToMinutes(body.closeTime)) {
+            return NextResponse.json(
+                { error: "Open time must be earlier than close time" },
+                { status: 400 }
+            );
+        }
+
         const day = await prisma.locationDay.findFirst({
             where: {
                 id: dayId,
@@ -61,6 +69,29 @@ export async function POST(
             );
         }
 
+        const existingHours = await prisma.hour.findMany({
+            where: { locationDayId: day.id },
+            select: {
+                id: true,
+                openTime: true,
+                closeTime: true,
+            },
+        });
+
+        const conflictingHour = existingHours.find((hour) =>
+            checkTimeOverlap(
+                body.openTime, body.closeTime,
+                hour.openTime, hour.closeTime
+            )
+        );
+
+        if (conflictingHour) {
+            return NextResponse.json(
+                { error: `The selected time conflicts with the existing hours ${conflictingHour.openTime} - ${conflictingHour.closeTime}`},
+                { status: 409 }
+            );
+        }
+
         const hour = await prisma.hour.create({
             data: {
                 locationDayId: day.id,
@@ -77,6 +108,8 @@ export async function POST(
                 title: true,
                 note: true,
                 isDisabled: true,
+                createdAt: true,
+                updatedAt: true,
             },
         });
 

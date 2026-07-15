@@ -74,7 +74,6 @@ export async function POST(
                 name: body.name,
                 price: body.price,
                 order: nextOrder,
-                isAvailable: body.isAvailable ?? true,
             },
             select: {
                 id: true,

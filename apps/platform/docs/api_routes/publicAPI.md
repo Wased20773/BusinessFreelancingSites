@@ -1,15 +1,15 @@
 ---
 title: Public API
 code-paths:
+  - apps/platform/src/app/api/business/categories
+  - apps/platform/src/app/api/business/contacts
+  - apps/platform/src/app/api/business/locations
+  - apps/platform/src/app/api/business/menu
+  - apps/platform/src/app/api/business/socials
   - apps/platform/src/app/api/business/route.ts
-  - apps/platform/src/app/api/business/contacts/route.ts
-  - apps/platform/src/app/api/business/socials/route.ts
-  - apps/platform/src/app/api/business/categories/route.ts
-  - apps/platform/src/app/api/business/locations/route.ts
-  - apps/platform/src/app/api/business/menu/route.ts
-  - apps/platform/src/app/api/business/menu/items/[itemSlug]/route.ts
-last-verified: 2026-07-10
-status: draft
+
+last-verified: 2026-07-14
+status: planned
 ---
 
 # Public API Routes
@@ -31,8 +31,6 @@ All request require:
 ## Business
 
 ### GET /api/business
-
-(1 OPERATION)
 
 Fetches basic public business information by slug.
 
@@ -56,8 +54,6 @@ This route should only return the business model fields needed to identify and d
 
 ### GET /api/business/contacts
 
-(2 OPERATIONS)
-
 Fetches public contact information for a business.
 
 #### Returns
@@ -74,8 +70,6 @@ Fetches public contact information for a business.
 
 ### GET /api/business/socials
 
-(2 OPERATIONS)
-
 Fetches public social media links for a business.
 
 #### Returns
@@ -91,8 +85,6 @@ Fetches public social media links for a business.
 ## Locations
 
 ### GET /api/business/locations
-
-(3 OPERATIONS)
 
 Fetches active public locations for a business, including each location's working days and hours.
 
@@ -114,8 +106,6 @@ Fetches active public locations for a business, including each location's workin
 
 ### GET /api/business/categories
 
-(2 OPERATIONS)
-
 Fetches all visible categories for a business, this does not include the items that come with it.
 
 #### Returns
@@ -131,8 +121,6 @@ Fetches all visible categories for a business, this does not include the items t
 ## Menu
 
 ### GET /api/business/menu
-
-(4 OPERATIONS)
 
 Fetches public menu data for a business.
 
@@ -153,8 +141,6 @@ This route returns categories, items, and item options because the public menu p
 ## Menu Item
 
 ### GET /api/business/menu/items/[itemSlug]
-
-(2 OPERATIONS)
 
 Fetches one public menu item by its item slug.
 

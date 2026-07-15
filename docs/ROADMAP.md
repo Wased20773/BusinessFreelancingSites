@@ -1,8 +1,8 @@
 ---
 title: ROADMAP
 
-last-verified: 2026-7-10
-status: draft
+last-verified: 2026-7-14
+status: planned
 ---
 
 # Road Map For MVP Completion
@@ -19,9 +19,9 @@ Primary goal:
 
 - [x] Finish remaining public routes (locations)
 - [x] Seed realistic demo data (roles, users, categories, items, locations, etc.)
-- [ ] Verify response consistency through documentation
-- [ ] Document both response and body strucutres for both public and admin routes
-- [ ] Test edge cases
+- [x] Verify response consistency through documentation
+- [x] Document both response and body strucutres for both public and admin routes
+- [x] Test edge cases
 
 ### Backend Images
 

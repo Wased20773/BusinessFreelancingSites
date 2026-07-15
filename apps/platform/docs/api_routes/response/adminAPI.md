@@ -1,3 +1,19 @@
+---
+title: Admin API
+code-paths:
+  - \platform\src\api\admin\account
+  - \platform\src\api\admin\business-user
+  - \platform\src\api\admin\categories
+  - \platform\src\api\admin\contacts
+  - \platform\src\api\admin\items\[itemId]
+  - \platform\src\api\admin\locations
+  - \platform\src\api\admin\socials
+
+last-verified: 2026-07-14
+status: planned
+---
+
+
 # Admin API JSON Response Structure
 
 ## Response Rules
@@ -15,15 +31,19 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 ```json
 {
     "id": "UUID",
-    "businessUserId": "UUID",
-    "name": "String | null",
-    "username": "String | null",
-    "email": "String",
-    "image": "String",
-    "accessLevel": "owner | admin | staff",
-    "description": "String",
-    "createdAt": "DateTime",
-    "updatedAt": "DateTime"
+    "user": {
+        "id": "UUID",
+        "name": "String | null",
+        "username": "String | null",
+        "email": "String",
+        "image": "String",
+        "createdAt": "DateTime",
+        "updatedAt": "DateTime"
+    },
+    "role": {
+        "accessLevel": "owner | admin | staff",
+        "description": "String"
+    }
 }
 ```
 
@@ -86,7 +106,7 @@ DELETE routes return a small confirmation object instead of the full deleted mod
                 "id": "UUID",
                 "name": "String | null",
                 "username": "String | null",
-                "email": "String",
+                "email": "String"
             },
             "role": {
                 "id": "UUID",
@@ -117,9 +137,11 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 
 ```json
 {
-    "businessUserId": "UUID",
-    "accessLevel": "owner | admin | staff",
-    "description": "String"
+    "id": "UUID",
+    "role": {
+        "accessLevel": "owner | admin | staff",
+        "description": "String"
+    }
 }
 ```
 
@@ -147,6 +169,21 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 }
 ```
 
+### POST /api/admin/categories/[categoryId]/subcategory
+
+```json
+{
+    "id": "UUID",
+    "parentId": "UUID",
+    "name": "String",
+    "description": "String | null",
+    "order": "Int",
+    "isVisible": "Boolean",
+    "createdAt": "DateTime",
+    "updatedAt": "DateTime"
+}
+```
+
 ### PATCH /api/admin/categories/[categoryId]
 
 ```json
@@ -164,13 +201,12 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 
 ```json
 {
-    "categories": [
-        {
-            "id": "UUID",
-            "order": "Int",
-            "updatedAt": "DateTime"
-        }
-    ]
+    "id": "UUID",
+    "name": "String",
+    "description": "String",
+    "order": "Int",
+    "isVisible": "Boolean",
+    "updatedAt": "DateTime"
 }
 ```
 
@@ -178,14 +214,14 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 
 ```json
 {
-    "categories": [
-        {
-            "id": "UUID",
-            "order": "Int",
-            "updatedAt": "DateTime"
-        }
-    ]
+    "id": "UUID",
+    "name": "String",
+    "description": "String",
+    "order": "Int",
+    "isVisible": "Boolean",
+    "updatedAt": "DateTime"
 }
+
 ```
 
 ### DELETE /api/admin/categories/[categoryId]
@@ -213,6 +249,7 @@ DELETE routes return a small confirmation object instead of the full deleted mod
     "isAvailable": "Boolean",
     "slug": "String",
     "imageKey": "String | null",
+    "createdAt": "DateTime",
     "updatedAt": "DateTime"
 }
 ```
@@ -221,14 +258,10 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 
 ```json
 {
-  "items": [
-    {
-      "id": "UUID",
-      "categoryId": "UUID",
-      "order": "Int",
-      "updatedAt": "DateTime"
-    }
-  ]
+    "id": "UUID",
+    "categoryId": "UUID",
+    "order": "Int",
+    "updatedAt": "DateTime"
 }
 ```
 
@@ -236,14 +269,10 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 
 ```json
 {
-  "items": [
-    {
-      "id": "UUID",
-      "categoryId": "UUID",
-      "order": "Int",
-      "updatedAt": "DateTime"
-    }
-  ]
+    "id": "UUID",
+    "categoryId": "UUID",
+    "order": "Int",
+    "updatedAt": "DateTime"
 }
 ```
 
@@ -255,6 +284,7 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 ```json
 {
     "id": "UUID",
+    "categoryId": "UUID",
     "name": "String",
     "description": "String | null",
     "containsList": "String[]",
@@ -266,6 +296,8 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 ```
 
 ### PATCH /api/admin/items/[itemId]/image
+
+(NOT VERIFIED YET)
 
 ```json
 {
@@ -307,7 +339,6 @@ DELETE routes return a small confirmation object instead of the full deleted mod
     "itemId": "UUID",
     "name": "String",
     "price": "Decimal",
-    "order": "Int",
     "isAvailable": "Boolean",
     "updatedAt": "DateTime"
 }
@@ -317,13 +348,10 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 
 ```json
 {
-    "options": [
-        {
-            "id": "UUID",
-            "order": "Int",
-            "updatedAt": "DateTime"
-        }
-    ]
+    "id": "UUID",
+    "itemId": "UUID",
+    "order": "Int",
+    "updatedAt": "DateTime"
 }
 ```
 
@@ -331,13 +359,10 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 
 ```json
 {
-    "options": [
-        {
-            "id": "UUID",
-            "order": "Int",
-            "updatedAt": "DateTime"
-        }
-    ]
+    "id": "UUID",
+    "itemId": "UUID",
+    "order": "Int",
+    "updatedAt": "DateTime"
 }
 ```
 
@@ -380,7 +405,6 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 
 ```json
 {
-    "deletedContactId": "UUID",
     "message": "String"
 }
 ```
@@ -392,7 +416,7 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 ```json
 {
     "id": "UUID",
-    "dns": "String",
+    "domain": "String",
     "profileName": "String",
     "url": "String",
     "icon": "String"
@@ -404,7 +428,7 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 ```json
 {
     "id": "UUID",
-    "dns": "String",
+    "domain": "String",
     "profileName": "String",
     "url": "String",
     "icon": "String"
@@ -433,6 +457,7 @@ DELETE routes return a small confirmation object instead of the full deleted mod
     "city": "String | null",
     "parking": "Boolean",
     "isActive": "Boolean",
+    "enableHours": "Boolean",
     "createdAt": "DateTime",
     "updatedAt": "DateTime"
 }
@@ -450,6 +475,7 @@ DELETE routes return a small confirmation object instead of the full deleted mod
     "city": "String | null",
     "parking": "Boolean",
     "isActive": "Boolean",
+    "enableHours": "Boolean",
     "updatedAt": "DateTime"
 }
 ```
@@ -458,45 +484,82 @@ DELETE routes return a small confirmation object instead of the full deleted mod
 
 ```json
 {
-    "deletedLocationId": "UUID",
+    "message": "String"
+}
+```
+
+## Location Days
+
+### POST /api/admin/location/[locationId]/days
+
+```json
+{
+    "id": "UUID",
+    "locationId": "UUID",
+    "dayOfWeek": "String",
+    "isClosed": "Boolean",
+    "createdAt": "DateTime",
+    "updatedAt": "DateTime"
+}
+```
+
+### PATCH /api/admin/location/[locationId]/days/[dayId]
+
+```json
+{
+    "id": "UUID",
+    "locationId": "UUID",
+    "dayOfWeek": "Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday",
+    "isClosed": "Boolean",
+    "updatedAt": "DateTime"
+}
+```
+
+### DELETE /api/admin/location/[locationId]/days/[dayId]
+
+```json
+{
     "message": "String"
 }
 ```
 
 ## Location Hours
 
-### POST /api/admin/locations/[locationId]/hours
+### POST /api/admin/location/[locationId]/days/[dayId]/hours
 
 ```json
 {
     "id": "UUID",
-    "locationId": "UUID",
-    "dayOfWeek": "String",
-    "openTime": "String | null",
-    "closeTime": "String | null",
-    "isClosed": "Boolean"
+    "locationDayId": "UUID",
+    "openTime": "String",
+    "closeTime": "String",
+    "title": "String | null",
+    "note": "String | null",
+    "isDisabled": "Boolean",
+    "createdAt": "DateTime",
+    "updatedAt": "DateTime"
 }
 ```
 
-### PATCH /api/admin/locations/[locationId]/hours/[hourId]
+### PATCH /api/admin/location/[locationId]/days/[dayId]/hours/[hourId]
 
 ```json
 {
     "id": "UUID",
-    "locationId": "UUID",
-    "dayOfWeek": "String",
-    "openTime": "String | null",
-    "closeTime": "String | null",
-    "isClosed": "Boolean"
+    "locationDayId": "UUID",
+    "openTime": "String",
+    "closeTime": "String",
+    "title": "String | null",
+    "note": "String | null",
+    "isDisabled": "Boolean",
+    "updatedAt": "DateTime"
 }
 ```
 
-### DELETE /api/admin/locations/[locationId]/hours/[hourId]
+### DELETE /api/admin/location/[locationId]/days/[dayId]/hours/[hourId]
 
 ```json
 {
-    "deletedHourId": "UUID",
-    "locationId": "UUID",
     "message": "String"
 }
 ```

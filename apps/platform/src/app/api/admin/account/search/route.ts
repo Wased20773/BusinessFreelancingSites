@@ -1,7 +1,7 @@
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
-import { NextFetchEvent, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 // GET /api/admin/account/search?email
 export async function GET(request: Request): Promise<NextResponse> {
