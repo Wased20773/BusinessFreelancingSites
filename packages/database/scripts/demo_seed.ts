@@ -184,7 +184,7 @@ async function main() {
     await createSocial({
         prisma,
         businessId: business.id,
-        dns: "instagram.com",
+        domain: "instagram.com",
         profileName: createSlug("example resturant"),
         url: `instagram.com/${createSlug("example resturant")}`,
         icon: "businesses/icons/socials/instagram.webp",
@@ -193,7 +193,7 @@ async function main() {
     await createSocial({
         prisma,
         businessId: business.id,
-        dns: "facebook.com",
+        domain: "facebook.com",
         profileName: createSlug("example resturant"),
         url: `facebook.com/${createSlug("example resturant")}`,
         icon: "businesses/icons/socials/facebook.webp",

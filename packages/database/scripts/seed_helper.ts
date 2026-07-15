@@ -89,7 +89,7 @@ export async function createBusinessUser({
 export async function createSocial({
     prisma,
     businessId,
-    dns,
+    domain,
     profileName,
     url,
     icon,
@@ -98,31 +98,31 @@ export async function createSocial({
         const existingSocial = await prisma.social.findFirst({
             where: {
                 businessId,
-                dns,
+                domain,
             },
         });
 
         if (existingSocial) {
-            console.log(`\t[=] ${dns} social already exists`);
+            console.log(`\t[=] ${domain} social already exists`);
             return existingSocial;
         }
 
         const social = await prisma.social.create({
             data: {
                 businessId,
-                dns,
+                domain,
                 profileName,
                 url,
                 icon,
             },
         });
 
-        console.log(`\t[+] ${dns} social created`);
+        console.log(`\t[+] ${domain} social created`);
 
         return social;
     } catch (error) {
         throw new Error(
-            `[x] Failed to create the ${dns} social`,
+            `[x] Failed to create the ${domain} social`,
             { cause: error }
         );
     }
@@ -285,8 +285,8 @@ export async function seedItemWithOptions({
 
         const existingItem = await prisma.item.findUnique({
             where: {
-                businessId_slug: {
-                    businessId,
+                categoryId_slug: {
+                    categoryId,
                     slug,
                 },
             },
@@ -297,8 +297,8 @@ export async function seedItemWithOptions({
 
         const item = await prisma.item.upsert({
             where: {
-                businessId_slug: {
-                    businessId,
+                categoryId_slug: {
+                    categoryId,
                     slug,
                 },
             },
@@ -465,8 +465,8 @@ export async function seedDrinks({
 
                 const existingDrink = await prisma.item.findUnique({
                     where: {
-                        businessId_slug: {
-                            businessId,
+                        categoryId_slug: {
+                            categoryId,
                             slug,
                         },
                     },
@@ -477,8 +477,8 @@ export async function seedDrinks({
 
                 await prisma.item.upsert({
                     where: {
-                        businessId_slug: {
-                            businessId,
+                        categoryId_slug: {
+                            categoryId,
                             slug,
                         },
                     },

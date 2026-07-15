@@ -157,7 +157,7 @@ model Contact {
 model Social {
   id          String   @id @default(uuid())
   businessId  String
-  dns         String
+  domain      String
   profileName String
   url         String
   icon        String
@@ -166,7 +166,7 @@ model Social {
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  @@unique([businessId, dns, profileName])
+  @@unique([businessId, domain, profileName])
 }
 
 model Location {
@@ -185,6 +185,8 @@ model Location {
 
   business Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   days     LocationDay[]
+
+  @@unique([businessId, address])
 }
 
 model LocationDay {
@@ -202,7 +204,7 @@ model LocationDay {
 }
 
 model Hour {
-  id            String  @id @default(uuid())
+  id            String   @id @default(uuid())
   locationDayId String
   openTime      String
   closeTime     String
@@ -237,7 +239,7 @@ model Item {
   category Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   options  ItemOption[]
 
-  @@unique([businessId, slug])
+  @@unique([categoryId, slug])
 }
 
 model ItemOption {

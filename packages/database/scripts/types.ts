@@ -10,7 +10,7 @@ export type businessUser = {
 export type Social = {
     prisma: PrismaClient,
     businessId: string,
-    dns: string,
+    domain: string,
     profileName: string,
     url: string,
     icon: string,

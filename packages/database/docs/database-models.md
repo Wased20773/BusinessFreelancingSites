@@ -3,7 +3,7 @@ title: DatabaseModels
 code-paths:
   - packages/database/prisma/schema.prisma
 
-last-verified: 2026-07-08
+last-verified: 2026-07-14
 status: planned
 ---
 
@@ -91,6 +91,7 @@ A shared PostgreSQL database stores business information for all client websites
 | --- | --- | --- |
 | id | UUID | Primary key |
 | businessId | FK → [Business](#business) | The Business this category belongs to |
+| parentId | FK -> [Category](#category) | For more organization for a category (drinks -> cups, bottles, etc.) |
 | name | String | User defined Category name; Drinks, Orders, Beverages, Alcohol, Toppings, etc. |
 | description | String? | Optional category description |
 | order | Int | Helps display the Category in a specific order in the frontend; Orders(1) -> Toppings(2) -> Drinks(3) |
@@ -113,9 +114,9 @@ A shared PostgreSQL database stores business information for all client websites
 | --- | --- | --- |
 | id | UUID | Primary key |
 | businessId | FK → [Business](#business) | The Business record this social link belongs to |
-| dns | String | Predefined Social platform name; `https://instagram.com`, `https://twitter.com`, `https://facebook.com`, etc. |
-| profileName | String | Business Social platform account name; used at the end of the dns in url |
-| url | String | Predefined domain for Social URL profile; `${dns}/${profileName}` |
+| domain | String | Predefined Social platform name; `instagram.com`, `twitter.com`, `facebook.com`, etc. |
+| profileName | String | Business Social platform account name; used at the end of the domain in url |
+| url | String | Predefined domain for Social URL profile; `${domain}/${profileName}` |
 | icon | String | Predefined Icon images, must be supported; businesses/icons/socials/facebook.webp |
 
 ### Location
@@ -132,7 +133,7 @@ A shared PostgreSQL database stores business information for all client websites
 | parking | boolean | Whether parking is available |
 | isActive | boolean | Is this location serving customers? Has this location temporarily closed? |
 | enableHours | boolean | defaulted to false, allows an hourly formate for rendering the locations hours for its days, else it just renders the locations opening days (can only be enabled when hours have been set for all days) |
-| hours | [LocationDay[]](#locationday) | Days and hours this location is open |
+| days | [LocationDay[]](#locationday) | The days this location is open |
 
 ### LocationDay
 
@@ -150,10 +151,10 @@ A shared PostgreSQL database stores business information for all client websites
 | --- | --- | --- |
 | id | UUID | Primary key |
 | locationDayId | FK -> [LocationDay](#locationday) | The Days the hours belong to |
-| title | String? | Optional title for the hours set (Happy Hour) |
-| note | String? | Optional note about the hours (selling specials only at this hour) |
 | openTime | String? | Opening time; 09:00 |
 | closeTime | String? | Closing time; 21:00 |
+| title | String? | Optional title for the hours set (Happy Hour) |
+| note | String? | Optional note about the hours (selling specials only at this hour) |
 | isDisabled | boolean | Disables the hours set (prevents full deletion) |
 
 ### Item
@@ -163,7 +164,6 @@ A shared PostgreSQL database stores business information for all client websites
 | id | UUID | Primary key |
 | businessId | FK → [Business](#business) | The Business this item belongs to |
 | categoryId | FK → [Category](#category) | The Category this item belongs to |
-| options | [ItemOptions[]](#itemoptions) | When there are multiple options for this item (e.g. different meat prices; small, medium, or large prices), activate through frontend to enable options |
 | name | String | Item name; Bottle Water |
 | description | String? | Optional item description |
 | containsList | string[] | List of what the item contains to help with the frontend; tomato, onions, salt, pepper, etc. |
@@ -173,6 +173,7 @@ A shared PostgreSQL database stores business information for all client websites
 | isAvailable | boolean | Whether the item is available/displayed (example; seasonal items) |
 | slug | String | System-generated URL-safe identifier. Must be unique inside the business; bottle-water |
 | imageKey | String? | Optional image storage key that uses AWS S3 Buckets; businesses/business-slug/menu-items/bottle-water-ITEM_UUID.webp |
+| options | [ItemOptions[]](#itemoptions) | When there are multiple options for this item (e.g. different meat prices; small, medium, or large prices) |
 
 ### ItemOptions
 
@@ -210,32 +211,34 @@ A shared PostgreSQL database stores business information for all client websites
 ## Design Decisions
 
 - **Self Managed Businesses:** Businesses with only one user who is also the owner should be given full access to their content. While not strictly an owner's job to manage all content modifications, in this case it is necessary.
-- **Business User Join Model:** A user account can be connected to more than one business. The `BusinessUser` model stores the relationship between a user and a business, including the user's role for that specific business. This allows the same email account to be an admin for one business and staff for another.
+- **Business User Join Model:** A user account can be connected to more than one business. The `BusinessUser` model stores the JOIN relationship between a user and a business, including the user's role for that specific business. This allows the same email account to be an admin for one business and staff for another.
 - **Role Organization:** Roles are kept in their own model instead of being stored directly on `User`. This keeps access-level data organized and leaves room to add more role-related fields later.
 - **Contacts Info:** A business can be self owned, which in most cases they might just use their mobile phone. Another business might be using a dedicated business number which is only accessible in the business location (e.g. landline). Providing this information would allow the frontend to demonstrate calling hours that would link to the location hours.
-- **Menu Ordering:** Every business should have one or many categories to organize their menu items and each category has one or many items in them. The field `order` allows for manual organization to tell where each set goes. They might want drinks to go before alcohol, or they might want to switch the order a menu item is displayed to show more popular items first. There should be a button to manually change the order number which will swap the two sets (categories or items).
+- **Menu Ordering:** Every business should have one or many categories to organize their menu items and each category should have one or many items in them. The field `order` allows for manual organization to tell where each set goes. They might want drinks to go before alcohol, or they might want to switch the order a menu item is displayed to show more popular items first. There should be a button to manually change the order number which will swap the two sets (categories, items, or item options).
 - **Social Media Linkage:** Not all businesses have a social media to promote their own business. But when they do they will be able to select from a predefined set of data for the social media we provide. This is to avoid malicious redirects to an unsafe site where the user could write to a phishing link.
-- **Social Media URL Field:** When creating a Social model it must include a `url` value for its field. However, the url itself is not created entirly by the user. The DNS (predefined values) is used for the url which the user has no control of modifying. For example, `dns=https://instagram.com`, then url will be the complete url for the businesses social media profile at `${dns}/${profileName}`. At times, this can be wrong, so the user must validate first before confirming the changes.
-- **Location Hours:** Every business should have one or many locations and each location should have one or more hours to show per day of the week when the business is available at that location. Open and close times are required for each day set unless it is typically closed on that specified day through `isClosed` where open and close times will be disabled. If there is a split in hours, provide the same day with a different open and close time; there should be no overlap.
+- **Social Media URL Field:** When creating a Social model it must be created with a `url` value for its field. However, the url itself is not created entirly by the user. The domain (predefined values) is used for the url which the user has no control of modifying. For example, `domain=instagram.com`, then url will be the complete url for the businesses social media profile at `https://${domain}/${profileName}`. At times, this can be wrong, so the user must validate first before confirming the changes.
+- **Location Hours:** A business can have one or many locations and each location can have one or more hours to show per day of the week when the business is available at that location. Open and close times are required for each day set unless it is typically closed on that specified day through `isClosed` where open and close times will be disabled. If there is a split in hours, provide the same day with a different open and close time; there should be no overlap (handled by api).
 
 This schema supports structures like:
 
 ```json
-"business": {
-  "locations": [
-    {
-      "addressOne": "Example St.",
-      "days": [
-        {
-          "dayOfWeek": "Monday",
-          "hours": {
-            "openTime": "9:00",
-            "closeTime": "20:00"
+{
+  "business": {
+    "locations": [
+      {
+        "addressOne": "Example St.",
+        "days": [
+          {
+            "dayOfWeek": "Monday",
+            "hours": {
+              "openTime": "9:00",
+              "closeTime": "20:00"
+            }
           }
-        }
-      ]
-    }
-  ]
+        ]
+      }
+    ]
+  }
 }
 ```
 
