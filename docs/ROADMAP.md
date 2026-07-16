@@ -28,9 +28,12 @@ Primary goal:
 - [x] Configure S3 bucket
 - [x] Validate connection with S3 bucket with backend platform
 - [x] Create image upload route using multipart/form-data
-- [ ] Create image replace route (deletes previous S3 image after a successful replacement)
-- [ ] Create image removal route
-- [ ] Return image URLs from public routes
+- [x] Create image replace route (deletes previous S3 image after a successful replacement)
+- [x] Create image removal route
+- [x] Return image URLs from public routes
+- [x] Convert images to webp unless original is smaller
+- [x] Preserve transparency from images
+- [x] Support URL Versioning for frontend (backend sends imageKey + updatedAt)
 
 ### Testing
 

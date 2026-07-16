@@ -3,6 +3,10 @@ title: S3 Storage
 code-path:
     - /platform/src/lib/s3/keys.ts
     - /platform/src/lib/s3/upload.ts
+    - /platform/src/lib/s3/delete.ts
+    - /platform/src/lib/s3/client.ts
+    - /platform/src/lib/images/process.ts
+    - /platform/src/app/api/admin/items/[itemId]/image/route.ts
 
 last-verified: 2026-7-15
 status: planned
@@ -73,7 +77,7 @@ Amazon S3
 | Next.js Route Handler | Coordinates the upload process. |
 | Authentication | Verifies business access |
 | Media Validation | Validate file content, file size, and file type |
-| Media Processing | Converts images to WebP and prepares files before upload |
+| Media Processing | Converts images to WebP if needed and prepares files before upload |
 | S3 Helper | Handles communication with Amazon S3 |
 | Database | Stores only the generated object key (`imageKey`) |
 
@@ -82,19 +86,13 @@ Route handlers should never directly communicate with Amazon S3.
 ## Upload Flow
 
 ```txt
-Client
+Upload Media
     │
     ▼
-Create database record
+Validate record
     │
     ▼
-Receive record ID
-    │
-    ▼
-Upload media
-    │
-    ▼
-Validate file
+Validate image
     │
     ▼
 Generate object key
@@ -112,30 +110,33 @@ Store generated imageKey in database
 Return success
 ```
 
-If the upload fails, the database record remains valid with a `null` imageKey.
+If the upload fails, the database record remains valid with a `null` imageKey. When successfuly uploaded imageKey no longer needs to be regenerated unless deleted.
 
 ## Replace Flow
 
 ```txt
+Upload Media
+    │
+    ▼
 Validate record
     │
     ▼
-Generate new object key
+Validate image
     │
     ▼
-Upload new object
+Process Media
     │
     ▼
-Update imageKey
+Upload to S3
     │
     ▼
-Delete previous object
+Update updatedAt from the record
     │
     ▼
 Return success
 ```
 
-The previous object is never deleted until the replacement upload has completed successfully.
+The imageKey is never deleted or truly replaced since the imageKey for the same item would point to the same object prefix key. This means we still use the same imageKey from the item to save on query operations.
 
 ## Delete Flow
 
@@ -161,6 +162,20 @@ Example:
 ```txt
 businesses/{businessId}/items/{itemId}.webp
 ```
+
+Objects are uploaded with a one-year `Cache-Control` header to allow browsers and CDNs to aggressively cache media.
+
+To ensure image replacements appear immediately, the frontend uses **URL Versioning** by appending the record's `updatedAt` timestamp to the image URL.
+
+Example:
+
+```txt
+businesses/{businessId}/items/{itemId}.webp?v=1784179800000
+```
+
+Whenever an image is uploaded, replaced, or removed, the corresponding database record for an item is updated, causing the `updatedAt` timestamp to change. Because the browser treats the updated URL as a new resource, it immediately downloads the latest image while still allowing previous versions to remain cached. This approach provides instant image updates without sacrificing the performance benefits of long-term caching.
+
+Previous image versions may temporarily remain in the browser cache. Browsers automatically remove older cached resources over time as part of their normal cache management. This behavior is independent of the configured Cache-Control lifetime.
 
 ### Why UUIDs?
 
@@ -198,8 +213,7 @@ Regardless of whether the original upload is:
 - JPG
 - JPEG
 - PNG
-- WebP
-
+  
 the stored object becomes:
 
 ```txt
@@ -215,6 +229,10 @@ ITEM_UUID.webp
 - Simpler frontend rendering
 
 Videos are excluded from this conversion.
+
+### Sharp
+
+Sharp is used to process uploaded images before they are stored in Amazon S3. During upload, Sharp generates an optimized WebP version of each supported image while preserving transparency, correcting image orientation, and removing unnecessary metadata. The processed WebP image is then compared to the original upload, and whichever version produces the smaller file size is stored in Amazon S3. This allows the platform to automatically optimize storage and bandwidth without requiring businesses to manually prepare their uploads.
 
 ## Future Media Support
 

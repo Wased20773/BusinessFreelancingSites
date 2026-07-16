@@ -4,6 +4,8 @@ const IMAGE_EXTENSION_BY_CONTENT_TYPE = {
     "image/webp": "webp",
 } as const;
 
+type ImageExtension = "jpg" | "png" | "webp";
+
 export type SupportedImageContentType = keyof typeof IMAGE_EXTENSION_BY_CONTENT_TYPE;
 
 export function isSupportedImageContentType(
@@ -12,15 +14,14 @@ export function isSupportedImageContentType(
     return contentType in IMAGE_EXTENSION_BY_CONTENT_TYPE;
 }
 
-export function createItemImageKey({
+export function generateItemImageKey({
     businessId,
     itemId,
-    contentType
+    extension,
 }: {
     businessId: string;
     itemId: string;
-    contentType: SupportedImageContentType;
+    extension: ImageExtension;
 }): string {
-    const extension = IMAGE_EXTENSION_BY_CONTENT_TYPE[contentType];
     return `businesses/${businessId}/items/${itemId}.${extension}`;
 }

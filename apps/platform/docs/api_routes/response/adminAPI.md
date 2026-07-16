@@ -302,21 +302,34 @@ DELETE routes return a small confirmation object instead of the full deleted mod
     "message": "String",
     "item": {
         "id": "UUID",
-        "imageKey": "String"
+        "imageKey": "String",
+        "updatedAt": "DateTime"
     }
 }
 ```
 
 ### PATCH /api/admin/items/[itemId]/image
 
-(NOT VERIFIED YET)
+```json
+{
+    "message": "String",
+    "item": {
+        "id": "UUID",
+        "imageKey": "String",
+        "updatedAt": "DateTime"
+    }
+}
+```
+
+### DELETE /api/admin/items/[itemId]/image
 
 ```json
 {
     "message": "String",
     "item": {
         "id": "UUID",
-        "imageKey": "String"
+        "imageKey": "String",
+        "updatedAt": "DateTime"
     }
 }
 ```

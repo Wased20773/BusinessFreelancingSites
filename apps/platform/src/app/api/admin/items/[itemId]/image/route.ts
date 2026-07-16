@@ -1,11 +1,12 @@
+import { imageRequestValidation } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
+import { processImage } from "@/lib/images/process";
 import { prisma } from "@/lib/prisma";
-import { createItemImageKey, isSupportedImageContentType } from "@/lib/s3/keys";
+import { deleteObject } from "@/lib/s3/delete";
+import { generateItemImageKey} from "@/lib/s3/keys";
 import { uploadImage } from "@/lib/s3/upload";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
-
-const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2 MB
 
 // POST /api/admin/items/[itemId]/image
 export async function POST(
@@ -52,57 +53,31 @@ export async function POST(
         // POST the image (not replace)
         if (item.imageKey) {
             return NextResponse.json(
-                { error: "Please use the image replacement instead" },
+                { error: "You cannot add to an item with an existing imageKey. Please use replace instead" },
                 { status: 409 }
             );
         }
 
-        const formData = await request.formData();
-        const image = formData.get("image");
+        // Validate the image
+        const image = await imageRequestValidation(request);
 
-        if (!(image instanceof File)) {
-            return NextResponse.json(
-                { error: 'Missing image file. Submit the file using "image" form-data field' },
-                { status: 400 }
-            );
-        }
+        if (image instanceof NextResponse) return image;
 
-        if (image.size === 0) {
-            return NextResponse.json(
-                { error: "The uploaded image is empty" },
-                { status: 400 }
-            );
-        }
+        // Process image
+        const processedImage = await processImage(image);
 
-        if (image.size > MAX_IMAGE_SIZE) {
-            return NextResponse.json(
-                { error: "The image cannot be larger than 2 MB" },
-                { status: 413}
-            );
-        }
-
-        if (!isSupportedImageContentType(image.type)) {
-            return NextResponse.json(
-                { error: "Unsupported image type. Only JPEG, PNG, and WebP images are allowed." },
-                { status: 415 }
-            );
-        }
-
-        const imageKey = createItemImageKey({
+        // Generate the imageKey for the item
+        const imageKey = generateItemImageKey({
             businessId: item.businessId,
             itemId: item.id,
-            contentType: image.type,
+            extension: processedImage.extension,
         });
-
-        const imageBuffer = Buffer.from(
-            await image.arrayBuffer()
-        );
 
         // Attempt to upload the image first before adding it to the database
         await uploadImage({
             key: imageKey,
-            body: imageBuffer,
-            contentType: image.type,
+            body: processedImage.buffer,
+            contentType: processedImage.contentType,
         });
 
         // Now update the items imageKey after image upload
@@ -112,6 +87,7 @@ export async function POST(
             select: {
                 id: true,
                 imageKey: true,
+                updatedAt: true,
             },
         });
 
@@ -120,24 +96,180 @@ export async function POST(
             { status: 201 }
         );
     } catch (error) {
+        console.error(`Failed to add image to item: ${error}`);
+
         return NextResponse.json(
-            { error: `Failed to upload item image: ${error}` },
+            { error: "Failed to upload image to the item" },
             { status: 500 }
         );
     }
 }
 
 // PATCH /api/admin/items/[itemId]/image
-// export async function PATCH(
-//     request: Request,
-//     { params }: { params: Promise<{ itemId: string }> }
-// ): Promise<NextResponse> {
-//     try {
+export async function PATCH(
+    request: Request,
+    { params }: { params: Promise<{ itemId: string }> }
+): Promise<NextResponse> {
+    try {
+        const authResult = await authenticateBusinessAccess(
+            request,
+            [AccessLevel.owner, AccessLevel.admin]
+        );
 
-//     } catch (error) {
-//         return NextResponse.json(
-//             { error: "Failed to replace item image" },
-//             { status: 500 }
-//         );
-//     }
-// }
+        if (authResult instanceof NextResponse) return authResult;
+
+        const { businessId } = authResult;
+        const { itemId } = await params;
+        
+        if (!itemId) {
+            return NextResponse.json(
+                { error: "Missing itemId" },
+                { status: 400 }
+            );
+        }
+
+        const item = await prisma.item.findFirst({
+            where: {
+                id: itemId,
+                businessId: businessId,
+            },
+            select: { 
+                id: true,
+                businessId: true,
+                imageKey: true,
+            },
+        });
+
+        if (!item) {
+            return NextResponse.json(
+                { error: "Item not found" },
+                { status: 404 }
+            );
+        }
+
+        // imageKey must exist first to do a PATCH request
+        if (!item.imageKey) {
+            return NextResponse.json(
+                { error: "This item does not currently have an image in our records. Please upload an image to this item first" },
+                { status: 409 }
+            );
+        }
+
+        // Validate the image
+        const image = await imageRequestValidation(request);
+
+        if (image instanceof NextResponse) return image;
+
+        // Process image
+        const processedImage = await processImage(image);
+
+        // Attempt to upload the image
+        await uploadImage({
+            key: item.imageKey,
+            body: processedImage.buffer,
+            contentType: processedImage.contentType,
+        });
+
+        // Make sure the item gets "updated"
+        const updatedItem = await prisma.item.update({
+            where: { id: item.id },
+            data: { updatedAt: new Date() },
+            select: {
+                id: true,
+                imageKey: true,
+                updatedAt: true,
+            },
+        });
+
+        // Return success, no need to retrieve the item
+        return NextResponse.json(
+            { message: "Item image replaced successfully", item: updatedItem },
+            { status: 200 }
+        );
+    } catch (error) {
+        console.error(`Failed to update image to item: ${error}`);
+
+        return NextResponse.json(
+            { error: `Failed to replace the image to the item: ${error}` },
+            { status: 500 }
+        );
+    }
+}
+
+// DELETE /api/admin/items/[itemId]/image
+export async function DELETE(
+    request: Request,
+    { params }: { params: Promise<{ itemId: string }> }
+): Promise<NextResponse> {
+    try {
+        const authResult = await authenticateBusinessAccess(
+            request,
+            [AccessLevel.owner, AccessLevel.admin]
+        );
+
+        if (authResult instanceof NextResponse) return authResult;
+
+        const { businessId } = authResult;
+        const { itemId } = await params;
+
+        if (!itemId) {
+            return NextResponse.json(
+                { error: "Missing itemId" },
+                { status: 400 }
+            );
+        }
+
+        const item = await prisma.item.findFirst({
+            where: {
+                id: itemId,
+                businessId: businessId,
+            },
+            select: {
+                id: true,
+                imageKey: true,
+            },
+        });
+
+        if (!item) {
+            return NextResponse.json(
+                { error: "Item was not found" },
+                { status: 404 }
+            );
+        }
+
+        if (!item.imageKey) {
+            return NextResponse.json(
+                { error: "This item does not have an image" },
+                { status: 404 }
+            );
+        }
+
+        // Delete the image from s3 storage
+        await deleteObject(item.imageKey);
+
+        // Update item's imageKey to null
+        const updatedItem = await prisma.item.update({
+            where: {
+                id: itemId,
+            },
+            data: { imageKey: null },
+            select: {
+                id: true,
+                imageKey: true,
+                updatedAt: true,
+            },
+        });
+
+        return NextResponse.json(
+            { message: "Item image deleted successfully", item: updatedItem },
+            { status: 200 }
+        );
+    } catch (error) {
+        console.error(`Failed to delete image from item: ${error}`);
+
+        return NextResponse.json(
+            { error: "Failed to delete the image from the item" },
+            { status: 500 }
+        );
+    }
+}

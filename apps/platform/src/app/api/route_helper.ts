@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from "../../../../../packages/database/generated/prisma/client";
 import { DayOfWeek } from "@business-freelancer/database";
+import { isSupportedImageContentType } from "@/lib/s3/keys";
 
 type OrderModel = {
     findFirst: (args: {
@@ -10,6 +11,8 @@ type OrderModel = {
         select: { order: true };
     }) => Promise<{ order: number } | null>;
 }
+
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2 MB
 
 /*
 *   Gets the slug of the HTTP request
@@ -117,4 +120,51 @@ export function checkTimeOverlap(
     const existingClose = timeToMinutes(existingCloseTime);
 
     return newOpen < existingClose && newClose > existingOpen;
+}
+
+export async function imageRequestValidation(request: Request): Promise<NextResponse | File> {
+    try {
+        // Get the image from form-data
+        const formData = await request.formData();
+        const image = formData.get("image");
+    
+        // Check if an image was sent
+        if (!(image instanceof File)) {
+            return NextResponse.json(
+                { error: 'Missing image file. Please submit the file using the "image" form-data field' },
+                { status: 400 }
+            );
+        }
+
+        // Check if the image size exist
+        if (image.size === 0) {
+            return NextResponse.json(
+                { error: "The uploaded image is empty" },
+                { status: 400 }
+            );
+        }
+
+        // Check if image payload exceeds max image size
+        if (image.size > MAX_IMAGE_SIZE) {
+            return NextResponse.json(
+                { error: "The image cannot be larger than 5 MB" },
+                { status: 413 }
+            );
+        }
+
+        // Check for image type support
+        if (!isSupportedImageContentType(image.type)) {
+            return NextResponse.json(
+                { error: "Unsupported image type. Only JPEG, PNG, and WebP images are allowed." },
+                { status: 415 }
+            );
+        }
+
+        return image;
+    } catch (error) {
+        return NextResponse.json(
+            { error: `Failed to get form data from request: ${error}`},
+            { status: 400 }
+        );
+    }
 }

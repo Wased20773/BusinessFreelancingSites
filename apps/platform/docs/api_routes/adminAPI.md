@@ -21,6 +21,8 @@ These routes should require authentication and business access checks later.
 
 To view the full JSON return values per route, go to [Admin API Responses](../../docs/api_routes/response/adminAPI.md).
 
+For view the document of how the images are stored, flow, and designed you can go to [S3 Storage](../s3-storage.md)
+
 #### Query Params
 
 All request require:
@@ -414,7 +416,7 @@ Deletes the image for an item by its `itemId`.
 
 | Param | Type | Required | Note |
 | --- | --- | --- | --- |
-| itemId | UUID | Yes | The ID of the `Item` record to update the image for. |
+| itemId | UUID | Yes | The ID of the `Item` record to delete the image for. |
 
 No body request.
 
@@ -423,6 +425,8 @@ No body request.
 Deletes an item row by its `itemId`.
 
 When deleting an item, all item options will also be deleted. Warn the user before allowing the action.
+
+No body request.
 
 #### Route Param Required
 
