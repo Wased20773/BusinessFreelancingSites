@@ -1,4 +1,4 @@
-import { PrismaClient } from '../../../../packages/database/generated/prisma/client';
+import { PrismaClient } from '@business-freelancer/database';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 const databaseUrl = process.env.DATABASE_URL;

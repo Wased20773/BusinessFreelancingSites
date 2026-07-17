@@ -80,23 +80,35 @@ export async function POST(
             contentType: processedImage.contentType,
         });
 
-        // Now update the items imageKey after image upload
-        const updatedItem = await prisma.item.update({
-            where: { id: item.id },
-            data: { imageKey: imageKey },
-            select: {
-                id: true,
-                imageKey: true,
-                updatedAt: true,
-            },
-        });
+        let updatedItem;
 
-        return NextResponse.json(
-            { message: "Item image uploaded ", item: updatedItem},
-            { status: 201 }
-        );
+        try {
+            // Now update the items imageKey after image upload
+            updatedItem = await prisma.item.update({
+                where: { id: item.id },
+                data: { imageKey: imageKey },
+                select: {
+                    id: true,
+                    imageKey: true,
+                    updatedAt: true,
+                },
+            });
+    
+            return NextResponse.json(
+                { message: "Item image uploaded", item: updatedItem},
+                { status: 201 }
+            );
+        } catch (error) {
+            try {
+                await deleteObject(imageKey);
+            } catch (cleanupError) {
+                console.error("Failed to clean up uploaded image after database failure:", cleanupError);
+            }
+
+            throw error;
+        }
     } catch (error) {
-        console.error(`Failed to add image to item: ${error}`);
+        console.error("Failed to add image to item:", error);
 
         return NextResponse.json(
             { error: "Failed to upload image to the item" },
@@ -187,10 +199,10 @@ export async function PATCH(
             { status: 200 }
         );
     } catch (error) {
-        console.error(`Failed to update image to item: ${error}`);
+        console.error("Failed to update image to item:", error);
 
         return NextResponse.json(
-            { error: `Failed to replace the image to the item: ${error}` },
+            { error: "Failed to replace the image to the item" },
             { status: 500 }
         );
     }
@@ -244,14 +256,12 @@ export async function DELETE(
             );
         }
 
-        // Delete the image from s3 storage
-        await deleteObject(item.imageKey);
-
+        // Create rollback to imageKey
+        const oldImageKey = item.imageKey;
+        
         // Update item's imageKey to null
         const updatedItem = await prisma.item.update({
-            where: {
-                id: itemId,
-            },
+            where: { id: itemId },
             data: { imageKey: null },
             select: {
                 id: true,
@@ -260,12 +270,31 @@ export async function DELETE(
             },
         });
 
+        try {
+            // Delete the image from s3 storage
+            await deleteObject(oldImageKey);
+        } catch (error) {
+            try {
+                await prisma.item.update({
+                    where: { id: itemId },
+                    data: { imageKey: oldImageKey },
+                });
+            } catch (rollbackError) {
+                console.error(
+                    "Failed to restore imageKey after S3 deletion failure:",
+                    rollbackError
+                );
+            }
+
+            throw error;
+        }
+
         return NextResponse.json(
             { message: "Item image deleted successfully", item: updatedItem },
             { status: 200 }
         );
     } catch (error) {
-        console.error(`Failed to delete image from item: ${error}`);
+        console.error("Failed to delete image from item:", error);
 
         return NextResponse.json(
             { error: "Failed to delete the image from the item" },

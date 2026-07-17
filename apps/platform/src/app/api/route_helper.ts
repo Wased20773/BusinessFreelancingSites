@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from '@/lib/prisma';
-import type { Prisma } from "../../../../../packages/database/generated/prisma/client";
-import { DayOfWeek } from "@business-freelancer/database";
+import { DayOfWeek, Prisma } from "@business-freelancer/database";
 import { isSupportedImageContentType } from "@/lib/s3/keys";
 
 type OrderModel = {
@@ -147,7 +146,7 @@ export async function imageRequestValidation(request: Request): Promise<NextResp
         // Check if image payload exceeds max image size
         if (image.size > MAX_IMAGE_SIZE) {
             return NextResponse.json(
-                { error: "The image cannot be larger than 5 MB" },
+                { error: "The image cannot be larger than 2 MB" },
                 { status: 413 }
             );
         }
