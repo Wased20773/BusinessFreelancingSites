@@ -83,7 +83,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "POST",
             });
 
-            const context = createRouteContext("item-123");
+            const context = createRouteContext({ itemId: "item-123" });
 
             const response = await POST(request, context);
             const responseBody = await response.json();
@@ -110,7 +110,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "POST",
             });
 
-            const context = createRouteContext("");
+            const context = createRouteContext({ itemId: "" });
 
             const response = await POST(request, context);
             const responseBody = await response.json();
@@ -143,7 +143,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "POST",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await POST(request, context);
             const responseBody = await response.json();
@@ -172,7 +172,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "POST",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await POST(request, context);
             const responseBody = await response.json();
@@ -209,7 +209,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "POST",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await POST(request, context);
             const responseBody = await response.json();
@@ -250,7 +250,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "POST",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await POST(request, context);
             const responseBody = await response.json();
@@ -290,7 +290,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "POST",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await POST(request, context);
             const responseBody = await response.json();
@@ -336,7 +336,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "POST",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await POST(request, context);
             const responseBody = await response.json();
@@ -385,7 +385,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "POST",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await POST(request, context);
             const responseBody = await response.json();
@@ -436,7 +436,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "POST",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await POST(request, context);
             const responseBody = await response.json();
@@ -488,7 +488,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "POST",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await POST(request, context);
             const responseBody = await response.json();
@@ -539,7 +539,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "POST",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await POST(request, context);
             const responseBody = await response.json();
@@ -616,7 +616,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "PATCH",
             });
 
-            const context = createRouteContext("item-123");
+            const context = createRouteContext({ itemId: "item-123" });
 
             const response = await PATCH(request, context);
             const responseBody = await response.json();
@@ -641,7 +641,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "PATCH",
             });
 
-            const context = createRouteContext("");
+            const context = createRouteContext({ itemId: "" });
 
             const response = await PATCH(request, context);
             const responseBody = await response.json();
@@ -672,7 +672,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "PATCH",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await PATCH(request, context);
             const responseBody = await response.json();
@@ -699,7 +699,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "PATCH",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await PATCH(request, context);
             const responseBody = await response.json();
@@ -733,7 +733,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "PATCH",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await PATCH(request, context);
             const responseBody = await response.json();
@@ -776,7 +776,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "PATCH",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await PATCH(request, context);
             const responseBody = await response.json();
@@ -818,7 +818,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "PATCH",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await PATCH(request, context);
             const responseBody = await response.json();
@@ -866,7 +866,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "PATCH",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await PATCH(request, context);
             const responseBody = await response.json();
@@ -920,7 +920,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "PATCH",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await PATCH(request, context);
             const responseBody = await response.json();
@@ -989,7 +989,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "PATCH",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await PATCH(request, context);
             const responseBody = await response.json();
@@ -1043,7 +1043,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "DELETE",
             });
 
-            const context = createRouteContext("item-123");
+            const context = createRouteContext({ itemId: "item-123" });
 
             const response = await DELETE(request, context);
             const responseBody = await response.json();
@@ -1066,7 +1066,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "DELETE",
             });
 
-            const context = createRouteContext("");
+            const context = createRouteContext({ itemId: "" });
 
             const response = await DELETE(request, context);
             const responseBody = await response.json();
@@ -1095,7 +1095,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "DELETE",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await DELETE(request, context);
             const responseBody = await response.json();
@@ -1120,7 +1120,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "DELETE",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await DELETE(request, context);
             const responseBody = await response.json();
@@ -1151,7 +1151,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "DELETE",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await DELETE(request, context);
             const responseBody = await response.json();
@@ -1187,7 +1187,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "DELETE",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await DELETE(request, context);
             const responseBody = await response.json();
@@ -1249,7 +1249,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "DELETE",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await DELETE(request, context);
             const responseBody = await response.json();
@@ -1327,7 +1327,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "DELETE",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await DELETE(request, context);
             const responseBody = await response.json();
@@ -1382,7 +1382,7 @@ describe("/api/admin/items/[itemId]/image", () => {
                 method: "DELETE",
             });
 
-            const context = createRouteContext(item.id);
+            const context = createRouteContext({ itemId: item.id });
 
             const response = await DELETE(request, context);
             const responseBody = await response.json();

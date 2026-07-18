@@ -1,5 +1,7 @@
-export function createRouteContext(itemId: string) {
+export function createRouteContext<
+    TParams extends Record<string, string>
+>(params: TParams) {
     return {
-        params: Promise.resolve({ itemId }),
+        params: Promise.resolve(params),
     };
 }

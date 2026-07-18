@@ -66,8 +66,9 @@ export async function PATCH(
 
         return NextResponse.json(updatedCategory, { status: 200 });
     } catch (error) {
+        console.error("Failed to update category:", error);
         return NextResponse.json(
-            { error: `Failed to update category: ${error}` },
+            { error: "Failed to update category" },
             { status: 500 }
         );
     }
@@ -167,8 +168,10 @@ export async function DELETE(
             { status: 200 }
         );
     } catch (error) {
+        console.error("Failed to delete category:", error);
+
         return NextResponse.json(
-            { error: `Failed to delete category: ${error}` },
+            { error: "Failed to delete category" },
             { status: 500 }
         );
     }
