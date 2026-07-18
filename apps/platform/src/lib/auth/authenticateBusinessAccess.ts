@@ -78,8 +78,10 @@ export async function authenticateBusinessAccess(
             slug: slug,
         }
     } catch (error) {
+        console.error("Failed to authenticate:", error);
+        
         return NextResponse.json(
-            { error: `Failed to authenticate: ${error}` },
+            { error: "Failed to authenticate"},
             { status: 400 }
         )
     }

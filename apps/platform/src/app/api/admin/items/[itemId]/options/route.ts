@@ -89,8 +89,10 @@ export async function POST(
 
         return NextResponse.json(option, { status: 201 });
     } catch (error) {
+        console.error("Failed to create item option:", error);
+
         return NextResponse.json(
-            { error: `Failed to create item option: ${error}` },
+            { error: "Failed to create item option" },
             { status: 500 }
         );
     }

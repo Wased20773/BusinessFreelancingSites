@@ -107,8 +107,10 @@ export async function PATCH(
 
         return NextResponse.json(updatedOption, { status: 200 });
     } catch (error) {
+        console.error("Failed to move item option down:", error);
+
         return NextResponse.json(
-            { error: `Failed to move item option down: ${error}` },
+            { error: "Failed to move item option down" },
             { status: 500 }
         );
     }

@@ -75,8 +75,10 @@ export async function PATCH(
 
         return NextResponse.json(updatedOption, { status: 200 });
     } catch (error) {
+        console.error("Failed to update item option:", error);
+
         return NextResponse.json(
-            { error: `Failed to update item option: ${error}` },
+            { error: "Failed to update item option" },
             { status: 500 }
         );
     }
@@ -169,8 +171,10 @@ export async function DELETE(
             { status: 200 }
         );
     } catch (error) {
+        console.error("Failed to delete item option:", error);
+
         return NextResponse.json(
-            { error: `Failed to delete item option: ${error}` },
+            { error: "Failed to delete item option" },
             { status: 500 }
         );
     }
