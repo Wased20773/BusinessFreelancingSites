@@ -51,8 +51,9 @@ export async function POST(request: Request): Promise<NextResponse> {
 
         return NextResponse.json(category, { status: 201 });
     } catch (error) {
+        console.error("Failed to create category:", error);
         return NextResponse.json(
-            { error: `Failed to create category: ${error}` },
+            { error: "Failed to create category" },
             { status: 500 }
         );
     }

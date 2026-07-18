@@ -120,8 +120,10 @@ export async function PATCH(
 
         return NextResponse.json(updatedItem, { status: 200 });
     } catch (error) {
+        console.error("Failed to move item down:", error);
+
         return NextResponse.json(
-            { error: `Failed to move item down: ${error}` },
+            { error: "Failed to move item down" },
             { status: 500 }
         );
     }

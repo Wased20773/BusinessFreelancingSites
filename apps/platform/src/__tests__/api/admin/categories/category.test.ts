@@ -11,6 +11,8 @@ import {
     DELETE,
     PATCH,
 } from "@/app/api/admin/categories/[categoryId]/route";
+import { getNextOrder } from "@/app/api/route_helper";
+import { POST } from "@/app/api/admin/categories/route";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { NextResponse } from "next/server";
 
@@ -22,12 +24,212 @@ jest.mock("@/lib/auth/authenticateBusinessAccess", () => ({
     authenticateBusinessAccess: jest.fn(),
 }));
 
+jest.mock("@/app/api/route_helper", () => ({
+    getNextOrder: jest.fn(),
+}));
+
 const mockedAuthenticateBusinessAccess =
     jest.mocked(authenticateBusinessAccess);
+
+const mockedGetNextOrder =
+    jest.mocked(getNextOrder);
 
 describe("/api/admin/categories/[categoryId]", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+    });
+
+    describe("POST /api/admin/categories", () => {
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it("returns the authentication error response", async () => {
+            mockedAuthenticateBusinessAccess.mockResolvedValue(
+                NextResponse.json(
+                    { error: "Unauthorized Access" },
+                    { status: 401 }
+                )
+            );
+
+            const request = createJsonRequest({
+                url: "http://localhost/api/admin/categories",
+                method: "POST",
+                body: {
+                    name: "Tacos",
+                    description: "Taco menu",
+                },
+            });
+
+            const response = await POST(request);
+            const responseBody = await response.json();
+
+            expect(response.status).toBe(401);
+
+            expect(responseBody).toEqual({
+                error: "Unauthorized Access",
+            });
+
+            expect(mockedGetNextOrder).not.toHaveBeenCalled();
+            expect(mockPrisma.category.create).not.toHaveBeenCalled();
+        });
+
+        it("returns 400 when the category name is missing", async () => {
+            mockSuccessfulAuthentication();
+
+            const request = createJsonRequest({
+                url: "http://localhost/api/admin/categories",
+                method: "POST",
+                body: {
+                    description: "Taco menu",
+                },
+            });
+
+            const response = await POST(request);
+            const responseBody = await response.json();
+
+            expect(response.status).toBe(400);
+
+            expect(responseBody).toEqual({
+                error: "Missing category name",
+            });
+
+            expect(mockedGetNextOrder).not.toHaveBeenCalled();
+            expect(mockPrisma.category.create).not.toHaveBeenCalled();
+        });
+
+        it("returns the getNextOrder error response", async () => {
+            mockSuccessfulAuthentication();
+
+            mockedGetNextOrder.mockResolvedValue(
+                NextResponse.json(
+                    { error: "Failed to calculate category order" },
+                    { status: 500 }
+                )
+            );
+
+            const request = createJsonRequest({
+                url: "http://localhost/api/admin/categories",
+                method: "POST",
+                body: {
+                    name: "Tacos",
+                    description: "Taco menu",
+                },
+            });
+
+            const response = await POST(request);
+            const responseBody = await response.json();
+
+            expect(response.status).toBe(500);
+
+            expect(responseBody).toEqual({
+                error: "Failed to calculate category order",
+            });
+
+            expect(mockedGetNextOrder).toHaveBeenCalledWith(
+                mockPrisma.category,
+                {
+                    businessId: "business-123",
+                }
+            );
+
+            expect(mockPrisma.category.create).not.toHaveBeenCalled();
+        });
+
+        it("returns 500 when creating the category fails", async () => {
+            mockSuccessfulAuthentication();
+
+            mockedGetNextOrder.mockResolvedValue(1);
+
+            mockPrisma.category.create.mockRejectedValue(
+                new Error("Database create failed")
+            );
+
+            const request = createJsonRequest({
+                url: "http://localhost/api/admin/categories",
+                method: "POST",
+                body: {
+                    name: "Tacos",
+                    description: "Taco menu",
+                },
+            });
+
+            const response = await POST(request);
+            const responseBody = await response.json();
+
+            expect(response.status).toBe(500);
+
+            expect(responseBody).toEqual({
+                error: "Failed to create category",
+            });
+
+            expect(mockPrisma.category.create).toHaveBeenCalled();
+        });
+
+        it("successfully creates a category", async () => {
+            const createdCategory = {
+                id: "category-123",
+                name: "Tacos",
+                description: "Taco menu",
+                order: 1,
+                isVisible: true,
+                createdAt: new Date("2026-07-17T12:00:00.000Z"),
+                updatedAt: new Date("2026-07-17T12:00:00.000Z"),
+            };
+
+            mockSuccessfulAuthentication();
+
+            mockedGetNextOrder.mockResolvedValue(1);
+
+            mockPrisma.category.create.mockResolvedValue(
+                createdCategory
+            );
+
+            const request = createJsonRequest({
+                url: "http://localhost/api/admin/categories",
+                method: "POST",
+                body: {
+                    name: "Tacos",
+                    description: "Taco menu",
+                },
+            });
+
+            const response = await POST(request);
+            const responseBody = await response.json();
+
+            expect(response.status).toBe(201);
+
+            expect(responseBody).toEqual({
+                ...createdCategory,
+                createdAt: createdCategory.createdAt.toISOString(),
+                updatedAt: createdCategory.updatedAt.toISOString(),
+            });
+
+            expect(mockedGetNextOrder).toHaveBeenCalledWith(
+                mockPrisma.category,
+                {
+                    businessId: "business-123",
+                }
+            );
+
+            expect(mockPrisma.category.create).toHaveBeenCalledWith({
+                data: {
+                    businessId: "business-123",
+                    name: "Tacos",
+                    description: "Taco menu",
+                    order: 1,
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    order: true,
+                    isVisible: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
+            });
+        });
     });
 
     describe("PATCH", () => {

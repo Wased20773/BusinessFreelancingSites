@@ -45,8 +45,6 @@ export async function POST(
             select: { id: true },
         });
 
-        console.log(parentCategory);
-
         if (!parentCategory) {
             return NextResponse.json(
                 { error: "Either the category does not exists in our records or the selected category is already a subcategory" },
@@ -83,9 +81,11 @@ export async function POST(
 
         return NextResponse.json(subCategory, { status: 201 });
     } catch (error) {
+        console.error("Failed to add a subcategory:", error);
+
         return NextResponse.json(
-            { error: `Failed to add a subcategory: ${error}` },
+            { error: "Failed to add a subcategory" },
             { status: 500 }
         );
-    }
+}
 }

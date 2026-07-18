@@ -113,8 +113,10 @@ export async function PATCH(
 
         return NextResponse.json(updatedCategory, { status: 200 });
     } catch (error) {
+        console.error("Failed to move category down:", error);
+
         return NextResponse.json(
-            { error: `Failed to connect to servers when moving category down: ${error}` },
+            { error: "Failed to move category down" },
             { status: 500 }
         );
     }
