@@ -99,8 +99,10 @@ export async function POST(
 
         return NextResponse.json(item, { status: 201 });
     } catch (error) {
+        console.error("Failed to create category item", error);
+
         return NextResponse.json(
-            { error: `Failed to create category item: ${error}` },
+            { error: "Failed to create category item" },
             { status: 500 }
         );
     }
