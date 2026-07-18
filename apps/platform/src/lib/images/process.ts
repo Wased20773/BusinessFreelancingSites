@@ -33,7 +33,6 @@ export async function processImage(image: File): Promise<ProcessedImage> {
     }
 }
 
-
 function getImageExtension(
     contentType: string
 ): ImageExtension {

@@ -161,8 +161,10 @@ export async function imageRequestValidation(request: Request): Promise<NextResp
 
         return image;
     } catch (error) {
+        console.error("Failed to parse the image form data:", error);
+        
         return NextResponse.json(
-            { error: `Failed to get form data from request: ${error}`},
+            { error: "Failed to get form data from request"},
             { status: 400 }
         );
     }
