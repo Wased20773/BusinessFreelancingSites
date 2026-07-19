@@ -63,8 +63,10 @@ export async function GET(
 
         return NextResponse.json(item, { status: 200 });
     } catch (error) {
+        console.error("Failed to fetch business item:", error);
+
         return NextResponse.json(
-            { error: `Failed to connect to servers when fetching for the specified business item: ${error}` },
+            { error: "Failed to fetch business item" },
             { status: 500 }
         );
     }
