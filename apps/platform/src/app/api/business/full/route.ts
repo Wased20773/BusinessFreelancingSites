@@ -5,11 +5,11 @@ import { prisma } from '@/lib/prisma';
 /*
 *   Note: This is a test api route, it will not be pushed into production. it is
 *         meant to serve as a test to view ALL data relating to a business. Make
-*         to DELETE this file and its folder after no longer testing.
+*         sure to DELETE this file and its folder after no longer testing.
 *  
 **/
 
-// GET /api/business
+// GET /api/business/full
 export async function GET(request: Request): Promise<NextResponse> {
     
     try {
