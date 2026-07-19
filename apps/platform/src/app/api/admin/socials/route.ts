@@ -2,7 +2,7 @@ import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAcces
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
-import { createSlug, getSlug } from "../../route_helper";
+import { createSlug } from "../../route_helper";
 
 // POST /api/admin/socials
 export async function POST(request: Request): Promise<NextResponse> {

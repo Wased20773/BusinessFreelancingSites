@@ -1,4 +1,3 @@
-import { auth } from "@/auth";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
@@ -96,8 +95,10 @@ export async function PATCH(
 
         return NextResponse.json(updatedBusinessUser, { status: 200 });
     } catch (error) {
+        console.error("Failed to update business user:", error);
+
         return NextResponse.json(
-            { error: `Failed to update linked user's access level: ${error}` },
+            { error: "Failed to update business user" },
             { status: 500 }
         );
     }
@@ -143,8 +144,10 @@ export async function DELETE(
             { status: 200 }
         );
     } catch (error) {
+        console.error("Failed to delete business user:", error);
+
         return NextResponse.json(
-            { error: `Failed to connect to servers when deleting a business user: ${error}` },
+            { error: "Failed to delete business user" },
             { status: 500 }
         );
     }

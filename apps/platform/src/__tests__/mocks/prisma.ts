@@ -67,5 +67,23 @@ export const mockPrisma = {
         delete: jest.fn(),
         deleteMany: jest.fn(),
     },
+    
+    businessUser: {
+        findFirst: jest.fn(),
+        findMany: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+        deleteMany: jest.fn(),
+    },
+
+    user: {
+        findUnique: jest.fn(),
+    },
+
+    role: {
+        findFirst: jest.fn(),
+    },
+
     $transaction: jest.fn(),
 };

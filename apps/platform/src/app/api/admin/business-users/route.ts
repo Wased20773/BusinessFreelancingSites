@@ -44,10 +44,12 @@ export async function GET(request: Request): Promise<NextResponse> {
 
         return NextResponse.json(businessUsers);
     } catch (error) {
+        console.error("Failed to fetch business users:", error);
+
         return NextResponse.json(
-            { error: `Failed to connect to servers when fetching users for your business: ${error}` },
+            { error: "Failed to fetch business users" },
             { status: 500 }
-        )
+        );
     }
 }
 
@@ -115,9 +117,11 @@ export async function POST(request: Request): Promise<NextResponse> {
 
         return NextResponse.json(businessUser, { status: 201 });
     } catch (error) {
+        console.error("Failed to link user to business:", error);
+
         return NextResponse.json(
-            { error: `Failed to connect to servers when creating a link to the user: ${error}` },
+            { error: "Failed to link user to business" },
             { status: 500 }
-        )
+        );
     }
 }
