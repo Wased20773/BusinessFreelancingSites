@@ -51,6 +51,8 @@ export async function PATCH(
         const domain = body.domain ?? social.domain;
         const profileName = body.profileName ?? social.profileName;
 
+        const url = `https://${domain}/${(createSlug(profileName))}`;
+
         const updatedSocial = await prisma.social.update({
             where: {
                 id: social.id,
@@ -58,7 +60,7 @@ export async function PATCH(
             data: {
                 domain: body.domain,
                 profileName: body.profileName,
-                url: `${domain}/${createSlug(profileName)}`,
+                url: url,
                 icon: body.icon,
             },
             select: {
@@ -72,8 +74,10 @@ export async function PATCH(
 
         return NextResponse.json(updatedSocial, { status: 200 });
     } catch (error) {
+        console.error("Failed to update social:", error);
+
         return NextResponse.json(
-            { error: `Failed to update social: ${error}` },
+            { error: "Failed to update social" },
             { status: 500 }
         );
     }
@@ -121,8 +125,10 @@ export async function DELETE(
             { status: 200 }
         );
     } catch (error) {
+        console.error("Failed to delete social:", error);
+
         return NextResponse.json(
-            { error: `Failed to delete social: ${error}` },
+            { error: "Failed to delete social" },
             { status: 500 }
         );
     }
