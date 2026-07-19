@@ -50,8 +50,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
         return NextResponse.json(location, { status: 201 });
     } catch (error) {
+        console.error("Failed to create location", error);
+
         return NextResponse.json(
-            { error: `Failed to create location: ${error}` },
+            { error: "Failed to create location" },
             { status: 500 }
         );
     }

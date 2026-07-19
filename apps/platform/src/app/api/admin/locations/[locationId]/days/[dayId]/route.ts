@@ -69,8 +69,10 @@ export async function PATCH(
 
         return NextResponse.json(updatedDay, { status: 200 });
     } catch (error) {
+        console.error("Failed to update location day:", error);
+
         return NextResponse.json(
-            { error: `Failed to update location day: ${error}` },
+            { error: "Failed to update location day" },
             { status: 500 }
         );
     }
@@ -128,8 +130,10 @@ export async function DELETE(
             { status: 200 }
         );
     } catch (error) {
+        console.error("Failed to delete location day:", error);
+
         return NextResponse.json(
-            { error: `Failed to delete location day: ${error}` },
+            { error: "Failed to delete location day" },
             { status: 500 }
         );
     }

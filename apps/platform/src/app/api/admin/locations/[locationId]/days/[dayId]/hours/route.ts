@@ -115,8 +115,10 @@ export async function POST(
 
         return NextResponse.json(hour, { status: 201 });
     } catch (error) {
+        console.error("Failed to create location hours:", error);
+
         return NextResponse.json(
-            { error: `Failed to create location hours: ${error}` },
+            { error: "Failed to create location hours" },
             { status: 500 }
         );
     }

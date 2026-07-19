@@ -74,8 +74,10 @@ export async function PATCH(
 
         return NextResponse.json(updatedLocation, { status: 200 });
     } catch (error) {
+        console.error("Failed to update location:", error);
+
         return NextResponse.json(
-            { error: `Failed to update location: ${error}` },
+            { error: "Failed to update location" },
             { status: 500 }
         );
     }
@@ -123,8 +125,10 @@ export async function DELETE(
             { status: 200 }
         );
     } catch (error) {
+        console.error("Failed to delete location:", error);
+
         return NextResponse.json(
-            { error: `Failed to delete location: ${error}` },
+            { error: "Failed to delete location" },
             { status: 500 }
         );
     }

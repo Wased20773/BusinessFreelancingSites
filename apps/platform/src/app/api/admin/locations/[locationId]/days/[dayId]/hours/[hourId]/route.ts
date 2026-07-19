@@ -130,10 +130,12 @@ export async function PATCH(
 
         return NextResponse.json(updatedHour, { status: 200 });
     } catch (error) {
+        console.error("Failed to update location hours:", error);
+
         return NextResponse.json(
-            { error: `Failed to update location hours: ${error}` },
+            { error: "Failed to update location hours" },
             { status: 500 }
-        )
+        );
     }
 }
 
@@ -199,8 +201,10 @@ export async function DELETE(
             { status: 200 }
         );
     } catch (error) {
+        console.error("Failed to delete location hour:", error);
+
         return NextResponse.json(
-            { error: `Failed to delete location hour: ${error}` },
+            { error: "Failed to delete location hour" },
             { status: 500 }
         );
     }

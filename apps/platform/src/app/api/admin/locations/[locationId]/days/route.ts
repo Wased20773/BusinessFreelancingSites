@@ -77,8 +77,10 @@ export async function POST(
 
         return NextResponse.json(day, { status: 201 });
     } catch (error) {
+        console.error("Failed to create location day:", error);
+
         return NextResponse.json(
-            { error: `Failed to create location day: ${error}` },
+            { error: "Failed to create location day" },
             { status: 500 }
         );
     }
