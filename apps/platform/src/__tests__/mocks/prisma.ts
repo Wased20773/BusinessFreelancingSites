@@ -67,7 +67,7 @@ export const mockPrisma = {
         delete: jest.fn(),
         deleteMany: jest.fn(),
     },
-    
+
     businessUser: {
         findFirst: jest.fn(),
         findMany: jest.fn(),
@@ -79,6 +79,7 @@ export const mockPrisma = {
 
     user: {
         findUnique: jest.fn(),
+        update: jest.fn(),
     },
 
     role: {

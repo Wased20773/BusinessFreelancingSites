@@ -44,10 +44,12 @@ export async function GET(request: Request): Promise<NextResponse> {
 
         return NextResponse.json(businessUser);
     } catch (error) {
+        console.error("Failed to fetch account details:", error);
+
         return NextResponse.json(
-            { error: `Failed to connect to servers when fetching for your account details: ${error}` },
+            { error: "Failed to fetch account details" },
             { status: 500 }
-        )
+        );
     }
 }
 
@@ -81,10 +83,12 @@ export async function PATCH(request: Request): Promise<NextResponse> {
         });
 
         return NextResponse.json(updatedUser);
-    } catch(error) {
+    } catch (error) {
+        console.error("Failed to update user profile:", error);
+
         return NextResponse.json(
-            { error:  `Failed to connect to servers when updating your user profile: ${error}`},
+            { error: "Failed to update user profile" },
             { status: 500 }
-        )
+        );
     }
 }
