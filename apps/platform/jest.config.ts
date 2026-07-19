@@ -10,6 +10,7 @@ const config: Config = {
     testEnvironment: "jsdom",
 
     moduleNameMapper: {
+        "^@/auth$": "<rootDir>/auth.ts",
         "^@/(.*)$": "<rootDir>/src/$1",
     },
 

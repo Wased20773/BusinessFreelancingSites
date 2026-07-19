@@ -63,7 +63,7 @@ export async function authenticateBusinessAccess(
             },
         });
     
-        // 5. Check if they did not meet the requirements (Currently all roles are valid; MVP goal)
+        // 5. Check if they did not meet the requirements
         if (!businessUser) {
             return NextResponse.json(
                 { error: 'Forbidden' },
@@ -71,7 +71,7 @@ export async function authenticateBusinessAccess(
             );
         }
     
-        // 6. return userId, businessId & slug for upcoming queries
+        // 6. Return userId, businessId & slug for upcoming queries
         return { 
             userId: businessUser.user.id,
             businessId: businessUser.business.id,
