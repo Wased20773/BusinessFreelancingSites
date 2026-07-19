@@ -45,8 +45,10 @@ export async function GET(request: Request): Promise<NextResponse> {
 
         return NextResponse.json(searchedUser, { status: 200 });
     } catch (error) {
+        console.error("Failed to search for account:", error);
+
         return NextResponse.json(
-            { error: `Failed to connect to servers when fetching for the searched account: ${error}` },
+            { error: "Failed to search for account" },
             { status: 500 }
         );
     }

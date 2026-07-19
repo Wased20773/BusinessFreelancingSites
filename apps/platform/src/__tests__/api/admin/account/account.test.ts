@@ -10,6 +10,10 @@ import {
     GET,
     PATCH,
 } from "@/app/api/admin/account/route";
+import {
+    GET as searchAccount,
+} from "@/app/api/admin/account/search/route";
+
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { NextResponse } from "next/server";
 
@@ -280,6 +284,182 @@ describe("/api/admin/account", () => {
                     name: true,
                     username: true,
                     updatedAt: true,
+                },
+            });
+        });
+    });
+
+    describe("GET /search", () => {
+        it("returns the authentication error response", async () => {
+            mockedAuthenticateBusinessAccess.mockResolvedValue(
+                NextResponse.json(
+                    { error: "Unauthorized Access" },
+                    { status: 401 }
+                )
+            );
+
+            const request = new Request(
+                "http://localhost/api/admin/account/search?email=user@example.com",
+                {
+                    method: "GET",
+                }
+            );
+
+            const response = await searchAccount(request);
+            const responseBody = await response.json();
+
+            expect(response.status).toBe(401);
+
+            expect(responseBody).toEqual({
+                error: "Unauthorized Access",
+            });
+
+            expect(mockPrisma.user.findUnique).not.toHaveBeenCalled();
+        });
+
+        it("returns 400 when the email query parameter is missing", async () => {
+            mockSuccessfulAuthentication();
+
+            const request = new Request(
+                "http://localhost/api/admin/account/search",
+                {
+                    method: "GET",
+                }
+            );
+
+            const response = await searchAccount(request);
+            const responseBody = await response.json();
+
+            expect(response.status).toBe(400);
+
+            expect(responseBody).toEqual({
+                error: "Missing email",
+            });
+
+            expect(mockPrisma.user.findUnique).not.toHaveBeenCalled();
+        });
+
+        it("returns 404 when the searched user is not found", async () => {
+            mockSuccessfulAuthentication();
+
+            mockPrisma.user.findUnique.mockResolvedValue(null);
+
+            const request = new Request(
+                "http://localhost/api/admin/account/search?email=missing@example.com",
+                {
+                    method: "GET",
+                }
+            );
+
+            const response = await searchAccount(request);
+            const responseBody = await response.json();
+
+            expect(response.status).toBe(404);
+
+            expect(responseBody).toEqual({
+                error: "Searched user was not found",
+            });
+
+            expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
+                where: {
+                    email: "missing@example.com",
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    username: true,
+                    email: true,
+                    emailVerified: true,
+                    image: true,
+                    createdAt: true,
+                },
+            });
+        });
+
+        it("returns 500 when searching for the account fails", async () => {
+            mockSuccessfulAuthentication();
+
+            mockPrisma.user.findUnique.mockRejectedValue(
+                new Error("Database query failed")
+            );
+
+            const request = new Request(
+                "http://localhost/api/admin/account/search?email=user@example.com",
+                {
+                    method: "GET",
+                }
+            );
+
+            const response = await searchAccount(request);
+            const responseBody = await response.json();
+
+            expect(response.status).toBe(500);
+
+            expect(responseBody).toEqual({
+                error: "Failed to search for account",
+            });
+
+            expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
+                where: {
+                    email: "user@example.com",
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    username: true,
+                    email: true,
+                    emailVerified: true,
+                    image: true,
+                    createdAt: true,
+                },
+            });
+        });
+
+        it("successfully returns the searched user", async () => {
+            const searchedUser = {
+                id: "user-123",
+                name: "Tester",
+                username: "tester",
+                email: "tester@example.com",
+                emailVerified: new Date("2026-07-17T12:00:00.000Z"),
+                image: "https://example.com/profile.png",
+                createdAt: new Date("2026-07-17T12:00:00.000Z"),
+            };
+
+            mockSuccessfulAuthentication();
+
+            mockPrisma.user.findUnique.mockResolvedValue(searchedUser);
+
+            const request = new Request(
+                "http://localhost/api/admin/account/search?email=tester@example.com",
+                {
+                    method: "GET",
+                }
+            );
+
+            const response = await searchAccount(request);
+            const responseBody = await response.json();
+
+            expect(response.status).toBe(200);
+
+            expect(responseBody).toEqual({
+                ...searchedUser,
+                emailVerified: searchedUser.emailVerified.toISOString(),
+                createdAt: searchedUser.createdAt.toISOString(),
+            });
+
+            expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
+                where: {
+                    email: "tester@example.com",
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    username: true,
+                    email: true,
+                    emailVerified: true,
+                    image: true,
+                    createdAt: true,
                 },
             });
         });
