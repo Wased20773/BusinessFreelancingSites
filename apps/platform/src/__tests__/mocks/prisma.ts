@@ -1,4 +1,8 @@
 export const mockPrisma = {
+    business: {
+        findUnique: jest.fn(),
+    },
+    
     category: {
         findFirst: jest.fn(),
         findMany: jest.fn(),

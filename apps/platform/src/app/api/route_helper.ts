@@ -86,8 +86,9 @@ export async function getNextOrder(
 
         return (lastRecord?.order?? 0) + 1;
     } catch (error) {
+        console.error("Failed to determine the next order:", error);
         return NextResponse.json(
-            { error: `Failed to connect to servers when determining the order of the model: ${error}` },
+            { error: "Failed to determine the next order" },
             { status: 500 }
         )
     }
