@@ -64,8 +64,10 @@ export async function PATCH(
 
         return NextResponse.json(updatedContact, { status: 200 });
     } catch (error) {
+        console.error("Failed to update contact:", error);
+
         return NextResponse.json(
-            { error: `Failed to update contact: ${error}` },
+            { error: "Failed to update contact" },
             { status: 500 }
         );
     }
@@ -113,8 +115,10 @@ export async function DELETE(
             { status: 200 }
         );
     } catch (error) {
+        console.error("Failed to delete contact:", error);
+
         return NextResponse.json(
-            { error: `Failed to delete contact: ${error}` },
+            { error: "Failed to delete contact" },
             { status: 500 }
         );
     }
