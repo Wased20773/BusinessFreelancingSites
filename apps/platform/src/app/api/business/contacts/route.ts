@@ -20,6 +20,7 @@ export async function GET(request: Request): Promise<NextResponse> {
                     },
                 },
             },
+            "contact"
         );
     } catch (error) {
         return NextResponse.json(

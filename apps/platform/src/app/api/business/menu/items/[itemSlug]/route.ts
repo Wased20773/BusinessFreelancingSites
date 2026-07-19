@@ -56,7 +56,7 @@ export async function GET(
 
         if (!item) {
             return NextResponse.json(
-                { error: 'Item not found' },
+                { error: 'Item not found for this business' },
                 { status: 404 }
             );
         }

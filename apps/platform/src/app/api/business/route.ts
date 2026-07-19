@@ -15,5 +15,6 @@ export async function GET(request: Request): Promise<NextResponse> {
             createdAt: true,
             updatedAt: true,
         },
+        "business"
     );
 }

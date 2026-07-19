@@ -48,6 +48,7 @@ export async function GET(request: Request): Promise<NextResponse> {
                     },
                 },
             },
+            "location"
         );
     } catch (error) {
         return NextResponse.json(

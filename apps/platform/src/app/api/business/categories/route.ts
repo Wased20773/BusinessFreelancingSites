@@ -26,6 +26,7 @@ export async function GET(request: Request): Promise<NextResponse> {
                     },
                 },
             },
+            "category"
         );
     } catch (error) {
         return NextResponse.json(
