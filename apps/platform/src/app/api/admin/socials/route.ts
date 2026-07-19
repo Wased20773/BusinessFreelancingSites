@@ -59,8 +59,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
         return NextResponse.json(social, { status: 201 });
     } catch (error) {
+        console.error("Failed to create social:", error);
+
         return NextResponse.json(
-            { error: `Failed to create social: ${error}` },
+            { error: "Failed to create social" },
             { status: 500 }
         );
     }
