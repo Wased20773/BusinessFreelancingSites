@@ -1,9 +1,9 @@
 ---
 title: Testing Plan
 code-path:
-    - platform/tests/
+    - platform/src/__tests__/
 
-last-verified: 2026-07-16
+last-verified: 2026-07-19
 status: planned
 ---
 

@@ -45,7 +45,7 @@ Primary goal:
 
 ### DOCS
 
-- [ ] Update API documents for correctness of any new issues
+- [x] Update API documents for correctness of any new issues
 
 ## August
 
