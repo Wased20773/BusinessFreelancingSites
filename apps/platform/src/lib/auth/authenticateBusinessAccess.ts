@@ -7,13 +7,13 @@ import { getSlug } from '@/app/api/route_helper';
 import { Session } from 'next-auth';
 
 
-// Purpose: Authenticate the currently logged-in user with Auth.js
-//          and verify that the user has access to the requested
-//          business and that access levels are within range.
-//
-// Return: 
-//  - NextResponse -> whenever theres failure
-//  - { businessId: string; slug: string }
+/**
+ * Authenticates the current user and verifies that they belong to the
+ * requested business with one of the allowed access levels.
+ *
+ * Returns The IDs needed by the route when access is granted, or a JSON error
+ * response that the route can return immediately when access is denied.
+ */
 export async function authenticateBusinessAccess(
     request: Request,
     allowedRoles: AccessLevel[]

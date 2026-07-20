@@ -22,7 +22,7 @@ type BusinessResourceName =
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2 MB
 
 /*
-*   Gets the slug of the HTTP request
+*   Gets the slug from the HTTP request via the search param.
 **/
 export function getSlug(request: Request): string {
     // Get the URL from the request
@@ -38,7 +38,7 @@ export function getSlug(request: Request): string {
 
 /*
 *   Gets the response of a businesses data where <T> is the object of the
-*   Corresponding select "items" in the query
+*   Corresponding select "items" in the query.
 **/
 export async function getBusinessResponse<T extends Prisma.BusinessSelect>(
     slug: string,
@@ -69,6 +69,11 @@ export async function getBusinessResponse<T extends Prisma.BusinessSelect>(
     }
 }
 
+/*
+*   Checks the model's current order value and returns the incremented
+*   value of it. If there were no records for that model then automatically
+*   return 1.
+**/
 export async function getNextOrder(
     model: OrderModel,
     where: Record<string, unknown>
@@ -94,6 +99,18 @@ export async function getNextOrder(
     }
 }
 
+/*
+*   Generates the slug from a given value string. It removes whitespace, converts 
+*   everything to lowercase, removes everything except letters, numbers, spaces, and 
+*   hyphens, converts one or more spaces into a single hyphen, and collapse multiple
+*   hyphens into one.
+* 
+*   Example:
+*       Example Street -> example-street
+*       The #1 Store -> the-1-store
+*       Menu (Lunch) -> menu-lunch
+*       Rice & Beans -> rice-beans
+**/
 export function createSlug(value: string): string {
     return value
         .trim()
@@ -103,6 +120,10 @@ export function createSlug(value: string): string {
         .replace(/-+/g, "-");
 }
 
+/*
+*   Normalizes string to DayOfWeek string value and returns value when its included
+*   in the DayOfWeek type.
+**/
 export function normalizeDayOfWeek(value: string): DayOfWeek | null {
     const normalized = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 
@@ -113,12 +134,29 @@ export function normalizeDayOfWeek(value: string): DayOfWeek | null {
     return normalized as DayOfWeek;
 }
 
+/*
+*   Converts a string time to minutes by spliting the time formate, HH:MM, by the colon.
+*   
+*   Example:
+*       12:00 -> 12 * 60 + 0 -> 720
+*       15:30 -> 15 * 60 + 30 -> 930
+*       23:59 -> 23 * 60 + 59 -> 1439
+**/
 export function timeToMinutes(time: string): number {
     const [hours, minutes] = time.split(":").map(Number);
 
     return hours * 60 + minutes;
 }
 
+/*
+*   Checks if the new time provided is overlapping from the existing time. Uses timeToMinutes()
+*   helper function to calculate minutes. Uses calculated value to determine ranges of existing and 
+*   newly provided times.
+* 
+*   Example:
+*       (newOpen = 720, newClose = 900), (existingOpen = 780, existingClose = 960)
+*           -> returns False -> Reason: newClose overlaps with existingOpen time
+**/
 export function checkTimeOverlap(
     newOpenTime: string,
     newCloseTime: string,
@@ -133,6 +171,9 @@ export function checkTimeOverlap(
     return newOpen < existingClose && newClose > existingOpen;
 }
 
+/*
+*   Validates an images existence, size, and type.
+**/
 export async function imageRequestValidation(request: Request): Promise<NextResponse | File> {
     try {
         // Get the image from form-data

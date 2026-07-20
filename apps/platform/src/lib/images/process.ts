@@ -9,6 +9,10 @@ type ProcessedImage = {
     extension: ImageExtension;
 };
 
+/**
+ * Converts an uploaded image to WebP and keeps that version only when it is
+ * smaller than the original. Sharp's rotation also applies EXIF orientation.
+ */
 export async function processImage(image: File): Promise<ProcessedImage> {
     const originalBuffer = Buffer.from(
         await image.arrayBuffer()
@@ -33,6 +37,9 @@ export async function processImage(image: File): Promise<ProcessedImage> {
     }
 }
 
+/** 
+ *  Maps a supported image MIME type to the extension used in its S3 key.
+ */
 function getImageExtension(
     contentType: string
 ): ImageExtension {
