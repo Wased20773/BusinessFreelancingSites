@@ -1,7 +1,7 @@
 ---
 title: ROADMAP
 
-last-verified: 2026-7-15
+last-verified: 2026-7-19
 status: planned
 ---
 
@@ -37,11 +37,11 @@ Primary goal:
 
 ### Testing
 
-- [ ] Test every public API endpoint
-- [ ] Test every admin API endpoint
-- [ ] Test image upload/type/size(2MB), replacement, removal, and failure handling
-- [ ] Test authentication and authorization
-- [ ] Test validation and error response
+- [x] Test every public API endpoint
+- [x] Test every admin API endpoint
+- [x] Test image upload/type/size(2MB), replacement, removal, and failure handling
+- [x] Test authentication and authorization
+- [x] Test validation and error response
 
 ### DOCS
 

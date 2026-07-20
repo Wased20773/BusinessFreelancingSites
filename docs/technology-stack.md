@@ -1,7 +1,7 @@
 ---
 title: Technology Stack
 
-last-verified: 2026-06-25
+last-verified: 2026-07-19
 status: planned
 ---
 
@@ -19,6 +19,6 @@ status: planned
 | Auth.js | Authentication | Handles administration sign-in and protected sessions. |
 | Zod | Validation | Validates form data and server requests before information reaches the database. |
 | React Hook Form | Forms | Manages admin forms, including validation messages and editing workflows. |
-| Vitest + React Testing Library | Testing | Test form behavior, and React components. Browser-level testing (Playwright) can be added later if needed. |
+| Jest + React Testing Library | Testing | Tests API route behavior, reusable utilities, form interactions, and React components. AWS S3, Prisma, authentication, and other external dependencies are mocked during unit and integration tests. Browser-level end-to-end testing with Playwright can be added later if needed. |
 | npm | Package Manager | Manages dependencies. |
 | GitHub | Version Control | Stores source code and tracks changes. |

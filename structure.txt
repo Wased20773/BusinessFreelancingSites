@@ -5,16 +5,80 @@
     - platform
         - docs/
             - api_routes/
+                - body/
+                    - adminAPI.md
+
                 - response/
+                    - adminAPI.md
                     - publicAPI.md
 
                 - adminAPI.md
+                - HTTPRequestMethods.md
                 - publicAPI.md
                     
+            - s3-storage.md
+            - testing-plan.md
+
         - public/
             - ...
 
         - src/
+            - __tests__/
+                - api/
+                    - admin/
+                        - account/
+                            - account.test.ts
+
+                        - business-users/
+                            - business-users.test.ts
+
+                        - categories/
+                            - category-items.test.ts
+                            - category-move.test.ts
+                            - category.test.ts
+                            - item-move.test.ts
+                            - subcategory.test.ts
+
+                        - contacts/
+                            - contact.test.ts
+
+                        - items/
+                            - item-image.test.ts
+                            - item.test.ts
+                            - options.test.ts
+
+                        - locations/
+                            - location-day.test.ts
+                            - location-days.test.ts
+                            - location-hour.test.ts
+                            - location-hours.test.ts
+                            - location.test.ts
+
+                        - socials/
+                            - social.test.ts
+
+                    - business/
+                        - menu/
+                            - item.test.ts
+
+                    - route-helper.test.ts
+
+                - fixtures/
+                    - image.ts
+                    - item.ts
+
+                - helpers/
+                    - auth.ts
+                    - request.ts
+                    - route.ts
+
+                - lib/
+                    - images/
+                        - process.test.ts
+
+                - mocks/
+                    - prisma.ts
+
             - app/
                 - api/
                     - admin/
@@ -165,6 +229,8 @@
         - auth.ts
         - CLAUDE.md
         - eslint.config.mjs
+        - jest.config.ts
+        - jest.setup.ts
         - next.config.ts
         - package.json
         - postcss.config.mjs
