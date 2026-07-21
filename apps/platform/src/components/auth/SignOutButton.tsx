@@ -6,7 +6,7 @@ export default function SignOut() {
         action={async () => {
             "use server";
             await signOut({
-                redirectTo: "/login",
+                redirectTo: "/",
             });
         }}
     >

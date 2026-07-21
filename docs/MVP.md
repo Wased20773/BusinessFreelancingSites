@@ -1,7 +1,7 @@
 ---
 title: MVP
 
-last-verified: 2026-07-14
+last-verified: 2026-07-20
 status: planned
 ---
 
@@ -19,7 +19,7 @@ Each business remains a custom-built frontend with its own design, domain, brand
 
 ## Basic Workflow
 
-![Basic workflow diagram](./images/basic-workflow.svg)
+![Basic workflow diagram](./images/basic-dashboard-workflow.svg)
 
 ## Initial Scope
 

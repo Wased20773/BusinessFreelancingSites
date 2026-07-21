@@ -198,8 +198,7 @@
             
                     - route_helper.ts
 
-                - login/
-                    - page.tsx
+                - dashboard/
 
                 - favicon.ico
                 - globals.css
@@ -207,7 +206,8 @@
                 - page.tsx
             
             - components/
-                - sign-out.tsx
+                - LoginButton.tsx
+                - SignOutButton.tsx
 
             - lib/
                 - auth/
