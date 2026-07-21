@@ -20,7 +20,7 @@
             - testing-plan.md
 
         - public/
-            - ...
+            - logo.svg
 
         - src/
             - __tests__/
@@ -199,6 +199,7 @@
                     - route_helper.ts
 
                 - dashboard/
+                    - page.tsx
 
                 - favicon.ico
                 - globals.css
@@ -206,8 +207,13 @@
                 - page.tsx
             
             - components/
-                - LoginButton.tsx
-                - SignOutButton.tsx
+                - auth/
+                    - LoginButton.tsx
+                    - SignOutButton.tsx
+
+                - layout/
+                    - Header.tsx
+                    - Footer.tsx
 
             - lib/
                 - auth/
