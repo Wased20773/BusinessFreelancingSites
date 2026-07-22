@@ -1,7 +1,7 @@
 ---
 title: MVP
 
-last-verified: 2026-07-20
+last-verified: 2026-07-21
 status: planned
 ---
 
@@ -41,3 +41,5 @@ Each business remains a custom-built frontend with its own design, domain, brand
 - Logging service like Sentry, Logtail, Datadog, etc.
   - For checking issues from clients from a deeper perspective
 - For client business app, determining travel time to reach business location
+- items per location
+  - rework how locations work and link them directly to items in a many-to-many relationship
