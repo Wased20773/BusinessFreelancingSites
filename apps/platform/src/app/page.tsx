@@ -10,8 +10,8 @@ export default function Home() {
         <Image
           src={Logo}
           alt="Platform logo"
-          width={200}
-          height={200}
+          width={100}
+          height={100}
           loading="eager"
           priority
         />
