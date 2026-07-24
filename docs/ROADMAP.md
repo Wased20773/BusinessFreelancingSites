@@ -1,7 +1,7 @@
 ---
 title: ROADMAP
 
-last-verified: 2026-7-19
+last-verified: 2026-7-22
 status: planned
 ---
 
@@ -56,8 +56,7 @@ Primary goal:
 ### Platform Website
 
 - [ ] Build the public landing page
-- [ ] Build the login/onboarding flow
-- [ ] Add business search
+- [ ] Build the login flow
 - [ ] Add business creation flow for new clients
 
 ### Dashboard Foundation

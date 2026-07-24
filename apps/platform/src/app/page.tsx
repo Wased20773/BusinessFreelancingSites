@@ -2,6 +2,7 @@ import Image from "next/image";
 import Logo from "../../public/logo.svg";
 import Card from "@/components/Card"
 import Link from "next/link";
+import Header from "@/components/layout/Header"
 
 export default function Home() {
   return (
@@ -20,6 +21,8 @@ export default function Home() {
           <h2>Business Platform</h2>
         </Link>
       </header>
+
+      <Header />
 
       <div className="flex flex-col gap-5">
         {/* Hero */}
@@ -44,19 +47,17 @@ export default function Home() {
               <div className="grid grid-cols-3 gap-10">
                 <Card
                   styleVarient="workflow-card" 
-                  image={Logo} order={1}
+                  order={1}
                   title="Sign in"
                   context="Sign in with your Google account to access your business dashboard. Don't have an account yet? Simply sign in and we'll create one for you."
                 />
                 <Card
                   styleVarient="workflow-card"
-                  image={Logo}
                   order={2}
                   title="Build it"
                   context="Add your categories, menu items, business hours, locations, contact information, social media, and more. Once everything is ready, your website is ready to share with your customers."/>
                 <Card
                   styleVarient="workflow-card"
-                  image={Logo}
                   order={3}
                   title="Manage it your way"
                   context="Need to make any changes? Add a new item? Mark something as sold out or seasonal? Update your website with just a few clicks. No longer will you need to wait for someone else to make the changes."
@@ -65,8 +66,8 @@ export default function Home() {
               <div className="grid grid-cols-6 gap-10">
                 <div className="col-span-3 h-full">
                   <Card 
-                    styleVarient="workflow-card" 
-                    image={Logo} order={4}
+                    styleVarient="workflow-card"
+                    order={4}
                     title="No coding required"
                     context="Your business changes all the time, and your website should too. Make updates whenever you need to without touching code. Change what you want whenever you want."
                   />
@@ -74,7 +75,6 @@ export default function Home() {
                 <div className="col-span-3">
                   <Card
                     styleVarient="workflow-card"
-                    image={Logo}
                     order={5}
                     title="Secured account access"
                     context="Only authorized users can access and manage your business dashboard. Your business information stays private and under your control."/>
@@ -89,21 +89,18 @@ export default function Home() {
               <h3 className="text-center">What you can with it</h3>
               <Card
                 styleVarient="media-card"
-                image={Logo}
                 flow="left"
                 title="Organize your products"
                 context="Create categories and subcategories to keep your products organized. Whether you have five items or hundreds, customers can quickly find what they're looking for."
               />
               <Card
                 styleVarient="media-card"
-                image={Logo}
                 flow="right"
                 title="Product image management"
                 context="Upload, replace, and organize product images directly from your dashboard. Keep your website looking fresh without editing a single line of code."
               />
               <Card
                 styleVarient="media-card"
-                image={Logo}
                 flow="left"
                 title="Multiple business locations"
                 context="Manage multiple store locations with their own addresses"
