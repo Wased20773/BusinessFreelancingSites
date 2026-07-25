@@ -199,7 +199,14 @@
                     - route_helper.ts
 
                 - dashboard/
+                    - login/
+                        - page.tsx
+                        
                     - page.tsx
+
+                - wireframes/
+                    - MVP/
+                        - platform-home.jpg
 
                 - favicon.ico
                 - globals.css
@@ -212,8 +219,11 @@
                     - SignOutButton.tsx
 
                 - layout/
+                    - Header.css
                     - Header.tsx
                     - Footer.tsx
+                
+                - Card.tsx
 
             - lib/
                 - auth/

@@ -1,13 +1,14 @@
 import { signIn } from '@/auth';
 
-export default function LoginPage() {
+export default function LoginButton() {
+
     return (
         <>
             <form
                 action={async () => {
                     'use server';
                     await signIn('google', {
-                        redirectTo: '/',
+                        redirectTo: '/dashboard',
                     });
                 }}
             >
