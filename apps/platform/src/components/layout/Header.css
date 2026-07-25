@@ -1,0 +1,33 @@
+
+.nav-link {
+    height: 100%;
+    width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 3px solid transparent;
+    transition: 0.3s;
+}
+
+.nav-link:hover,
+.nav-link:focus {
+    transition: 0.3s;
+    border-color: var(--blue-500);
+    color: var(--blue-500);
+    font-weight: bold;
+}
+
+.mobile-nav-links {
+    display: none;
+}
+
+@media (max-width: 800px) {
+    .desktop-nav-links {
+        display: none;
+    }
+
+    .mobile-nav-links {
+        display: block;
+        background-color: gray;
+    }
+}

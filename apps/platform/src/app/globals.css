@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+:root {
+    --blue-500: oklch(62.3% 0.214 259.815);
+    --gray-100: oklch(96.7% 0.003 264.542);
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--gray-100);
+}
+
 h1 {
   font-size: 2.25rem;
   line-height: 2.5rem;
