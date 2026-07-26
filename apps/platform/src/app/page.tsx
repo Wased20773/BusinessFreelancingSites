@@ -5,7 +5,7 @@ import Link from "next/link";
 import Header from "@/components/layout/Header"
 import Footer from "@/components/layout/Footer";
 
-export default function Home() {
+export default function HomePage() {
   return (
     <>
       {/* Navigation Bar */}

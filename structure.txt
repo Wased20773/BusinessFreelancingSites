@@ -198,10 +198,32 @@
             
                     - route_helper.ts
 
-                - dashboard/
-                    - login/
+                - dashboard/  
+                    - business/
                         - page.tsx
                         
+                    - categories/
+                        - page.tsx
+                    
+                    - contacts/
+                        - page.tsx
+                        
+                    - locations/
+                        - page.tsx
+                    
+                    - login/
+                        - page.tsx
+
+                    - settings/
+                        - page.tsx
+                      
+                    - socials/
+                        - page.tsx
+                        
+                    - users/
+                        - page.tsx
+
+                    - layout.tsx
                     - page.tsx
 
                 - wireframes/
@@ -219,6 +241,9 @@
                     - SignOutButton.tsx
 
                 - layout/
+                    - dashboard/
+                        - SideBar.tsx
+
                     - Header.css
                     - Header.tsx
                     - Footer.tsx

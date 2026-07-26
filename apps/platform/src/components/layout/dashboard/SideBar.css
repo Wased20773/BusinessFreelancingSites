@@ -1,0 +1,20 @@
+.sidebar-nav-links {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+
+    transition: 0.3s;
+}
+
+.sidebar-nav-links:hover,
+.sidebar-nav-links:focus {
+    transition: 0.3s;
+    background-color: var(--gray-100);
+}
+
+.sidebar-nav-links.selected {
+    color: var(--blue-500);
+    transition: 0.3s;
+    border: 1px solid var(--blue-500);
+    background-color: var(--blue-100);
+}
