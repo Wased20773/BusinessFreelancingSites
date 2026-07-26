@@ -1,7 +1,12 @@
 .sidebar-nav-links {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
     padding: 5px 12px;
-    border-radius: 6px;
     border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--gray-500);
 
     transition: 0.3s;
 }

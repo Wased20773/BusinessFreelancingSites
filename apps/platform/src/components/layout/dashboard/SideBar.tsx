@@ -1,58 +1,85 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import "@/components/layout/dashboard/SideBar.css"
-import Logo from "../../../../public/logo.svg"
+import "@/components/layout/dashboard/SideBar.css";
+import Logo from "../../../../public/logo.svg";
+import { usePathname } from "next/navigation";
+import { dashboardLinks } from "@/data/dashboardLinks";
+import PlaceHolderAccountBlack from "@/components/icons/placeholder-account-black.svg";
+import SettingsIconBlack from "@/components/icons/settings-black.svg";
 
-type SideBarProps = {
-    selected: string;
-}
+export default function SideBar() {
+    const pathname = usePathname();
 
-export default function SideBar({selected}: SideBarProps) {
+    const settingsSelected = pathname === "/dashboard/settings";
+
     return (
-        <aside className="border-r border-gray-300 grid grid-rows-[auto_1fr_auto] bg-white min-w-[250px]">
+        <aside className="hidden h-screen min-w-[250px] grid-rows-[auto_minmax(0,1fr)_auto] md:grid bg-white border-r border-gray-300">
             {/* Client Logo + Name */}
-            <div className="border-b border-gray-300 p-2 grid grid-cols-[auto_1fr] items-center">
-                <Image src={Logo} alt="Client logo" width={50} height={50}></Image>
-                <span className="font-bold">`Business-Name`</span>
+            <div className="border-b border-gray-300 p-2 grid grid-cols-[auto_1fr] items-center gap-1">
+                <Image
+                    src={Logo}
+                    alt="Client logo"
+                    width={50}
+                    height={50}
+                    loading="eager"
+                />
+                <span className="text-gray-900 font-semibold px-2">`Business-Name`</span>
             </div>
 
             {/* Navigation Links */}
-            <nav className="border-b border-gray-300 p-2">
+            <nav className="border-b border-gray-300 p-2 overflow-y-scroll min-h-0" aria-label="Dashboard Navigation">
                 <ul className="flex flex-col gap-1">
-                    <li className={["sidebar-nav-links", selected === "Overview" && "selected"].filter(Boolean).join(" ")}>
-                        <Link href={"/dashboard/"}>Overview</Link>
-                    </li>
-                    <li className={["sidebar-nav-links", selected === "Business" && "selected"].filter(Boolean).join(" ")}>
-                        <Link href={"/dashboard/business"}>Business</Link>
-                    </li>
-                    <li className={["sidebar-nav-links", selected === "Users" && "selected"].filter(Boolean).join(" ")}>
-                        <Link href={"/dashboard/users"}>Users</Link>
-                    </li>
-                    <li className={["sidebar-nav-links", selected === "Categories" && "selected"].filter(Boolean).join(" ")}>
-                        <Link href={"/dashboard/categories"}>Categories</Link>
-                    </li>
-                    <li className={["sidebar-nav-links", selected === "Locations" && "selected"].filter(Boolean).join(" ")}>
-                        <Link href={"/dashboard/locations"}>Locations</Link>
-                    </li>
-                    <li className={["sidebar-nav-links", selected === "Contacts" && "selected"].filter(Boolean).join(" ")}>
-                        <Link href={"/dashboard/contacts"}>Contacts</Link>
-                    </li>
-                    <li className={["sidebar-nav-links", selected === "Socials" && "selected"].filter(Boolean).join(" ")}>
-                        <Link href={"/dashboard/socials"}>Socials</Link>
-                    </li>
+                    {dashboardLinks.map((link) => {
+                        const isSelected = pathname === link.href;
+
+                        return (
+                            <li key={link.href}>
+                                <Link
+                                    href={link.href}
+                                    aria-current={isSelected ? "page" : undefined}
+                                    className={[
+                                        "sidebar-nav-links",
+                                        isSelected && "selected",
+                                    ].filter(Boolean).join(" ")}
+                                >
+                                    {link.name}
+                                </Link>
+                            </li>
+                        );
+                    })}
                 </ul>
             </nav>
 
             {/* Account */}
             <div className="flex flex-col p-2 gap-1">
-                <Link className={["sidebar-nav-links", selected === "Settings" && "selected"].filter(Boolean).join(" ")} href={"/dashboard/settings"}>
-                    `icon` Settings
+                <Link
+                    className={[
+                        "sidebar-nav-links",
+                        settingsSelected && "selected"].filter(Boolean).join(" ")}
+                    href={"/dashboard/settings"}>
+                    <Image
+                        src={SettingsIconBlack}
+                        alt="Settings icon"
+                        width={35}
+                        height={35}
+                        loading="eager"
+                    />
+                    <span>Settings</span>
                 </Link>
                 <div className="grid grid-cols-[auto_1fr] items-center">
-                    <Image src={Logo}  alt="Account profile" height={35} width={35}></Image>
-                    <div className="px-2">
-                        <span>`Name`</span>
-                        <span>`Role`</span>
+                    <Image
+                        className="border-[2px] border-gray-900 rounded-[50%] overflow-hidden"
+                        src={PlaceHolderAccountBlack}
+                        alt="Account profile"
+                        height={35}
+                        width={35}
+                        loading="eager"
+                    />
+                    <div className="flex flex-col px-2">
+                        <span className="text-gray-900">`Name`</span>
+                        <span className="text-gray-500">`Role`</span>
                     </div>
                 </div>
             </div>

@@ -198,39 +198,40 @@
             
                     - route_helper.ts
 
-                - dashboard/  
-                    - business/
-                        - page.tsx
+                - dashboard/
+                    - (protected)/
+                        - business/
+                            - page.tsx
+                            
+                        - categories/
+                            - page.tsx
                         
-                    - categories/
-                        - page.tsx
-                    
-                    - contacts/
-                        - page.tsx
+                        - contacts/
+                            - page.tsx
+                            
+                        - locations/
+                            - page.tsx
                         
-                    - locations/
+                        - settings/
+                            - page.tsx
+                        
+                        - socials/
+                            - page.tsx
+                            
+                        - users/
+                            - page.tsx
+
+                        - layout.tsx
                         - page.tsx
-                    
+
+                                
                     - login/
                         - page.tsx
-
-                    - settings/
-                        - page.tsx
-                      
-                    - socials/
-                        - page.tsx
-                        
-                    - users/
-                        - page.tsx
-
-                    - layout.tsx
-                    - page.tsx
 
                 - wireframes/
                     - MVP/
                         - platform-home.jpg
 
-                - favicon.ico
                 - globals.css
                 - layout.tsx
                 - page.tsx
@@ -240,15 +241,30 @@
                     - LoginButton.tsx
                     - SignOutButton.tsx
 
+                - icons/
+                    - burger-button.svg
+                    - exit-black.svg
+                    - exit-white.svg
+                    - placeholder-account-black.svg
+                    - placeholder-account-white.svg
+                    - settings-black.svg
+                    - settings-white.svg
+
                 - layout/
                     - dashboard/
+                        - MobileNavBar.css
+                        - MobileNavBar.tsx
+                        - SideBar.css
                         - SideBar.tsx
 
+                    - Footer.tsx
                     - Header.css
                     - Header.tsx
-                    - Footer.tsx
                 
                 - Card.tsx
+
+            - data/
+                - dashboardLinks.ts
 
             - lib/
                 - auth/
