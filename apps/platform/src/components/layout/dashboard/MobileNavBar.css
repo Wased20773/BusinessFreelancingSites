@@ -1,5 +1,5 @@
 .mobile-nav-group {
-    background: var(--gray-900);
+    background-color: var(--gray-900);
     position: absolute;
     left: 0;
     top: 0;
@@ -32,14 +32,14 @@
 .mobile-nav-link:focus {
     transition: 0.3s;
 
-    background: var(--gray-100);
+    background-color: var(--gray-100);
     color: var(--gray-900)
 }
 
 
 .mobile-nav-link.selected,
 .mobile-bottom-nav-link.selected {
-    background: var(--gray-100);
+    background-color: var(--gray-100);
     color: var(--gray-900);
 }
 
@@ -60,6 +60,6 @@
 .mobile-bottom-nav-link:focus {
     transition: 0.3s;
     
-    background: var(--gray-100);
+    background-color: var(--gray-100);
     color: var(--gray-900);
 }

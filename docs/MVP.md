@@ -1,7 +1,7 @@
 ---
 title: MVP
 
-last-verified: 2026-07-25
+last-verified: 2026-07-27
 status: planned
 ---
 
@@ -44,3 +44,7 @@ Each business remains a custom-built frontend with its own design, domain, brand
 - location based
   - rework how locations work and link them directly to items in a many-to-many relationship
   - same with hours, businessUser's, categories, and even contact
+- 3rd-party integration
+  - UberEats
+  - DoorDash
+  - Grubhub

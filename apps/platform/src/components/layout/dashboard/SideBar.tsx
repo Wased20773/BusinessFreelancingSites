@@ -15,7 +15,7 @@ export default function SideBar() {
     const settingsSelected = pathname === "/dashboard/settings";
 
     return (
-        <aside className="hidden h-screen min-w-[250px] grid-rows-[auto_minmax(0,1fr)_auto] md:grid bg-white border-r border-gray-300">
+        <aside className="hidden h-screen min-w-[250px] grid-rows-[auto_minmax(0,1fr)_auto] md:grid bg-gray-50 border-r border-gray-300">
             {/* Client Logo + Name */}
             <div className="border-b border-gray-300 p-2 grid grid-cols-[auto_1fr] items-center gap-1">
                 <Image

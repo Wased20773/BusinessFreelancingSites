@@ -1,12 +1,13 @@
 @import "tailwindcss";
 
 :root {
-    --blue-500: oklch(70.7% 0.165 254.624);
-    --blue-100: oklch(95.1% 0.026 236.824);
-    --gray-900: oklch(21% 0.034 264.665);
-    --gray-500: oklch(55.1% 0.027 264.364);
-    --gray-300: oklch(87.2% 0.01 258.338);
-    --gray-100: oklch(92.8% 0.006 264.531);
+  --blue-500: oklch(70.7% 0.165 254.624);
+  --blue-100: oklch(95.1% 0.026 236.824);
+  --gray-900: oklch(21% 0.034 264.665);
+  --gray-500: oklch(55.1% 0.027 264.364);
+  --gray-300: oklch(87.2% 0.01 258.338);
+  --gray-100: oklch(92.8% 0.006 264.531);
+  --gray-50: oklch(98.5% 0.002 247.839);
 }
 
 html {
@@ -34,5 +35,10 @@ h3 {
 }
 
 p {
-  line-height: 1.75rem;
+  line-height: 1.5rem;
+}
+
+button {
+  cursor: pointer;
+  transition: 0.3s;
 }
