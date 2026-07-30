@@ -168,7 +168,9 @@
                             - [socialId]
                                 - route.ts
 
-                            - route.ts    
+                            - route.ts
+
+                        - route.ts
 
                     - auth/
                         - [...nextauth]/
@@ -265,6 +267,7 @@
 
             - data/
                 - dashboardLinks.ts
+                - types.ts
 
             - lib/
                 - auth/
@@ -279,6 +282,7 @@
                     - keys.ts
                     - upload.ts
 
+                - getCurrentBusiness.ts
                 - prisma.ts
 
         - .gitignore

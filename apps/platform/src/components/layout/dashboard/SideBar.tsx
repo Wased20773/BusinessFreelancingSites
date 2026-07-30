@@ -2,22 +2,26 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import "@/components/layout/dashboard/SideBar.css";
+import "./SideBar.css";
 import Logo from "../../../../public/logo.svg";
 import { usePathname } from "next/navigation";
 import { dashboardLinks } from "@/data/dashboardLinks";
 import PlaceHolderAccountBlack from "@/components/icons/placeholder-account-black.svg";
 import SettingsIconBlack from "@/components/icons/settings-black.svg";
+import { DashboardNavProps } from "@/types/types";
 
-export default function SideBar() {
+export default function SideBar({
+  currentBusiness,
+  currentAccount,
+}: DashboardNavProps) {
   const pathname = usePathname();
 
   const settingsSelected = pathname === "/dashboard/settings";
 
   return (
-    <aside className="hidden h-screen min-w-[250px] grid-rows-[auto_minmax(0,1fr)_auto] md:grid bg-gray-50 border-r border-gray-300">
+    <aside className="hidden h-screen w-[250px] grid-rows-[auto_minmax(0,1fr)_auto] md:grid bg-gray-50 border-r border-gray-300">
       {/* Client Logo + Name */}
-      <div className="border-b border-gray-300 p-2 grid grid-cols-[auto_1fr] items-center gap-1">
+      <div className="border-b border-gray-300 p-2 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-1">
         <Image
           src={Logo}
           alt="Client logo"
@@ -25,8 +29,8 @@ export default function SideBar() {
           height={50}
           loading="eager"
         />
-        <span className="text-gray-900 font-semibold px-2">
-          `Business-Name`
+        <span className="min-w-0 text-gray-900 font-semibold px-2 truncate">
+          {currentBusiness.name}
         </span>
       </div>
 
@@ -76,7 +80,7 @@ export default function SideBar() {
           />
           <span>Settings</span>
         </Link>
-        <div className="grid grid-cols-[auto_1fr] items-center">
+        <div className="min-w-0 grid grid-cols-[auto_minmax(0,1fr)] items-center px-3 py-1">
           <Image
             className="border-[2px] border-gray-900 rounded-[50%] overflow-hidden"
             src={PlaceHolderAccountBlack}
@@ -85,9 +89,13 @@ export default function SideBar() {
             width={35}
             loading="eager"
           />
-          <div className="flex flex-col px-2">
-            <span className="text-gray-900">`Name`</span>
-            <span className="text-gray-500">`Role`</span>
+          <div className="min-w-0 flex flex-col px-2">
+            <span className="text-gray-900 truncate">
+              {currentAccount.name}
+            </span>
+            <span className="text-gray-500 truncate">
+              {currentAccount.accessLevel}
+            </span>
           </div>
         </div>
       </div>

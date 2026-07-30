@@ -12,7 +12,12 @@ import Logo from "../../../../public/logo.svg";
 import SettingsIconWhite from "@/components/icons/settings-white.svg";
 import SettingsIconBlack from "@/components/icons/settings-black.svg";
 import PlaceHolderAccountWhite from "@/components/icons/placeholder-account-white.svg";
-export default function MobileNavBar() {
+import { DashboardNavProps } from "@/types/types";
+
+export default function MobileNavBar({
+  currentBusiness,
+  currentAccount,
+}: DashboardNavProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const pathname = usePathname();
@@ -40,7 +45,9 @@ export default function MobileNavBar() {
 
       {/* Client Logo + Name */}
       <div className="flex flex-row items-center gap-3">
-        <span className="text-gray-900 font-semibold">Business Name</span>
+        <span className="text-gray-900 font-semibold">
+          {currentBusiness.name}
+        </span>
         <Image
           src={Logo}
           alt="Client Logo"
@@ -66,7 +73,9 @@ export default function MobileNavBar() {
               height={50}
               loading="eager"
             />
-            <span className="font-semibold text-gray-100">Business Name</span>
+            <span className="font-semibold text-gray-100">
+              {currentBusiness.name}
+            </span>
           </div>
 
           <button
@@ -166,9 +175,13 @@ export default function MobileNavBar() {
               height={40}
               loading="eager"
             />
-            <div className="flex flex-col px-2">
-              <span className="text-gray-300">`Name`</span>
-              <span className="text-gray-500">`Role`</span>
+            <div className="max-w-[150px] flex flex-col px-2">
+              <span className="text-gray-300 truncate">
+                {currentAccount.name}
+              </span>
+              <span className="text-gray-500 truncate">
+                {currentAccount.accessLevel}
+              </span>
             </div>
           </div>
         </div>
