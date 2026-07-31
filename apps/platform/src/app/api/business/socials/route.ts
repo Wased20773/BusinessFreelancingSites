@@ -1,25 +1,36 @@
-import { NextResponse } from 'next/server';
-import { getBusinessResponse, getSlug } from '../../route_helper';
+import { NextResponse } from "next/server";
+import {
+  authenticateBusinessReadAccess,
+  getBusinessResponse,
+} from "../../route_helper";
+import { AccessLevel } from "@business-freelancer/database";
 
 // GET /api/business/socials
 export async function GET(request: Request): Promise<NextResponse> {
-    const slug: string = getSlug(request);
+  const authentication = await authenticateBusinessReadAccess(request, [
+    AccessLevel.developer,
+    AccessLevel.owner,
+    AccessLevel.admin,
+    AccessLevel.staff,
+  ]);
 
-    return getBusinessResponse(
-        slug,
-        {
-            socials: {
-                select: {
-                    id: true,
-                    dns: true,
-                    profileName: true,
-                    url: true,
-                    icon: true,
-                    createdAt: true,
-                    updatedAt: true,
-                },
-            },
+  if (authentication instanceof NextResponse) return authentication;
+
+  return getBusinessResponse(
+    authentication.businessId,
+    {
+      socials: {
+        select: {
+          id: true,
+          dns: true,
+          profileName: true,
+          url: true,
+          icon: true,
+          createdAt: true,
+          updatedAt: true,
         },
-        "social"
-    );
+      },
+    },
+    "social",
+  );
 }

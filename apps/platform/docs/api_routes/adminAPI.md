@@ -2,6 +2,7 @@
 title: Admin API
 code-paths:
   - /platform/src/app/api/admin/account
+  - /platform/src/app/api/admin/api-keys
   - /platform/src/app/api/admin/business-user
   - /platform/src/app/api/admin/categories
   - /platform/src/app/api/admin/contacts
@@ -9,7 +10,7 @@ code-paths:
   - /platform/src/app/api/admin/locations
   - /platform/src/app/api/admin/socials
 
-last-verified: 2026-07-15
+last-verified: 2026-7-31
 status: planned
 ---
 
@@ -17,19 +18,21 @@ status: planned
 
 Used by the platform admin dashboard to create, update, and delete business data.
 
-These routes should require authentication and business access checks later.
+All routes require an authenticated Auth.js session and verify that the user belongs to the current business with the required access level before performing any operation.
 
 To view the full JSON return values per route, go to [Admin API Responses](../../docs/api_routes/response/adminAPI.md).
 
-For view the document of how the images are stored, flow, and designed you can go to [S3 Storage](../s3-storage.md)
+For the document describing how images are stored and managed, see [S3 Storage](../s3-storage.md).
 
-#### Query Params
+## Authentication
 
-All request require:
+All /api/admin API routes require:
 
-| Param | Type | Required | Example |
-| --- | --- | --- | --- |
-| slug | string | yes | tacos-el-guero |
+- A valid Auth.js session.
+- The authenticated user must belong to the current business.
+- The user's access level must satisfy the route's required permissions.
+
+The current business is determined from the authenticated session.
 
 ## Account
 
@@ -58,9 +61,9 @@ Fetches a user by email.
 
 #### Required Params
 
-| Param | Type | Required | Example |
-| --- | --- | --- | --- |
-| email | string | yes | `test@gmail.com` |
+| Param | Type   | Example          |
+| ----- | ------ | ---------------- |
+| email | string | `test@gmail.com` |
 
 #### Returns
 
@@ -86,6 +89,84 @@ Example request body:
   "username": "John123"
 }
 ```
+
+## API Keys
+
+### GET /api/admin/api-keys
+
+Fetches all Business API keys belonging to the authenticated user's current business.
+
+The full API key is never returned after creation. Only metadata used to identify the key is returned.
+
+#### Returns
+
+- ApiKeyId
+- Name
+- Key Prefix
+- Active Status
+- Created Date
+- Updated Date
+
+#### Used For
+
+- Developer Dashboard
+  - API Key Management
+
+### POST /api/admin/api-keys
+
+Creates a new Business API key for the authenticated user's current business.
+
+The generated API key is returned exactly once during creation. It cannot be retrieved again after this request.
+
+#### Security Notes
+
+Business API keys are intended for server-to-server communication only.
+
+The raw API key is shown only ONCE during creation and will not be viewable again. Store it securly before leaving the creation screen.
+
+For a client website, the key should be stored in your .env file like (but not strictly typed):
+
+```env
+BUSINESS_PLATFORM_API_KEY=bp_example_key_here
+```
+
+Example request body:
+
+> Creating a production API key
+
+```json
+{
+  "name": "Production Website"
+}
+```
+
+### PATCH /api/admin/api-keys/[apiKeyId]
+
+Updates a Business API key by its `apiKeyId`.
+
+#### Route Param Required
+
+| Param    | Type | Note                                           |
+| -------- | ---- | ---------------------------------------------- |
+| apiKeyId | UUID | The ID of the BusinessApiKey record to update. |
+
+Example request body:
+
+> Disable the specified apiKeyId
+
+```json
+{
+  "isActive": false
+}
+```
+
+### DELETE /api/admin/api-keys/[apiKeyId]
+
+Deletes a Business API key by its apiKeyId.
+
+Deleting a key permanently revokes access for any website currently using that credential.
+
+If you still need the key please use the PATCH request to update `isActive` to false.
 
 ## Business Users
 
@@ -134,9 +215,9 @@ This route only updates the role assigned to the BusinessUser record. It does no
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| businessUserId | UUID | Yes | The ID of the `BusinessUser` join record to update. |
+| Param          | Type | Note                                                |
+| -------------- | ---- | --------------------------------------------------- |
+| businessUserId | UUID | The ID of the `BusinessUser` join record to update. |
 
 Example request body:
 
@@ -158,9 +239,9 @@ When rendering the list of business users, attach the `businessUserId` to the de
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| businessUserId | UUID | Yes | The ID of the `BusinessUser` join record to delete. |
+| Param          | Type | Note                                                |
+| -------------- | ---- | --------------------------------------------------- |
+| businessUserId | UUID | The ID of the `BusinessUser` join record to delete. |
 
 ## Categories
 
@@ -185,9 +266,9 @@ Adds a subcategory row to an existing category through `categoryId` and add it a
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| categoryId | UUID | Yes | The ID of the `Category` record to insert the subcategory into. |
+| Param      | Type | Note                                                            |
+| ---------- | ---- | --------------------------------------------------------------- |
+| categoryId | UUID | The ID of the `Category` record to insert the subcategory into. |
 
 Example request body:
 
@@ -206,9 +287,9 @@ Updates a category row by its `categoryId`. This cannot update the order value. 
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| categoryId | UUID | Yes | The ID of the `Category` record to update. |
+| Param      | Type | Note                                       |
+| ---------- | ---- | ------------------------------------------ |
+| categoryId | UUID | The ID of the `Category` record to update. |
 
 Example request body:
 
@@ -244,9 +325,9 @@ If `Orders` moves up, it swaps order values with `Drinks`.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| categoryId | UUID | Yes | The ID of the `Category` record to "move up". |
+| Param      | Type | Note                                          |
+| ---------- | ---- | --------------------------------------------- |
+| categoryId | UUID | The ID of the `Category` record to "move up". |
 
 No body request
 
@@ -274,9 +355,9 @@ If `Orders` moves down, it swaps order values with `Toppings`.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| categoryId | UUID | Yes | The ID of the `Category` record to "move down". |
+| Param      | Type | Note                                            |
+| ---------- | ---- | ----------------------------------------------- |
+| categoryId | UUID | The ID of the `Category` record to "move down". |
 
 No body request
 
@@ -286,9 +367,9 @@ Deletes a category row by its `categoryId`.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| categoryId | UUID | Yes | The ID of the `Category` record to delete. |
+| Param      | Type | Note                                       |
+| ---------- | ---- | ------------------------------------------ |
+| categoryId | UUID | The ID of the `Category` record to delete. |
 
 Deletion of a category is only possible when there are no items attached to it.
 
@@ -302,9 +383,9 @@ A Category can exist without items, but an item can't exist without being attach
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| categoryId | UUID | Yes | The ID of the `Category` record to insert the new item into. |
+| Param      | Type | Note                                                         |
+| ---------- | ---- | ------------------------------------------------------------ |
+| categoryId | UUID | The ID of the `Category` record to insert the new item into. |
 
 Example request body:
 
@@ -324,10 +405,10 @@ Moves an item one position up within its current category.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| categoryId | UUID | Yes | The ID of the `Category` record where the item is located. |
-| itemId | UUID | Yes | The Id of the `Item` record to "move up" |
+| Param      | Type | Note                                                       |
+| ---------- | ---- | ---------------------------------------------------------- |
+| categoryId | UUID | The ID of the `Category` record where the item is located. |
+| itemId     | UUID | The Id of the `Item` record to "move up"                   |
 
 No body request
 
@@ -337,10 +418,10 @@ Moves an item one position down within its current category.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| categoryId | UUID | Yes | The ID of the `Category` record where the item is located. |
-| itemId | UUID | Yes | The Id of the `Item` record to "move down" |
+| Param      | Type | Note                                                       |
+| ---------- | ---- | ---------------------------------------------------------- |
+| categoryId | UUID | The ID of the `Category` record where the item is located. |
+| itemId     | UUID | The Id of the `Item` record to "move down"                 |
 
 No body request
 
@@ -354,9 +435,9 @@ This does not allow for order, slug, or imageKey to be updated. These are handle
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| itemId | UUID | Yes | The ID of the `Item` record to update. |
+| Param  | Type | Note                                   |
+| ------ | ---- | -------------------------------------- |
+| itemId | UUID | The ID of the `Item` record to update. |
 
 Example request body:
 
@@ -376,16 +457,16 @@ Image uploads must be 2 MB or less to upload. If an image is uploaded to an item
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| itemId | UUID | Yes | The ID of the `Item` record to add the image for. |
+| Param  | Type | Note                                              |
+| ------ | ---- | ------------------------------------------------- |
+| itemId | UUID | The ID of the `Item` record to add the image for. |
 
 Example request multipart/form-data body:
 
 > Adding an image to an item
 
-| Key | Value |
-| --- | --- |
+| Key         | Value             |
+| ----------- | ----------------- |
 | image: File | Image Upload Path |
 
 ### PATCH /api/admin/items/[itemId]/image
@@ -396,16 +477,16 @@ This route accepts an image file upload. The admin does not send an `imageKey` m
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| itemId | UUID | Yes | The ID of the `Item` record to update the image for. |
+| Param  | Type | Note                                                 |
+| ------ | ---- | ---------------------------------------------------- |
+| itemId | UUID | The ID of the `Item` record to update the image for. |
 
 Example request multipart/form-data body:
 
 > Replacing an item's image
 
-| Key | Value |
-| --- | --- |
+| Key         | Value             |
+| ----------- | ----------------- |
 | image: File | Image Upload Path |
 
 ### DELETE /api/admin/items/[itemId]/image
@@ -414,9 +495,9 @@ Deletes the image for an item by its `itemId`.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| itemId | UUID | Yes | The ID of the `Item` record to delete the image for. |
+| Param  | Type | Note                                                 |
+| ------ | ---- | ---------------------------------------------------- |
+| itemId | UUID | The ID of the `Item` record to delete the image for. |
 
 No body request.
 
@@ -430,9 +511,9 @@ No body request.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| itemId | UUID | Yes | The ID of the `Item` record to delete. |
+| Param  | Type | Note                                   |
+| ------ | ---- | -------------------------------------- |
+| itemId | UUID | The ID of the `Item` record to delete. |
 
 ## Item Options
 
@@ -442,9 +523,9 @@ Adds an option row to the item by `itemId`.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| itemId | UUID | Yes | The ID of the `Item` record to add the option to. |
+| Param  | Type | Note                                              |
+| ------ | ---- | ------------------------------------------------- |
+| itemId | UUID | The ID of the `Item` record to add the option to. |
 
 Example request body:
 
@@ -463,10 +544,10 @@ Updates an item option row by its `optionId`.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| itemId | UUID | Yes | The ID of the `Item` record where the option is located. |
-| optionId | UUID | Yes | The Id of the `ItemOption` record to update |
+| Param    | Type | Note                                                     |
+| -------- | ---- | -------------------------------------------------------- |
+| itemId   | UUID | The ID of the `Item` record where the option is located. |
+| optionId | UUID | The Id of the `ItemOption` record to update              |
 
 Example request body:
 
@@ -484,10 +565,10 @@ Moves an item option one position up within its current item.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| itemId | UUID | Yes | The ID of the `Item` record where the option is located. |
-| optionId | UUID | Yes | The Id of the `ItemOption` record to "move up" |
+| Param    | Type | Note                                                     |
+| -------- | ---- | -------------------------------------------------------- |
+| itemId   | UUID | The ID of the `Item` record where the option is located. |
+| optionId | UUID | The Id of the `ItemOption` record to "move up"           |
 
 No body request
 
@@ -497,10 +578,10 @@ Moves an item option one position down within its current item.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| itemId | UUID | Yes | The ID of the `Item` record where the option is located. |
-| optionId | UUID | Yes | The Id of the `ItemOption` record to move down |
+| Param    | Type | Note                                                     |
+| -------- | ---- | -------------------------------------------------------- |
+| itemId   | UUID | The ID of the `Item` record where the option is located. |
+| optionId | UUID | The Id of the `ItemOption` record to move down           |
 
 No body request
 
@@ -510,10 +591,10 @@ Deletes an item option row by its `optionId`.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| itemId | UUID | Yes | The ID of the `Item` record where the option is located. |
-| optionId | UUID | Yes | The Id of the `ItemOption` record to move down |
+| Param    | Type | Note                                                     |
+| -------- | ---- | -------------------------------------------------------- |
+| itemId   | UUID | The ID of the `Item` record where the option is located. |
+| optionId | UUID | The Id of the `ItemOption` record to move down           |
 
 no body request.
 
@@ -540,9 +621,9 @@ Updates a contact row by its `contactId`.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| contactId | UUID | Yes | The ID of the `Contact` record to update. |
+| Param     | Type | Note                                      |
+| --------- | ---- | ----------------------------------------- |
+| contactId | UUID | The ID of the `Contact` record to update. |
 
 Example request body:
 
@@ -560,9 +641,9 @@ Deletes a contact row by its `contactId`.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| contactId | UUID | Yes | The ID of the `Contact` record to delete. |
+| Param     | Type | Note                                      |
+| --------- | ---- | ----------------------------------------- |
+| contactId | UUID | The ID of the `Contact` record to delete. |
 
 No body request.
 
@@ -592,9 +673,9 @@ Updates a social row by its `socialId`.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| socialId | UUID | Yes | The ID of the `Social` record to update. |
+| Param    | Type | Note                                     |
+| -------- | ---- | ---------------------------------------- |
+| socialId | UUID | The ID of the `Social` record to update. |
 
 Example request body:
 
@@ -612,9 +693,9 @@ Deletes a social row by its `socialId`.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| socialId | UUID | Yes | The ID of the `Social` record to delete. |
+| Param    | Type | Note                                     |
+| -------- | ---- | ---------------------------------------- |
+| socialId | UUID | The ID of the `Social` record to delete. |
 
 No body request.
 
@@ -641,9 +722,9 @@ Updates a location row by its `locationId`.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| locationId | UUID | Yes | The ID of the `Location` record to update. |
+| Param      | Type | Note                                       |
+| ---------- | ---- | ------------------------------------------ |
+| locationId | UUID | The ID of the `Location` record to update. |
 
 Example request body:
 
@@ -661,9 +742,9 @@ Deletes a location row by its `locationId`.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| locationId | UUID | Yes | The ID of the `Location` record to delete. |
+| Param      | Type | Note                                       |
+| ---------- | ---- | ------------------------------------------ |
+| locationId | UUID | The ID of the `Location` record to delete. |
 
 When deleting a location, all location hours will also be deleted. Warn the user before allowing the action
 
@@ -677,9 +758,9 @@ A location does not need location days, this is to help with the frontend to dis
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| locationId | UUID | Yes | The ID of the `Location` record to insert the the new day record. |
+| Param      | Type | Note                                                              |
+| ---------- | ---- | ----------------------------------------------------------------- |
+| locationId | UUID | The ID of the `Location` record to insert the the new day record. |
 
 Example request body:
 
@@ -697,10 +778,10 @@ Updates a locations day row contents by its `dayId`.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| locationId | UUID | Yes | The ID of the `Location` record where the day is located. |
-| dayId | UUID | Yes | The ID of the `LocationDay` record to update. |
+| Param      | Type | Note                                                      |
+| ---------- | ---- | --------------------------------------------------------- |
+| locationId | UUID | The ID of the `Location` record where the day is located. |
+| dayId      | UUID | The ID of the `LocationDay` record to update.             |
 
 Example request body:
 
@@ -720,10 +801,10 @@ When deleting a locations day, all location hours will also be deleted. Warn the
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| locationId | UUID | Yes | The ID of the `Location` record where the day is located. |
-| dayId | UUID | Yes | The ID of the `LocationDay` record to delete. |
+| Param      | Type | Note                                                      |
+| ---------- | ---- | --------------------------------------------------------- |
+| locationId | UUID | The ID of the `Location` record where the day is located. |
+| dayId      | UUID | The ID of the `LocationDay` record to delete.             |
 
 No body request.
 
@@ -737,10 +818,10 @@ Hours are not required to present a days availability (you can turn on and off t
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| locationId | UUID | Yes | The ID of the `Location` record where the day is located. |
-| dayId | UUID | Yes | The ID of the `LocationDay` record to add the hour record. |
+| Param      | Type | Note                                                       |
+| ---------- | ---- | ---------------------------------------------------------- |
+| locationId | UUID | The ID of the `Location` record where the day is located.  |
+| dayId      | UUID | The ID of the `LocationDay` record to add the hour record. |
 
 Example request body:
 
@@ -761,11 +842,11 @@ Updates an hours contents by its `hourId`.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| locationId | UUID | Yes | The ID of the `Location` record where the day is located. |
-| dayId | UUID | Yes | The ID of the `LocationDay` record where the hour is located. |
-| hourId | UUID | Yes | The ID of the `Hour` record to update. |
+| Param      | Type | Note                                                          |
+| ---------- | ---- | ------------------------------------------------------------- |
+| locationId | UUID | The ID of the `Location` record where the day is located.     |
+| dayId      | UUID | The ID of the `LocationDay` record where the hour is located. |
+| hourId     | UUID | The ID of the `Hour` record to update.                        |
 
 Example request body:
 
@@ -783,9 +864,8 @@ Delete an hour row by its `hourId`.
 
 #### Route Param Required
 
-| Param | Type | Required | Note |
-| --- | --- | --- | --- |
-| locationId | UUID | Yes | The ID of the `Location` record where the day is located. |
-| dayId | UUID | Yes | The ID of the `LocationDay` record where the hour is located. |
-| hourId | UUID | Yes | The ID of the `Hour` record to delete. |
-
+| Param      | Type | Note                                                          |
+| ---------- | ---- | ------------------------------------------------------------- |
+| locationId | UUID | The ID of the `Location` record where the day is located.     |
+| dayId      | UUID | The ID of the `LocationDay` record where the hour is located. |
+| hourId     | UUID | The ID of the `Hour` record to delete.                        |

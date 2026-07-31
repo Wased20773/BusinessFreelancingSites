@@ -12,18 +12,7 @@ last-verified: 2026-07-14
 status: planned
 ---
 
-
 # Public API JSON Response Structure
-
-## Response Rules
-
-Public routes should only return the data needed for the page or component using the route.
-
-Avoid returning unrelated relationship data from a single route. For example, the business route should not also return contacts, socials, locations, and menu data.
-
-Public routes are read-only. They should not create, update, or delete database records.
-
----
 
 ## Business
 
@@ -31,10 +20,10 @@ Public routes are read-only. They should not create, update, or delete database 
 
 ```json
 {
-    "id": "UUID",
-    "name": "String",
-    "slug": "String",
-    "domain": "String | null"
+  "id": "UUID",
+  "name": "String",
+  "slug": "String",
+  "domain": "String | null"
 }
 ```
 
@@ -46,14 +35,14 @@ Public routes are read-only. They should not create, update, or delete database 
 
 ```json
 {
-    "contacts": [
-        {
-            "id": "UUID",
-            "phoneNumber": "String | null",
-            "email": "String | null",
-            "isPersonal": "Boolean"
-        }
-    ]
+  "contacts": [
+    {
+      "id": "UUID",
+      "phoneNumber": "String | null",
+      "email": "String | null",
+      "isPersonal": "Boolean"
+    }
+  ]
 }
 ```
 
@@ -65,15 +54,15 @@ Public routes are read-only. They should not create, update, or delete database 
 
 ```json
 {
-    "socials": [
-        {
-            "id": "UUID",
-            "name": "String",
-            "profileName": "String",
-            "url": "String",
-            "icon": "String"
-        }
-    ]
+  "socials": [
+    {
+      "id": "UUID",
+      "name": "String",
+      "profileName": "String",
+      "url": "String",
+      "icon": "String"
+    }
+  ]
 }
 ```
 
@@ -85,28 +74,28 @@ Public routes are read-only. They should not create, update, or delete database 
 
 ```json
 {
-    "locations": [
+  "locations": [
+    {
+      "id": "UUID",
+      "address": "String",
+      "zip": "String | null",
+      "country": "String | null",
+      "state": "String | null",
+      "city": "String | null",
+      "parking": "Boolean",
+      "isActive": "Boolean",
+      "hours": [
         {
-            "id": "UUID",
-            "address": "String",
-            "zip": "String | null",
-            "country": "String | null",
-            "state": "String | null",
-            "city": "String | null",
-            "parking": "Boolean",
-            "isActive": "Boolean",
-            "hours": [
-                {
-                    "id": "UUID",
-                    "locationId": "UUID",
-                    "dayOfWeek": "String",
-                    "openTime": "String | null",
-                    "closeTime": "String | null",
-                    "isClosed": "Boolean"
-                }
-            ]
+          "id": "UUID",
+          "locationId": "UUID",
+          "dayOfWeek": "String",
+          "openTime": "String | null",
+          "closeTime": "String | null",
+          "isClosed": "Boolean"
         }
-    ]
+      ]
+    }
+  ]
 }
 ```
 
@@ -118,42 +107,42 @@ Public routes are read-only. They should not create, update, or delete database 
 
 ```json
 {
-    "categories": [
+  "categories": [
+    {
+      "id": "UUID",
+      "name": "String",
+      "description": "String | null",
+      "order": "Int",
+      "isVisible": "Boolean",
+      "items": [
         {
-            "id": "UUID",
-            "name": "String",
-            "description": "String | null",
-            "order": "Int",
-            "isVisible": "Boolean",
-            "items": [
-                {
-                    "id": "UUID",
-                    "categoryId": "UUID",
-                    "name": "String",
-                    "description": "String | null",
-                    "containsList": "String[]",
-                    "calories": "Int | null",
-                    "price": "Decimal | null",
-                    "order": "Int",
-                    "isAvailable": "Boolean",
-                    "slug": "String",
-                    "imageKey": "String | null",
-                    "createdAt": "DateTime",
-                    "updatedAt": "DateTime",
-                    "options": [
-                        {
-                            "id": "UUID",
-                            "itemId": "UUID",
-                            "name": "String",
-                            "price": "Decimal",
-                            "order": "Int",
-                            "isAvailable": "Boolean"
-                        }
-                    ]
-                }
-            ]
+          "id": "UUID",
+          "categoryId": "UUID",
+          "name": "String",
+          "description": "String | null",
+          "containsList": "String[]",
+          "calories": "Int | null",
+          "price": "Decimal | null",
+          "order": "Int",
+          "isAvailable": "Boolean",
+          "slug": "String",
+          "imageKey": "String | null",
+          "createdAt": "DateTime",
+          "updatedAt": "DateTime",
+          "options": [
+            {
+              "id": "UUID",
+              "itemId": "UUID",
+              "name": "String",
+              "price": "Decimal",
+              "order": "Int",
+              "isAvailable": "Boolean"
+            }
+          ]
         }
-    ]
+      ]
+    }
+  ]
 }
 ```
 
@@ -165,26 +154,26 @@ Public routes are read-only. They should not create, update, or delete database 
 
 ```json
 {
-    "id": "UUID",
-    "categoryId": "UUID",
-    "name": "String",
-    "description": "String | null",
-    "containsList": "String[]",
-    "calories": "Int | null",
-    "price": "Decimal | null",
-    "order": "Int",
-    "isAvailable": "Boolean",
-    "slug": "String",
-    "imageKey": "String | null",
-    "options": [
-        {
-            "id": "UUID",
-            "itemId": "UUID",
-            "name": "String",
-            "price": "Decimal",
-            "order": "Int",
-            "isAvailable": "Boolean"
-        }
-    ]
+  "id": "UUID",
+  "categoryId": "UUID",
+  "name": "String",
+  "description": "String | null",
+  "containsList": "String[]",
+  "calories": "Int | null",
+  "price": "Decimal | null",
+  "order": "Int",
+  "isAvailable": "Boolean",
+  "slug": "String",
+  "imageKey": "String | null",
+  "options": [
+    {
+      "id": "UUID",
+      "itemId": "UUID",
+      "name": "String",
+      "price": "Decimal",
+      "order": "Int",
+      "isAvailable": "Boolean"
+    }
+  ]
 }
 ```

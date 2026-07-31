@@ -8,7 +8,7 @@ code-paths:
   - apps/platform/src/app/api/business/socials
   - apps/platform/src/app/api/business/route.ts
 
-last-verified: 2026-07-14
+last-verified: 2026-07-31
 status: planned
 ---
 
@@ -24,9 +24,9 @@ To view the full JSON return value types per route, go to [docs/api_routes/respo
 
 All request require:
 
-| Param | Type | Required | Example |
-| --- | --- | --- | --- |
-| slug | string | yes | tacos-el-guero |
+| Param | Type   | Required | Example        |
+| ----- | ------ | -------- | -------------- |
+| slug  | string | yes      | tacos-el-guero |
 
 ## Business
 
@@ -146,11 +146,11 @@ Fetches one public menu item by its item slug.
 
 This route is only needed if the public business site has individual item detail pages.
 
-#### Route Params
+#### Required Route Params
 
-| Param | Type | Required | Example |
-| --- | --- | --- | --- |
-| itemSlug | string | yes | each-taco |
+| Param    | Type   | Example   |
+| -------- | ------ | --------- |
+| itemSlug | string | each-taco |
 
 #### Returns
 

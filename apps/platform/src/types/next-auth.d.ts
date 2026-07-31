@@ -7,7 +7,7 @@ declare module "next-auth" {
       businessId?: string;
       businessSlug?: string;
       businessName?: string;
-      accessLevel?: "owner" | "admin" | "staff";
+      accessLevel?: "developer" | "owner" | "admin" | "staff";
     } & DefaultSession["user"];
   }
 }
@@ -18,7 +18,7 @@ declare module "next-auth/jwt" {
     businessId?: string;
     businessSlug?: string;
     businessName?: string;
-    accessLevel?: "owner" | "admin" | "staff";
+    accessLevel?: "developer" | "owner" | "admin" | "staff";
   }
 }
 

@@ -27,7 +27,7 @@ export type DashboardNavBusiness = {
  */
 export type DashboardNavAccount = {
   name: string | null | undefined;
-  accessLevel: "owner" | "admin" | "staff";
+  accessLevel: "developer" | "owner" | "admin" | "staff";
 };
 
 /*

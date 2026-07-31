@@ -8,7 +8,7 @@ type BusinessToken = {
   businessId?: string;
   businessSlug?: string;
   businessName?: string;
-  accessLevel?: "owner" | "admin" | "staff";
+  accessLevel?: "developer" | "owner" | "admin" | "staff";
 };
 
 /**
