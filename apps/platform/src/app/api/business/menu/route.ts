@@ -1,7 +1,5 @@
-import {
-  authenticateBusinessReadAccess,
-  getBusinessResponse,
-} from "../../route_helper";
+import { getBusinessResponse } from "../../route_helper";
+import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
 import { NextResponse } from "next/server";
 import { AccessLevel } from "@business-freelancer/database";
 

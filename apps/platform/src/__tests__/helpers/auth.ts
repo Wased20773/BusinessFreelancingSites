@@ -1,16 +1,15 @@
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 
-const mockedAuthenticateBusinessAccess =
-    jest.mocked(authenticateBusinessAccess);
+const mockedAuthenticateBusinessAccess = jest.mocked(
+  authenticateBusinessAccess,
+);
 
 export function mockSuccessfulAuthentication(
-    businessId = "business-123",
-    userId = "user-123",
-    slug = "business-slug"
+  businessId = "business-123",
+  userId = "user-123",
 ): void {
-    mockedAuthenticateBusinessAccess.mockResolvedValue({
-        userId,
-        businessId,
-        slug,
-    } as never);
+  mockedAuthenticateBusinessAccess.mockResolvedValue({
+    userId,
+    businessId,
+  } as never);
 }

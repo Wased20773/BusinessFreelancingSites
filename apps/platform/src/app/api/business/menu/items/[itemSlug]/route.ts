@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
-import { authenticateBusinessReadAccess } from "@/app/api/route_helper";
+import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
 
 // GET /api/business/menu/items/[itemSlug]
-export async function GET(request: Request): Promise<NextResponse> {
+export async function GET(
+  request: Request,
+  params: Promise<{
+    itemSlug: string;
+  }>,
+): Promise<NextResponse> {
   try {
     const authentication = await authenticateBusinessReadAccess(request, [
       AccessLevel.developer,
@@ -15,11 +20,16 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     if (authentication instanceof NextResponse) return authentication;
 
+    const { itemSlug } = await params;
+
+    if (!itemSlug) {
+      return NextResponse.json({ error: "Missing item slug" }, { status: 400 });
+    }
+
     const item = await prisma.item.findFirst({
       where: {
-        business: {
-          id: authentication.businessId,
-        },
+        businessId: authentication.businessId,
+        slug: itemSlug,
       },
       select: {
         id: true,

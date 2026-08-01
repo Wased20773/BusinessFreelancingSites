@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import {
-  authenticateBusinessReadAccess,
-  getBusinessResponse,
-} from "../../route_helper";
+import { getBusinessResponse } from "../../route_helper";
+import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
 import { AccessLevel } from "@business-freelancer/database";
 
 // GET /api/business/locations
