@@ -29,6 +29,10 @@
                         - account/
                             - account.test.ts
 
+                        - api-keys/
+                            - api-key.test.ts
+                            - api-keys.test.ts
+
                         - business-users/
                             - business-users.test.ts
 
@@ -73,6 +77,13 @@
                     - route.ts
 
                 - lib/
+                    - api-keys/
+                        - authenticateBusinessApiKey.test.ts
+
+                    - auth/
+                        - authenticateBusinessAccess.test.ts
+                        - authenticateBusinessReadAccess.test.ts
+
                     - images/
                         - process.test.ts
 
@@ -293,6 +304,7 @@
 
                 - auth/
                     - authenticateBusinessAccess.ts
+                    - authenticateBusinessReadAccess.ts
 
                 - images/
                     - process.ts
