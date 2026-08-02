@@ -87,6 +87,12 @@
                                 - route.ts
 
                             route.ts
+
+                        - api-keys/
+                            - [apiKeyId]/
+                                - route.ts
+                            
+                            - route.ts
                         
                         - business-users/
                             - [businessUserId]/
@@ -168,7 +174,9 @@
                             - [socialId]
                                 - route.ts
 
-                            - route.ts    
+                            - route.ts
+
+                        - route.ts
 
                     - auth/
                         - [...nextauth]/
@@ -219,9 +227,19 @@
                             - page.tsx
                             
                         - users/
+                            - [userId]/
+                                - page.tsx
+                            
+                            - access-level/
+                                - page.tsx
+
+                            - search/
+                                - page.tsx
+                            
                             - page.tsx
 
                         - layout.tsx
+                        - page.css
                         - page.tsx
 
                                 
@@ -265,8 +283,14 @@
 
             - data/
                 - dashboardLinks.ts
+                - types.ts
 
             - lib/
+                - api-keys/
+                    - authenticateBusinessApiKey.ts
+                    - createBusinessApiKey.ts
+                    - generateBusinessApiKey.ts
+
                 - auth/
                     - authenticateBusinessAccess.ts
 
@@ -280,6 +304,10 @@
                     - upload.ts
 
                 - prisma.ts
+
+            - types/
+                - next-auth.d.ts
+                - types.ts
 
         - .gitignore
         - AGENTS.md
@@ -334,6 +362,7 @@
             - schema.prisma
 
         - scripts/
+            - businessApiKey-seed.ts
             - demo_seed.ts
             - role-seed.ts
             - seed_helper.ts

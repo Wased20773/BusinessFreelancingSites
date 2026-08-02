@@ -9,60 +9,77 @@ const prisma = new PrismaClient({
   }),
 });
 
-
 async function main() {
-    // ################################
-    // ##### Create Access Levels #####
-    // ################################
-    let ownerRole = await prisma.role.findFirst({
-        where: { accessLevel: "owner" },
+  // ################################
+  // ##### Create Access Levels #####
+  // ################################
+  let developerRole = await prisma.role.findFirst({
+    where: { accessLevel: "developer" },
+  });
+  let ownerRole = await prisma.role.findFirst({
+    where: { accessLevel: "owner" },
+  });
+  let adminRole = await prisma.role.findFirst({
+    where: { accessLevel: "admin" },
+  });
+  let staffRole = await prisma.role.findFirst({
+    where: { accessLevel: "staff" },
+  });
+
+  if (!developerRole) {
+    developerRole = await prisma.role.create({
+      data: {
+        accessLevel: "developer",
+        description:
+          "Responsible for the technical integration of the business website. Can create, view, rotate, deactivate, and delete Business API keys used by the website.",
+      },
     });
-    let adminRole = await prisma.role.findFirst({
-        where: { accessLevel: "admin"}
-    })
-    let staffRole = await prisma.role.findFirst({
-        where: { accessLevel: "staff"}
-    })
+    console.log("[+] Inserted developer role");
+  }
 
-    if (!ownerRole) {
-        ownerRole = await prisma.role.create({
-            data: {
-                accessLevel: "owner",
-                description: "Full business-level access. Can add, update, and change business content, manage users/roles, and transfer ownership.",
-            },
-        });
-        console.log("[+] Inserted owner role");
-    }
+  if (!ownerRole) {
+    ownerRole = await prisma.role.create({
+      data: {
+        accessLevel: "owner",
+        description:
+          "Full business-level access. Can add, update, and change business content, manage users/roles, and transfer ownership.",
+      },
+    });
+    console.log("[+] Inserted owner role");
+  }
 
+  if (!adminRole) {
+    adminRole = await prisma.role.create({
+      data: {
+        accessLevel: "admin",
+        description:
+          "Can add, update, and delete business content. Can manage general user information, but cannot remove an owner, or transfer ownership.",
+      },
+    });
+    console.log("[+] Inserted admin role");
+  }
 
-    if (!adminRole) {
-        adminRole = await prisma.role.create({
-            data: {
-                accessLevel: "admin",
-                description: "Can add, update, and delete business content. Can manage general user information, but cannot remove an owner, or transfer ownership."
-            }
-        });
-        console.log("[+] Inserted admin role");
-    }
+  if (!staffRole) {
+    staffRole = await prisma.role.create({
+      data: {
+        accessLevel: "staff",
+        description:
+          "View-only access. Can view business information but cannot add, update, or delete business content. Free to update their credentials but not role.",
+      },
+    });
+    console.log("[+] Inserted staff role");
+  }
 
-    if (!staffRole) {
-        staffRole = await prisma.role.create({
-            data: {
-                accessLevel: "staff",
-                description: "View-only access. Can view business information but cannot add, update, or delete business content. Free to update their credentials but not role."
-            }
-        });
-        console.log("[+] Inserted staff role");
-    }
-    
-    // ########## End ##########
+  // ########## End ##########
 
-    console.log("Role's seeded successfully.");
+  console.log("Role's seeded successfully.");
 }
 
 main()
-    .catch((error) => {
-        console.error("Seed failed:", error);
-        process.exit(1);
-    })
-    .finally(async () => { await prisma.$disconnect() });
+  .catch((error) => {
+    console.error("Seed failed:", error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

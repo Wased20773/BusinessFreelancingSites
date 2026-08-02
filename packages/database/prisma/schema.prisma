@@ -13,6 +13,7 @@ datasource db {
 }
 
 enum AccessLevel {
+  developer
   owner
   admin
   staff
@@ -26,6 +27,24 @@ enum DayOfWeek {
   Friday
   Saturday
   Sunday
+}
+
+model BusinessApiKey {
+  id         String @id @default(uuid())
+  businessId String
+
+  name      String
+  keyHash   String @unique
+  keyPrefix String
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
 }
 
 model Business {
@@ -42,6 +61,8 @@ model Business {
   socials    Social[]
   locations  Location[]
   items      Item[]
+
+  apiKeys BusinessApiKey[]
 }
 
 model User {

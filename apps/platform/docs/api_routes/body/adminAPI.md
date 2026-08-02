@@ -2,6 +2,7 @@
 title: Admin API
 code-paths:
   - /platform/src/api/admin/account
+  - /platform/src/api/admin/api-keys
   - /platform/src/api/admin/business-user
   - /platform/src/api/admin/categories
   - /platform/src/api/admin/contacts
@@ -9,7 +10,7 @@ code-paths:
   - /platform/src/api/admin/locations
   - /platform/src/api/admin/socials
 
-last-verified: 2026-07-15
+last-verified: 2026-07-31
 status: planned
 ---
 
@@ -29,10 +30,39 @@ No request body.
 
 ```json
 {
-    "name": "String | null",
-    "username": "String | null"
+  "name": "String | null",
+  "username": "String | null"
 }
 ```
+
+## API Keys
+
+### GET /api/admin/api-keys
+
+No request body.
+
+### POST /api/admin/api-keys
+
+```json
+{
+  "name": "String"
+}
+```
+
+### PATCH /api/admin/api-keys/[apiKeyId]
+
+```json
+{
+  "name": "String",
+  "isActive": "Boolean"
+}
+```
+
+Both fields are optional, but at least one must be provided.
+
+### DELETE /api/admin/api-keys/[apiKeyId]
+
+No request body.
 
 ## Business Users
 
@@ -44,8 +74,8 @@ No request body.
 
 ```json
 {
-    "email": "String",
-    "accessLevel": "owner | admin | staff"
+  "email": "String",
+  "accessLevel": "owner | admin | staff"
 }
 ```
 
@@ -53,7 +83,7 @@ No request body.
 
 ```json
 {
-    "accessLevel": "owner | admin | staff"
+  "accessLevel": "owner | admin | staff"
 }
 ```
 
@@ -67,8 +97,8 @@ No request body.
 
 ```json
 {
-    "name": "String",
-    "description": "String | null"
+  "name": "String",
+  "description": "String | null"
 }
 ```
 
@@ -76,8 +106,8 @@ No request body.
 
 ```json
 {
-    "name": "String",
-    "description": "String | null"
+  "name": "String",
+  "description": "String | null"
 }
 ```
 
@@ -85,9 +115,9 @@ No request body.
 
 ```json
 {
-    "name": "String",
-    "description": "String | null",
-    "isVisible": "Boolean"
+  "name": "String",
+  "description": "String | null",
+  "isVisible": "Boolean"
 }
 ```
 
@@ -109,14 +139,14 @@ No request body.
 
 ```json
 {
-    "name": "String",
-    "description": "String | null",
-    "containsList": "String[]",
-    "calories": "Int | null",
-    "price": "Decimal | null",
-    "isAvailable": "Boolean",
-    "slug": "String",
-    "imageKey": "String"
+  "name": "String",
+  "description": "String | null",
+  "containsList": "String[]",
+  "calories": "Int | null",
+  "price": "Decimal | null",
+  "isAvailable": "Boolean",
+  "slug": "String",
+  "imageKey": "String"
 }
 ```
 
@@ -126,12 +156,12 @@ No request body.
 
 ```json
 {
-    "name": "String",
-    "description": "String | null",
-    "containsList": "String[]",
-    "calories": "Int | null",
-    "price": "Decimal | null",
-    "isAvailable": "Boolean"
+  "name": "String",
+  "description": "String | null",
+  "containsList": "String[]",
+  "calories": "Int | null",
+  "price": "Decimal | null",
+  "isAvailable": "Boolean"
 }
 ```
 
@@ -163,8 +193,8 @@ No request body.
 
 ```json
 {
-    "name": "String",
-    "price": "Decimal"
+  "name": "String",
+  "price": "Decimal"
 }
 ```
 
@@ -172,9 +202,9 @@ No request body.
 
 ```json
 {
-    "name": "String",
-    "price": "Decimal",
-    "isAvailable": "Boolean"
+  "name": "String",
+  "price": "Decimal",
+  "isAvailable": "Boolean"
 }
 ```
 
@@ -196,9 +226,9 @@ No request body.
 
 ```json
 {
-    "phoneNumber": "String | null",
-    "email": "String | null",
-    "isPersonal": "Boolean"
+  "phoneNumber": "String | null",
+  "email": "String | null",
+  "isPersonal": "Boolean"
 }
 ```
 
@@ -206,9 +236,9 @@ No request body.
 
 ```json
 {
-    "phoneNumber": "String | null",
-    "email": "String | null",
-    "isPersonal": "Boolean"
+  "phoneNumber": "String | null",
+  "email": "String | null",
+  "isPersonal": "Boolean"
 }
 ```
 
@@ -222,9 +252,9 @@ No request body.
 
 ```json
 {
-    "name": "String",
-    "profileName": "String",
-    "icon": "String"
+  "name": "String",
+  "profileName": "String",
+  "icon": "String"
 }
 ```
 
@@ -232,9 +262,9 @@ No request body.
 
 ```json
 {
-    "name": "String",
-    "profileName": "String",
-    "icon": "String"
+  "name": "String",
+  "profileName": "String",
+  "icon": "String"
 }
 ```
 
@@ -248,12 +278,12 @@ No request body.
 
 ```json
 {
-    "address": "String",
-    "zip": "String | null",
-    "country": "String | null",
-    "state": "String | null",
-    "city": "String | null",
-    "parking": "Boolean"
+  "address": "String",
+  "zip": "String | null",
+  "country": "String | null",
+  "state": "String | null",
+  "city": "String | null",
+  "parking": "Boolean"
 }
 ```
 
@@ -261,14 +291,14 @@ No request body.
 
 ```json
 {
-    "address": "String",
-    "zip": "String | null",
-    "country": "String | null",
-    "state": "String | null",
-    "city": "String | null",
-    "parking": "Boolean",
-    "isActive": "Boolean",
-    "enableHours": "Boolean"
+  "address": "String",
+  "zip": "String | null",
+  "country": "String | null",
+  "state": "String | null",
+  "city": "String | null",
+  "parking": "Boolean",
+  "isActive": "Boolean",
+  "enableHours": "Boolean"
 }
 ```
 
@@ -282,7 +312,7 @@ No request body.
 
 ```json
 {
-    "dayOfWeek": "Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday"
+  "dayOfWeek": "Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday"
 }
 ```
 
@@ -290,7 +320,7 @@ No request body.
 
 ```json
 {
-    "isClosed": "Boolean"
+  "isClosed": "Boolean"
 }
 ```
 
@@ -304,10 +334,10 @@ No response body.
 
 ```json
 {
-    "openTime": "String",
-    "closeTime": "String",
-    "title": "String | null",
-    "note": "String | null"
+  "openTime": "String",
+  "closeTime": "String",
+  "title": "String | null",
+  "note": "String | null"
 }
 ```
 
@@ -315,11 +345,11 @@ No response body.
 
 ```json
 {
-    "openTime": "String | null",
-    "closeTime": "String | null",
-    "title": "String | null",
-    "note": "String | null",
-    "isDisabled": "Boolean"
+  "openTime": "String | null",
+  "closeTime": "String | null",
+  "title": "String | null",
+  "note": "String | null",
+  "isDisabled": "Boolean"
 }
 ```
 

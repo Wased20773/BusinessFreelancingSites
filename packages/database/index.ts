@@ -8,5 +8,13 @@
 //
 // instead of importing directly from the generated Prisma folder
 
-export { PrismaClient, Prisma } from "./generated/prisma/client";
+export {
+  PrismaClient,
+  Prisma,
+  type Category,
+  type Business,
+  type BusinessUser,
+  type User,
+  type Role,
+} from "./generated/prisma/client";
 export { AccessLevel, DayOfWeek } from "./generated/prisma/enums";

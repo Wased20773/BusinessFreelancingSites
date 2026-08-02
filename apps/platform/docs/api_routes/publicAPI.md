@@ -8,7 +8,7 @@ code-paths:
   - apps/platform/src/app/api/business/socials
   - apps/platform/src/app/api/business/route.ts
 
-last-verified: 2026-07-14
+last-verified: 2026-07-31
 status: planned
 ---
 
@@ -20,13 +20,25 @@ These routes should not add, update, or delete data in the database. Go to [docs
 
 To view the full JSON return value types per route, go to [docs/api_routes/response/publicAPI.md](../../docs/api_routes/response/publicAPI.md).
 
-#### Query Params
+## Authentication
 
-All request require:
+Public business routes support two authentication methods.
 
-| Param | Type | Required | Example |
-| --- | --- | --- | --- |
-| slug | string | yes | tacos-el-guero |
+### Dashboard Requests
+
+Requests made by the authenticated platform dashboard use the logged-in user's Auth.js session.
+
+The current business is determined from the authenticated user's business membership.
+
+### Client Website Requests
+
+External client websites must provide a valid Business Platform API key using the `Authorization` header:
+
+```http
+Authorization: Bearer bp_example_key
+```
+
+You can read more about creating your own Business Platform Api key via the POST request in [docs/api_routes/adminAPI.md#post-apiadminapi-keys](../../docs/api_routes/adminAPI.md#post-apiadminapi-keys) document
 
 ## Business
 
@@ -146,11 +158,11 @@ Fetches one public menu item by its item slug.
 
 This route is only needed if the public business site has individual item detail pages.
 
-#### Route Params
+#### Required Route Params
 
-| Param | Type | Required | Example |
-| --- | --- | --- | --- |
-| itemSlug | string | yes | each-taco |
+| Param    | Type   | Example   |
+| -------- | ------ | --------- |
+| itemSlug | string | each-taco |
 
 #### Returns
 
@@ -162,3 +174,7 @@ This route is only needed if the public business site has individual item detail
 - Public item detail page
 - Shareable item links
 - SEO-friendly item pages
+
+```
+
+```
