@@ -13,6 +13,8 @@ export {
   Prisma,
   type Category,
   type Business,
+  type Social,
+  type Contact,
   type BusinessUser,
   type User,
   type Role,

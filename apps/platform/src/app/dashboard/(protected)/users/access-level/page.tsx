@@ -5,10 +5,12 @@ import Link from "next/link";
 export default function AccessLevelsPage() {
   return (
     <div aria-labelledby="access-level-heading">
-      <Link href="/dashboard/users">
-        <ArrowIcon direction="left" size={50} />
-      </Link>
-      <h1 id="access-level-heading">Access Level</h1>
+      <div className="flex items-center gap-2 mb-[1.5rem]">
+        <Link href="/dashboard/users">
+          <ArrowIcon direction="left" size={50} />
+        </Link>
+        <h1 id="access-level-heading">Access Level</h1>
+      </div>
       <p>
         This defines the permissions a user has in a business. This allows
         certain users to add, update, or delete content from their business
@@ -22,6 +24,15 @@ export default function AccessLevelsPage() {
       {/* Business.Role: accessLevel, description */}
 
       <article className="flex flex-col gap-3">
+        <div>
+          <p className="font-bold">Developer</p>
+          <p>
+            Responsible for the technical integration of the business website.
+            Can create, view, rotate, deactivate, and delete Business API keys
+            used by the website.
+          </p>
+        </div>
+
         <div>
           <p className="font-bold">Owner</p>
           <p>

@@ -83,7 +83,7 @@ export default function SideBar({
         <div className="min-w-0 grid grid-cols-[auto_minmax(0,1fr)] items-center px-3 py-1">
           <Image
             className="border-[2px] border-gray-900 rounded-[50%] overflow-hidden"
-            src={PlaceHolderAccountBlack}
+            src={currentAccount.image || PlaceHolderAccountBlack}
             alt="Account profile"
             height={35}
             width={35}

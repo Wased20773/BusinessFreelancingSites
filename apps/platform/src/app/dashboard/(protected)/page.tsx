@@ -11,9 +11,11 @@ import Link from "next/link";
 export default function DashboardPage() {
   return (
     <div aria-labelledby="overview-heading">
-      <h1 id="overview-heading">Overview</h1>
+      <h1 className="mb-[1.5rem]" id="overview-heading">
+        Overview
+      </h1>
 
-      <div className="mt-[1.5rem]">
+      <div>
         <section>
           {/* BusinessUser */}
           <div className="dashboard-card flex flex-col gap-3">

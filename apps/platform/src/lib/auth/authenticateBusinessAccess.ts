@@ -7,7 +7,7 @@ import { Session } from "next-auth";
 
 /**
  * Authenticates the current user and verifies that they belong to the
- * requested business with one of the allowed access levels.
+ * business, via their current session, with one of the allowed access levels.
  *
  * Returns The IDs needed by the route when access is granted, or a JSON error
  * response that the route can return immediately when access is denied.

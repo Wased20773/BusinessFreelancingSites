@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import MobileNavBar from "@/components/layout/dashboard/MobileNavBar";
 import SideBar from "@/components/layout/dashboard/SideBar";
+import ResponsiveToaster from "@/components/ui/ResponsiveToast";
 import { redirect } from "next/navigation";
 import { ReactNode } from "react";
 
@@ -47,17 +48,20 @@ export default async function DashboardLayout({
   };
 
   return (
-    <div className="h-screen grid grid-rows-[auto_1fr] md:grid-cols-[auto_1fr] md:grid-rows-1">
-      <SideBar
-        currentBusiness={currentBusiness}
-        currentAccount={currentAccount}
-      />
-      <MobileNavBar
-        currentBusiness={currentBusiness}
-        currentAccount={currentAccount}
-      />
+    <>
+      <ResponsiveToaster />
+      <div className="h-screen grid grid-rows-[auto_1fr] md:grid-cols-[auto_1fr] md:grid-rows-1">
+        <SideBar
+          currentBusiness={currentBusiness}
+          currentAccount={currentAccount}
+        />
+        <MobileNavBar
+          currentBusiness={currentBusiness}
+          currentAccount={currentAccount}
+        />
 
-      <main className="min-h-0 overflow-y-scroll p-5">{children}</main>
-    </div>
+        <main className="min-h-0 overflow-y-scroll p-5">{children}</main>
+      </div>
+    </>
   );
 }

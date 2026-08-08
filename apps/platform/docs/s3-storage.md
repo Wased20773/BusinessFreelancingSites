@@ -1,14 +1,14 @@
 ---
 title: S3 Storage
 code-path:
-    - /platform/src/lib/s3/keys.ts
-    - /platform/src/lib/s3/upload.ts
-    - /platform/src/lib/s3/delete.ts
-    - /platform/src/lib/s3/client.ts
-    - /platform/src/lib/images/process.ts
-    - /platform/src/app/api/admin/items/[itemId]/image/route.ts
+  - /platform/src/lib/s3/keys.ts
+  - /platform/src/lib/s3/upload.ts
+  - /platform/src/lib/s3/delete.ts
+  - /platform/src/lib/s3/client.ts
+  - /platform/src/lib/images/process.ts
+  - /platform/src/app/api/admin/items/[itemId]/image/route.ts
 
-last-verified: 2026-7-15
+last-verified: 2026-08-07
 status: planned
 ---
 
@@ -20,7 +20,7 @@ Business Freelancer stores uploaded media in a private Amazon S3 bucket.
 
 Only the backend communicates with Amazon S3. Clients never upload directly to S3 and never receive AWS credentials. Every upload, replacement, and deletion request is performed through authenticated backend API routes.
 
-The database stores the S3 object key (`imageKey`) instead of a public URL. This allows the application to change how media is served in the future (such as through CloudFront or signed URLs) without modifying existing database records.
+The database stores the S3 object key (Item's `imageKey`) instead of a public URL. When media is requested, the backend generates a temporary presigned S3 URL for the object. This keeps the bucket private while allowing authenticated clients to access media without exposing AWS credentials or permanent object URLs.
 
 ## Bucket Structure
 
@@ -72,14 +72,14 @@ Amazon S3
 
 ### Responsibility
 
-| Layer | Responsibility |
-| -------- | ---------------- |
-| Next.js Route Handler | Coordinates the upload process. |
-| Authentication | Verifies business access |
-| Media Validation | Validate file content, file size, and file type |
-| Media Processing | Converts images to WebP if needed and prepares files before upload |
-| S3 Helper | Handles communication with Amazon S3 |
-| Database | Stores only the generated object key (`imageKey`) |
+| Layer                 | Responsibility                                                     |
+| --------------------- | ------------------------------------------------------------------ |
+| Next.js Route Handler | Coordinates the upload process.                                    |
+| Authentication        | Verifies business access                                           |
+| Media Validation      | Validate file content, file size, and file type                    |
+| Media Processing      | Converts images to WebP if needed and prepares files before upload |
+| S3 Helper             | Handles communication with Amazon S3                               |
+| Database              | Stores only the generated object key (`imageKey`)                  |
 
 Route handlers should never directly communicate with Amazon S3.
 
@@ -163,28 +163,26 @@ Example:
 businesses/{businessId}/items/{itemId}.webp
 ```
 
-Objects are uploaded with a one-year `Cache-Control` header to allow browsers and CDNs to aggressively cache media.
+## Object Access
 
-To ensure image replacements appear immediately, the frontend uses **URL Versioning** by appending the record's `updatedAt` timestamp to the image URL.
+Objects retain a stable object key for their entire lifetime.
 
 Example:
 
 ```txt
-businesses/{businessId}/items/{itemId}.webp?v=1784179800000
+businesses/{businessId}/items/{itemId}.webp
 ```
 
-Whenever an image is uploaded, replaced, or removed, the corresponding database record for an item is updated, causing the `updatedAt` timestamp to change. Because the browser treats the updated URL as a new resource, it immediately downloads the latest image while still allowing previous versions to remain cached. This approach provides instant image updates without sacrificing the performance benefits of long-term caching.
+The object key never changes, even when an image is replaced.
 
-Previous image versions may temporarily remain in the browser cache. Browsers automatically remove older cached resources over time as part of their normal cache management. This behavior is independent of the configured Cache-Control lifetime.
+When an authenticated client requests media, the backend generates a temporary presigned S3 URL for the object. These URLs expire automatically after a configured duration and are never stored in the database.
 
-### Why UUIDs?
+This approach provides:
 
-- Never change
-- Independent of public URLs
-- Prevent accidental object moves
-- Keep storage implementation separate from routing
-
-**The API may continue using business slugs while S3 bucket storage internally uses UUIDs.**
+- Private bucket storage
+- Temporary media access
+- No permanent public URLs
+- Stable object keys
 
 ## Supported Upload Types
 
@@ -213,7 +211,7 @@ Regardless of whether the original upload is:
 - JPG
 - JPEG
 - PNG
-  
+
 the stored object becomes:
 
 ```txt
@@ -276,11 +274,19 @@ Video uploads will use a separate validation and processing pipeline.
 
 ## Design Decisions
 
-### Private Bucket
+### Presigned URL Security
 
-The S3 bucket remains private.
+Amazon S3 objects remain private at all times.
 
-Media is never exposed directly from Amazon S3.
+Instead of exposing permanent object URLs, the backend generates temporary presigned URLs for authenticated requests.
+
+Benefits:
+
+- Bucket remains private
+- No AWS credentials are exposed
+- URLs expire automatically
+- Permanent object locations are never exposed
+- Existing object keys never need to change
 
 ### Backend Only
 

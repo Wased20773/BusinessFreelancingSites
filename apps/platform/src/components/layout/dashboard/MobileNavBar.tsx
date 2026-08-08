@@ -25,7 +25,7 @@ export default function MobileNavBar({
   const settingsSelected = pathname === "/dashboard/settings";
 
   return (
-    <header className="md:hidden flex justify-between items-center gap-1 border-b border-gray-300 bg-gray-50 p-2 z-50">
+    <header className="md:hidden flex justify-between items-center gap-1 border-b border-gray-300 bg-gray-50 p-2 z-20">
       {/* Burger Button */}
       <button
         className="cursor-pointer w-[50px] h-[50px] flex justify-center items-center"
@@ -169,7 +169,7 @@ export default function MobileNavBar({
           <div className="grid grid-cols-[auto_auto] items-center justify-center">
             <Image
               className="border-[2px] border-gray-100 rounded-[50%] overflow-hidden"
-              src={PlaceHolderAccountWhite}
+              src={currentAccount.image || PlaceHolderAccountWhite}
               alt="Account profile"
               width={40}
               height={40}

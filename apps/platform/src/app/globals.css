@@ -34,11 +34,39 @@ h3 {
   font-weight: 600;
 }
 
+h4 {
+  font-size: 1.35rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+}
+
 p {
   line-height: 1.5rem;
 }
 
-button {
+button:not(:disabled) {
   cursor: pointer;
   transition: 0.3s;
+}
+
+[data-sonner-toaster] {
+  z-index: 20 !important;
+}
+
+fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+legend {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 600;
+
+  margin-bottom: 10px;
+}
+
+label:not(:has(input)) {
+  color: var(--gray-500);
 }

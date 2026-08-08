@@ -1,48 +1,117 @@
+"use client";
+
 import Image from "next/image";
 import "../page.css";
 import ExternalLinkIcon from "@/components/icons/external-link.svg";
 import Link from "next/link";
-import { GET } from "@/app/api/business/route";
-import { auth } from "@/auth";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import type { BusinessJson } from "@/types/types";
+import Editicon from "@/components/icons/edit.svg";
+import { toast } from "sonner";
 
-export default async function BusinessPage() {
-  const session = await auth();
+export default function BusinessPage() {
+  const [businessData, setBusinessData] = useState<BusinessJson | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const businessSlug = session?.user.businessSlug;
+  const [isEdit, setIsEdit] = useState<boolean>(false);
 
-  if (!businessSlug) {
-    throw new Error("No Business is associated with this account.");
+  useEffect(() => {
+    async function getBusinessData() {
+      setIsLoading(true);
+
+      try {
+        const businessResponse = toast.promise<BusinessJson>(
+          axios
+            .get<BusinessJson>("/api/business")
+            .then((response) => response.data),
+          {
+            loading: "Loading business",
+            success: "Business loaded",
+            error: (error) => {
+              if (axios.isAxiosError<{ error?: string }>(error)) {
+                return {
+                  message: "Failed to load business data",
+                  description:
+                    error.response?.data?.error ??
+                    `Status code: ${error.response?.status ?? "No response"}`,
+                };
+              }
+
+              return {
+                message: "Unexpected error.",
+                description:
+                  "Something went wrong while loading the business data.",
+              };
+            },
+          },
+        );
+
+        const data: BusinessJson = await businessResponse.unwrap();
+
+        setBusinessData(data);
+      } catch (e) {
+        console.error("Error in Business page: ", e);
+
+        if (axios.isAxiosError(e)) {
+          setErrorMessage(
+            e.response?.data?.error ?? "Failed to load business data.",
+          );
+        } else {
+          setErrorMessage("Failed to load business data.");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void getBusinessData();
+  }, []);
+
+  if (isLoading) {
+    return <p>Loading business...</p>;
   }
 
-  const request = new Request(
-    `http://internal/api/business?slug=${encodeURIComponent(businessSlug)}`,
-  );
-
-  const response = await GET(request);
-
-  if (!response.ok) {
-    throw new Error("Failed to retrieve categories.");
+  if (errorMessage) {
+    return <p>{errorMessage}</p>;
   }
 
-  const data = await response.json();
-
+  if (!businessData) {
+    return <p>No business data was found</p>;
+  }
   return (
     <div aria-labelledby="business-heading">
-      <h1 id="business-heading">Business</h1>
+      <div className="flex justify-between items-center mb-[1.5rem]">
+        <h1 id="business-heading">Business</h1>
+        <button type="button" onClick={() => setIsEdit((prev) => !prev)}>
+          <Image
+            src={Editicon}
+            alt="Edit Business Info"
+            width={40}
+            height={40}
+          />
+        </button>
+      </div>
 
-      <div className="mt-[1.5rem]">
+      <div>
         <section>
-          {/* TODO: Render the businesses name and domain when onboarding */}
           <div>
             {/* Name */}
-            <form>
-              <input
-                className="border-[0.1rem] border-gray-400 bg-gray-50 w-full rounded-lg border-b-[0.2rem] border-gray-300 px-3 py-1"
-                type="text"
-                placeholder="Enter your business name"
-                value={data.name}
-              />
-            </form>
+            {isEdit ? (
+              <form>
+                <input
+                  className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
+                  type="text"
+                  placeholder="Enter your business name"
+                  value={businessData.name}
+                />
+              </form>
+            ) : (
+              <span className="block w-full border-[0.1rem] rounded-lg border-gray-300 bg-gray-100 px-3 py-2 text-gray-500">
+                {businessData.name}
+              </span>
+            )}
 
             {/* Domain */}
             <p className="mt-1">Your domain is:</p>
@@ -55,7 +124,7 @@ export default async function BusinessPage() {
               />
               {/* TODO: Replace href with actual business domain */}
               <Link className="text-blue-500 ml-1" href="#">
-                https://{data.domain}
+                https://{businessData.domain}
               </Link>
             </div>
           </div>

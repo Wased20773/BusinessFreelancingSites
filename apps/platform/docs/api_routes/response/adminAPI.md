@@ -10,7 +10,7 @@ code-paths:
   - /platform/src/api/admin/locations
   - /platform/src/api/admin/socials
 
-last-verified: 2026-07-31
+last-verified: 2026-08-05
 status: planned
 ---
 
@@ -47,7 +47,7 @@ status: planned
   "name": "String | null",
   "username": "String | null",
   "email": "String",
-  "emailVerified": "String",
+  "emailVerified": "DateTime | null",
   "image": "String | null",
   "createdAt": "DateTime"
 }
@@ -147,11 +147,15 @@ status: planned
             "businessId": "UUID",
             "userId": "UUID",
             "roleId": "UUID",
+            "createdAt": "DateTime",
+            "updatedAt": "DateTime",
             "user": {
-                "id": "UUID",
-                "name": "String | null",
-                "username": "String | null",
-                "email": "String"
+              "id": "UUID",
+              "name": "String | null",
+              "username": "String | null",
+              "email": "String",
+              "createdAt": "DateTime",
+              "updatedAt": "DateTime"
             },
             "role": {
                 "id": "UUID",
@@ -184,6 +188,7 @@ status: planned
 {
   "id": "UUID",
   "role": {
+    "id": "UUID",
     "accessLevel": "owner | admin | staff",
     "description": "String"
   }

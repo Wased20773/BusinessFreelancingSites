@@ -8,7 +8,7 @@ code-paths:
   - apps/platform/src/app/api/business/socials
   - apps/platform/src/app/api/business/route.ts
 
-last-verified: 2026-07-14
+last-verified: 2026-08-06
 status: planned
 ---
 
@@ -40,7 +40,9 @@ status: planned
       "id": "UUID",
       "phoneNumber": "String | null",
       "email": "String | null",
-      "isPersonal": "Boolean"
+      "isPersonal": "Boolean",
+      "createdAt": "DateTime",
+      "updatedAt": "DateTime"
     }
   ]
 }

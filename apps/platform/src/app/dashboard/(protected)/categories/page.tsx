@@ -24,7 +24,7 @@ export default async function CategoriesPage() {
 
   return (
     <>
-      <h1>Categories</h1>
+      <h1 className="mb-[1.5rem]">Categories</h1>
 
       <section>
         <p>{data.categories[1].subcategories[1].name}</p>

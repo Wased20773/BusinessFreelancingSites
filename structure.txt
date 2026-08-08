@@ -223,6 +223,9 @@
 
                 - dashboard/
                     - (protected)/
+                        - account/
+                            - page.tsx
+
                         - business/
                             - page.tsx
                             
@@ -230,6 +233,11 @@
                             - page.tsx
                         
                         - contacts/
+                            - [contactId]/
+                                - page.tsx
+                            - create/
+                                - page.tsx
+
                             - page.tsx
                             
                         - locations/
@@ -239,6 +247,9 @@
                             - page.tsx
                         
                         - socials/
+                            - create/
+                                - page.tsx
+                                
                             - page.tsx
                             
                         - users/
@@ -275,13 +286,27 @@
                     - SignOutButton.tsx
 
                 - icons/
+                    - add.svg
+                    - arrow.tsx
                     - burger-button.svg
+                    - business.svg
+                    - category.svg
+                    - chevron.svg
+                    - create-button.svg
+                    - drop-arrow.svg
+                    - edit.svg
                     - exit-black.svg
                     - exit-white.svg
+                    - external-link.svg
+                    - google-logo.svg
+                    - key.svg
                     - placeholder-account-black.svg
                     - placeholder-account-white.svg
+                    - search.svg
                     - settings-black.svg
                     - settings-white.svg
+                    - trash-black.svg
+                    - trash-red.svg
 
                 - layout/
                     - dashboard/
@@ -294,6 +319,12 @@
                     - Header.css
                     - Header.tsx
                 
+                - ui/
+                    - ActionItem.tsx
+                    - ListCard.tsx
+                    - ResponsiveToast.tsx
+                    - sonner.tsx
+
                 - Card.tsx
 
             - data/
@@ -316,6 +347,7 @@
                 - s3/
                     - client.ts
                     - delete.ts
+                    - get-url.ts
                     - keys.ts
                     - upload.ts
 
