@@ -55,14 +55,38 @@ export type UserJson = Omit<
 export type CategoryJson = Omit<Category, "createdAt" | "updatedAt"> & {
   createdAt: string;
   updatedAt: string;
+  items?: ItemJson[];
+  subcategories?: CategoryJson[];
 };
 
-export type CategoryComplete = CategoryJson & {
-  subcategories: CategoryJson[];
+// Item
+
+export type ItemJson = {
+  id: string;
+  categoryId: string;
+  name: string;
+  description: string | null;
+  containsList: string[];
+  calories: number | null;
+  price: number;
+  order: number;
+  isAvailable: boolean;
+  slug: string;
+  imageKey: string | null;
+  createdAt: string;
+  updatedAt: string;
+  options: ItemOptionsJson[];
 };
 
-export type CategoriesResponse = {
-  categories: CategoryComplete[];
+export type ItemOptionsJson = {
+  id: string;
+  itemId: string;
+  name: string;
+  price: number;
+  order: number;
+  isAvailable: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 
 // Contact

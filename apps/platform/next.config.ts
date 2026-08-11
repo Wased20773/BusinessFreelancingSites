@@ -10,20 +10,24 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
+        // For authentication
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
         pathname: "/**",
       },
       {
+        // For Business
+        protocol: "https",
+        hostname:
+          "business-freelancer-storage-972388989182-us-west-2-an.s3.us-west-2.amazonaws.com",
+        pathname: "/businesses/**",
+      },
+      {
+        // For icons
         protocol: "https",
         hostname:
           "business-freelancer-storage-972388989182-us-west-2-an.s3.us-west-2.amazonaws.com",
         pathname: "/social-icons/**",
-      },
-      {
-        protocol: "https",
-        hostname: "sso.pdx.edu",
-        pathname: "/**",
       },
     ],
   },

@@ -1,14 +1,13 @@
-import { NextResponse } from "next/server";
+import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
+import { getObjectUrl } from "@/lib/s3/get-url";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
-import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
+import { NextResponse } from "next/server";
 
-// GET /api/business/menu/items/[itemSlug]
+// GET /api/business/menu/items/[itemId]
 export async function GET(
   request: Request,
-  params: Promise<{
-    itemSlug: string;
-  }>,
+  { params }: { params: Promise<{ itemId: string }> },
 ): Promise<NextResponse> {
   try {
     const authentication = await authenticateBusinessReadAccess(request, [
@@ -20,16 +19,16 @@ export async function GET(
 
     if (authentication instanceof NextResponse) return authentication;
 
-    const { itemSlug } = await params;
+    const { itemId } = await params;
 
-    if (!itemSlug) {
-      return NextResponse.json({ error: "Missing item slug" }, { status: 400 });
+    if (!itemId) {
+      return NextResponse.json({ error: "Missing item ID" }, { status: 400 });
     }
 
     const item = await prisma.item.findFirst({
       where: {
+        id: itemId,
         businessId: authentication.businessId,
-        slug: itemSlug,
       },
       select: {
         id: true,
@@ -46,6 +45,9 @@ export async function GET(
         createdAt: true,
         updatedAt: true,
         options: {
+          orderBy: {
+            order: "asc",
+          },
           select: {
             id: true,
             itemId: true,
@@ -67,7 +69,14 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(item, { status: 200 });
+    const itemWithImageUrl = {
+      ...item,
+      imageKey: item.imageKey ? await getObjectUrl(item.imageKey) : null,
+    };
+
+    return NextResponse.json(itemWithImageUrl, {
+      status: 200,
+    });
   } catch (error) {
     console.error("Failed to fetch business item:", error);
 

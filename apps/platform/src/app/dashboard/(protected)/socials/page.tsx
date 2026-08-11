@@ -83,7 +83,7 @@ export default function SocialsPage() {
         <nav className="dashboard-card" aria-label="Social actions">
           {/* Create Socials */}
           <ActionItem
-            href="/dashboard/socials/create"
+            href="socials/create"
             icon={CreateButtonIcon}
             label="Create Social"
           />
@@ -150,7 +150,7 @@ export default function SocialsPage() {
                           key={social.id}
                           variant="desktop"
                           id={social.id}
-                          path={`/dashboard/socials/${social.id}`}
+                          path={`socials/${social.id}`}
                           icon={social.icon}
                           title={social.profileName}
                           subtitle={social.domain}

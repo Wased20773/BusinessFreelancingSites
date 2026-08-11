@@ -31,6 +31,7 @@ export async function GET(request: Request): Promise<NextResponse> {
             isVisible: true,
             createdAt: true,
             updatedAt: true,
+            items: true,
             subcategories: true,
           },
         },

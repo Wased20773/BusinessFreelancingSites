@@ -105,7 +105,7 @@ export default function ContactsPage() {
                       key={contact.id}
                       variant="mobile"
                       id={contact.id}
-                      path={`/dashboard/contacts/${contact.id}`}
+                      path={`contacts/${contact.id}`}
                       icon={contact.isPersonal ? PersonalIcon : BusinessIcon}
                       title={contact.phoneNumber}
                       subtitle={contact.email}
@@ -148,7 +148,7 @@ export default function ContactsPage() {
                           key={contact.id}
                           variant="desktop"
                           id={contact.id}
-                          path={`/dashboard/contacts/${contact.id}`}
+                          path={`contacts/${contact.id}`}
                           icon={
                             contact.isPersonal ? PersonalIcon : BusinessIcon
                           }

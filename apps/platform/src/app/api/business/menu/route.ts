@@ -18,22 +18,32 @@ export async function GET(request: Request) {
     authentication.businessId,
     {
       categories: {
-        where: { parentId: null },
+        // Only return parent categories at the root level.
+        where: {
+          parentId: null,
+        },
+
         orderBy: {
           order: "asc",
         },
+
         select: {
           id: true,
+          businessId: true,
+          parentId: true,
           name: true,
           description: true,
           order: true,
           isVisible: true,
           createdAt: true,
           updatedAt: true,
+
+          // Parent category items
           items: {
             orderBy: {
               order: "asc",
             },
+
             select: {
               id: true,
               categoryId: true,
@@ -48,18 +58,80 @@ export async function GET(request: Request) {
               imageKey: true,
               createdAt: true,
               updatedAt: true,
+
               options: {
                 orderBy: {
                   order: "asc",
                 },
+
                 select: {
                   id: true,
+                  itemId: true,
                   name: true,
                   price: true,
                   order: true,
                   isAvailable: true,
                   createdAt: true,
                   updatedAt: true,
+                },
+              },
+            },
+          },
+
+          // Child categories
+          subcategories: {
+            orderBy: {
+              order: "asc",
+            },
+
+            select: {
+              id: true,
+              businessId: true,
+              parentId: true,
+              name: true,
+              description: true,
+              order: true,
+              isVisible: true,
+              createdAt: true,
+              updatedAt: true,
+
+              // Items belonging to this subcategory
+              items: {
+                orderBy: {
+                  order: "asc",
+                },
+
+                select: {
+                  id: true,
+                  categoryId: true,
+                  name: true,
+                  description: true,
+                  containsList: true,
+                  calories: true,
+                  price: true,
+                  order: true,
+                  isAvailable: true,
+                  slug: true,
+                  imageKey: true,
+                  createdAt: true,
+                  updatedAt: true,
+
+                  options: {
+                    orderBy: {
+                      order: "asc",
+                    },
+
+                    select: {
+                      id: true,
+                      itemId: true,
+                      name: true,
+                      price: true,
+                      order: true,
+                      isAvailable: true,
+                      createdAt: true,
+                      updatedAt: true,
+                    },
+                  },
                 },
               },
             },

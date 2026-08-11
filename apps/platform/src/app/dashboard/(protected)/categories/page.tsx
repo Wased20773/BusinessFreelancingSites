@@ -1,33 +1,97 @@
-import { auth } from "@/auth";
-import { GET as getCategories } from "@/app/api/business/categories/route";
+"use client";
 
-export default async function CategoriesPage() {
-  const session = await auth();
+import Divider from "@/components/layout/Divider";
+import type { CategoryJson } from "@/types/types";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import "../page.css";
+import ActionItem from "@/components/ui/ActionItem";
+import CreateButtonIcon from "@/components/icons/create-button.svg";
+import CategoryList from "@/components/ui/categories/CategoriesList";
 
-  const businessSlug = session?.user.businessSlug;
+export default function CategoriesPage() {
+  const [categoryData, setCategoryData] = useState<CategoryJson[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  if (!businessSlug) {
-    throw new Error("No Business is associated with this account.");
-  }
+  useEffect(() => {
+    async function getCategoriesData() {
+      setIsLoading(true);
+      setErrorMessage(null);
 
-  const request = new Request(
-    `http://internal/api/business/categories?slug=${encodeURIComponent(businessSlug)}`,
-  );
+      try {
+        const categoriesToast = toast.promise<CategoryJson[]>(
+          axios
+            .get<{ categories: CategoryJson[] }>("/api/business/categories")
+            .then((response) => response.data.categories),
+          {
+            loading: "Loading categories...",
+            success: "Categories loaded.",
+            error: (error) => {
+              if (axios.isAxiosError<{ error?: string }>(error)) {
+                return {
+                  message: "Failed to load categories.",
+                  description:
+                    error.response?.data?.error ??
+                    `Status code: ${error.response?.status ?? "No response"}`,
+                };
+              }
 
-  const response = await getCategories(request);
+              return {
+                message: "Unexpected error.",
+                description:
+                  "Something went wrong while loading the categories.",
+              };
+            },
+          },
+        );
 
-  if (!response.ok) {
-    throw new Error("Failed to retrieve categories.");
-  }
+        const categories = await categoriesToast.unwrap();
 
-  const data = await response.json();
+        setCategoryData(categories);
+      } catch (error) {
+        console.error("Error in Categories page:", error);
+
+        if (axios.isAxiosError<{ error?: string }>(error)) {
+          setErrorMessage(
+            error.response?.data?.error ?? "Failed to load categories.",
+          );
+        } else {
+          setErrorMessage("Failed to load categories.");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void getCategoriesData();
+  }, []);
 
   return (
     <>
-      <h1 className="mb-[1.5rem]">Categories</h1>
+      <section aria-labelledby="categories-heading">
+        <h1 id="categories-heading">Categories</h1>
 
-      <section>
-        <p>{data.categories[1].subcategories[1].name}</p>
+        <div className="mt-[1.5rem]">
+          {/* Links */}
+          <nav className="dashboard-card" aria-label="Category actions">
+            {/* Create Category */}
+            <ActionItem
+              href="categories/create"
+              icon={CreateButtonIcon}
+              label="Create Category"
+            />
+          </nav>
+
+          <Divider />
+
+          <CategoryList
+            isLoading={isLoading}
+            categoryData={categoryData}
+            errorMessage={errorMessage}
+          />
+        </div>
       </section>
     </>
   );

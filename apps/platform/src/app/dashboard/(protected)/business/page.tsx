@@ -4,7 +4,7 @@ import Image from "next/image";
 import "../page.css";
 import ExternalLinkIcon from "@/components/icons/external-link.svg";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { SubmitEvent, useEffect, useState } from "react";
 import axios from "axios";
 import type { BusinessJson } from "@/types/types";
 import Editicon from "@/components/icons/edit.svg";
@@ -13,9 +13,67 @@ import { toast } from "sonner";
 export default function BusinessPage() {
   const [businessData, setBusinessData] = useState<BusinessJson | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [name, setName] = useState<string>("");
 
   const [isEdit, setIsEdit] = useState<boolean>(false);
+
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+
+    const businessName = formData.get("name");
+
+    if (typeof businessName !== "string" || !businessName.trim()) {
+      setErrorMessage("A business name must be entered");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const updateToast = toast.promise<BusinessJson>(
+        axios
+          .patch<BusinessJson>("/api/admin/business", {
+            businessName: businessName,
+          })
+          .then((response) => response.data),
+        {
+          loading: "Updating business...",
+          success: "Business updated",
+          error: (error) => {
+            if (axios.isAxiosError<{ error?: string }>(error)) {
+              return {
+                message: "Failed to update the business.",
+                description: `Status code: ${error.response?.status ?? "No response"}`,
+              };
+            }
+
+            return {
+              message: "Unexpected error.",
+              description: "Something went wrong while updating the business.",
+            };
+          },
+        },
+      );
+
+      const updatedBusiness = await updateToast.unwrap();
+      setBusinessData(updatedBusiness);
+    } catch (error) {
+      console.error("Error updating business:", error);
+
+      if (axios.isAxiosError<{ error?: string }>(error)) {
+        setErrorMessage(
+          error.response?.data?.error ?? "Failed to update the business.",
+        );
+      } else {
+        setErrorMessage("Failed to update the business.");
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   useEffect(() => {
     async function getBusinessData() {
@@ -51,6 +109,7 @@ export default function BusinessPage() {
         const data: BusinessJson = await businessResponse.unwrap();
 
         setBusinessData(data);
+        setName(data.name);
       } catch (e) {
         console.error("Error in Business page: ", e);
 
@@ -97,14 +156,18 @@ export default function BusinessPage() {
       <div>
         <section>
           <div>
+            <label htmlFor="business-name">Business Name</label>
             {/* Name */}
             {isEdit ? (
-              <form>
+              <form onSubmit={handleSubmit}>
                 <input
                   className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
+                  id="business-name"
+                  name="name"
                   type="text"
                   placeholder="Enter your business name"
-                  value={businessData.name}
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
                 />
               </form>
             ) : (
@@ -122,7 +185,6 @@ export default function BusinessPage() {
                 width={15}
                 height={15}
               />
-              {/* TODO: Replace href with actual business domain */}
               <Link className="text-blue-500 ml-1" href="#">
                 https://{businessData.domain}
               </Link>

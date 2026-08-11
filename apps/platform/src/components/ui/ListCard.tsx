@@ -43,7 +43,7 @@ export default function ListCard({
             </div>
           </div>
 
-          <Link href={`/dashboard/${path}`} aria-label="Edit">
+          <Link href={path} aria-label="Edit">
             <Image
               src={EditIcon}
               alt=""
@@ -76,7 +76,7 @@ export default function ListCard({
 
           <td>
             <Link
-              href={`/dashboard/${path}`}
+              href={path}
               aria-label={`Edit this social`}
               className="flex justify-center w-fit"
             >
