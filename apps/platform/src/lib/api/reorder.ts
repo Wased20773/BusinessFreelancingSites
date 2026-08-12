@@ -26,12 +26,13 @@ type MoveItemOptionParams = {
 type MoveParams = MoveCategoryParams | MoveItemParams | MoveItemOptionParams;
 
 // ----------------------------
-// MOVE ITEM OPTION
+// MOVE UP & DOWN OPERATIONS
 // ----------------------------
 /*
  * Changes the order the selected context is rendered in the frontend. Uses the move-up,
  * and move-down endpoints and the context is decided via a switch block.
  **/
+
 export async function moveOrder(params: MoveParams) {
   let url: string;
 

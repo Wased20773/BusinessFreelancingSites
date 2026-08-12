@@ -12,8 +12,11 @@ import { toast } from "sonner";
 import "../../page.css";
 import type { CategoryJson } from "@/types/types";
 import CategoryInfo from "@/components/ui/categories/CategoryInfo";
-import ItemsList from "@/components/ui/items/ItemsList";
+
 import SubcategoriesList from "@/components/ui/subcategories/SubcategoriesList";
+import ItemsList from "@/components/ui/items/ItemsList";
+import { moveOrder, ReorderDirection } from "@/lib/api/reorder";
+import { getCategories } from "@/lib/api/categories";
 
 export default function CategoryPage() {
   const params = useParams<{ categoryId: string }>();
@@ -21,9 +24,67 @@ export default function CategoryPage() {
   const categoryId = params.categoryId;
 
   const [categoryData, setCategoryData] = useState<CategoryJson | null>(null);
-
+  const [processingItemId, setProcessingItemId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  async function refreshCategoryData() {
+    const refreshedMenu = await getCategories();
+
+    const selectedCategory = refreshedMenu.find(
+      (category) => category.id === categoryId,
+    );
+
+    if (!selectedCategory) {
+      setErrorMessage("This category could not be found.");
+      return;
+    }
+    setCategoryData(selectedCategory);
+  }
+
+  // ----------------------------
+  // MOVE ITEM
+  // ----------------------------
+  async function handleMoveItem(itemId: string, direction: ReorderDirection) {
+    setProcessingItemId(itemId);
+
+    try {
+      const moveToast = toast.promise(
+        moveOrder({
+          context: "item",
+          direction,
+          categoryId,
+          itemId,
+        }), {
+          loading:
+            direction === "up" ? "Moving item up" : "Moving item down",
+          success: "Item order updated",
+          error: (error) => {
+            if (axios.isAxiosError(error)) {
+              return {
+                message: "Failed to move item.",
+                description: `Status code: ${
+                  error.response?.status ?? "No response"
+                }`,
+              };
+            }
+
+            return {
+              message: "Unexpected error.",
+              description: "Something went wrong while moving the item"
+            }
+          }
+        }
+      )
+
+      await moveToast.unwrap();
+      await refreshCategoryData();
+    } catch (error) {
+      console.error("Error moving item: ", error);
+    } finally {
+      setProcessingItemId(null);
+    }
+  }
 
   useEffect(() => {
     async function getCategoryData() {
@@ -135,8 +196,13 @@ export default function CategoryPage() {
         <Divider />
 
         {/* ITEMS */}
-        <ItemsList categoryId={categoryId} categoryData={categoryData} />
-
+        <ItemsList 
+          categoryId={categoryId}
+          categoryData={categoryData}
+          handleMoveItem={handleMoveItem}
+          processingItemId={processingItemId}
+          isLast={true}
+        />
         <Divider />
 
         {/* SUBCATEGORIES */}

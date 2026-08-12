@@ -30,7 +30,7 @@ export default function ResponsiveToaster() {
       position={position}
       richColors
       closeButton
-      duration={10000}
+      duration={3000}
       offset={
         position === "bottom-right"
           ? "30px"

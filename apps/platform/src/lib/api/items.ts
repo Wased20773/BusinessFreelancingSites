@@ -1,9 +1,5 @@
 import axios from "axios";
-import type { ItemJson } from "@/types/types";
-
-// ################
-// ##### ITEM #####
-// ################
+import { type ItemJson } from "@/types/types";
 
 // GET
 export async function getItem(itemId: string): Promise<ItemJson> {

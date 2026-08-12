@@ -20,7 +20,7 @@ type BusinessResourceName =
   | "menu"
   | "social";
 
-const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2 MB
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 /*
  *   Gets the slug from the HTTP request via the search param.
