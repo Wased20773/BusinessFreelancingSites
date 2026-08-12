@@ -28,8 +28,8 @@ import {
   deleteItemOption,
   updateItemOption,
 } from "@/lib/api/item-options";
-import ItemOptionsForm from "@/components/ui/Items/ItemOptionsForm";
-import EditItemForm from "@/components/ui/Items/EditItemForm";
+import ItemOptionsForm from "@/components/ui/items/ItemOptionsForm";
+import EditItemForm from "@/components/ui/items/EditItemForm";
 
 export default function EditItemPage() {
   const params = useParams<{

@@ -1,35 +1,14 @@
 "use client";
 
 import ArrowIcon from "@/components/icons/arrow";
+import EditSocialForm from "@/components/ui/socials/EditSocialForm";
+import { SOCIAL_PLATFORMS } from "@/data/socials";
 import type { SocialJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { InputEvent, SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
-
-const SOCIAL_PLATFORMS = {
-  instagram: {
-    domain: "instagram.com",
-    icon: "social-icons/instagram/normal.svg",
-  },
-  facebook: {
-    domain: "facebook.com",
-    icon: "social-icons/facebook/normal.svg",
-  },
-  youtube: {
-    domain: "youtube.com",
-    icon: "social-icons/youtube/normal.svg",
-  },
-  tiktok: {
-    domain: "tiktok.com",
-    icon: "social-icons/tiktok/normal.svg",
-  },
-  twitter: {
-    domain: "twitter.com",
-    icon: "social-icons/twitter/normal.svg",
-  },
-} as const;
 
 type SocialPlatform = keyof typeof SOCIAL_PLATFORMS;
 
@@ -56,6 +35,7 @@ export default function EditSocialPage() {
   const [selectedPlatform, setSelectedPlatform] = useState<SocialPlatform | "">(
     "",
   );
+  const [previewUrl, setPreviewUrl] = useState<string>("https://");
 
   const [profileName, setProfileName] = useState<string>("");
 
@@ -103,6 +83,11 @@ export default function EditSocialPage() {
         setSelectedPlatform(getPlatformFromDomain(selectedSocial.domain) ?? "");
         setProfileName(selectedSocial.profileName);
         setCanSubmit(Boolean(selectedSocial.profileName?.trim()));
+        setPreviewUrl(
+          selectedPlatform && profileName.trim()
+            ? `https://${SOCIAL_PLATFORMS[selectedPlatform].domain}/${profileName.replaceAll(" ", "-")}`
+            : "",
+        );
       } catch (error) {
         console.error("Error in Edit Social page:", error);
 
@@ -119,21 +104,27 @@ export default function EditSocialPage() {
     }
 
     void getSocialData();
-  }, [socialId]);
+  }, [socialId, selectedPlatform]);
 
   function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
 
     const platform = formData.get("platform");
     const profileName = formData.get("profileName");
+    const profileNameValue =
+      typeof profileName === "string" ? profileName.trim() : "";
 
     const hasPlatform =
       typeof platform === "string" && platform in SOCIAL_PLATFORMS;
 
-    const hasProfileName =
-      typeof profileName === "string" && profileName.trim() !== "";
+    const hasProfileName = profileNameValue !== "";
 
     setCanSubmit(hasPlatform && hasProfileName);
+    setPreviewUrl(
+      selectedPlatform && profileNameValue
+        ? `https://${SOCIAL_PLATFORMS[selectedPlatform].domain}/${profileNameValue.replaceAll(" ", "-")}`
+        : "",
+    );
   }
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
@@ -267,11 +258,6 @@ export default function EditSocialPage() {
 
   const isProcessing = isSaving || isDeleting;
 
-  const previewUrl =
-    selectedPlatform && profileName.trim()
-      ? `https://${SOCIAL_PLATFORMS[selectedPlatform].domain}/${profileName}`
-      : "";
-
   return (
     <section aria-labelledby="edit-social-heading">
       <header className="flex items-center gap-3">
@@ -283,82 +269,21 @@ export default function EditSocialPage() {
       </header>
 
       <div className="mt-[1.5rem]">
-        <form
-          className="dashboard-card flex flex-col gap-5 p-4"
-          onSubmit={handleSubmit}
-          onInput={handleFormInput}
-        >
-          <fieldset disabled={isProcessing}>
-            <legend>Social info</legend>
-
-            <div>
-              <label htmlFor="social-platform">Platform</label>
-
-              <select
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                id="social-platform"
-                name="platform"
-                value={selectedPlatform}
-                onChange={(event) =>
-                  setSelectedPlatform(event.target.value as SocialPlatform)
-                }
-              >
-                <option value="" disabled>
-                  Select a platform
-                </option>
-                <option value="instagram">Instagram</option>
-                <option value="facebook">Facebook</option>
-                <option value="youtube">YouTube</option>
-                <option value="tiktok">TikTok</option>
-                <option value="twitter">Twitter</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="social-profile-name">Profile name</label>
-
-              <input
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                id="social-profile-name"
-                name="profileName"
-                type="text"
-                value={profileName}
-                onChange={(event) => setProfileName(event.target.value)}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="social-url">URL</label>
-
-              <input
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-gray-300 bg-gray-100 px-3 py-2"
-                id="social-url"
-                type="url"
-                value={previewUrl}
-                readOnly
-              />
-            </div>
-          </fieldset>
-
-          {errorMessage && <p role="alert">{errorMessage}</p>}
-
-          <button
-            className="bg-emerald-300 border-[0.1rem] border-emerald-500 rounded-md text-emerald-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-            type="submit"
-            disabled={isProcessing || !canSubmit}
-          >
-            {isSaving ? "Saving..." : "Save"}
-          </button>
-
-          <button
-            className="bg-red-300 border-[0.1rem] border-red-500 rounded-md text-red-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-            type="button"
-            disabled={isProcessing}
-            onClick={handleDelete}
-          >
-            {isDeleting ? "Deleting..." : "Delete Social"}
-          </button>
-        </form>
+        <EditSocialForm
+          handleSubmit={handleSubmit}
+          handleFormInput={handleFormInput}
+          handleDelete={handleDelete}
+          isProcessing={isProcessing}
+          selectedPlatform={selectedPlatform}
+          setSelectedPlatform={setSelectedPlatform}
+          profileName={profileName}
+          setProfileName={setProfileName}
+          previewUrl={previewUrl}
+          errorMessage={errorMessage}
+          canSubmit={canSubmit}
+          isSaving={isSaving}
+          isDeleting={isDeleting}
+        />
       </div>
     </section>
   );

@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import InstagramIcon from "@/components/icons/instagram.svg";
 import "../page.css";
 import ListCard from "@/components/ui/ListCard";
+import SocialsList from "@/components/ui/socials/SocialsList";
 
 // Test later
 // https://business-freelancer-storage-972388989182-us-west-2-an.s3.us-west-2.amazonaws.com/social-icons/instagram/normal.svg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIA6EZXGPD7JYK375WX%2F20260808%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20260808T024154Z&X-Amz-Expires=3600&X-Amz-Signature=23b4e75413d07e1ba6de0f5ae5597f766fa1bf51a4d0fcc07b5c91b1abfdff50&X-Amz-SignedHeaders=host&x-amz-checksum-mode=ENABLED&x-id=GetObject
@@ -91,78 +92,7 @@ export default function SocialsPage() {
 
         <Divider />
 
-        <section aria-label="socials-list-heading">
-          <div className="dashboard-card">
-            {/* TODO: No current socials */}
-            {isLoading ? (
-              <p>Loading socials...</p>
-            ) : socialsData.length === 0 ? (
-              <p>You have no socials</p>
-            ) : (
-              <>
-                {/* MOBILE */}
-                <ul className="md:hidden">
-                  {socialsData.map((social, idx) => (
-                    <ListCard
-                      key={social.id}
-                      variant="mobile"
-                      id={social.id}
-                      path={`socials/${social.id}`}
-                      icon={social.icon}
-                      title={social.profileName}
-                      subtitle={social.domain}
-                      isLast={socialsData.length !== idx + 1}
-                    />
-                  ))}
-                </ul>
-                {/* DESKTOP */}
-                <div className="hidden overflow-x-auto md:block">
-                  <table className="w-full border-collapse text-left">
-                    <caption className="sr-only">
-                      Business socials, including profile name, domain, and the
-                      platform
-                    </caption>
-
-                    <thead>
-                      <tr className="border-b border-gray-600">
-                        <th scope="col" className="px-3 py-2 font-semibold">
-                          Profile name
-                        </th>
-
-                        <th scope="col" className="px-3 py-2 font-semibold">
-                          Domain
-                        </th>
-
-                        <th scope="col" className="px-3 py-2 font-semibold">
-                          Platform
-                        </th>
-
-                        <th scope="col" className="w-12 px-3 py-2">
-                          <span className="sr-only">Edit socials</span>
-                        </th>
-                      </tr>
-                    </thead>
-
-                    <tbody className="divide-y">
-                      {/* TODO: Render the desktop view socials */}
-                      {socialsData.map((social) => (
-                        <ListCard
-                          key={social.id}
-                          variant="desktop"
-                          id={social.id}
-                          path={`socials/${social.id}`}
-                          icon={social.icon}
-                          title={social.profileName}
-                          subtitle={social.domain}
-                        />
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-          </div>
-        </section>
+        <SocialsList socialsData={socialsData} isLoading={isLoading} />
       </div>
     </section>
   );

@@ -8,7 +8,7 @@ import { SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 import "../../../../../../page.css";
 import type { ItemJson } from "@/types/types";
-import CreateItemForm from "@/components/ui/Items/CreateItemForm";
+import CreateItemForm from "@/components/ui/items/CreateItemForm";
 
 export default function CreateItemPage() {
   const params = useParams<{ categoryId: string; subcategoryId: string }>();

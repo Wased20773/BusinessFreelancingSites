@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import "../../../../page.css";
 import CreateOptionForm from "@/components/ui/item-options/CreateOptionForm";
 import ExistingOptionsForm from "@/components/ui/item-options/ExistingOptionsForm";
-import EditItemForm from "@/components/ui/Items/EditItemForm";
+import EditItemForm from "@/components/ui/items/EditItemForm";
 
 export default function EditItemPage() {
   const params = useParams<{

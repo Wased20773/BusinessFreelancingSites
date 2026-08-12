@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import "../../page.css";
 import type { CategoryJson } from "@/types/types";
 import CategoryInfo from "@/components/ui/categories/CategoryInfo";
-import ItemsList from "@/components/ui/Items/ItemsList";
+import ItemsList from "@/components/ui/items/ItemsList";
 import SubcategoriesList from "@/components/ui/subcategories/SubcategoriesList";
 
 export default function CategoryPage() {

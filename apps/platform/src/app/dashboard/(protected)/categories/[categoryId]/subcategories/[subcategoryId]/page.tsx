@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../../../page.css";
 import type { CategoryJson } from "@/types/types";
-import ItemsList from "@/components/ui/Items/ItemsList";
+import ItemsList from "@/components/ui/items/ItemsList";
 import CategoryInfo from "@/components/ui/categories/CategoryInfo";
 
 export default function CategoryPage() {
