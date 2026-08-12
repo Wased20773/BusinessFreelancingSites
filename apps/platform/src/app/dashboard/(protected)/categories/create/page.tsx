@@ -105,6 +105,7 @@ export default function CreateCategoryPage() {
 
       <div className="mt-[1.5rem]">
         <CreateCategoryForm
+          legend="Category info"
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}
           isLoading={isLoading}

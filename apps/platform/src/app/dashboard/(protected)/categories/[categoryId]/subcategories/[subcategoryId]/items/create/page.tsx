@@ -8,6 +8,7 @@ import { SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 import "../../../../../../page.css";
 import type { ItemJson } from "@/types/types";
+import CreateItemForm from "@/components/ui/Items/CreateItemForm";
 
 export default function CreateItemPage() {
   const params = useParams<{ categoryId: string; subcategoryId: string }>();
@@ -172,113 +173,13 @@ export default function CreateItemPage() {
       </header>
 
       <div className="mt-[1.5rem]">
-        <form
-          className="dashboard-card flex flex-col gap-5 p-4"
-          onSubmit={handleSubmit}
-          onInput={handleFormInput}
-        >
-          <fieldset disabled={isLoading}>
-            <legend>Item info</legend>
-
-            <div>
-              <label htmlFor="item-name">Name</label>
-
-              <input
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                id="item-name"
-                name="name"
-                type="text"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="item-description">Description</label>
-
-              <textarea
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                id="item-description"
-                name="description"
-                rows={4}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="item-contains">
-                What does the item contain? Please separate with a comma.
-              </label>
-              <input
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                id="item-contains"
-                name="containsList"
-                type="text"
-                placeholder="pepper, salt, onions ..."
-              />
-            </div>
-
-            <div>
-              <label htmlFor="item-calories">Calories (kcal)</label>
-
-              <input
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                id="item-calories"
-                name="calories"
-                type="number"
-                min="0"
-                step="10"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="item-image">Image</label>
-
-              <input
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                id="item-image"
-                name="image"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="item-price">Price</label>
-
-              <input
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                id="item-price"
-                name="price"
-                type="number"
-                min="0"
-                step="0.10"
-              />
-            </div>
-          </fieldset>
-
-          <fieldset disabled={isLoading}>
-            <legend>Availability</legend>
-
-            <label htmlFor="item-available" className="cursor-pointer">
-              <input
-                className="mr-2"
-                id="item-available"
-                name="isAvailable"
-                type="checkbox"
-                defaultChecked
-              />
-              Available?
-            </label>
-          </fieldset>
-
-          {errorMessage && <p role="alert">{errorMessage}</p>}
-
-          <button
-            className="bg-emerald-300 border-[0.1rem] border-emerald-500 rounded-md text-emerald-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-            type="submit"
-            disabled={isLoading || !canSubmit}
-          >
-            {isLoading ? "Creating..." : "Create"}
-          </button>
-        </form>
+        <CreateItemForm
+          handleSubmit={handleSubmit}
+          handleFormInput={handleFormInput}
+          isLoading={isLoading}
+          errorMessage={errorMessage}
+          canSubmit={canSubmit}
+        />
       </div>
     </section>
   );

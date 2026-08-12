@@ -29,7 +29,7 @@ import {
   updateItemOption,
 } from "@/lib/api/item-options";
 import ItemOptionsForm from "@/components/ui/Items/ItemOptionsForm";
-import ItemForm from "@/components/ui/Items/ItemForm";
+import EditItemForm from "@/components/ui/Items/EditItemForm";
 
 export default function EditItemPage() {
   const params = useParams<{
@@ -596,7 +596,7 @@ export default function EditItemPage() {
 
       <div className="mt-[1.5rem]">
         {/* ITEM FORM */}
-        <ItemForm
+        <EditItemForm
           itemData={itemData}
           imagePreview={imagePreview}
           canSubmit={canSubmit}

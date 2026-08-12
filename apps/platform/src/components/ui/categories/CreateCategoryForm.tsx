@@ -5,9 +5,11 @@ type CreateCategoryFormParams = {
   handleFormInput(event: InputEvent<HTMLFormElement>): void;
   isLoading: boolean;
   canSubmit: boolean;
+  legend: string;
 };
 
 export default function CreateCategoryForm({
+  legend,
   handleSubmit,
   handleFormInput,
   isLoading,
@@ -20,7 +22,7 @@ export default function CreateCategoryForm({
       onInput={handleFormInput}
     >
       <fieldset disabled={isLoading}>
-        <legend>Category info</legend>
+        <legend>{legend}</legend>
 
         <div>
           <label htmlFor="category-name">Name</label>

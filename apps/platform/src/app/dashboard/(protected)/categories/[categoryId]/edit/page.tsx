@@ -1,6 +1,7 @@
 "use client";
 
 import ArrowIcon from "@/components/icons/arrow";
+import EditCategoryForm from "@/components/ui/categories/EditCategoryForm";
 import type { CategoryJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
@@ -246,84 +247,17 @@ export default function EditCategoryPage() {
       </header>
 
       <div className="mt-[1.5rem]">
-        <form
-          className="dashboard-card flex flex-col gap-5 p-4"
-          onSubmit={handleSubmit}
-          onInput={handleFormInput}
-        >
-          <fieldset disabled={isProcessing}>
-            <legend>Category info</legend>
-
-            <div>
-              <label htmlFor="category-name">Name</label>
-
-              <input
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                id="category-name"
-                name="name"
-                type="text"
-                defaultValue={categoryData.name}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="category-description">Description</label>
-
-              <textarea
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                id="category-description"
-                name="description"
-                rows={4}
-                defaultValue={categoryData.description ?? ""}
-              />
-            </div>
-          </fieldset>
-
-          <fieldset disabled={isProcessing}>
-            <legend>Display</legend>
-
-            <label htmlFor="category-visible" className="cursor-pointer">
-              <input
-                className="mr-2"
-                id="category-visible"
-                name="isVisible"
-                type="checkbox"
-                defaultChecked={categoryData.isVisible}
-              />
-              Visible?
-            </label>
-
-            <div>
-              <label htmlFor="category-order">Order</label>
-
-              <span
-                className="block w-fit border-[0.1rem] border-b-[0.2rem] rounded-lg border-gray-300 bg-gray-100 px-3 py-2"
-                id="category-order"
-              >
-                {categoryData.order}
-              </span>
-            </div>
-          </fieldset>
-
-          {errorMessage && <p role="alert">{errorMessage}</p>}
-
-          <button
-            className="bg-emerald-300 border-[0.1rem] border-emerald-500 rounded-md text-emerald-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-            type="submit"
-            disabled={isProcessing || !canSubmit}
-          >
-            {isSaving ? "Saving..." : "Save"}
-          </button>
-
-          <button
-            className="bg-red-300 border-[0.1rem] border-red-500 rounded-md text-red-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-            type="button"
-            disabled={isProcessing}
-            onClick={handleDelete}
-          >
-            {isDeleting ? "Deleting..." : "Delete Category"}
-          </button>
-        </form>
+        <EditCategoryForm
+          handleSubmit={handleSubmit}
+          handleFormInput={handleFormInput}
+          handleDelete={handleDelete}
+          isProcessing={isProcessing}
+          categoryData={categoryData}
+          errorMessage={errorMessage}
+          canSubmit={canSubmit}
+          isSaving={isSaving}
+          isDeleting={isDeleting}
+        />
       </div>
     </section>
   );

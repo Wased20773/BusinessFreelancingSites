@@ -15,6 +15,9 @@ import {
 } from "react";
 import { toast } from "sonner";
 import "../../../../page.css";
+import CreateOptionForm from "@/components/ui/item-options/CreateOptionForm";
+import ExistingOptionsForm from "@/components/ui/item-options/ExistingOptionsForm";
+import EditItemForm from "@/components/ui/Items/EditItemForm";
 
 export default function EditItemPage() {
   const params = useParams<{
@@ -691,156 +694,19 @@ export default function EditItemPage() {
 
       <div className="mt-[1.5rem]">
         {/* ITEM FORM */}
-        <form
-          className="dashboard-card flex flex-col gap-5 p-4"
-          onSubmit={handleSubmit}
-          onInput={handleFormInput}
-        >
-          <fieldset disabled={isProcessing}>
-            <legend>Item info</legend>
-
-            <div>
-              <label htmlFor="item-name">Name</label>
-
-              <input
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                id="item-name"
-                name="name"
-                type="text"
-                defaultValue={itemData.name}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="item-description">Description</label>
-
-              <textarea
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                id="item-description"
-                name="description"
-                rows={4}
-                defaultValue={itemData.description ?? ""}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="item-contains">
-                What does the item contain? Please separate with a comma.
-              </label>
-
-              <input
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                id="item-contains"
-                name="containsList"
-                type="text"
-                defaultValue={itemData.containsList.join(", ")}
-                placeholder="pepper, salt, onions ..."
-              />
-            </div>
-
-            <div>
-              <label htmlFor="item-calories">Calories (kcal)</label>
-
-              <input
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                id="item-calories"
-                name="calories"
-                type="number"
-                min="0"
-                step="10"
-                defaultValue={itemData.calories ?? ""}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="item-price">Price</label>
-
-              <input
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                id="item-price"
-                name="price"
-                type="number"
-                min="0"
-                step="0.10"
-                defaultValue={itemData.price}
-              />
-            </div>
-          </fieldset>
-
-          <fieldset disabled={isProcessing}>
-            <legend>Image</legend>
-
-            {imagePreview && (
-              <div className="mb-3">
-                <Image
-                  src={imagePreview}
-                  alt={`${itemData.name} image preview`}
-                  width={300}
-                  height={300}
-                  className="max-h-[300px] w-auto rounded-md object-contain"
-                />
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="item-image">
-                {itemData.imageKey ? "Replace image" : "Add image"}
-              </label>
-
-              <input
-                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                id="item-image"
-                name="image"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleImageChange}
-              />
-            </div>
-
-            {itemData.imageKey && (
-              <button
-                className="w-fit border-[0.1rem] border-gray-500 rounded-md text-gray-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                type="button"
-                disabled={isProcessing}
-                onClick={handleDeleteImage}
-              >
-                Delete Image
-              </button>
-            )}
-          </fieldset>
-
-          <fieldset disabled={isProcessing}>
-            <legend>Availability</legend>
-
-            <label htmlFor="item-available" className="cursor-pointer">
-              <input
-                className="mr-2"
-                id="item-available"
-                name="isAvailable"
-                type="checkbox"
-                defaultChecked={itemData.isAvailable}
-              />
-              Available?
-            </label>
-          </fieldset>
-
-          <button
-            className="bg-emerald-300 border-[0.1rem] border-emerald-500 rounded-md text-emerald-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-            type="submit"
-            disabled={isProcessing || !canSubmit}
-          >
-            {isSaving ? "Saving..." : "Save"}
-          </button>
-
-          <button
-            className="bg-red-300 border-[0.1rem] border-red-500 rounded-md text-red-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-            type="button"
-            disabled={isProcessing}
-            onClick={handleDelete}
-          >
-            {isDeleting ? "Deleting..." : "Delete Item"}
-          </button>
-        </form>
+        <EditItemForm
+          handleSubmit={handleSubmit}
+          handleFormInput={handleFormInput}
+          isProcessing={isProcessing}
+          itemData={itemData}
+          imagePreview={imagePreview}
+          handleImageChange={handleImageChange}
+          handleDeleteImage={handleDeleteImage}
+          canSubmit={canSubmit}
+          isSaving={isSaving}
+          handleDelete={handleDelete}
+          isDeleting={isDeleting}
+        />
 
         {/* ITEM OPTIONS */}
         <section
@@ -850,161 +716,19 @@ export default function EditItemPage() {
           <h2 id="item-options-heading">Item Options</h2>
 
           {/* CREATE OPTION */}
-          <form
-            className="mt-4 border-b border-gray-300 pb-5"
-            onSubmit={handleCreateOption}
-          >
-            <fieldset
-              className="grid gap-3 md:grid-cols-[1fr_150px_auto]"
-              disabled={isCreatingOption}
-            >
-              <div>
-                <label htmlFor="new-option-name">Name</label>
-
-                <input
-                  className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                  id="new-option-name"
-                  name="name"
-                  type="text"
-                  placeholder="Extra Cheese"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="new-option-price">Price</label>
-
-                <input
-                  className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                  id="new-option-price"
-                  name="price"
-                  type="number"
-                  min="0"
-                  step="0.10"
-                  placeholder="1.50"
-                />
-              </div>
-
-              <button
-                className="self-end bg-emerald-300 border-[0.1rem] border-emerald-500 rounded-md text-emerald-900 px-3 py-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                type="submit"
-                disabled={isCreatingOption}
-              >
-                {isCreatingOption ? "Adding..." : "Add Option"}
-              </button>
-            </fieldset>
-          </form>
+          <CreateOptionForm
+            handleCreateOption={handleCreateOption}
+            isCreatingOption={isCreatingOption}
+          />
 
           {/* EXISTING OPTIONS */}
-          {options.length === 0 ? (
-            <p className="pt-4">This item has no options</p>
-          ) : (
-            <div>
-              {options.map((option, index) => {
-                const isProcessingOption = processingOptionId === option.id;
-
-                const isFirst = index === 0;
-
-                const isLast = index === options.length - 1;
-
-                return (
-                  <form
-                    key={option.id}
-                    className="border-b border-gray-300 py-4 last:border-b-0"
-                    onSubmit={(event) => handleUpdateOption(event, option.id)}
-                  >
-                    <fieldset
-                      className="grid gap-3"
-                      disabled={isProcessingOption}
-                    >
-                      <div className="grid gap-3 md:grid-cols-[1fr_150px_auto]">
-                        <div>
-                          <label htmlFor={`option-name-${option.id}`}>
-                            Name
-                          </label>
-
-                          <input
-                            className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                            id={`option-name-${option.id}`}
-                            name="name"
-                            type="text"
-                            defaultValue={option.name}
-                          />
-                        </div>
-
-                        <div>
-                          <label htmlFor={`option-price-${option.id}`}>
-                            Price
-                          </label>
-
-                          <input
-                            className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                            id={`option-price-${option.id}`}
-                            name="price"
-                            type="number"
-                            min="0"
-                            step="0.10"
-                            defaultValue={option.price}
-                          />
-                        </div>
-
-                        <label
-                          className="flex items-end gap-2 pb-2 cursor-pointer"
-                          htmlFor={`option-available-${option.id}`}
-                        >
-                          <input
-                            id={`option-available-${option.id}`}
-                            name="isAvailable"
-                            type="checkbox"
-                            defaultChecked={option.isAvailable}
-                          />
-                          Available?
-                        </label>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          className="border-[0.1rem] border-gray-500 rounded-md px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                          type="button"
-                          disabled={isProcessingOption || isFirst}
-                          onClick={() => handleMoveOption(option.id, "up")}
-                        >
-                          Move Up
-                        </button>
-
-                        <button
-                          className="border-[0.1rem] border-gray-500 rounded-md px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                          type="button"
-                          disabled={isProcessingOption || isLast}
-                          onClick={() => handleMoveOption(option.id, "down")}
-                        >
-                          Move Down
-                        </button>
-
-                        <span>Order: {option.order}</span>
-
-                        <button
-                          className="bg-emerald-300 border-[0.1rem] border-emerald-500 rounded-md text-emerald-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                          type="submit"
-                          disabled={isProcessingOption}
-                        >
-                          {isProcessingOption ? "Saving..." : "Save"}
-                        </button>
-
-                        <button
-                          className="bg-red-300 border-[0.1rem] border-red-500 rounded-md text-red-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                          type="button"
-                          disabled={isProcessingOption}
-                          onClick={() => handleDeleteOption(option.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </fieldset>
-                  </form>
-                );
-              })}
-            </div>
-          )}
+          <ExistingOptionsForm
+            options={options}
+            processingOptionId={processingOptionId}
+            handleUpdateOption={handleUpdateOption}
+            handleMoveOption={handleMoveOption}
+            handleDeleteOption={handleDeleteOption}
+          />
         </section>
       </div>
     </section>
