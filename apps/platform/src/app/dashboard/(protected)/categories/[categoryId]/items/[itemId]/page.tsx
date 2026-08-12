@@ -3,7 +3,6 @@
 import ArrowIcon from "@/components/icons/arrow";
 import type { ItemJson } from "@/types/types";
 import axios from "axios";
-import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {

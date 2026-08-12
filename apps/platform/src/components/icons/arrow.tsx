@@ -20,15 +20,13 @@ export default function ArrowIcon({
 }: ArrowIconProps) {
   return (
     <svg
-      width={size}
-      height={size}
       viewBox="0 0 24 24"
       fill="none"
+      width={size}
+      height={size}
       aria-hidden="true"
-      // className={className}
       style={{
         transform: `rotate(${rotation[direction ?? "right"]}deg)`,
-        // borderRadius: radius,
       }}
     >
       <path
