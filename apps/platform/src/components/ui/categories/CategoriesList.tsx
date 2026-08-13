@@ -9,6 +9,7 @@ import { getCategories } from "@/lib/api/categories";
 import { toast } from "sonner";
 import { moveOrder, ReorderDirection } from "@/lib/api/reorder";
 import axios from "axios";
+import ChevronIcon from "@/components/icons/chevron";
 
 type CategoryListParams = {
   isLoading: boolean;
@@ -108,26 +109,24 @@ export default function CategoryList({
                       isLast={isLast}
                       handleMove={handleMoveCategory}
                     />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold truncate">{category.name}</p>
-                      <p className="text-gray-500 truncate">
-                        Order: {category.order}
-                      </p>
-                    </div>
+                    <Link
+                      href={`categories/${category.id}`}
+                      className="flex-1 min-w-0 flex items-center"
+                      aria-label={`Edit ${category.name}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate">
+                          {category.name}
+                        </p>
+                        <p className="text-gray-500 truncate">
+                          Order: {category.order}
+                        </p>
+                      </div>
+                      <div className="shrink-0">
+                        <ChevronIcon direction="right" size={35} />
+                      </div>
+                    </Link>
                   </div>
-
-                  <Link
-                    href={`categories/${category.id}`}
-                    aria-label={`Edit ${category.name}`}
-                  >
-                    <Image
-                      src={EditIcon}
-                      alt=""
-                      width={50}
-                      height={50}
-                      aria-hidden="true"
-                    />
-                  </Link>
 
                   {categoryData.length !== idx + 1 && (
                     <div className="col-span-2">

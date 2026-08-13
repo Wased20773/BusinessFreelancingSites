@@ -104,7 +104,7 @@ export default function EditSocialPage() {
     }
 
     void getSocialData();
-  }, [socialId, selectedPlatform]);
+  }, [socialId]);
 
   function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);

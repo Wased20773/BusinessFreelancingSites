@@ -17,16 +17,14 @@ export default function CategoryInfo({
       className="dashboard-card p-4"
       aria-labelledby="category-info-heading"
     >
-      <div className="flex justify-between">
+      <div className="flex justify-between items-center">
         <h2 id="category-info-heading">Category Information</h2>
-        <Link href={`${categoryId}/edit`}>
+        <Link href={`${categoryId}/edit`} className="shrink-0">
           <Image
             src={EditIcon}
             alt=""
             aria-hidden="true"
-            width={30}
-            height={30}
-            loading="eager"
+            className="md:min-w-[30px] min-w-[50px] h-fit"
           />
         </Link>
       </div>

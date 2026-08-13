@@ -26,8 +26,12 @@ export default function ListCard({
     <>
       {/* MOBILE */}
       {variant === "mobile" && (
-        <li key={id} className="grid grid-cols-[1fr_auto]">
-          <div className="min-w-0 flex items-center gap-3">
+        <li key={id}>
+          <Link
+            href={path}
+            aria-label="Edit"
+            className="min-w-0 flex items-center gap-3"
+          >
             <Image
               className="shrink-0"
               src={icon}
@@ -35,15 +39,12 @@ export default function ListCard({
               width={50}
               height={50}
             />
-            <div className="min-w-0 overflow-x-auto">
+            <div className="flex-1 min-w-0 overflow-x-auto">
               <div className="w-max min-w-full">
                 <p className="whitespace-nowrap font-semibold">{title}</p>
                 <p className="whitespace-nowrap text-gray-500">{subtitle}</p>
               </div>
             </div>
-          </div>
-
-          <Link href={path} aria-label="Edit">
             <Image
               src={EditIcon}
               alt=""

@@ -8,13 +8,12 @@ import ArrowIcon from "@/components/icons/arrow";
 import Link from "next/link";
 import Divider from "@/components/layout/Divider";
 import KeyIcon from "@/components/icons/key.svg";
-import ChevronIcon from "@/components/icons/chevron.svg";
 import SearchIcon from "@/components/icons/search.svg";
 import { useEffect, useState } from "react";
 import type { BusinessUserJson } from "@/types/types";
 import axios from "axios";
 import { toast } from "sonner";
-import ListItem from "@/components/ui/ActionItem";
+import ActionItem from "@/components/ui/ActionItem";
 
 const USERS_PER_PAGE = 5;
 
@@ -101,7 +100,7 @@ export default function UsersPage() {
       <div className="mt-[1.5rem]">
         {/* Links */}
         <section className="dashboard-card">
-          <ListItem
+          <ActionItem
             href="/dashboard/users/access-level"
             icon={KeyIcon}
             label="Access Levels"
@@ -109,7 +108,7 @@ export default function UsersPage() {
 
           <Divider />
 
-          <ListItem
+          <ActionItem
             href="/dashboard/users/search"
             icon={SearchIcon}
             label="Search"

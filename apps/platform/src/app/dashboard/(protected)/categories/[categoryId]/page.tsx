@@ -106,7 +106,9 @@ export default function CategoryPage() {
           <ArrowIcon direction="left" size={50} />
         </Link>
 
-        <h1 id="category-heading">{categoryData.name}</h1>
+        <h1 className="truncate" id="category-heading">
+          {categoryData.name}
+        </h1>
       </header>
 
       <div className="mt-[1.5rem]">

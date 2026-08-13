@@ -119,30 +119,30 @@ export default function ItemsList({
                       isLast={isLast}
                       handleMove={handleMoveItem}
                     />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold truncate">
-                        ${Number(item.price).toFixed(2)}
-                      </p>
-                      <p className="font-semibold truncate">{item.name}</p>
-                      <p className="text-gray-500 truncate">
-                        Order: {item.order}
-                      </p>
-                    </div>
+                    <Link
+                      href={`${categoryId}/items/${item.id}`}
+                      className="flex-1 min-w-0 flex items-center"
+                      aria-label={`Edit ${item.name}`}
+                    >
+                      <div className="flex-1">
+                        <p className="font-semibold truncate">
+                          ${Number(item.price).toFixed(2)}
+                        </p>
+                        <p className="font-semibold truncate">{item.name}</p>
+                        <p className="text-gray-500 truncate">
+                          Order: {item.order}
+                        </p>
+                      </div>
+                      <Image
+                        className="h-fit"
+                        src={EditIcon}
+                        alt=""
+                        width={50}
+                        height={50}
+                        aria-hidden="true"
+                      />
+                    </Link>
                   </div>
-
-                  <Link
-                    href={`${categoryId}/items/${item.id}`}
-                    aria-label={`Open ${item.name}`}
-                    className="flex justify-center items-center"
-                  >
-                    <Image
-                      src={EditIcon}
-                      alt=""
-                      width={50}
-                      height={50}
-                      aria-hidden="true"
-                    />
-                  </Link>
 
                   {categoryData.items?.length !== idx + 1 && (
                     <div className="col-span-2">
