@@ -85,12 +85,12 @@ export default function ItemOptionsForm({
         <p className="pt-4">This item has no options</p>
       ) : (
         <div>
-          {options.map((option, index) => {
+          {options.map((option, idx) => {
             const isProcessingOption = processingOptionId === option.id;
 
-            const isFirst = index === 0;
+            const isFirst = idx === 0;
 
-            const isLast = index === options.length - 1;
+            const isLast = idx === options.length - 1;
 
             return (
               <form

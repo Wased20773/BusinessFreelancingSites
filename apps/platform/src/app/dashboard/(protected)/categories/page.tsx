@@ -90,6 +90,7 @@ export default function CategoriesPage() {
             isLoading={isLoading}
             categoryData={categoryData}
             errorMessage={errorMessage}
+            setCategoryData={setCategoryData}
           />
         </div>
       </section>

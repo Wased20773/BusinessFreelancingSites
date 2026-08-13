@@ -38,8 +38,8 @@ export default function CategoryPage() {
             .get<{ categories: CategoryJson[] }>("/api/business/menu")
             .then((response) => response.data.categories),
           {
-            loading: "Loading category...",
-            success: "Category loaded.",
+            loading: "Loading subcategory...",
+            success: "Subcategory loaded.",
             error: (error) => {
               if (axios.isAxiosError(error)) {
                 return {
@@ -67,7 +67,7 @@ export default function CategoryPage() {
         );
 
         if (!selectedCategory) {
-          setErrorMessage("This category could not be found.");
+          setErrorMessage("This subcategory could not be found.");
           return;
         }
 
@@ -147,7 +147,12 @@ export default function CategoryPage() {
         <Divider />
 
         {/* ITEMS */}
-        <ItemsList categoryId={subcategoryId} categoryData={subcategoryData} />
+        <ItemsList
+          categoryId={subcategoryId}
+          categoryData={subcategoryData}
+          setErrorMessage={setErrorMessage}
+          setCategoryData={setSubcategoryData}
+        />
       </div>
     </section>
   );

@@ -3,16 +3,92 @@ import Image from "next/image";
 import Link from "next/link";
 import EditIcon from "@/components/icons/edit.svg";
 import Divider from "@/components/layout/Divider";
+import ReorderControls from "../controls/ReorderControls";
+import { Dispatch, SetStateAction, useState } from "react";
+import { getCategories } from "@/lib/api/categories";
+import { moveOrder, ReorderDirection } from "@/lib/api/reorder";
+import { toast } from "sonner";
+import axios from "axios";
 
 type SubcategoriesListParams = {
   categoryId: string;
   categoryData: CategoryJson;
+  setCategoryData: Dispatch<SetStateAction<CategoryJson | null>>;
+  setErrorMessage: Dispatch<SetStateAction<string | null>>;
 };
 
 export default function SubcategoriesList({
   categoryId,
   categoryData,
+  setCategoryData,
+  setErrorMessage,
 }: SubcategoriesListParams) {
+  const [processingSubcategoryId, setProcessingSubcategoryId] = useState<
+    string | null
+  >(null);
+
+  async function refreshCategoryData() {
+    const refreshedCategories = await getCategories();
+
+    const selectedCategory = refreshedCategories.find(
+      (category) => category.id === categoryId,
+    );
+
+    if (!selectedCategory) {
+      setErrorMessage("This category could not be found.");
+      return;
+    }
+
+    setCategoryData(selectedCategory);
+  }
+
+  // ----------------------------
+  // MOVE CATEGORY
+  // ----------------------------
+  async function handleMoveSubcategory(
+    categoryId: string,
+    direction: ReorderDirection,
+  ) {
+    setProcessingSubcategoryId(categoryId);
+
+    try {
+      const moveToast = toast.promise(
+        moveOrder({
+          context: "category",
+          direction,
+          categoryId,
+        }),
+        {
+          loading:
+            direction === "up" ? "Moving category up" : "Moving category down",
+          success: "Item order updated",
+          error: (error) => {
+            if (axios.isAxiosError(error)) {
+              return {
+                message: "Failed to move category.",
+                description: `Status code: ${
+                  error.response?.status ?? "No response"
+                }`,
+              };
+            }
+
+            return {
+              message: "Unexpected error.",
+              description: "Something went wrong while moving the category",
+            };
+          },
+        },
+      );
+
+      await moveToast.unwrap();
+      await refreshCategoryData();
+    } catch (error) {
+      console.error("Error moving category: ", error);
+    } finally {
+      setProcessingSubcategoryId(null);
+    }
+  }
+
   return (
     <section className="dashboard-card" aria-labelledby="subcategory-heading">
       <h2 id="subcategory-heading" className="px-3 py-2">
@@ -25,34 +101,55 @@ export default function SubcategoriesList({
         <>
           {/* MOBILE */}
           <ul className="md:hidden">
-            {categoryData.subcategories?.map((subcategory, idx) => (
-              <li key={subcategory.id} className="grid grid-cols-[1fr_auto]">
-                <div className="min-w-0 px-3">
-                  <p className="font-semibold truncate">{subcategory.name}</p>
+            {categoryData.subcategories?.map((subcategory, idx) => {
+              const isProcessingSubcategory =
+                processingSubcategoryId === subcategory.id;
 
-                  <p className="text-gray-500">Order: {subcategory.order}</p>
-                </div>
+              const isFirst = idx === 0;
+              const isLast =
+                idx === (categoryData.subcategories?.length ?? 0) - 1;
 
-                <Link
-                  href={`${categoryId}/subcategories/${subcategory.id}`}
-                  aria-label={`Open ${subcategory.name}`}
-                >
-                  <Image
-                    src={EditIcon}
-                    alt=""
-                    width={50}
-                    height={50}
-                    aria-hidden="true"
-                  />
-                </Link>
-
-                {categoryData.subcategories?.length !== idx + 1 && (
-                  <div className="col-span-2">
-                    <Divider />
+              return (
+                <li key={subcategory.id} className="grid grid-cols-[1fr_auto]">
+                  <div className="min-w-0 px-3 flex items-center gap-5">
+                    <ReorderControls
+                      id={subcategory.id}
+                      isProcessing={isProcessingSubcategory}
+                      isFirst={isFirst}
+                      isLast={isLast}
+                      handleMove={handleMoveSubcategory}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold truncate">
+                        {subcategory.name}
+                      </p>
+                      <p className="text-gray-500 truncate">
+                        Order: {subcategory.order}
+                      </p>
+                    </div>
                   </div>
-                )}
-              </li>
-            ))}
+
+                  <Link
+                    href={`${categoryId}/subcategories/${subcategory.id}`}
+                    aria-label={`Open ${subcategory.name}`}
+                  >
+                    <Image
+                      src={EditIcon}
+                      alt=""
+                      width={50}
+                      height={50}
+                      aria-hidden="true"
+                    />
+                  </Link>
+
+                  {categoryData.subcategories?.length !== idx + 1 && (
+                    <div className="col-span-2">
+                      <Divider />
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
 
           {/* DESKTOP */}
