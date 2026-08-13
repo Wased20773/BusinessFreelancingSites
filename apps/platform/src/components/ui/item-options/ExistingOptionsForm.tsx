@@ -1,6 +1,7 @@
 import { ReorderDirection } from "@/lib/api/reorder";
 import { ItemOptionsJson } from "@/types/types";
 import { SubmitEvent } from "react";
+import ReorderControls from "../controls/ReorderControls";
 
 type ExistingOptionsFormParams = {
   options: ItemOptionsJson[];
@@ -33,7 +34,6 @@ export default function ExistingOptionsForm({
             const isProcessingOption = processingOptionId === option.id;
 
             const isFirst = idx === 0;
-
             const isLast = idx === options.length - 1;
 
             return (
@@ -43,12 +43,12 @@ export default function ExistingOptionsForm({
                 onSubmit={(event) => handleUpdateOption(event, option.id)}
               >
                 <fieldset className="grid gap-3" disabled={isProcessingOption}>
-                  <div className="grid gap-3 md:grid-cols-[1fr_150px_auto]">
-                    <div>
+                  <div className="flex gap-3">
+                    <div className="flex-1">
                       <label htmlFor={`option-name-${option.id}`}>Name</label>
 
                       <input
-                        className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
+                        className="min-w-0 block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
                         id={`option-name-${option.id}`}
                         name="name"
                         type="text"
@@ -60,7 +60,7 @@ export default function ExistingOptionsForm({
                       <label htmlFor={`option-price-${option.id}`}>Price</label>
 
                       <input
-                        className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
+                        className="min-w-0 max-w-[100px] block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
                         id={`option-price-${option.id}`}
                         name="price"
                         type="number"
@@ -69,58 +69,55 @@ export default function ExistingOptionsForm({
                         defaultValue={option.price}
                       />
                     </div>
-
-                    <label
-                      className="flex items-end gap-2 pb-2 cursor-pointer"
-                      htmlFor={`option-available-${option.id}`}
-                    >
-                      <input
-                        id={`option-available-${option.id}`}
-                        name="isAvailable"
-                        type="checkbox"
-                        defaultChecked={option.isAvailable}
-                      />
-                      Available?
-                    </label>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      className="border-[0.1rem] border-gray-500 rounded-md px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                      type="button"
-                      disabled={isProcessingOption || isFirst}
-                      onClick={() => handleMoveOption(option.id, "up")}
-                    >
-                      Move Up
-                    </button>
+                  <label
+                    className="flex items-end gap-2 pb-2 cursor-pointer"
+                    htmlFor={`option-available-${option.id}`}
+                  >
+                    <input
+                      id={`option-available-${option.id}`}
+                      name="isAvailable"
+                      type="checkbox"
+                      defaultChecked={option.isAvailable}
+                    />
+                    Available?
+                  </label>
 
-                    <button
-                      className="border-[0.1rem] border-gray-500 rounded-md px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                      type="button"
-                      disabled={isProcessingOption || isLast}
-                      onClick={() => handleMoveOption(option.id, "down")}
-                    >
-                      Move Down
-                    </button>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 px-3 flex items-center gap-5">
+                      <ReorderControls
+                        id={option.id}
+                        isProcessing={isProcessingOption}
+                        isFirst={isFirst}
+                        isLast={isLast}
+                        handleMove={handleMoveOption}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-gray-500 truncate">
+                          Order: {option.order}
+                        </p>
+                      </div>
+                    </div>
 
-                    <span>Order: {option.order}</span>
+                    <div className="flex gap-2">
+                      <button
+                        className="bg-emerald-300 border-[0.1rem] border-emerald-500 rounded-md text-emerald-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                        type="submit"
+                        disabled={isProcessingOption}
+                      >
+                        {isProcessingOption ? "Saving..." : "Save"}
+                      </button>
 
-                    <button
-                      className="bg-emerald-300 border-[0.1rem] border-emerald-500 rounded-md text-emerald-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                      type="submit"
-                      disabled={isProcessingOption}
-                    >
-                      {isProcessingOption ? "Saving..." : "Save"}
-                    </button>
-
-                    <button
-                      className="bg-red-300 border-[0.1rem] border-red-500 rounded-md text-red-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                      type="button"
-                      disabled={isProcessingOption}
-                      onClick={() => handleDeleteOption(option.id)}
-                    >
-                      Delete
-                    </button>
+                      <button
+                        className="bg-red-300 border-[0.1rem] border-red-500 rounded-md text-red-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                        type="button"
+                        disabled={isProcessingOption}
+                        onClick={() => handleDeleteOption(option.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </fieldset>
               </form>

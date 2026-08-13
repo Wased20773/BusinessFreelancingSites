@@ -714,12 +714,14 @@ export default function EditItemPage() {
         >
           <h2 id="item-options-heading">Item Options</h2>
 
+          <h3 className="mt-3">Create an option below</h3>
           {/* CREATE OPTION */}
           <CreateOptionForm
             handleCreateOption={handleCreateOption}
             isCreatingOption={isCreatingOption}
           />
 
+          <h3 className="mt-3">Update any existing options below</h3>
           {/* EXISTING OPTIONS */}
           <ExistingOptionsForm
             options={options}

@@ -11,7 +11,7 @@ export default function CreateOptionForm({
 }: CreateOptionFormParams) {
   return (
     <form
-      className="mt-4 border-b border-gray-300 pb-5"
+      className="my-4 border-b border-gray-300"
       onSubmit={handleCreateOption}
     >
       <fieldset
