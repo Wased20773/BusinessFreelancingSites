@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import MobileNavBar from "@/components/layout/dashboard/MobileNavBar";
 import SideBar from "@/components/layout/dashboard/SideBar";
+import AuthSessionProvider from "@/components/providers/AuthSessionProvider";
 import ResponsiveToaster from "@/components/ui/ResponsiveToast";
 import { redirect } from "next/navigation";
 import { ReactNode } from "react";
@@ -48,7 +49,7 @@ export default async function DashboardLayout({
   };
 
   return (
-    <>
+    <AuthSessionProvider>
       <ResponsiveToaster />
       <div className="h-screen grid grid-rows-[auto_1fr] md:grid-cols-[auto_1fr] md:grid-rows-1">
         <SideBar
@@ -62,6 +63,6 @@ export default async function DashboardLayout({
 
         <main className="min-h-0 overflow-y-scroll p-5">{children}</main>
       </div>
-    </>
+    </AuthSessionProvider>
   );
 }

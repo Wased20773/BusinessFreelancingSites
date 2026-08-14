@@ -44,7 +44,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
 
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       const businessToken = token as typeof token & BusinessToken;
 
       const userId = user?.id ?? businessToken.userId ?? token.sub;
@@ -60,6 +60,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
        * the user's business information.
        */
       if (
+        trigger === "update" ||
         !businessToken.businessId ||
         !businessToken.businessSlug ||
         !businessToken.businessName ||

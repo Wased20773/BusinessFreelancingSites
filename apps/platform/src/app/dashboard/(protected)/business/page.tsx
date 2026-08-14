@@ -9,6 +9,8 @@ import axios from "axios";
 import type { BusinessJson } from "@/types/types";
 import Editicon from "@/components/icons/edit.svg";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function BusinessPage() {
   const [businessData, setBusinessData] = useState<BusinessJson | null>(null);
@@ -18,6 +20,9 @@ export default function BusinessPage() {
   const [name, setName] = useState<string>("");
 
   const [isEdit, setIsEdit] = useState<boolean>(false);
+
+  const { update } = useSession();
+  const router = useRouter();
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -60,6 +65,12 @@ export default function BusinessPage() {
 
       const updatedBusiness = await updateToast.unwrap();
       setBusinessData(updatedBusiness);
+      await update({
+        business: {
+          name: updatedBusiness.name,
+        },
+      });
+      router.refresh();
     } catch (error) {
       console.error("Error updating business:", error);
 
