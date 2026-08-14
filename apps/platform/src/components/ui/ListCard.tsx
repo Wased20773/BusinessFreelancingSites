@@ -39,11 +39,13 @@ export default function ListCard({
               width={50}
               height={50}
             />
-            <div className="flex-1 min-w-0 overflow-x-auto">
-              <div className="w-max min-w-full">
-                <p className="whitespace-nowrap font-semibold">{title}</p>
-                <p className="whitespace-nowrap text-gray-500">{subtitle}</p>
-              </div>
+            <div className="flex-1 min-w-0">
+              <p className="whitespace-nowrap font-semibold truncate">
+                {title}
+              </p>
+              <p className="whitespace-nowrap text-gray-500 truncate">
+                {subtitle}
+              </p>
             </div>
             <Image
               src={EditIcon}

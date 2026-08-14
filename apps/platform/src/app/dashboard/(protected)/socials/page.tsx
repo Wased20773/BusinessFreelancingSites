@@ -1,18 +1,13 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import CreateButtonIcon from "@/components/icons/create-button.svg";
 import Divider from "@/components/layout/Divider";
 import ActionItem from "@/components/ui/ActionItem";
-import EditIcon from "@/components/icons/edit.svg";
 import { useEffect, useState } from "react";
 import { SocialJson } from "@/types/types";
 import axios from "axios";
 import { toast } from "sonner";
-import InstagramIcon from "@/components/icons/instagram.svg";
 import "../page.css";
-import ListCard from "@/components/ui/ListCard";
 import SocialsList from "@/components/ui/socials/SocialsList";
 
 // Test later
