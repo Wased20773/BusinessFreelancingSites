@@ -79,13 +79,15 @@ export default function EditSocialPage() {
           return;
         }
 
+        const platform = getPlatformFromDomain(selectedSocial.domain) ?? "";
+
         setSocialData(selectedSocial);
-        setSelectedPlatform(getPlatformFromDomain(selectedSocial.domain) ?? "");
+        setSelectedPlatform(platform);
         setProfileName(selectedSocial.profileName);
         setCanSubmit(Boolean(selectedSocial.profileName?.trim()));
         setPreviewUrl(
-          selectedPlatform && profileName.trim()
-            ? `https://${SOCIAL_PLATFORMS[selectedPlatform].domain}/${profileName.replaceAll(" ", "-")}`
+          platform && selectedSocial.profileName.trim()
+            ? `https://${SOCIAL_PLATFORMS[platform].domain}/${selectedSocial.profileName.replaceAll(" ", "-")}`
             : "",
         );
       } catch (error) {
@@ -104,16 +106,16 @@ export default function EditSocialPage() {
     }
 
     void getSocialData();
-  }, [socialId]);
+  }, []);
 
   function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
 
     const platform = formData.get("platform");
     const profileName = formData.get("profileName");
+
     const profileNameValue =
       typeof profileName === "string" ? profileName.trim() : "";
-
     const hasPlatform =
       typeof platform === "string" && platform in SOCIAL_PLATFORMS;
 
@@ -121,8 +123,8 @@ export default function EditSocialPage() {
 
     setCanSubmit(hasPlatform && hasProfileName);
     setPreviewUrl(
-      selectedPlatform && profileNameValue
-        ? `https://${SOCIAL_PLATFORMS[selectedPlatform].domain}/${profileNameValue.replaceAll(" ", "-")}`
+      hasPlatform && profileNameValue
+        ? `https://${SOCIAL_PLATFORMS[platform as SocialPlatform].domain}/${profileNameValue.replaceAll(" ", "-")}`
         : "",
     );
   }
