@@ -1,19 +1,13 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import CreateButtonIcon from "@/components/icons/create-button.svg";
 import Divider from "@/components/layout/Divider";
 import ActionItem from "@/components/ui/ActionItem";
-import BusinessIcon from "@/components/icons/business.svg";
-import PersonalIcon from "@/components/icons/placeholder-account-black.svg";
-import EditIcon from "@/components/icons/edit.svg";
 import { useEffect, useState } from "react";
 import { ContactJson } from "@/types/types";
 import axios from "axios";
 import { toast } from "sonner";
 import "../page.css";
-import ListCard from "@/components/ui/ListCard";
 import ContactsList from "@/components/ui/contacts/ContactsList";
 
 export default function ContactsPage() {

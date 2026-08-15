@@ -1,11 +1,13 @@
 import type {
   Category,
   Business,
-  BusinessUser,
   User,
   Social,
   Contact,
   AccessLevel,
+  Location,
+  LocationDay,
+  Hour,
 } from "@business-freelancer/database";
 
 // --------------------
@@ -97,6 +99,24 @@ export type ContactJson = Omit<Contact, "createdAt" | "updatedAt"> & {
 
 // Social
 export type SocialJson = Omit<Social, "createdAt" | "updatedAt"> & {
+  createdAt: string;
+  updatedAt: string;
+};
+
+// Location
+export type LocationJson = Omit<Location, "createdAt" | "updatedAt"> & {
+  createdAt: string;
+  updatedAt: string;
+  days: LocationDayJson[];
+};
+
+export type LocationDayJson = Omit<LocationDay, "createdAt" | "updatedAt"> & {
+  createdAt: string;
+  updatedAt: string;
+  hours: HourJson[];
+};
+
+export type HourJson = Omit<Hour, "createdAt" | "updatedAt"> & {
   createdAt: string;
   updatedAt: string;
 };

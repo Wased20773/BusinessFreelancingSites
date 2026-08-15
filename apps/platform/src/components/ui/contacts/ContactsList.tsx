@@ -3,16 +3,18 @@ import PersonalIcon from "@/components/icons/placeholder-account-black.svg";
 import BusinessIcon from "@/components/icons/business.svg";
 import ListCard from "../ListCard";
 
-type ContactsList = {
+type ContactsListParams = {
   isLoading: boolean;
   contactData: ContactJson[];
 };
 
-export default function ContactsList({ isLoading, contactData }: ContactsList) {
+export default function ContactsList({
+  isLoading,
+  contactData,
+}: ContactsListParams) {
   return (
     <section aria-label="contacts-list-heading">
       <div className="dashboard-card">
-        {/* TODO: No current contacts */}
         {isLoading ? (
           <p>Loading contacts...</p>
         ) : contactData.length === 0 ? (
@@ -63,7 +65,6 @@ export default function ContactsList({ isLoading, contactData }: ContactsList) {
                 </thead>
 
                 <tbody className="divide-y">
-                  {/* TODO: Render the desktop view contacts */}
                   {contactData.map((contact) => (
                     <ListCard
                       key={contact.id}

@@ -7,10 +7,13 @@ type ListCardProps = {
   variant: string;
   id: string;
   path: string;
-  icon: StaticImageData | string;
+  icon?: StaticImageData | string;
   title: string | null | undefined;
   subtitle: string | null | undefined;
   isLast?: boolean;
+  status?: {
+    isActive: boolean;
+  };
 };
 
 export default function ListCard({
@@ -21,6 +24,7 @@ export default function ListCard({
   title,
   subtitle,
   isLast,
+  status,
 }: ListCardProps) {
   return (
     <>
@@ -32,13 +36,29 @@ export default function ListCard({
             aria-label="Edit"
             className="min-w-0 flex items-center gap-3"
           >
-            <Image
-              className="shrink-0"
-              src={icon}
-              alt=""
-              width={50}
-              height={50}
-            />
+            {status && (
+              <div
+                className={[
+                  `min-w-[1.25rem] min-h-[1.25rem] rounded-full border-[0.2rem]`,
+                  status.isActive
+                    ? "border-green-500 bg-emerald-400"
+                    : "border-zinc-500 bg-zinc-400",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              ></div>
+            )}
+
+            {icon && (
+              <Image
+                className="shrink-0"
+                src={icon}
+                alt=""
+                width={50}
+                height={50}
+              />
+            )}
+
             <div className="flex-1 min-w-0">
               <p className="whitespace-nowrap font-semibold truncate">
                 {title}
@@ -67,30 +87,49 @@ export default function ListCard({
       {/* DESKTOP */}
       {variant === "desktop" && (
         <tr className="border-gray-300">
-          <th scope="row" className="px-3 py-2 font-normal">
-            {title}
-          </th>
+          {status ? (
+            <>
+              <th scope="row" className="px-3 py-2 font-normal align-middle">
+                <div
+                  className={[
+                    `size-5 mx-auto rounded-full border-[0.2rem]`,
+                    status.isActive
+                      ? "border-green-500 bg-emerald-400"
+                      : "border-zinc-500 bg-zinc-400",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                ></div>
+              </th>
+
+              <td className="px-3 py-2 font-normal">{title}</td>
+            </>
+          ) : (
+            <th scope="row" className="px-3 py-2 font-normal">
+              {title}
+            </th>
+          )}
 
           <td className="px-3 py-2">{subtitle}</td>
 
-          <td className="px-3 py-2">
-            <Image src={icon} alt="" width={30} height={30} />
-          </td>
+          {icon && (
+            <td className="px-3 py-2">
+              <Image src={icon} alt="" width={30} height={30} />
+            </td>
+          )}
 
           <td>
-            <Link
-              href={path}
-              aria-label={`Edit this social`}
-              className="flex justify-center w-fit"
-            >
-              <Image
-                src={EditIcon}
-                alt=""
-                width={30}
-                height={30}
-                aria-hidden="true"
-              />
-            </Link>
+            <div className="flex justify-center items-center">
+              <Link href={path} aria-label={`Edit this social`}>
+                <Image
+                  src={EditIcon}
+                  alt=""
+                  width={30}
+                  height={30}
+                  aria-hidden="true"
+                />
+              </Link>
+            </div>
           </td>
         </tr>
       )}

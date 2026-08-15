@@ -18,5 +18,8 @@ export {
   type BusinessUser,
   type User,
   type Role,
+  type Location,
+  type LocationDay,
+  type Hour,
 } from "./generated/prisma/client";
 export { AccessLevel, DayOfWeek } from "./generated/prisma/enums";
