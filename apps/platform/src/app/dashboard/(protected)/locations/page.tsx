@@ -75,7 +75,7 @@ export default function LocationsPage() {
         <nav className="dashboard-card" aria-label="Location actions">
           {/* Create Location */}
           <ActionItem
-            href="/dashboard/location/create"
+            href="/dashboard/locations/create"
             icon={CreateButtonIcon}
             label="Create Location"
           />

@@ -29,7 +29,7 @@ export default function LocationsList({
                   variant={"mobile"}
                   id={location.id}
                   path={`/dashboard/locations/${location.id}`}
-                  icon={PinpointIcon}
+                  // icon={PinpointIcon}
                   title={location.address}
                   subtitle={location.zip}
                   isLast={locationData.length !== idx + 1}

@@ -5,7 +5,7 @@ import CreateContactForm from "@/components/ui/contacts/CreateContactForm";
 import { ContactJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
-import { SubmitEvent, useState } from "react";
+import { InputEvent, SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 
 export default function CreateContactPage() {
@@ -90,7 +90,7 @@ export default function CreateContactPage() {
     }
   }
 
-  function handleFormInput(event: React.FormEvent<HTMLFormElement>) {
+  function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
 
     const phoneNumber = formData.get("phoneNumber");

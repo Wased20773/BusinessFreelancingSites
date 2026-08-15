@@ -56,7 +56,7 @@ button:not(:disabled) {
 fieldset {
   display: flex;
   flex-direction: column;
-  gap: 25px;
+  gap: 15px;
 }
 
 legend {
@@ -67,6 +67,12 @@ legend {
   margin-bottom: 10px;
 }
 
+/* typically a checkbox */
 label:not(:has(input)) {
   color: var(--gray-500);
+}
+
+/* typically a checkbox */
+label:has(input) {
+  width: fit-content;
 }
