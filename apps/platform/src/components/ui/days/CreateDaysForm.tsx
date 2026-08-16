@@ -38,8 +38,6 @@ export default function CreateDaysForm({
   setErrorMessage,
 }: CreateDaysFormProps) {
   const [isActivatingDays, setIsActivatingDays] = useState<boolean>(false);
-  const [weekFormat, setWeekFormat] =
-    useState<readonly string[]>(MONDAY_SUNDAY);
 
   const hasBusinessDays = locationData.days.length > 0;
 
@@ -48,7 +46,7 @@ export default function CreateDaysForm({
     setErrorMessage(null);
 
     const requestBody = {
-      days: weekFormat.map((day) => ({
+      days: MONDAY_SUNDAY.map((day) => ({
         dayOfWeek: day,
         isClosed: false,
       })),
@@ -64,11 +62,18 @@ export default function CreateDaysForm({
           .then((response) => response.data),
         {
           loading: "Activating business days...",
+
           success: "Business days activated.",
+
           error: (error) => {
-            if (axios.isAxiosError<{ error?: string }>(error)) {
+            if (
+              axios.isAxiosError<{
+                error?: string;
+              }>(error)
+            ) {
               return {
                 message: "Failed to activate business days.",
+
                 description:
                   error.response?.data?.error ??
                   `Status code: ${error.response?.status ?? "No response"}`,
@@ -77,6 +82,7 @@ export default function CreateDaysForm({
 
             return {
               message: "Unexpected error.",
+
               description:
                 "Something went wrong while activating business days.",
             };
@@ -86,13 +92,17 @@ export default function CreateDaysForm({
 
       await daysToast.unwrap();
 
-      // Refresh the location so we receive the newly created
-      // LocationDay records with their actual ids.
+      // Refresh so we receive the real
+      // LocationDay records and ids.
       await getLocationData(false);
     } catch (error) {
       console.error("Error activating Business Days:", error);
 
-      if (axios.isAxiosError<{ error?: string }>(error)) {
+      if (
+        axios.isAxiosError<{
+          error?: string;
+        }>(error)
+      ) {
         setErrorMessage(
           error.response?.data?.error ?? "Failed to activate business days.",
         );
@@ -162,21 +172,16 @@ export default function CreateDaysForm({
           </p>
 
           <div className="flex flex-col">
-            {[...locationData.days]
-              .sort(
-                (a, b) =>
-                  weekFormat.indexOf(a.dayOfWeek) -
-                  weekFormat.indexOf(b.dayOfWeek),
-              )
-              .map((day) => (
-                <div
-                  key={day.id}
-                  className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0"
-                >
-                  <p className="font-semibold">{day.dayOfWeek}</p>
-                  <p>{day.isClosed ? "Closed" : "Open"}</p>
-                </div>
-              ))}
+            {locationData.days.map((day) => (
+              <div
+                key={day.id}
+                className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0"
+              >
+                <p className="font-semibold">{day.dayOfWeek}</p>
+
+                <p>{day.isClosed ? "Closed" : "Open"}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}

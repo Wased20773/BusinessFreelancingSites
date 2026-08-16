@@ -33,8 +33,11 @@ type DayHours = {
 
 type CreateHoursFormProps = {
   day: DayOfWeek;
+
   currentDay: DayHours;
+
   setDays: Dispatch<SetStateAction<Record<DayOfWeek, DayHours> | null>>;
+
   removeHour: (day: DayOfWeek, hourIdx: number) => Promise<void>;
 };
 
@@ -103,6 +106,7 @@ export default function CreateHoursForm({
                             hourIdx === idx
                               ? {
                                   ...currentHour,
+
                                   title: event.target.value,
                                 }
                               : currentHour,
@@ -140,6 +144,7 @@ export default function CreateHoursForm({
                             hourIdx === idx
                               ? {
                                   ...currentHour,
+
                                   note: event.target.value,
                                 }
                               : currentHour,
@@ -178,6 +183,7 @@ export default function CreateHoursForm({
                             hourIdx === idx
                               ? {
                                   ...currentHour,
+
                                   openTime: event.target.value,
                                 }
                               : currentHour,
@@ -216,6 +222,7 @@ export default function CreateHoursForm({
                             hourIdx === idx
                               ? {
                                   ...currentHour,
+
                                   closeTime: event.target.value,
                                 }
                               : currentHour,
@@ -248,6 +255,7 @@ export default function CreateHoursForm({
 
                 hours: [
                   ...currentDays[day].hours,
+
                   {
                     title: "",
                     note: "",

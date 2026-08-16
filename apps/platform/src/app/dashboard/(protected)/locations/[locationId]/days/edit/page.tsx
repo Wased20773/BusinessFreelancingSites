@@ -1,16 +1,14 @@
 "use client";
 
 import ArrowIcon from "@/components/icons/arrow";
-import TrashIcon from "@/components/icons/trash-red.svg";
+import CreateHoursForm from "@/components/ui/hours/CreateHoursForm";
 import type { LocationJson } from "@/types/types";
 import axios from "axios";
-import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { type SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../../../page.css";
-import CreateHoursForm from "@/components/ui/hours/CreateHoursForm";
 
 const MONDAY_SUNDAY = [
   "Monday",
@@ -45,10 +43,13 @@ export default function EditBusinessDaysPage() {
   const locationId = params.locationId;
 
   const [locationData, setLocationData] = useState<LocationJson | null>(null);
+
   const [days, setDays] = useState<Record<DayOfWeek, DayHours> | null>(null);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
   const [isSaving, setIsSaving] = useState<boolean>(false);
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -98,7 +99,6 @@ export default function EditBusinessDaysPage() {
           setErrorMessage(
             "Business days have not been activated for this location.",
           );
-
           return;
         }
 
@@ -106,27 +106,23 @@ export default function EditBusinessDaysPage() {
 
         const dayState = {} as Record<DayOfWeek, DayHours>;
 
-        for (const dayName of MONDAY_SUNDAY) {
-          const selectedDay = selectedLocation.days.find(
-            (day) => day.dayOfWeek === dayName,
-          );
-
-          if (!selectedDay) {
-            setErrorMessage(`${dayName} could not be found for this location.`);
-
-            return;
-          }
+        /*
+         * Days are already returned from the API
+         * in Monday -> Sunday order.
+         */
+        for (const selectedDay of selectedLocation.days) {
+          const dayName = selectedDay.dayOfWeek as DayOfWeek;
 
           dayState[dayName] = {
             id: selectedDay.id,
+
             isClosed: selectedDay.isClosed,
+
             originalIsClosed: selectedDay.isClosed,
 
             /*
-             * Use the real hours returned from the API.
-             *
-             * If this day has no existing hours,
-             * start it with one empty hours block.
+             * Hours are already returned from the API
+             * earliest -> latest and in HH:mm format.
              */
             hours:
               selectedDay.hours && selectedDay.hours.length > 0
@@ -137,17 +133,9 @@ export default function EditBusinessDaysPage() {
 
                     note: hour.note ?? "",
 
-                    /*
-                     * <input type="time"> expects
-                     * an HH:mm string.
-                     *
-                     * 11:01 remains 11:01.
-                     * If seconds ever come back,
-                     * slice removes them.
-                     */
-                    openTime: hour.openTime.slice(0, 5),
+                    openTime: hour.openTime,
 
-                    closeTime: hour.closeTime.slice(0, 5),
+                    closeTime: hour.closeTime,
                   }))
                 : [
                     {
@@ -223,8 +211,9 @@ export default function EditBusinessDaysPage() {
 
       return currentDay.hours.some((hour) => {
         /*
-         * No id means this hour does not exist in the database.
-         * Only count it as new if the user actually entered something.
+         * No id means this hour does not exist in
+         * the database. Only count it as new if
+         * the user actually entered something.
          */
         if (!hour.id) {
           return (
@@ -248,8 +237,8 @@ export default function EditBusinessDaysPage() {
         }
 
         return (
-          hour.openTime !== originalHour.openTime.slice(0, 5) ||
-          hour.closeTime !== originalHour.closeTime.slice(0, 5) ||
+          hour.openTime !== originalHour.openTime ||
+          hour.closeTime !== originalHour.closeTime ||
           hour.title !== (originalHour.title ?? "") ||
           hour.note !== (originalHour.note ?? "")
         );
@@ -296,6 +285,7 @@ export default function EditBusinessDaysPage() {
             for (const hour of currentDay.hours) {
               const requestBody = {
                 openTime: hour.openTime,
+
                 closeTime: hour.closeTime,
 
                 title: hour.title.trim() || null,
@@ -318,8 +308,8 @@ export default function EditBusinessDaysPage() {
 
                 const hourChanged =
                   originalHour &&
-                  (hour.openTime !== originalHour.openTime.slice(0, 5) ||
-                    hour.closeTime !== originalHour.closeTime.slice(0, 5) ||
+                  (hour.openTime !== originalHour.openTime ||
+                    hour.closeTime !== originalHour.closeTime ||
                     hour.title !== (originalHour.title ?? "") ||
                     hour.note !== (originalHour.note ?? ""));
 
@@ -379,7 +369,7 @@ export default function EditBusinessDaysPage() {
       await updateToast.unwrap();
 
       /*
-       * Reload the page so the newly-saved database
+       * Reload so the newly-saved database
        * values become the new original state.
        */
       window.location.reload();
@@ -419,7 +409,9 @@ export default function EditBusinessDaysPage() {
             .then((response) => response.data),
           {
             loading: "Removing hours...",
+
             success: "Hours removed.",
+
             error: (error) => {
               if (
                 axios.isAxiosError<{
@@ -428,6 +420,7 @@ export default function EditBusinessDaysPage() {
               ) {
                 return {
                   message: "Failed to remove hours.",
+
                   description:
                     error.response?.data?.error ??
                     `Status code: ${error.response?.status ?? "No response"}`,
@@ -436,6 +429,7 @@ export default function EditBusinessDaysPage() {
 
               return {
                 message: "Unexpected error.",
+
                 description: "Something went wrong while removing the hours.",
               };
             },
@@ -521,7 +515,8 @@ export default function EditBusinessDaysPage() {
             </p>
 
             <div className="flex flex-col gap-5 mt-5">
-              {MONDAY_SUNDAY.map((day) => {
+              {locationData.days.map((locationDay) => {
+                const day = locationDay.dayOfWeek as DayOfWeek;
                 const currentDay = days[day];
 
                 return (

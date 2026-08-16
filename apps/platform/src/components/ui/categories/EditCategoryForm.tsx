@@ -1,5 +1,6 @@
 import { CategoryJson } from "@/types/types";
 import { InputEvent, SubmitEvent } from "react";
+import "@/app/dashboard/(protected)/page.css";
 
 type EditCategoryFormParams = {
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;

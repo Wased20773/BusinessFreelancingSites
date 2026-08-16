@@ -1,23 +1,23 @@
 "use client";
 
 import ArrowIcon from "@/components/icons/arrow";
-import EditCategoryForm from "@/components/ui/categories/EditCategoryForm";
-import type { CategoryJson } from "@/types/types";
+import EditLocationForm from "@/components/ui/locations/EditLocationForm";
+import { LocationJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { InputEvent, SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export default function EditCategoryPage() {
-  const params = useParams<{ categoryId: string }>();
+export default function EditLocationPage() {
+  const params = useParams<{ locationId: string }>();
   const router = useRouter();
 
-  const categoryId = params.categoryId;
+  const locationId = params.locationId;
 
-  const [categoryData, setCategoryData] = useState<CategoryJson | null>(null);
+  const [locationData, setLocationData] = useState<LocationJson | null>(null);
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
@@ -25,22 +25,22 @@ export default function EditCategoryPage() {
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
 
   useEffect(() => {
-    async function getCategoryData() {
+    async function getLocationData() {
       setIsLoading(true);
       setErrorMessage(null);
 
       try {
-        const categoriesToast = toast.promise<CategoryJson[]>(
+        const locationsToast = toast.promise<LocationJson[]>(
           axios
-            .get<{ categories: CategoryJson[] }>("/api/business/categories")
-            .then((response) => response.data.categories),
+            .get<{ locations: LocationJson[] }>("/api/business/locations")
+            .then((response) => response.data.locations),
           {
-            loading: "Loading category...",
-            success: "Category loaded.",
+            loading: "Loading location...",
+            success: "Location loaded",
             error: (error) => {
               if (axios.isAxiosError<{ error?: string }>(error)) {
                 return {
-                  message: "Failed to load category.",
+                  message: "Failed to load location.",
                   description:
                     error.response?.data?.error ??
                     `Status code: ${error.response?.status ?? "No response"}`,
@@ -49,51 +49,51 @@ export default function EditCategoryPage() {
 
               return {
                 message: "Unexpected error.",
-                description: "Something went wrong while loading the category.",
+                description: "Something went wrong while loading the location.",
               };
             },
           },
         );
 
-        const categories = await categoriesToast.unwrap();
+        const locations = await locationsToast.unwrap();
 
-        const selectedCategory = categories.find(
-          (category) => category.id === categoryId,
+        const selectedLocation = locations.find(
+          (location) => location.id === locationId,
         );
 
-        if (!selectedCategory) {
-          setErrorMessage("This category could not be found.");
+        if (!selectedLocation) {
+          setErrorMessage("This location could not be found.");
           return;
         }
 
-        setCategoryData(selectedCategory);
-        setCanSubmit(Boolean(selectedCategory.name.trim()));
+        setLocationData(selectedLocation);
+        // setCanSubmit()
       } catch (error) {
-        console.error("Error in Edit Category page:", error);
+        console.error("Error in editing location page:", error);
 
         if (axios.isAxiosError<{ error?: string }>(error)) {
           setErrorMessage(
-            error.response?.data?.error ?? "Failed to load category data.",
+            error.response?.data?.error ?? "Failed to load location data.",
           );
         } else {
-          setErrorMessage("Failed to load category data.");
+          setErrorMessage("Failed to load location data.");
         }
       } finally {
         setIsLoading(false);
       }
     }
 
-    void getCategoryData();
-  }, [categoryId]);
+    void getLocationData();
+  }, [locationId]);
 
   function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
 
-    const name = formData.get("name");
+    const address = formData.get("address");
 
-    const hasName = typeof name === "string" && name.trim() !== "";
+    const hasAddress = typeof address === "string" && address.trim() !== "";
 
-    setCanSubmit(hasName);
+    setCanSubmit(hasAddress);
   }
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
@@ -101,23 +101,28 @@ export default function EditCategoryPage() {
 
     const formData = new FormData(event.currentTarget);
 
-    const name = formData.get("name");
-    const description = formData.get("description");
-    const isVisible = formData.get("isVisible");
+    const address = formData.get("address");
+    const zip = formData.get("zip");
+    const country = formData.get("country");
+    const state = formData.get("state");
+    const city = formData.get("city");
+    const parking = formData.get("parking");
+    const isActive = formData.get("isActive");
+    const enableHours = formData.get("enableHours");
 
     const requestBody = {
-      name: typeof name === "string" ? name.trim() : "",
-
-      description:
-        typeof description === "string" && description.trim()
-          ? description.trim()
-          : null,
-
-      isVisible: isVisible !== null,
+      address: typeof address === "string" ? address.trim() : "",
+      zip: typeof zip === "string" ? zip.trim() : "",
+      country: typeof country === "string" ? country.trim() : "",
+      state: typeof state === "string" ? state.trim() : "",
+      city: typeof city === "string" ? city.trim() : "",
+      parking: parking !== null,
+      isActive: isActive !== null,
+      enableHours: enableHours !== null,
     };
 
-    if (!requestBody.name || requestBody.name.length === 0) {
-      setErrorMessage("A category name is required.");
+    if (!requestBody.address || requestBody.address.length === 0) {
+      setErrorMessage("A location address is required");
       return;
     }
 
@@ -125,20 +130,20 @@ export default function EditCategoryPage() {
     setErrorMessage(null);
 
     try {
-      const updateToast = toast.promise<CategoryJson>(
+      const updateToast = toast.promise<LocationJson>(
         axios
-          .patch<CategoryJson>(
-            `/api/admin/categories/${categoryId}`,
+          .patch<LocationJson>(
+            `/api/admin/locations/${locationId}`,
             requestBody,
           )
           .then((response) => response.data),
         {
-          loading: "Updating category...",
-          success: "Category updated.",
+          loading: "Updating location...",
+          success: "Location updated.",
           error: (error) => {
             if (axios.isAxiosError<{ error?: string }>(error)) {
               return {
-                message: "Failed to update category.",
+                message: "Failed to update location.",
                 description:
                   error.response?.data?.error ??
                   `Status code: ${error.response?.status ?? "No response"}`,
@@ -147,24 +152,24 @@ export default function EditCategoryPage() {
 
             return {
               message: "Unexpected error.",
-              description: "Something went wrong while updating the category.",
+              description: "Something went wrong while updating the location.",
             };
           },
         },
       );
 
-      const updatedCategory = await updateToast.unwrap();
+      const updatedLocation = await updateToast.unwrap();
 
-      setCategoryData(updatedCategory);
+      setLocationData(updatedLocation);
     } catch (error) {
-      console.error("Error updating category:", error);
+      console.error("Error updating location:", error);
 
       if (axios.isAxiosError<{ error?: string }>(error)) {
         setErrorMessage(
-          error.response?.data?.error ?? "Failed to update the category.",
+          error.response?.data?.error ?? "Failed to update the location.",
         );
       } else {
-        setErrorMessage("Failed to update the category.");
+        setErrorMessage("Failed to update the location.");
       }
     } finally {
       setIsSaving(false);
@@ -178,15 +183,15 @@ export default function EditCategoryPage() {
     try {
       const deleteToast = toast.promise(
         axios
-          .delete(`/api/admin/categories/${categoryId}`)
+          .delete(`/api/admin/locations/${locationId}`)
           .then((response) => response.data),
         {
-          loading: "Deleting category...",
-          success: "Category deleted.",
+          loading: "Deleting location...",
+          success: "Location deleted.",
           error: (error) => {
             if (axios.isAxiosError<{ error?: string }>(error)) {
               return {
-                message: "Failed to delete category.",
+                message: "Failed to delete location.",
                 description:
                   error.response?.data?.error ??
                   `Status code: ${error.response?.status ?? "No response"}`,
@@ -195,7 +200,7 @@ export default function EditCategoryPage() {
 
             return {
               message: "Unexpected error.",
-              description: "Something went wrong while deleting the category.",
+              description: "Something went wrong while deleting the location.",
             };
           },
         },
@@ -203,7 +208,7 @@ export default function EditCategoryPage() {
 
       await deleteToast.unwrap();
 
-      router.push("/dashboard/categories");
+      router.push("/dashboard/locations");
     } catch (error) {
       console.error("Error deleting category:", error);
 
@@ -220,39 +225,39 @@ export default function EditCategoryPage() {
   }
 
   if (isLoading) {
-    return <p>Loading category</p>;
+    return <p>Loading location</p>;
   }
 
-  if (errorMessage && !categoryData) {
+  if (errorMessage && !locationData) {
     return <p>{errorMessage}</p>;
   }
 
-  if (!categoryData) {
-    return <p>This category could not be found.</p>;
+  if (!locationData) {
+    return <p>This location could not be found.</p>;
   }
 
   const isProcessing = isSaving || isDeleting;
 
   return (
-    <section aria-labelledby="edit-category-heading">
+    <section aria-labelledby="edit-location-heading">
       <header className="flex items-center gap-3">
         <Link
-          href={`/dashboard/categories/${categoryData.id}`}
-          aria-label="Return to categories"
+          href={`/dashboard/locations/${locationData.id}`}
+          aria-label="Return to locations"
         >
           <ArrowIcon direction="left" size={50} />
         </Link>
 
-        <h1 id="edit-category-heading">Edit Category</h1>
+        <h1 id="edit-location-heading">Edit Location</h1>
       </header>
 
       <div className="mt-[1.5rem]">
-        <EditCategoryForm
+        <EditLocationForm
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}
           handleDelete={handleDelete}
           isProcessing={isProcessing}
-          categoryData={categoryData}
+          locationData={locationData}
           errorMessage={errorMessage}
           canSubmit={canSubmit}
           isSaving={isSaving}

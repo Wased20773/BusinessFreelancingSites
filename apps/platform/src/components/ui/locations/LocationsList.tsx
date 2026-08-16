@@ -76,6 +76,7 @@ export default function LocationsList({
                       variant="desktop"
                       id={location.id}
                       path={`/dashboard/locations/${location.id}`}
+                      // icon={PinpointIcon}
                       title={location.address}
                       subtitle={location.zip}
                       status={{ isActive: location.isActive }}
