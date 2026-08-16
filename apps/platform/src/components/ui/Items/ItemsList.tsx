@@ -124,7 +124,7 @@ export default function ItemsList({
                       className="flex-1 min-w-0 flex items-center"
                       aria-label={`Edit ${item.name}`}
                     >
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <p className="font-semibold truncate">
                           ${Number(item.price).toFixed(2)}
                         </p>

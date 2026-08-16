@@ -119,17 +119,31 @@ export default function SubcategoriesList({
                       isLast={isLast}
                       handleMove={handleMoveSubcategory}
                     />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold truncate">
-                        {subcategory.name}
-                      </p>
-                      <p className="text-gray-500 truncate">
-                        Order: {subcategory.order}
-                      </p>
-                    </div>
+                    <Link
+                      href={`${categoryId}/subcategories/${subcategory.id}`}
+                      className="flex-1 min-w-0 flex items-center"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate">
+                          {subcategory.name}
+                        </p>
+                        <p className="text-gray-500 truncate">
+                          Order: {subcategory.order}
+                        </p>
+                      </div>
+                      <div className="shrink-0">
+                        <Image
+                          src={EditIcon}
+                          alt=""
+                          width={50}
+                          height={50}
+                          aria-hidden="true"
+                        />
+                      </div>
+                    </Link>
                   </div>
 
-                  <Link
+                  {/* <Link
                     href={`${categoryId}/subcategories/${subcategory.id}`}
                     aria-label={`Open ${subcategory.name}`}
                   >
@@ -140,7 +154,7 @@ export default function SubcategoriesList({
                       height={50}
                       aria-hidden="true"
                     />
-                  </Link>
+                  </Link> */}
 
                   {categoryData.subcategories?.length !== idx + 1 && (
                     <div className="col-span-2">
