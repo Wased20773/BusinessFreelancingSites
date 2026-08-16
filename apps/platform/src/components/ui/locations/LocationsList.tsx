@@ -75,7 +75,7 @@ export default function LocationsList({
                       key={location.id}
                       variant="desktop"
                       id={location.id}
-                      path={`contacts/${location.id}`}
+                      path={`/dashboard/locations/${location.id}`}
                       title={location.address}
                       subtitle={location.zip}
                       status={{ isActive: location.isActive }}
