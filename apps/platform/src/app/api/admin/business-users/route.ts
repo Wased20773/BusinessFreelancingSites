@@ -31,6 +31,9 @@ export async function GET(request: Request): Promise<NextResponse> {
         businessId: businessId,
         userId: userId ? userId : { not: authResult.userId },
       },
+      orderBy: {
+        user: { email: "asc" },
+      },
       select: {
         id: true,
         businessId: true,
