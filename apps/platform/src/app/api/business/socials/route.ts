@@ -29,6 +29,9 @@ export async function GET(request: Request): Promise<NextResponse> {
     authentication.businessId,
     {
       socials: {
+        orderBy: {
+          domain: "asc",
+        },
         select: {
           id: true,
           domain: true,
