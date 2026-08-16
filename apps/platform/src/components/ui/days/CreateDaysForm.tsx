@@ -9,16 +9,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
-const SUNDAY_SATURDAY = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-] as const;
-
 const MONDAY_SUNDAY = [
   "Monday",
   "Tuesday",
