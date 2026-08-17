@@ -4,6 +4,7 @@ import ArrowIcon from "@/components/icons/arrow";
 import CreateLocationForm from "@/components/ui/locations/CreateLocationForm";
 import axios from "axios";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { InputEvent, SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 
@@ -11,6 +12,8 @@ export default function CreateLocationPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
+
+  const router = useRouter();
 
   function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
@@ -87,8 +90,8 @@ export default function CreateLocationPage() {
 
       await locationToast.unwrap();
 
-      // on successful creation, clear the form for re-use
       form.reset();
+      router.push("/dashboard/locations");
     } catch (error) {
       console.error("Error in Create Location page: ", error);
 

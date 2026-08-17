@@ -3,7 +3,7 @@
 import ArrowIcon from "@/components/icons/arrow";
 import axios from "axios";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../../../page.css";
@@ -19,6 +19,8 @@ export default function CreateItemPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
   const [latestOrder, setLatestOrder] = useState<number>(0);
+
+  const router = useRouter();
 
   useEffect(() => {
     async function getLatestOrder() {
@@ -43,7 +45,7 @@ export default function CreateItemPage() {
           ...category.items.map((item) => item.order),
         );
 
-        setLatestOrder(highestOrder);
+        setLatestOrder(highestOrder + 1);
       } catch (error) {
         console.error("Failed to get latest item order:", error);
       }
@@ -163,6 +165,7 @@ export default function CreateItemPage() {
 
       form.reset();
       setCanSubmit(false);
+      router.push(`/dashboard/categories/${categoryId}`);
     } catch (error) {
       console.error("Error in Create Item page:", error);
 

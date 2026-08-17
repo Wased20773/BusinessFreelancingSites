@@ -3,11 +3,11 @@
 import ArrowIcon from "@/components/icons/arrow";
 import axios from "axios";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { SubmitEvent, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../../../../../page.css";
-import type { ItemJson } from "@/types/types";
+import type { CategoryJson, ItemJson } from "@/types/types";
 import CreateItemForm from "@/components/ui/items/CreateItemForm";
 
 export default function CreateItemPage() {
@@ -19,6 +19,42 @@ export default function CreateItemPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
+  const [latestOrder, setLatestOrder] = useState<number>(1);
+
+  const router = useRouter();
+
+  useEffect(() => {
+    async function getLatestOrder() {
+      try {
+        const response = await axios.get<{
+          categories: CategoryJson[];
+        }>("/api/business/menu");
+
+        const selectedCategory = response.data.categories.find(
+          (category) => category.id === categoryId,
+        );
+
+        const selectedSubcategory = selectedCategory?.subcategories?.find(
+          (subcategory) => subcategory.id === subcategoryId,
+        );
+
+        if (!selectedSubcategory?.items?.length) {
+          setLatestOrder(1);
+          return;
+        }
+
+        const highestOrder = Math.max(
+          ...selectedSubcategory.items.map((item) => item.order),
+        );
+
+        setLatestOrder(highestOrder + 1);
+      } catch (error) {
+        console.error("Failed to get latest item order:", error);
+      }
+    }
+
+    void getLatestOrder();
+  }, [categoryId, subcategoryId]);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -131,6 +167,9 @@ export default function CreateItemPage() {
 
       form.reset();
       setCanSubmit(false);
+      router.push(
+        `/dashboard/categories/${categoryId}/subcategories/${subcategoryId}`,
+      );
     } catch (error) {
       console.error("Error in Create Item page:", error);
 
@@ -179,6 +218,7 @@ export default function CreateItemPage() {
           isLoading={isLoading}
           errorMessage={errorMessage}
           canSubmit={canSubmit}
+          latestOrder={latestOrder}
         />
       </div>
     </section>

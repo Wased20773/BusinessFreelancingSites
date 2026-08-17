@@ -5,6 +5,7 @@ import CreateContactForm from "@/components/ui/contacts/CreateContactForm";
 import { ContactJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { InputEvent, SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 
@@ -12,6 +13,8 @@ export default function CreateContactPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
+
+  const router = useRouter();
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -73,8 +76,8 @@ export default function CreateContactPage() {
 
       await contactToast.unwrap();
 
-      // on successful creation, clear the form for re-use
       form.reset();
+      router.push("/dashboard/contacts");
     } catch (error) {
       console.error("Error in Create Contact page: ", error);
 

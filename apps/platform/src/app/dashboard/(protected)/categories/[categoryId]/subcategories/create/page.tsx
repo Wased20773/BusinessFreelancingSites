@@ -7,7 +7,7 @@ import Link from "next/link";
 import { InputEvent, SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../../../page.css";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import CreateCategoryForm from "@/components/ui/categories/CreateCategoryForm";
 
 export default function CreateCategoryPage() {
@@ -21,6 +21,8 @@ export default function CreateCategoryPage() {
   }>();
 
   const categoryId = params.categoryId;
+
+  const router = useRouter();
 
   useEffect(() => {
     async function getLatestOrder() {
@@ -110,6 +112,7 @@ export default function CreateCategoryPage() {
       // On successful creation, clear the form for re-use.
       form.reset();
       setCanSubmit(false);
+      router.push(`/dashboard/categories/${categoryId}`);
     } catch (error) {
       console.error("Error in Create Subcategory page:", error);
 

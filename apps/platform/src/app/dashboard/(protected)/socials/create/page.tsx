@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import "../../page.css";
 import { SOCIAL_PLATFORMS } from "@/data/socials";
 import CreateSocialForm from "@/components/ui/socials/CreateSocialForm";
+import { useRouter } from "next/navigation";
 
 type SocialPlatform = keyof typeof SOCIAL_PLATFORMS;
 
@@ -16,6 +17,8 @@ export default function CreateSocialPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
+
+  const route = useRouter();
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -74,9 +77,9 @@ export default function CreateSocialPage() {
 
       await socialToast.unwrap();
 
-      // On successful creation, clear the form for re-use.
       form.reset();
       setCanSubmit(false);
+      route.push("/dashboard/socials");
     } catch (error) {
       console.error("Error in Create Social page: ", error);
 

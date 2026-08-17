@@ -179,7 +179,7 @@ export default function SearchPage() {
           <input
             id="user-email"
             name="email"
-            className="w-full rounded-lg border-[0.1rem] border-b-[0.2rem] border-gray-400 bg-gray-50 px-3 py-1"
+            className="w-full rounded-lg border-[0.1rem] border-b-[0.2rem] border-blue-400 bg-gray-50 px-3 py-1"
             type="email"
             placeholder="user@email.com"
             autoComplete="email"

@@ -8,12 +8,15 @@ import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../page.css";
 import CreateCategoryForm from "@/components/ui/categories/CreateCategoryForm";
+import { useRouter } from "next/navigation";
 
 export default function CreateCategoryPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
   const [latestOrder, setLatestOrder] = useState<number>(0);
+
+  const router = useRouter();
 
   useEffect(() => {
     async function getLatestOrder() {
@@ -94,9 +97,9 @@ export default function CreateCategoryPage() {
 
       await categoryToast.unwrap();
 
-      // On successful creation, clear the form for re-use.
       form.reset();
       setCanSubmit(false);
+      router.push("/dashboard/categories");
     } catch (error) {
       console.error("Error in Create Category page:", error);
 
