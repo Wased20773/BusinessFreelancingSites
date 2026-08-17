@@ -34,11 +34,8 @@ type DayHours = {
 
 type CreateHoursFormProps = {
   day: DayOfWeek;
-
   currentDay: DayHours;
-
   setDays: Dispatch<SetStateAction<Record<DayOfWeek, DayHours> | null>>;
-
   removeHour: (day: DayOfWeek, hourIdx: number) => Promise<void>;
 };
 
@@ -248,7 +245,7 @@ export default function CreateHoursForm({
 
       {/* ADD HOURS */}
       <button
-        className="w-full sm:w-[50%] sm:mx-auto md:w-fit md:ml-auto md:mr-0 border-[0.1rem] border-emerald-400 text-emerald-400 bg-neutral-50 rounded-lg px-3 py-1 mt-5"
+        className="ml-auto border-[0.1rem] border-emerald-400 text-emerald-400 bg-neutral-50 rounded-lg px-3 py-1 mt-5"
         type="button"
         onClick={() => {
           setDays((currentDays) => {
@@ -277,7 +274,7 @@ export default function CreateHoursForm({
           });
         }}
       >
-        Add Another
+        {currentDay.hours.length === 0 ? "Add Hours" : "Add Another"}
       </button>
     </>
   );

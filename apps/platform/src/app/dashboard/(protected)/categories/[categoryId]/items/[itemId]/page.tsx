@@ -35,18 +35,16 @@ export default function EditItemPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [isDeletingOption, setIsDeletingOption] = useState<boolean>(false);
   const [isUpdatingImage, setIsUpdatingImage] = useState<boolean>(false);
 
   const [isCreatingOption, setIsCreatingOption] = useState<boolean>(false);
-
   const [processingOptionId, setProcessingOptionId] = useState<string | null>(
     null,
   );
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
-
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   async function refreshItemData() {
@@ -566,7 +564,7 @@ export default function EditItemPage() {
 
   async function handleDeleteOption(optionId: string) {
     setProcessingOptionId(optionId);
-
+    setIsDeletingOption(true);
     setErrorMessage(null);
 
     try {
@@ -574,14 +572,11 @@ export default function EditItemPage() {
         axios.delete(`/api/admin/items/${itemId}/options/${optionId}`),
         {
           loading: "Deleting option...",
-
           success: "Option deleted.",
-
           error: (error) => {
             if (axios.isAxiosError(error)) {
               return {
                 message: "Failed to delete option.",
-
                 description: `Status code: ${
                   error.response?.status ?? "No response"
                 }`,
@@ -590,7 +585,6 @@ export default function EditItemPage() {
 
             return {
               message: "Unexpected error.",
-
               description: "Something went wrong while deleting the option.",
             };
           },
@@ -606,6 +600,7 @@ export default function EditItemPage() {
       setErrorMessage("Failed to delete the option.");
     } finally {
       setProcessingOptionId(null);
+      setIsDeletingOption(false);
     }
   }
 
@@ -675,8 +670,6 @@ export default function EditItemPage() {
     return <p>This item could not be found.</p>;
   }
 
-  const isProcessing = isSaving || isDeleting || isUpdatingImage;
-
   const options = itemData.options ?? [];
 
   return (
@@ -697,7 +690,7 @@ export default function EditItemPage() {
         <EditItemForm
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}
-          isProcessing={isProcessing}
+          isProcessing={isSaving || isUpdatingImage}
           itemData={itemData}
           imagePreview={imagePreview}
           handleImageChange={handleImageChange}
@@ -707,6 +700,7 @@ export default function EditItemPage() {
           handleDelete={handleDelete}
           isDeleting={isDeleting}
         />
+        {/* const isProcessing = isSaving || isDeleting || isUpdatingImage; */}
 
         <Divider />
 
@@ -732,6 +726,7 @@ export default function EditItemPage() {
             handleUpdateOption={handleUpdateOption}
             handleMoveOption={handleMoveOption}
             handleDeleteOption={handleDeleteOption}
+            isDeletingOption={isDeletingOption}
           />
         </section>
       </div>

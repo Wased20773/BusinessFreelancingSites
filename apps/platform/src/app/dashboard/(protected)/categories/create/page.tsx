@@ -25,7 +25,7 @@ export default function CreateCategoryPage() {
         const categories = response.data.categories;
 
         if (categories.length === 0) {
-          setLatestOrder(0);
+          setLatestOrder(1);
           return;
         }
 
@@ -33,7 +33,7 @@ export default function CreateCategoryPage() {
           ...categories.map((category) => category.order),
         );
 
-        setLatestOrder(highestOrder);
+        setLatestOrder(highestOrder + 1);
       } catch (error) {
         console.error("Failed to get latest category order:", error);
       }

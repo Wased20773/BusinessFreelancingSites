@@ -4,7 +4,7 @@ import { SubmitEvent } from "react";
 import ReorderControls from "../controls/ReorderControls";
 import RequiredField from "../RequiredField";
 
-type ExistingOptionsFormParams = {
+type ExistingOptionsFormProps = {
   options: ItemOptionsJson[];
   processingOptionId: string | null;
   handleUpdateOption(
@@ -16,6 +16,7 @@ type ExistingOptionsFormParams = {
     direction: ReorderDirection,
   ): Promise<void>;
   handleDeleteOption(itemId: string): Promise<void>;
+  isDeletingOption: boolean;
 };
 
 export default function ExistingOptionsForm({
@@ -24,7 +25,8 @@ export default function ExistingOptionsForm({
   handleUpdateOption,
   handleMoveOption,
   handleDeleteOption,
-}: ExistingOptionsFormParams) {
+  isDeletingOption,
+}: ExistingOptionsFormProps) {
   return (
     <>
       {options.length === 0 ? (
@@ -115,7 +117,9 @@ export default function ExistingOptionsForm({
                         type="submit"
                         disabled={isProcessingOption}
                       >
-                        {isProcessingOption ? "Saving..." : "Save"}
+                        {isProcessingOption && !isDeletingOption
+                          ? "Saving..."
+                          : "Save"}
                       </button>
 
                       <button
@@ -124,7 +128,9 @@ export default function ExistingOptionsForm({
                         disabled={isProcessingOption}
                         onClick={() => handleDeleteOption(option.id)}
                       >
-                        Delete
+                        {isProcessingOption && isDeletingOption
+                          ? "Deleting..."
+                          : "Delete"}
                       </button>
                     </div>
                   </div>

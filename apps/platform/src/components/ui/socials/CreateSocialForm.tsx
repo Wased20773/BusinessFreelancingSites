@@ -79,7 +79,7 @@ export default function CreateSocialForm({
               border-[0.1rem] border-emerald-500 rounded-md
               bg-emerald-300 text-emerald-900
               transition-opacity disabled:cursor-not-allowed disabled:opacity-50
-              px-2 py-1"
+              md:w-fit px-2 py-1"
         type="submit"
         disabled={isLoading || !canSubmit}
       >

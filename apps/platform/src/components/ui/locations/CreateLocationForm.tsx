@@ -135,7 +135,7 @@ export default function CreateLocationForm({
       </fieldset>
 
       <button
-        className="w-full sm:w-[50%] sm:mx-auto md:w-fit md:mr-auto md:ml-0 bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1 mt-5 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full md:w-fit bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1 mt-5 disabled:opacity-50 disabled:cursor-not-allowed"
         type="submit"
         disabled={!canSubmit || isLoading}
       >

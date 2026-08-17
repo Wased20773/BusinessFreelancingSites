@@ -29,6 +29,7 @@ type CreateDaysFormProps = {
   locationData: LocationJson;
   getLocationData: (showLoading?: boolean) => Promise<void>;
   setErrorMessage: React.Dispatch<React.SetStateAction<string | null>>;
+  handleRemoveBusinessDays: () => Promise<void>;
 };
 
 export default function CreateDaysForm({
@@ -36,6 +37,7 @@ export default function CreateDaysForm({
   locationData,
   getLocationData,
   setErrorMessage,
+  handleRemoveBusinessDays,
 }: CreateDaysFormProps) {
   const [isActivatingDays, setIsActivatingDays] = useState<boolean>(false);
 
@@ -48,7 +50,7 @@ export default function CreateDaysForm({
     const requestBody = {
       days: MONDAY_SUNDAY.map((day) => ({
         dayOfWeek: day,
-        isClosed: false,
+        isClosed: day === "Saturday" || day === "Sunday",
       })),
     };
 
@@ -62,9 +64,7 @@ export default function CreateDaysForm({
           .then((response) => response.data),
         {
           loading: "Activating business days...",
-
           success: "Business days activated.",
-
           error: (error) => {
             if (
               axios.isAxiosError<{
@@ -73,7 +73,6 @@ export default function CreateDaysForm({
             ) {
               return {
                 message: "Failed to activate business days.",
-
                 description:
                   error.response?.data?.error ??
                   `Status code: ${error.response?.status ?? "No response"}`,
@@ -82,7 +81,6 @@ export default function CreateDaysForm({
 
             return {
               message: "Unexpected error.",
-
               description:
                 "Something went wrong while activating business days.",
             };
@@ -166,10 +164,8 @@ export default function CreateDaysForm({
           </button>
         </div>
       ) : (
-        <div className="mt-3">
-          <p className="mb-3">
-            Manage which days this location is open or closed.
-          </p>
+        <div className="flex flex-col gap-3">
+          <p>Manage which days this location is open or closed.</p>
 
           <div className="flex flex-col">
             {locationData.days.map((day) => (
@@ -183,6 +179,14 @@ export default function CreateDaysForm({
               </div>
             ))}
           </div>
+
+          <button
+            className="w-fit bg-red-200 border-[0.1rem] border-red-500 rounded-md px-2 py-1 text-red-500"
+            type="button"
+            onClick={handleRemoveBusinessDays}
+          >
+            Remove Business Days
+          </button>
         </div>
       )}
     </section>

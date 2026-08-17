@@ -80,7 +80,7 @@ export default function CreateCategoryForm({
       </div>
 
       <p className="w-fit border-[0.1rem] border-b-[0.2rem] rounded-lg border-gray-400 bg-gray-100 px-3 py-2">
-        Display Order: {latestOrder + 1}
+        Display Order: {latestOrder}
       </p>
 
       {errorMessage && <p role="alert">{errorMessage}</p>}

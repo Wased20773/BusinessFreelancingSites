@@ -6,7 +6,7 @@ import LocationInfo from "@/components/ui/locations/LocationInfo";
 import type { LocationJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../page.css";
@@ -20,6 +20,9 @@ export default function LocationPage() {
   const [locationData, setLocationData] = useState<LocationJson | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  const router = useRouter();
 
   useEffect(() => {
     void getLocationData();
@@ -82,6 +85,58 @@ export default function LocationPage() {
     }
   }
 
+  async function handleRemoveBusinessDays() {
+    setIsDeleting(true);
+    setErrorMessage(null);
+
+    try {
+      const deleteToast = toast.promise<{
+        message: string;
+        count: number;
+      }>(
+        axios
+          .delete(`/api/admin/locations/${locationId}/days`)
+          .then((response) => response.data),
+        {
+          loading: "Removing business days...",
+          success: "Business days removed.",
+          error: (error) => {
+            if (axios.isAxiosError<{ error?: string }>(error)) {
+              return {
+                message: "Failed to remove business days.",
+                description:
+                  error.response?.data?.error ??
+                  `Status code: ${error.response?.status ?? "No response"}`,
+              };
+            }
+
+            return {
+              message: "Unexpected error.",
+              description:
+                "Something went wrong while removing the business days.",
+            };
+          },
+        },
+      );
+
+      await deleteToast.unwrap();
+
+      router.push(`/dashboard/locations/${locationId}`);
+    } catch (error) {
+      console.error("Error removing business days:", error);
+
+      if (axios.isAxiosError<{ error?: string }>(error)) {
+        setErrorMessage(
+          error.response?.data?.error ?? "Failed to remove business days.",
+        );
+      } else {
+        setErrorMessage("Failed to remove business days.");
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   if (isLoading) {
     return <p>Loading location...</p>;
   }
@@ -119,6 +174,7 @@ export default function LocationPage() {
           locationData={locationData}
           getLocationData={getLocationData}
           setErrorMessage={setErrorMessage}
+          handleRemoveBusinessDays={handleRemoveBusinessDays}
         />
       </div>
     </section>

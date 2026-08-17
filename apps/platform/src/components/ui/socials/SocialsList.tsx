@@ -16,7 +16,12 @@ export default function SocialsList({
         {isLoading ? (
           <p>Loading socials...</p>
         ) : socialsData.length === 0 ? (
-          <p>You have no socials</p>
+          <div>
+            <p className="font-semibold">You have no socials</p>
+            <p className="text-gray-500">
+              Add a social to help customers know where else they can find you
+            </p>
+          </div>
         ) : (
           <>
             {/* MOBILE */}

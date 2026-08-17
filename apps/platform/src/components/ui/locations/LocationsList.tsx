@@ -17,7 +17,12 @@ export default function LocationsList({
         {isLoading ? (
           <p>Loading locations...</p>
         ) : locationData.length === 0 ? (
-          <p>You have no locations</p>
+          <div>
+            <p className="font-semibold">You have no locations</p>
+            <p className="text-gray-500">
+              Help your customers by telling them where your located
+            </p>
+          </div>
         ) : (
           <>
             {/* MOBILE */}

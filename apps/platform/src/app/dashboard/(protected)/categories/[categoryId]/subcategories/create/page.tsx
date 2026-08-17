@@ -4,7 +4,7 @@ import ArrowIcon from "@/components/icons/arrow";
 import type { CategoryJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
-import { SubmitEvent, useState } from "react";
+import { InputEvent, SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../../../page.css";
 import { useParams } from "next/navigation";
@@ -14,12 +14,42 @@ export default function CreateCategoryPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
+  const [latestOrder, setLatestOrder] = useState<number>(0);
 
   const params = useParams<{
     categoryId: string;
   }>();
 
   const categoryId = params.categoryId;
+
+  useEffect(() => {
+    async function getLatestOrder() {
+      try {
+        const response = await axios.get<{
+          categories: CategoryJson[];
+        }>("/api/business/categories");
+
+        const category = response.data.categories.find(
+          (category) => category.id === categoryId,
+        );
+
+        if (!category || !category.subcategories?.length) {
+          setLatestOrder(1);
+          return;
+        }
+
+        const highestOrder = Math.max(
+          ...category.subcategories.map((subcategory) => subcategory.order),
+        );
+
+        setLatestOrder(highestOrder + 1);
+      } catch (error) {
+        console.error("Failed to get latest subcategory order:", error);
+      }
+    }
+
+    void getLatestOrder();
+  }, [categoryId]);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -95,7 +125,7 @@ export default function CreateCategoryPage() {
     }
   }
 
-  function handleFormInput(event: React.FormEvent<HTMLFormElement>) {
+  function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
     const name = formData.get("name");
 
@@ -123,7 +153,9 @@ export default function CreateCategoryPage() {
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}
           isLoading={isLoading}
+          errorMessage={errorMessage}
           canSubmit={canSubmit}
+          latestOrder={latestOrder || 1}
         />
       </div>
     </section>

@@ -119,3 +119,70 @@ export async function POST(
     );
   }
 }
+
+// DELETE /api/admin/locations/[locationId]/days
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ locationId: string }> },
+): Promise<NextResponse> {
+  try {
+    const authResult = await authenticateBusinessAccess(request, [
+      AccessLevel.owner,
+      AccessLevel.admin,
+    ]);
+
+    if (authResult instanceof NextResponse) return authResult;
+
+    const { businessId } = authResult;
+    const { locationId } = await params;
+
+    if (!locationId) {
+      return NextResponse.json(
+        { error: "Missing locationId" },
+        { status: 400 },
+      );
+    }
+
+    // Make sure this location belongs to the authenticated business.
+    const location = await prisma.location.findFirst({
+      where: {
+        id: locationId,
+        businessId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!location) {
+      return NextResponse.json(
+        {
+          error: "This location does not exist in our records",
+        },
+        { status: 404 },
+      );
+    }
+
+    // Delete all business days for this location in one operation.
+    const deletedDays = await prisma.locationDay.deleteMany({
+      where: {
+        locationId: location.id,
+      },
+    });
+
+    return NextResponse.json(
+      {
+        message: "Location days removed successfully",
+        count: deletedDays.count,
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    console.error("Failed to remove location days:", error);
+
+    return NextResponse.json(
+      { error: "Failed to remove location days" },
+      { status: 500 },
+    );
+  }
+}

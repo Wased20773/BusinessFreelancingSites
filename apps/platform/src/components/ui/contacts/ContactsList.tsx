@@ -18,7 +18,12 @@ export default function ContactsList({
         {isLoading ? (
           <p>Loading contacts...</p>
         ) : contactData.length === 0 ? (
-          <p>You have no contacts</p>
+          <div>
+            <p className="font-semibold">You have no contacts</p>
+            <p className="text-gray-500">
+              Add a contact to help customers know who to contact
+            </p>
+          </div>
         ) : (
           <>
             {/* MOBILE */}

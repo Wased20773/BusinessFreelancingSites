@@ -43,13 +43,10 @@ export default function EditBusinessDaysPage() {
   const locationId = params.locationId;
 
   const [locationData, setLocationData] = useState<LocationJson | null>(null);
-
   const [days, setDays] = useState<Record<DayOfWeek, DayHours> | null>(null);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
-
   const [isSaving, setIsSaving] = useState<boolean>(false);
-
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -115,36 +112,14 @@ export default function EditBusinessDaysPage() {
 
           dayState[dayName] = {
             id: selectedDay.id,
-
             isClosed: selectedDay.isClosed,
-
             originalIsClosed: selectedDay.isClosed,
 
             /*
              * Hours are already returned from the API
              * earliest -> latest and in HH:mm format.
              */
-            hours:
-              selectedDay.hours && selectedDay.hours.length > 0
-                ? selectedDay.hours.map((hour) => ({
-                    id: hour.id,
-
-                    title: hour.title ?? "",
-
-                    note: hour.note ?? "",
-
-                    openTime: hour.openTime,
-
-                    closeTime: hour.closeTime,
-                  }))
-                : [
-                    {
-                      title: "",
-                      note: "",
-                      openTime: "",
-                      closeTime: "",
-                    },
-                  ],
+            hours: [],
           };
         }
 
@@ -186,13 +161,18 @@ export default function EditBusinessDaysPage() {
         return true;
       }
 
-      if (currentDay.hours.length === 0) {
-        return false;
-      }
+      return currentDay.hours.every((hour) => {
+        const hasOpenTime = hour.openTime.trim() !== "";
+        const hasCloseTime = hour.closeTime.trim() !== "";
 
-      return currentDay.hours.every(
-        (hour) => hour.openTime.trim() !== "" && hour.closeTime.trim() !== "",
-      );
+        // No hours entered is valid.
+        if (!hasOpenTime && !hasCloseTime) {
+          return true;
+        }
+
+        // If one time is entered, both are required.
+        return hasOpenTime && hasCloseTime;
+      });
     });
 
   /*
@@ -511,7 +491,9 @@ export default function EditBusinessDaysPage() {
 
             <p>
               Each open day must include business hours. Mark a day as closed if
-              this location does not operate on that day.
+              this location does not operate on that day. You are not required
+              to fill this out immediately. If left empty, your customers wont
+              see your business working hours.
             </p>
 
             <div className="flex flex-col gap-5 mt-5">
@@ -579,7 +561,7 @@ export default function EditBusinessDaysPage() {
           )}
 
           <button
-            className="w-full sm:w-[50%] sm:mx-auto md:w-fit md:mr-auto md:ml-0 bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full md:w-fit bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
             type="submit"
             disabled={!canSubmit}
           >

@@ -128,13 +128,13 @@ export default function CreateItemForm({
       </div>
 
       <p className="w-fit border-[0.1rem] border-b-[0.2rem] rounded-lg border-gray-400 bg-gray-100 px-3 py-2">
-        Display Order: {latestOrder + 1}
+        Display Order: {latestOrder}
       </p>
 
       {errorMessage && <p role="alert">{errorMessage}</p>}
 
       <button
-        className="bg-emerald-300 border-[0.1rem] border-emerald-500 rounded-md text-emerald-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+        className="md:w-fit bg-emerald-300 border-[0.1rem] border-emerald-500 rounded-md text-emerald-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
         type="submit"
         disabled={isLoading || !canSubmit}
       >
