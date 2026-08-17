@@ -2,6 +2,7 @@ import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAcces
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
+import { createDomainSlug } from "../../route_helper";
 
 // PATCH /api/admin/business
 export async function PATCH(request: Request): Promise<NextResponse> {
@@ -16,13 +17,39 @@ export async function PATCH(request: Request): Promise<NextResponse> {
     const { businessId } = authentication;
     const body = await request.json();
 
-    if (
-      !body.businessName ||
-      body.businessName === "" ||
-      !body.businessName.trim()
-    ) {
+    const updateData: {
+      name?: string;
+      domain?: string;
+    } = {};
+
+    // Are we updating the name?
+    if (body.name) {
+      if (body.name === "" || !body.name.trim()) {
+        return NextResponse.json(
+          { error: "Business name is required" },
+          { status: 400 },
+        );
+      }
+
+      updateData.name = body.name.trim();
+    }
+
+    // Are we updating the domain?
+    if (body.domain) {
+      if (body.domain === "" || !body.domain.trim()) {
+        return NextResponse.json(
+          { error: "Business domain is required" },
+          { status: 400 },
+        );
+      }
+
+      updateData.domain = createDomainSlug(body.domain.trim());
+    }
+
+    // Nothing supported was provided
+    if (body.name === undefined && body.domain === undefined) {
       return NextResponse.json(
-        { error: "Business name is required" },
+        { error: "No supported fields were provided" },
         { status: 400 },
       );
     }
@@ -31,9 +58,7 @@ export async function PATCH(request: Request): Promise<NextResponse> {
       where: {
         id: businessId,
       },
-      data: {
-        name: body.businessName.trim(),
-      },
+      data: updateData,
       select: {
         id: true,
         name: true,

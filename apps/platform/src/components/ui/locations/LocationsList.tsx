@@ -1,5 +1,4 @@
 import ListCard from "../ListCard";
-import PinpointIcon from "@/components/icons/pinpoint.svg";
 import "@/app/dashboard/(protected)/page.css";
 import { LocationJson } from "@/types/types";
 

@@ -122,6 +122,27 @@ export function createSlug(value: string): string {
 }
 
 /*
+ * Generates a domain-safe value from a given string.
+ * It trims whitespace, converts everything to lowercase,
+ * converts spaces into hyphens, collapses repeated hyphens,
+ * and removes unsupported characters while preserving periods
+ * so domain extensions and subdomains remain valid.
+ *
+ * Examples:
+ *   My Business.com -> my-business.com
+ *   Store  Name.net -> store-name.net
+ *   Shop.Example.COM -> shop.example.com
+ */
+export function createDomainSlug(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/[^a-z0-9.-]/g, "");
+}
+
+/*
  *   Normalizes string to DayOfWeek string value and returns value when its included
  *   in the DayOfWeek type.
  **/
