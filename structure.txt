@@ -109,6 +109,9 @@
                             
                             - route.ts
                         
+                        - business/
+                            - route.ts
+
                         - business-users/
                             - [businessUserId]/
                                 - route.ts
@@ -143,9 +146,6 @@
                             - [contactId]/
                                 - route.ts
 
-                            - route.ts
-
-                        - full/
                             - route.ts
 
                         - items/
@@ -191,8 +191,6 @@
 
                             - route.ts
 
-                        - route.ts
-
                     - auth/
                         - [...nextauth]/
                             - route.ts
@@ -209,7 +207,7 @@
 
                         - menu/
                             - items/
-                                - [itemSlug]/
+                                - [itemId]/
                                     - route.ts
 
                             route.ts
@@ -230,8 +228,41 @@
                             - page.tsx
                             
                         - categories/
+                            - [categoryId]/
+                                - edit/
+                                    - page.tsx
+                                
+                                - items/
+                                    - [itemId]/
+                                        - page.tsx
+                                
+                                    - create/
+                                        - page.tsx
+                                
+                                - subcategories/
+                                    - [subcategoryId]/
+                                        - edit/
+                                            - page.tsx
+
+                                        - items/
+                                            - [itemId]/
+                                                - page.tsx
+
+                                            - create/
+                                                - page.tsx
+
+                                        - page.tsx
+
+                                    - create/
+                                        - page.tsx
+
+                                - page.tsx
+
+                            - create/
+                                - page.tsx
+
                             - page.tsx
-                        
+
                         - contacts/
                             - [contactId]/
                                 - page.tsx
@@ -241,12 +272,28 @@
                             - page.tsx
                             
                         - locations/
+                            - [locationId]/
+                                - days/
+                                    - edit/
+                                        - page.tsx
+
+                                - edit/
+                                    - page.tsx
+
+                                page.tsx
+
+                            - create/
+                                - page.tsx
+
                             - page.tsx
                         
                         - settings/
                             - page.tsx
                         
                         - socials/
+                            - [socialId]/
+                                - page.tsx
+
                             - create/
                                 - page.tsx
                                 
@@ -267,7 +314,6 @@
                         - layout.tsx
                         - page.css
                         - page.tsx
-
                                 
                     - login/
                         - page.tsx
@@ -290,8 +336,10 @@
                     - arrow.tsx
                     - burger-button.svg
                     - business.svg
+                    - calendar.svg
                     - category.svg
                     - chevron.svg
+                    - chevron.tsx
                     - create-button.svg
                     - drop-arrow.svg
                     - edit.svg
@@ -300,6 +348,7 @@
                     - external-link.svg
                     - google-logo.svg
                     - key.svg
+                    - pinpoint.svg
                     - placeholder-account-black.svg
                     - placeholder-account-white.svg
                     - search.svg
@@ -315,13 +364,62 @@
                         - SideBar.css
                         - SideBar.tsx
 
+                    - Divider.tsx
                     - Footer.tsx
                     - Header.css
                     - Header.tsx
                 
+                - providers/
+                    - AuthSessionProvider.tsx
+
                 - ui/
+                    - category/
+                        - CategoriesList.tsx
+                        - CategoryInfo.tsx
+                        - CreateCategoryForm.tsx
+                        - EditCategoryForm.tsx
+
+                    - contacts/
+                        - ContactsList.tsx
+                        - CreateContactForm.tsx
+                        - EditContactForm.tsx
+
+                    - controls/
+                        - ReorderControls.tsx
+
+                    - days/
+                        - CreateDaysForm.tsx
+                    
+                    - hours/
+                        - CreateHoursForm.tsx
+
+                    - item-options/
+                        - CreateOptionForm.tsx
+                        - ExistingOptionsForm.tsx
+
+                    - items/
+                        - CreateItemForm.tsx
+                        - EditItemForm.tsx
+                        - ItemOptionsForm.tsx
+                        - ItemList.tsx
+
+                    - locations/
+                        - CreateLocationForm.tsx
+                        - EditLocationForm.tsx
+                        - LocationInfo.tsx
+                        - LocationList.tsx
+
+                    - socials/
+                        - CreateSocialForm.tsx
+                        - EditSocialForm.tsx
+                        - SocialList.tsx
+
+                    - subcategories/
+                        - SubcategoriesList.tsx
+
                     - ActionItem.tsx
                     - ListCard.tsx
+                    - RequiredField.tsx
                     - ResponsiveToast.tsx
                     - sonner.tsx
 
@@ -332,6 +430,12 @@
                 - types.ts
 
             - lib/
+                - api/
+                    - categories.ts
+                    - item-options.ts
+                    - items.ts
+                    - reorder.ts
+
                 - api-keys/
                     - authenticateBusinessApiKey.ts
                     - createBusinessApiKey.ts
@@ -412,6 +516,7 @@
         - scripts/
             - businessApiKey-seed.ts
             - demo_seed.ts
+            - linkUser-seed.ts
             - role-seed.ts
             - seed_helper.ts
             - types.ts
