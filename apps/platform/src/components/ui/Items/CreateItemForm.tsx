@@ -1,5 +1,6 @@
 import ChevronIcon from "@/components/icons/chevron";
 import { InputEvent, SubmitEvent } from "react";
+import RequiredField from "../RequiredField";
 
 type CreateItemFormProps = {
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
@@ -28,13 +29,17 @@ export default function CreateItemForm({
         <legend>Item info</legend>
 
         <div>
-          <label htmlFor="item-name">Name</label>
+          <label htmlFor="item-name">
+            Name
+            <RequiredField />
+          </label>
 
           <input
             className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
             id="item-name"
             name="name"
             type="text"
+            required
           />
         </div>
 
@@ -90,6 +95,7 @@ export default function CreateItemForm({
         <div>
           <label htmlFor="item-price">
             Price (For items with options inside, set this item price to 0)
+            <RequiredField />
           </label>
 
           <input
@@ -99,23 +105,9 @@ export default function CreateItemForm({
             type="number"
             min="0"
             step="0.10"
+            required
           />
         </div>
-      </fieldset>
-
-      <fieldset disabled={isLoading}>
-        <legend>Availability</legend>
-
-        <label htmlFor="item-available" className="cursor-pointer">
-          <input
-            className="mr-2"
-            id="item-available"
-            name="isAvailable"
-            type="checkbox"
-            defaultChecked
-          />
-          Available?
-        </label>
       </fieldset>
 
       <div>

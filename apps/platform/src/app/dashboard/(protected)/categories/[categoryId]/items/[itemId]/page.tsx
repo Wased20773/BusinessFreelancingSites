@@ -17,6 +17,7 @@ import "../../../../page.css";
 import CreateOptionForm from "@/components/ui/item-options/CreateOptionForm";
 import ExistingOptionsForm from "@/components/ui/item-options/ExistingOptionsForm";
 import EditItemForm from "@/components/ui/items/EditItemForm";
+import Divider from "@/components/layout/Divider";
 
 export default function EditItemPage() {
   const params = useParams<{
@@ -707,9 +708,11 @@ export default function EditItemPage() {
           isDeleting={isDeleting}
         />
 
+        <Divider />
+
         {/* ITEM OPTIONS */}
         <section
-          className="dashboard-card mt-[1.5rem] p-4"
+          className="dashboard-card p-4"
           aria-labelledby="item-options-heading"
         >
           <h2 id="item-options-heading">Item Options</h2>

@@ -21,7 +21,7 @@ export default function CreateContactForm({
     >
       <fieldset>
         <legend>Contact info</legend>
-
+        <p>Please provide one of the following.</p>
         <div>
           <label htmlFor="contact-phone-number">Phone number</label>
           <input
@@ -32,7 +32,7 @@ export default function CreateContactForm({
             autoComplete="tel"
             pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
             disabled={isLoading}
-            placeholder="000-000-0000"
+            placeholder="123-456-7890"
           />
         </div>
 

@@ -2,6 +2,7 @@
 
 import "@/app/dashboard/(protected)/page.css";
 import { InputEvent, SubmitEvent, useState } from "react";
+import RequiredField from "../RequiredField";
 
 const DAYS_OF_WEEK = [
   "Monday",
@@ -52,7 +53,10 @@ export default function CreateLocationForm({
         <legend>Location Details</legend>
 
         <div>
-          <label htmlFor="address">Address</label>
+          <label htmlFor="address">
+            Address
+            <RequiredField />
+          </label>
           <input
             className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
             id="address"

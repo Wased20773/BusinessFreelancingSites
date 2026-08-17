@@ -14,6 +14,7 @@ import type { SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
 import ExitIconBlack from "@/components/icons/exit-black.svg";
 import { toast } from "sonner";
+import RequiredField from "@/components/ui/RequiredField";
 
 type UserDetailsPageProps = {
   params: Promise<{
@@ -27,6 +28,7 @@ export default function UserDetailsPage({ params }: UserDetailsPageProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [isEdit, setIsEdit] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   const [selectedAccessLevel, setSelectedAccessLevel] = useState<string>("");
 
@@ -38,6 +40,8 @@ export default function UserDetailsPage({ params }: UserDetailsPageProps) {
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    setIsSaving(true);
 
     try {
       const updateResponse = toast.promise<BusinessUserJson>(
@@ -89,6 +93,8 @@ export default function UserDetailsPage({ params }: UserDetailsPageProps) {
       setIsEdit(false);
     } catch (e) {
       console.error("Failed to update business user: ", e);
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -254,13 +260,16 @@ export default function UserDetailsPage({ params }: UserDetailsPageProps) {
 
         {isEdit ? (
           <form onSubmit={handleSubmit}>
-            <label htmlFor="user-access-level">Access Level: </label>
+            <label htmlFor="user-access-level">
+              Access Level: <RequiredField />
+            </label>
             <select
               id="user-access-level"
               className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
               name="access-level"
               value={selectedAccessLevel}
               onChange={(event) => setSelectedAccessLevel(event.target.value)}
+              required
             >
               {/* TODO: Only owner can pass ownership */}
               <option value="developer">Developer</option>
@@ -268,7 +277,13 @@ export default function UserDetailsPage({ params }: UserDetailsPageProps) {
               <option value="staff">Staff</option>
             </select>
 
-            <button type="submit">Save</button>
+            <button
+              className="mt-3 ml-auto bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              type="submit"
+              disabled={isSaving}
+            >
+              {isSaving ? "Saving..." : "Save Changes"}
+            </button>
           </form>
         ) : (
           <p>

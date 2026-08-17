@@ -11,6 +11,7 @@ import Editicon from "@/components/icons/edit.svg";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import RequiredField from "@/components/ui/RequiredField";
 
 // This regex allows:
 // 1. literal dot -> .
@@ -285,7 +286,10 @@ export default function BusinessPage() {
             {isEdit ? (
               <form className="flex flex-col gap-3" onSubmit={handleNameSubmit}>
                 <div>
-                  <label htmlFor="business-name">Business Name</label>
+                  <label htmlFor="business-name">
+                    Business Name
+                    <RequiredField />
+                  </label>
                   <input
                     className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 disabled:opacity-50 px-3 py-2"
                     id="business-name"
@@ -295,6 +299,7 @@ export default function BusinessPage() {
                     value={name}
                     onChange={(event) => setName(event.target.value)}
                     disabled={isSavingName || isSavingDomain}
+                    required
                   />
                 </div>
 
@@ -328,7 +333,11 @@ export default function BusinessPage() {
               website. Only change this if the website&apos;s domain has changed
               or the current domain is incorrect.
             </p>
-            <p className="mt-1 font-semibold">Your domain is:</p>
+            <p className="mt-1 font-semibold">
+              Your domain is:
+              {isEdit && <RequiredField />}
+            </p>
+
             {isEdit ? (
               <form
                 className="flex flex-col gap-3"
@@ -343,10 +352,14 @@ export default function BusinessPage() {
                     width={15}
                     height={15}
                   />
-                  <span className="text-blue-500 ml-1">
+                  <label
+                    className="text-blue-500 ml-1"
+                    htmlFor="business-domain"
+                  >
                     https://
                     <input
                       className="border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 disabled:opacity-50"
+                      id="business-domain"
                       type="text"
                       name="domain"
                       value={domain || ""}
@@ -354,8 +367,9 @@ export default function BusinessPage() {
                       style={{
                         width: `${Math.max((domain?.length ?? 0) + 1, 2)}ch`,
                       }}
+                      required
                     />
-                  </span>
+                  </label>
                 </div>
 
                 {errorMessageDomain && (

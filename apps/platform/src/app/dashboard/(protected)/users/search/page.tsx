@@ -202,37 +202,43 @@ export default function SearchPage() {
             <li className="p-4 text-center">Searching users...</li>
           ) : searchData ? (
             <li key={searchData.id}>
-              <article className="flex flex-row items-center justify-between rounded-md p-2">
-                <div className="flex items-center overflow-x-auto">
-                  <Image
-                    className="rounded-full border-[2px] border-gray-800"
-                    src={searchData.image || PlaceholderAccountIcon}
-                    alt="Profile picture"
-                    width={50}
-                    height={50}
-                  />
-                  <div className="ml-[0.5rem] flex min-w-max items-center">
+              <article>
+                <button
+                  className="w-full flex flex-row items-center justify-between rounded-md p-2"
+                  aria-label={`Add ${searchData.email}`}
+                  disabled={addingUserEmail !== null}
+                  onClick={() => addUser(searchData.email)}
+                >
+                  <div className="flex items-center overflow-x-auto">
                     <Image
-                      src={GoogleLogoIcon}
-                      alt="Google account provider"
-                      width={15}
-                      height={15}
+                      className="rounded-full border-[2px] border-gray-800"
+                      src={searchData.image || PlaceholderAccountIcon}
+                      alt="Profile picture"
+                      width={50}
+                      height={50}
                     />
-                    <span className="ml-[0.25rem]">{searchData.email}</span>
+                    <div className="ml-[0.5rem] flex min-w-max items-center">
+                      <Image
+                        src={GoogleLogoIcon}
+                        alt="Google account provider"
+                        width={15}
+                        height={15}
+                      />
+                      <span className="ml-[0.25rem]">{searchData.email}</span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="shrink-0">
-                  <button
-                    type="button"
-                    className="shrink-0 rounded-full border-2 border-gray-400 p-1.5 disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label={`Add ${searchData.email}`}
-                    disabled={addingUserEmail !== null}
-                    onClick={() => addUser(searchData.email)}
-                  >
-                    <Image src={AddIcon} alt="" width={20} height={20} />
-                  </button>
-                </div>
+                  <div className="shrink-0">
+                    <button
+                      type="button"
+                      className="shrink-0 rounded-full border-2 border-gray-400 p-1.5 disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label={`Add ${searchData.email}`}
+                      disabled={addingUserEmail !== null}
+                    >
+                      <Image src={AddIcon} alt="" width={20} height={20} />
+                    </button>
+                  </div>
+                </button>
               </article>
             </li>
           ) : hasSearched ? (

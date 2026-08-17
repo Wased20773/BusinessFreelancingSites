@@ -1,4 +1,5 @@
 import { InputEvent, SubmitEvent } from "react";
+import RequiredField from "../RequiredField";
 
 type CreateSocialFormParams = {
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
@@ -24,13 +25,17 @@ export default function CreateSocialForm({
       <fieldset>
         <legend>Social info</legend>
         <div>
-          <label htmlFor="social-platform">Platform</label>
+          <label htmlFor="social-platform">
+            Platform
+            <RequiredField />
+          </label>
           <select
             className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
             id="social-platform"
             name="platform"
             defaultValue=""
             disabled={isLoading}
+            required
           >
             <option value="" disabled>
               Select a platform
@@ -48,13 +53,17 @@ export default function CreateSocialForm({
             The name or username used to identify your business on this
             platform.
           </p>
-          <label htmlFor="social-profile-name">Profile name</label>
+          <label htmlFor="social-profile-name">
+            Profile name
+            <RequiredField />
+          </label>
           <input
             className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
             id="social-profile-name"
             name="profileName"
             type="text"
             disabled={isLoading}
+            required
           />
         </div>
       </fieldset>

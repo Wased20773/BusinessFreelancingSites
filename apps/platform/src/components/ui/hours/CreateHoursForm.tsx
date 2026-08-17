@@ -3,6 +3,7 @@
 import TrashIcon from "@/components/icons/trash-red.svg";
 import Image from "next/image";
 import type { Dispatch, SetStateAction } from "react";
+import RequiredField from "../RequiredField";
 
 const MONDAY_SUNDAY = [
   "Monday",
@@ -158,7 +159,10 @@ export default function CreateHoursForm({
 
             {/* OPEN */}
             <div className="flex items-center gap-2 mb-1">
-              <label htmlFor={`${day}-openTime-${idx}`}>Open</label>
+              <label htmlFor={`${day}-openTime-${idx}`}>
+                Open
+                <RequiredField />
+              </label>
 
               <input
                 className="block border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
@@ -166,6 +170,7 @@ export default function CreateHoursForm({
                 name={`${day}-openTime-${idx}`}
                 type="time"
                 value={hour.openTime}
+                required
                 onChange={(event) => {
                   setDays((currentDays) => {
                     if (!currentDays) {
@@ -197,7 +202,10 @@ export default function CreateHoursForm({
 
             {/* CLOSE */}
             <div className="flex items-center gap-2">
-              <label htmlFor={`${day}-closeTime-${idx}`}>Close</label>
+              <label htmlFor={`${day}-closeTime-${idx}`}>
+                Close
+                <RequiredField />
+              </label>
 
               <input
                 className="block border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
@@ -205,6 +213,7 @@ export default function CreateHoursForm({
                 name={`${day}-closeTime-${idx}`}
                 type="time"
                 value={hour.closeTime}
+                required
                 onChange={(event) => {
                   setDays((currentDays) => {
                     if (!currentDays) {

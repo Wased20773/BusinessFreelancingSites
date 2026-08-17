@@ -1,6 +1,7 @@
 import { CategoryJson } from "@/types/types";
 import { InputEvent, SubmitEvent } from "react";
 import "@/app/dashboard/(protected)/page.css";
+import RequiredField from "../RequiredField";
 
 type EditCategoryFormParams = {
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
@@ -37,7 +38,10 @@ export default function EditCategoryForm({
         </legend>
 
         <div>
-          <label htmlFor="category-name">Name</label>
+          <label htmlFor="category-name">
+            Name
+            <RequiredField />
+          </label>
 
           <input
             className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
@@ -45,6 +49,7 @@ export default function EditCategoryForm({
             name="name"
             type="text"
             defaultValue={categoryData.name}
+            required
           />
         </div>
 

@@ -2,6 +2,7 @@ import { ReorderDirection } from "@/lib/api/reorder";
 import { ItemOptionsJson } from "@/types/types";
 import { SubmitEvent } from "react";
 import ReorderControls from "../controls/ReorderControls";
+import RequiredField from "../RequiredField";
 
 type ExistingOptionsFormParams = {
   options: ItemOptionsJson[];
@@ -45,7 +46,10 @@ export default function ExistingOptionsForm({
                 <fieldset className="grid gap-3" disabled={isProcessingOption}>
                   <div className="flex gap-3">
                     <div className="flex-1">
-                      <label htmlFor={`option-name-${option.id}`}>Name</label>
+                      <label htmlFor={`option-name-${option.id}`}>
+                        Name
+                        <RequiredField />
+                      </label>
 
                       <input
                         className="min-w-0 block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
@@ -53,11 +57,15 @@ export default function ExistingOptionsForm({
                         name="name"
                         type="text"
                         defaultValue={option.name}
+                        required
                       />
                     </div>
 
                     <div>
-                      <label htmlFor={`option-price-${option.id}`}>Price</label>
+                      <label htmlFor={`option-price-${option.id}`}>
+                        Price
+                        <RequiredField />
+                      </label>
 
                       <input
                         className="min-w-0 max-w-[100px] block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
@@ -67,6 +75,7 @@ export default function ExistingOptionsForm({
                         min="0"
                         step="0.10"
                         defaultValue={option.price}
+                        required
                       />
                     </div>
                   </div>
