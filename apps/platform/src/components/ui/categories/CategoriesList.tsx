@@ -88,7 +88,13 @@ export default function CategoryList({
       ) : errorMessage ? (
         <p role="alert">{errorMessage}</p>
       ) : categoryData.length === 0 ? (
-        <p>You have no categories</p>
+        <div>
+          <p className="font-semibold">You have no categories</p>
+          <p className="text-gray-500">
+            Create a category to start organizing the items shown on your
+            website.
+          </p>
+        </div>
       ) : (
         <>
           {/* MOBILE */}

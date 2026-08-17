@@ -4,7 +4,7 @@ import ArrowIcon from "@/components/icons/arrow";
 import axios from "axios";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { SubmitEvent, useState } from "react";
+import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../../../page.css";
 import type { ItemJson } from "@/types/types";
@@ -18,6 +18,39 @@ export default function CreateItemPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
+  const [latestOrder, setLatestOrder] = useState<number>(0);
+
+  useEffect(() => {
+    async function getLatestOrder() {
+      try {
+        const response = await axios.get<{
+          categories: {
+            id: string;
+            items: ItemJson[];
+          }[];
+        }>("/api/business/menu");
+
+        const category = response.data.categories.find(
+          (category) => category.id === categoryId,
+        );
+
+        if (!category || category.items.length === 0) {
+          setLatestOrder(0);
+          return;
+        }
+
+        const highestOrder = Math.max(
+          ...category.items.map((item) => item.order),
+        );
+
+        setLatestOrder(highestOrder);
+      } catch (error) {
+        console.error("Failed to get latest item order:", error);
+      }
+    }
+
+    void getLatestOrder();
+  }, [categoryId]);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -179,6 +212,7 @@ export default function CreateItemPage() {
           isLoading={isLoading}
           errorMessage={errorMessage}
           canSubmit={canSubmit}
+          latestOrder={latestOrder || 1}
         />
       </div>
     </section>

@@ -23,7 +23,6 @@ export default function CreateSocialForm({
     >
       <fieldset>
         <legend>Social info</legend>
-
         <div>
           <label htmlFor="social-platform">Platform</label>
           <select
@@ -45,6 +44,10 @@ export default function CreateSocialForm({
         </div>
 
         <div>
+          <p>
+            The name or username used to identify your business on this
+            platform.
+          </p>
           <label htmlFor="social-profile-name">Profile name</label>
           <input
             className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"

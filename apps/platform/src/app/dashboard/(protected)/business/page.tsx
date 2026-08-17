@@ -278,9 +278,9 @@ export default function BusinessPage() {
             {/* Name */}
             <h2>Business Name</h2>
             <p className="mb-3">
-              Your business name is what customers will see on your website.
-              Changing this has no effect on your web address or any form of
-              access to your website.
+              Your business name is displayed to customers on your website.
+              Changing it will not affect your web address or access to your
+              website.
             </p>
             {isEdit ? (
               <form className="flex flex-col gap-3" onSubmit={handleNameSubmit}>
@@ -321,11 +321,12 @@ export default function BusinessPage() {
             {/* Domain */}
             <h2 className="mt-5">Domain</h2>
             <p className="mb-3">
-              Your domain is the web address customers use to access your
-              website. A domain was automatically generated for you when you
-              completed onboarding. Your domain does not have to match your
-              business name, and changing your business name will not change
-              your domain. You can edit your domain separately if needed.
+              Your domain is the web address associated with your business
+              website. It was automatically created during onboarding and does
+              not need to match your business name. Keep this information up to
+              date so you and your freelancers know which domain belongs to your
+              website. Only change this if the website&apos;s domain has changed
+              or the current domain is incorrect.
             </p>
             <p className="mt-1 font-semibold">Your domain is:</p>
             {isEdit ? (

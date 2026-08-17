@@ -4,7 +4,7 @@ import ArrowIcon from "@/components/icons/arrow";
 import type { CategoryJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
-import { SubmitEvent, useState } from "react";
+import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../page.css";
 import CreateCategoryForm from "@/components/ui/categories/CreateCategoryForm";
@@ -13,6 +13,34 @@ export default function CreateCategoryPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
+  const [latestOrder, setLatestOrder] = useState<number>(0);
+
+  useEffect(() => {
+    async function getLatestOrder() {
+      try {
+        const response = await axios.get<{
+          categories: CategoryJson[];
+        }>("/api/business/categories");
+
+        const categories = response.data.categories;
+
+        if (categories.length === 0) {
+          setLatestOrder(0);
+          return;
+        }
+
+        const highestOrder = Math.max(
+          ...categories.map((category) => category.order),
+        );
+
+        setLatestOrder(highestOrder);
+      } catch (error) {
+        console.error("Failed to get latest category order:", error);
+      }
+    }
+
+    void getLatestOrder();
+  }, []);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -109,7 +137,9 @@ export default function CreateCategoryPage() {
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}
           isLoading={isLoading}
+          errorMessage={errorMessage}
           canSubmit={canSubmit}
+          latestOrder={latestOrder || 1}
         />
       </div>
     </section>

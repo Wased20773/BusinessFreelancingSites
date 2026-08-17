@@ -116,7 +116,7 @@ export default function CreateLocationForm({
 
         <label htmlFor="parking" className="cursor-pointer">
           <input className="mr-2" id="parking" name="parking" type="checkbox" />
-          Parking Available
+          Parking Available?
         </label>
 
         <div>

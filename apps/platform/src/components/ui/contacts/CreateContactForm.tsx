@@ -51,7 +51,11 @@ export default function CreateContactForm({
 
       <fieldset>
         <legend>Contact type</legend>
-
+        <p>
+          Personal contacts belong to an individual while a business contact
+          belongs to the business itself. This helps developers display either
+          type, both, or neither on your website.
+        </p>
         <label htmlFor="contact-personal" className="cursor-pointer">
           <input
             className="mr-2"
@@ -59,7 +63,7 @@ export default function CreateContactForm({
             name="contactType"
             type="checkbox"
           />
-          Personal?
+          Is this a personal contact?
         </label>
       </fieldset>
 

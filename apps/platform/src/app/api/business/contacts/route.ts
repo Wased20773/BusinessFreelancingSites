@@ -19,7 +19,14 @@ export async function GET(request: Request): Promise<NextResponse> {
       authentication.businessId,
       {
         contacts: {
-          orderBy: { createdAt: "asc" },
+          orderBy: [
+            {
+              isPersonal: "asc",
+            },
+            {
+              createdAt: "desc",
+            },
+          ],
           select: {
             id: true,
             phoneNumber: true,

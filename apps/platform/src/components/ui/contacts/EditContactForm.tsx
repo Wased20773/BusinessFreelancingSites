@@ -64,6 +64,11 @@ export default function EditContactForm({
 
       <fieldset disabled={isProcessing}>
         <legend>Contact type</legend>
+        <p>
+          Personal contacts belong to an individual while a business contact
+          belongs to the business itself. This helps developers display either
+          type, both, or neither on your website.
+        </p>
 
         <label htmlFor="contact-personal" className="cursor-pointer">
           <input
@@ -73,7 +78,7 @@ export default function EditContactForm({
             type="checkbox"
             defaultChecked={contactData.isPersonal}
           />
-          Personal?
+          Is this a personal contact?
         </label>
       </fieldset>
 
