@@ -3,6 +3,7 @@
 :root {
   --blue-500: oklch(70.7% 0.165 254.624);
   --blue-100: oklch(95.1% 0.026 236.824);
+  --zinc-100: oklch(96.7% 0.001 286.375);
   --gray-900: oklch(21% 0.034 264.665);
   --gray-500: oklch(55.1% 0.027 264.364);
   --gray-300: oklch(87.2% 0.01 258.338);
@@ -12,7 +13,18 @@
 
 html {
   scroll-behavior: smooth;
-  background-color: var(--gray-100);
+  background-color: var(--zinc-100);
+
+  /* Dotted Background */
+  /* background-image: radial-gradient(#f2f2f2 2px, transparent 1px); */
+  /* background-size: 15px 15px; */
+
+  /* Cross background */
+  /* background-color: #f8fafc; */
+  /* background-image:
+    linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.04) 1px, transparent 1px); */
+  /* background-size: 40px 40px; */
 }
 
 h1 {
