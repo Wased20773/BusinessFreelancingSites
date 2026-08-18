@@ -12,13 +12,7 @@ export default function ActionItem({ href, icon, label }: ActionItemProps) {
   return (
     <Link className="flex justify-between items-center" href={href}>
       <div className="flex flex-row items-center gap-3">
-        <Image
-          src={icon}
-          alt="Access Key Icon"
-          width={30}
-          height={30}
-          loading="eager"
-        />
+        <Image src={icon} alt="" width={30} height={30} loading="eager" />
         <p>{label}</p>
       </div>
 

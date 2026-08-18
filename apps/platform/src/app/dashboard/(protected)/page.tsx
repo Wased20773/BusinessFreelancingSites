@@ -112,8 +112,6 @@ export default function DashboardPage() {
           {/* Category */}
           <div className="dashboard-card flex flex-col gap-3">
             <h2>Categories</h2>
-            {/* TODO: Render all categories and # of items per category from the business and only render 3 */}
-            {/* Note: Clicking edit should open the Categories page with the selected category */}
             <div className="grid grid-cols-[1fr_auto] items-center bg-gray-200 rounded-md p-2">
               <div className="flex flex-col min-w-0 mr-2">
                 <p className="truncate">Category name</p>
@@ -129,7 +127,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <Link className="p-2" href="/dashboard/categories">
+              <Link className="p-2" href="/dashboard/menu">
                 <Image
                   src={EditIcon}
                   alt="Edit this category"
@@ -154,10 +152,10 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <Link className="p-2" href="/dashboard/categories">
+              <Link className="p-2" href="/dashboard/menu">
                 <Image
                   src={EditIcon}
-                  alt="Edit category button"
+                  alt="Edit this category"
                   width={30}
                   height={30}
                   loading="eager"
@@ -179,10 +177,10 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <Link className="p-2" href="/dashboard/categories">
+              <Link className="p-2" href="/dashboard/menu">
                 <Image
                   src={EditIcon}
-                  alt="Edit category button"
+                  alt="Edit this category"
                   width={30}
                   height={30}
                   loading="eager"
@@ -192,7 +190,7 @@ export default function DashboardPage() {
 
             <Link
               className="flex justify-center items-center"
-              href="/dashboard/categories"
+              href="/dashboard/menu"
             >
               <span className="mr-1">View More</span>
               <ArrowIcon />

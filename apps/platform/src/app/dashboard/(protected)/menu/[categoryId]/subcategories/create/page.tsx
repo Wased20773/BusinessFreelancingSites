@@ -112,7 +112,7 @@ export default function CreateCategoryPage() {
       // On successful creation, clear the form for re-use.
       form.reset();
       setCanSubmit(false);
-      router.push(`/dashboard/categories/${categoryId}`);
+      router.push(`/dashboard/menu/${categoryId}`);
     } catch (error) {
       console.error("Error in Create Subcategory page:", error);
 
@@ -141,8 +141,8 @@ export default function CreateCategoryPage() {
     <section aria-labelledby="create-category-heading">
       <header className="flex items-center gap-3">
         <Link
-          href={`/dashboard/categories/${categoryId}`}
-          aria-label="Return to categories"
+          href={`/dashboard/menu/${categoryId}`}
+          aria-label="Return to menu"
         >
           <ArrowIcon direction="left" size={50} />
         </Link>

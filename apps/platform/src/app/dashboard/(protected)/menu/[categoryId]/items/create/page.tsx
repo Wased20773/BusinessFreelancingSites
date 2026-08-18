@@ -165,7 +165,7 @@ export default function CreateItemPage() {
 
       form.reset();
       setCanSubmit(false);
-      router.push(`/dashboard/categories/${categoryId}`);
+      router.push(`/dashboard/menu/${categoryId}`);
     } catch (error) {
       console.error("Error in Create Item page:", error);
 
@@ -198,8 +198,8 @@ export default function CreateItemPage() {
     <section aria-labelledby="create-item-heading">
       <header className="flex items-center gap-3">
         <Link
-          href={`/dashboard/categories/${categoryId}`}
-          aria-label="Return to category"
+          href={`/dashboard/menu/${categoryId}`}
+          aria-label="Return to parent category"
         >
           <ArrowIcon direction="left" size={50} />
         </Link>

@@ -17,8 +17,8 @@ export const dashboardLinks: DashboardLink[] = [
     href: "/dashboard/users",
   },
   {
-    name: "Categories",
-    href: "/dashboard/categories",
+    name: "Menu",
+    href: "/dashboard/menu",
   },
   {
     name: "Locations",

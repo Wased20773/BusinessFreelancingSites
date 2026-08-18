@@ -1,21 +1,29 @@
 "use client";
 
 import ArrowIcon from "@/components/icons/arrow";
-import EditCategoryForm from "@/components/ui/categories/EditCategoryForm";
 import type { CategoryJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { InputEvent, SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
+import "../../../../../page.css";
+import EditCategoryForm from "@/components/ui/categories/EditCategoryForm";
 
-export default function EditCategoryPage() {
-  const params = useParams<{ categoryId: string }>();
+export default function EditSubcategoryPage() {
+  const params = useParams<{
+    categoryId: string;
+    subcategoryId: string;
+  }>();
+
   const router = useRouter();
 
   const categoryId = params.categoryId;
+  const subcategoryId = params.subcategoryId;
 
-  const [categoryData, setCategoryData] = useState<CategoryJson | null>(null);
+  const [subcategoryData, setSubcategoryData] = useState<CategoryJson | null>(
+    null,
+  );
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -25,7 +33,7 @@ export default function EditCategoryPage() {
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
 
   useEffect(() => {
-    async function getCategoryData() {
+    async function getSubcategoryData() {
       setIsLoading(true);
       setErrorMessage(null);
 
@@ -35,12 +43,12 @@ export default function EditCategoryPage() {
             .get<{ categories: CategoryJson[] }>("/api/business/categories")
             .then((response) => response.data.categories),
           {
-            loading: "Loading category...",
-            success: "Category loaded.",
+            loading: "Loading subcategory...",
+            success: "Subcategory loaded.",
             error: (error) => {
               if (axios.isAxiosError<{ error?: string }>(error)) {
                 return {
-                  message: "Failed to load category.",
+                  message: "Failed to load subcategory.",
                   description:
                     error.response?.data?.error ??
                     `Status code: ${error.response?.status ?? "No response"}`,
@@ -49,7 +57,8 @@ export default function EditCategoryPage() {
 
               return {
                 message: "Unexpected error.",
-                description: "Something went wrong while loading the category.",
+                description:
+                  "Something went wrong while loading the subcategory.",
               };
             },
           },
@@ -57,34 +66,45 @@ export default function EditCategoryPage() {
 
         const categories = await categoriesToast.unwrap();
 
+        // Find the parent category.
         const selectedCategory = categories.find(
           (category) => category.id === categoryId,
         );
 
         if (!selectedCategory) {
-          setErrorMessage("This category could not be found.");
+          setErrorMessage("The parent category could not be found.");
           return;
         }
 
-        setCategoryData(selectedCategory);
-        setCanSubmit(Boolean(selectedCategory.name.trim()));
+        // Find the selected subcategory inside the parent.
+        const selectedSubcategory = selectedCategory.subcategories?.find(
+          (subcategory) => subcategory.id === subcategoryId,
+        );
+
+        if (!selectedSubcategory) {
+          setErrorMessage("This subcategory could not be found.");
+          return;
+        }
+
+        setSubcategoryData(selectedSubcategory);
+        setCanSubmit(Boolean(selectedSubcategory.name.trim()));
       } catch (error) {
-        console.error("Error in Edit Category page:", error);
+        console.error("Error in Edit Subcategory page:", error);
 
         if (axios.isAxiosError<{ error?: string }>(error)) {
           setErrorMessage(
-            error.response?.data?.error ?? "Failed to load category data.",
+            error.response?.data?.error ?? "Failed to load subcategory data.",
           );
         } else {
-          setErrorMessage("Failed to load category data.");
+          setErrorMessage("Failed to load subcategory data.");
         }
       } finally {
         setIsLoading(false);
       }
     }
 
-    void getCategoryData();
-  }, [categoryId]);
+    void getSubcategoryData();
+  }, [categoryId, subcategoryId]);
 
   function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
@@ -116,8 +136,8 @@ export default function EditCategoryPage() {
       isVisible: isVisible !== null,
     };
 
-    if (!requestBody.name || requestBody.name.length === 0) {
-      setErrorMessage("A category name is required.");
+    if (!requestBody.name) {
+      setErrorMessage("A subcategory name is required.");
       return;
     }
 
@@ -128,17 +148,17 @@ export default function EditCategoryPage() {
       const updateToast = toast.promise<CategoryJson>(
         axios
           .patch<CategoryJson>(
-            `/api/admin/categories/${categoryId}`,
+            `/api/admin/categories/${subcategoryId}`,
             requestBody,
           )
           .then((response) => response.data),
         {
-          loading: "Updating category...",
-          success: "Category updated.",
+          loading: "Updating subcategory...",
+          success: "Subcategory updated.",
           error: (error) => {
             if (axios.isAxiosError<{ error?: string }>(error)) {
               return {
-                message: "Failed to update category.",
+                message: "Failed to update subcategory.",
                 description:
                   error.response?.data?.error ??
                   `Status code: ${error.response?.status ?? "No response"}`,
@@ -147,24 +167,25 @@ export default function EditCategoryPage() {
 
             return {
               message: "Unexpected error.",
-              description: "Something went wrong while updating the category.",
+              description:
+                "Something went wrong while updating the subcategory.",
             };
           },
         },
       );
 
-      const updatedCategory = await updateToast.unwrap();
+      const updatedSubcategory = await updateToast.unwrap();
 
-      setCategoryData(updatedCategory);
+      setSubcategoryData(updatedSubcategory);
     } catch (error) {
-      console.error("Error updating category:", error);
+      console.error("Error updating subcategory:", error);
 
       if (axios.isAxiosError<{ error?: string }>(error)) {
         setErrorMessage(
-          error.response?.data?.error ?? "Failed to update the category.",
+          error.response?.data?.error ?? "Failed to update the subcategory.",
         );
       } else {
-        setErrorMessage("Failed to update the category.");
+        setErrorMessage("Failed to update the subcategory.");
       }
     } finally {
       setIsSaving(false);
@@ -178,15 +199,15 @@ export default function EditCategoryPage() {
     try {
       const deleteToast = toast.promise(
         axios
-          .delete(`/api/admin/categories/${categoryId}`)
+          .delete(`/api/admin/categories/${subcategoryId}`)
           .then((response) => response.data),
         {
-          loading: "Deleting category...",
-          success: "Category deleted.",
+          loading: "Deleting subcategory...",
+          success: "Subcategory deleted.",
           error: (error) => {
             if (axios.isAxiosError<{ error?: string }>(error)) {
               return {
-                message: "Failed to delete category.",
+                message: "Failed to delete subcategory.",
                 description:
                   error.response?.data?.error ??
                   `Status code: ${error.response?.status ?? "No response"}`,
@@ -195,7 +216,8 @@ export default function EditCategoryPage() {
 
             return {
               message: "Unexpected error.",
-              description: "Something went wrong while deleting the category.",
+              description:
+                "Something went wrong while deleting the subcategory.",
             };
           },
         },
@@ -203,16 +225,17 @@ export default function EditCategoryPage() {
 
       await deleteToast.unwrap();
 
-      router.push("/dashboard/categories");
+      // Return to the parent category after deleting the subcategory.
+      router.push(`/dashboard/menu/${categoryId}`);
     } catch (error) {
-      console.error("Error deleting category:", error);
+      console.error("Error deleting subcategory:", error);
 
       if (axios.isAxiosError<{ error?: string }>(error)) {
         setErrorMessage(
-          error.response?.data?.error ?? "Failed to delete the category.",
+          error.response?.data?.error ?? "Failed to delete the subcategory.",
         );
       } else {
-        setErrorMessage("Failed to delete the category.");
+        setErrorMessage("Failed to delete the subcategory.");
       }
     } finally {
       setIsDeleting(false);
@@ -220,30 +243,30 @@ export default function EditCategoryPage() {
   }
 
   if (isLoading) {
-    return <p>Loading category</p>;
+    return <p>Loading subcategory...</p>;
   }
 
-  if (errorMessage && !categoryData) {
-    return <p>{errorMessage}</p>;
+  if (errorMessage && !subcategoryData) {
+    return <p role="alert">{errorMessage}</p>;
   }
 
-  if (!categoryData) {
-    return <p>This category could not be found.</p>;
+  if (!subcategoryData) {
+    return <p>This subcategory could not be found.</p>;
   }
 
   const isProcessing = isSaving || isDeleting;
 
   return (
-    <section aria-labelledby="edit-category-heading">
+    <section aria-labelledby="edit-subcategory-heading">
       <header className="flex items-center gap-3">
         <Link
-          href={`/dashboard/categories/${categoryData.id}`}
-          aria-label="Return to categories"
+          href={`/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`}
+          aria-label="Return to subcategory"
         >
           <ArrowIcon direction="left" size={50} />
         </Link>
 
-        <h1 id="edit-category-heading">Edit Category</h1>
+        <h1 id="edit-subcategory-heading">Edit Subcategory</h1>
       </header>
 
       <div className="mt-[1.5rem]">
@@ -252,7 +275,7 @@ export default function EditCategoryPage() {
           handleFormInput={handleFormInput}
           handleDelete={handleDelete}
           isProcessing={isProcessing}
-          categoryData={categoryData}
+          categoryData={subcategoryData}
           errorMessage={errorMessage}
           canSubmit={canSubmit}
           isSaving={isSaving}

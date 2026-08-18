@@ -116,7 +116,7 @@ export default function CategoryList({
                       handleMove={handleMoveCategory}
                     />
                     <Link
-                      href={`categories/${category.id}`}
+                      href={`menu/${category.id}`}
                       className="flex-1 min-w-0 flex items-center"
                       aria-label={`Edit ${category.name}`}
                     >
@@ -198,7 +198,7 @@ export default function CategoryList({
 
                       <td>
                         <Link
-                          href={`categories/${category.id}`}
+                          href={`menu/${category.id}`}
                           aria-label={`Edit ${category.name}`}
                           className="flex justify-center w-fit"
                         >

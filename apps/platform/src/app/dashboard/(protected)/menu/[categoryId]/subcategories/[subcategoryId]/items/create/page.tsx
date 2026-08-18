@@ -168,7 +168,7 @@ export default function CreateItemPage() {
       form.reset();
       setCanSubmit(false);
       router.push(
-        `/dashboard/categories/${categoryId}/subcategories/${subcategoryId}`,
+        `/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`,
       );
     } catch (error) {
       console.error("Error in Create Item page:", error);
@@ -202,7 +202,7 @@ export default function CreateItemPage() {
     <section aria-labelledby="create-item-heading">
       <header className="flex items-center gap-3">
         <Link
-          href={`/dashboard/categories/${categoryId}/subcategories/${subcategoryId}`}
+          href={`/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`}
           aria-label="Return to subcategory"
         >
           <ArrowIcon direction="left" size={50} />

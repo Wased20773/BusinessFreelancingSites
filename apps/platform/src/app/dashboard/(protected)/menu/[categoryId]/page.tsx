@@ -9,21 +9,19 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import "../../../../page.css";
+import "../../page.css";
 import type { CategoryJson } from "@/types/types";
-import ItemsList from "@/components/ui/items/ItemsList";
 import CategoryInfo from "@/components/ui/categories/CategoryInfo";
 
+import SubcategoriesList from "@/components/ui/subcategories/SubcategoriesList";
+import ItemsList from "@/components/ui/items/ItemsList";
+
 export default function CategoryPage() {
-  const params = useParams<{ categoryId: string; subcategoryId: string }>();
+  const params = useParams<{ categoryId: string }>();
 
   const categoryId = params.categoryId;
-  const subcategoryId = params.subcategoryId;
 
-  const [subcategoryData, setSubcategoryData] = useState<CategoryJson | null>(
-    null,
-  );
-
+  const [categoryData, setCategoryData] = useState<CategoryJson | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -38,22 +36,21 @@ export default function CategoryPage() {
             .get<{ categories: CategoryJson[] }>("/api/business/menu")
             .then((response) => response.data.categories),
           {
-            loading: "Loading subcategory...",
-            success: "Subcategory loaded.",
+            loading: "Loading category...",
+            success: "Category loaded.",
             error: (error) => {
-              if (axios.isAxiosError(error)) {
+              if (axios.isAxiosError<{ error?: string }>(error)) {
                 return {
-                  message: "Failed to load subcategory.",
-                  description: `Status code: ${
-                    error.response?.status ?? "No response"
-                  }`,
+                  message: "Failed to load category.",
+                  description:
+                    error.response?.data?.error ??
+                    `Status code: ${error.response?.status ?? "No response"}`,
                 };
               }
 
               return {
                 message: "Unexpected error.",
-                description:
-                  "Something went wrong while loading the subcategory.",
+                description: "Something went wrong while loading the category.",
               };
             },
           },
@@ -61,27 +58,16 @@ export default function CategoryPage() {
 
         const categories = await categoryToast.unwrap();
 
-        // Find the parent category first.
         const selectedCategory = categories.find(
           (category) => category.id === categoryId,
         );
 
         if (!selectedCategory) {
-          setErrorMessage("This subcategory could not be found.");
+          setErrorMessage("This category could not be found.");
           return;
         }
 
-        // Then find the selected subcategory inside it.
-        const selectedSubcategory = selectedCategory.subcategories?.find(
-          (subcategory) => subcategory.id === subcategoryId,
-        );
-
-        if (!selectedSubcategory) {
-          setErrorMessage("This subcategory could not be found.");
-          return;
-        }
-
-        setSubcategoryData(selectedSubcategory);
+        setCategoryData(selectedCategory);
       } catch (error) {
         console.error("Error in Category page:", error);
 
@@ -98,17 +84,17 @@ export default function CategoryPage() {
     }
 
     void getCategoryData();
-  }, [categoryId, subcategoryId]);
+  }, [categoryId]);
 
   if (isLoading) {
     return <p>Loading category...</p>;
   }
 
-  if (errorMessage && !subcategoryData) {
+  if (errorMessage && !categoryData) {
     return <p role="alert">{errorMessage}</p>;
   }
 
-  if (!subcategoryData) {
+  if (!categoryData) {
     return <p>This category could not be found.</p>;
   }
 
@@ -116,42 +102,55 @@ export default function CategoryPage() {
     <section aria-labelledby="category-heading">
       {/* HEADER */}
       <header className="flex items-center gap-3">
-        <Link
-          href={`/dashboard/categories/${categoryId}`}
-          aria-label="Return to categories"
-        >
+        <Link href="/dashboard/menu" aria-label="Return to menu">
           <ArrowIcon direction="left" size={50} />
         </Link>
 
-        <h1 id="category-heading">{subcategoryData.name}</h1>
+        <h1 className="truncate" id="category-heading">
+          {categoryData.name}
+        </h1>
       </header>
 
       <div className="mt-[1.5rem]">
         {/* ACTIONS */}
         <nav className="dashboard-card">
           <ActionItem
-            href={`${subcategoryId}/items/create`}
+            href={`${categoryId}/items/create`}
             icon={CreateButtonIcon}
             label="Create Item"
+          />
+
+          <Divider />
+
+          <ActionItem
+            href={`${categoryId}/subcategories/create`}
+            icon={CreateButtonIcon}
+            label="Create Subcategory"
           />
         </nav>
 
         <Divider />
 
         {/* CATEGORY INFORMATION */}
-        <CategoryInfo
-          categoryId={subcategoryId}
-          categoryData={subcategoryData}
-        />
+        <CategoryInfo categoryId={categoryId} categoryData={categoryData} />
 
         <Divider />
 
         {/* ITEMS */}
         <ItemsList
-          categoryId={subcategoryId}
-          categoryData={subcategoryData}
+          categoryId={categoryId}
+          categoryData={categoryData}
           setErrorMessage={setErrorMessage}
-          setCategoryData={setSubcategoryData}
+          setCategoryData={setCategoryData}
+        />
+        <Divider />
+
+        {/* SUBCATEGORIES */}
+        <SubcategoriesList
+          categoryId={categoryId}
+          categoryData={categoryData}
+          setCategoryData={setCategoryData}
+          setErrorMessage={setErrorMessage}
         />
       </div>
     </section>

@@ -45,14 +45,12 @@ export async function authenticateBusinessAccess(
         user: {
           email: session.user.email,
         },
-        // businessId: session.user.businessId,
-        role: {
-          accessLevel: { in: allowedRoles },
-        },
+        businessId: session.user.businessId,
+        role: {},
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      // orderBy: {
+      //   createdAt: "desc",
+      // },
       select: {
         businessId: true,
         userId: true,

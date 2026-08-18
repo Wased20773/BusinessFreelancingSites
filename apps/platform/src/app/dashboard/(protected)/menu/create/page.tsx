@@ -99,7 +99,7 @@ export default function CreateCategoryPage() {
 
       form.reset();
       setCanSubmit(false);
-      router.push("/dashboard/categories");
+      router.push("/dashboard/menu");
     } catch (error) {
       console.error("Error in Create Category page:", error);
 
@@ -127,7 +127,7 @@ export default function CreateCategoryPage() {
   return (
     <section aria-labelledby="create-category-heading">
       <header className="flex items-center gap-3">
-        <Link href="/dashboard/categories" aria-label="Return to category">
+        <Link href="/dashboard/menu" aria-label="Return to menu">
           <ArrowIcon direction="left" size={50} />
         </Link>
 

@@ -71,14 +71,14 @@ export default function CategoriesPage() {
   return (
     <>
       <section aria-labelledby="categories-heading">
-        <h1 id="categories-heading">Categories</h1>
+        <h1 id="categories-heading">Menu</h1>
 
         <div className="mt-[1.5rem]">
           {/* Links */}
           <nav className="dashboard-card" aria-label="Category actions">
             {/* Create Category */}
             <ActionItem
-              href="categories/create"
+              href="menu/create"
               icon={CreateButtonIcon}
               label="Create Category"
             />
