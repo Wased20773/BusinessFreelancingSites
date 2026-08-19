@@ -29,7 +29,7 @@ export default async function DashboardLayout({
     !session.user.businessName ||
     !session.user.accessLevel
   ) {
-    throw new Error("No business is associated with this account.");
+    redirect("/onboarding");
   }
 
   // ##############################################
