@@ -44,25 +44,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    // ################################
-    // ##### Prevent Re-Onboarding #####
-    // ################################
-    const existingBusinessUser = await prisma.businessUser.findFirst({
-      where: {
-        userId,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (existingBusinessUser) {
-      return NextResponse.json(
-        { error: "This account is already associated with a business" },
-        { status: 409 },
-      );
-    }
-
     // ############################
     // ##### Find Owner Role ######
     // ############################
