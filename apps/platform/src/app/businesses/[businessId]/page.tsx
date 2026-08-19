@@ -76,7 +76,26 @@ export default function BusinessLocationsPage() {
   }
 
   useEffect(() => {
-    void getLocations();
+    axios
+      .get<LocationsResponse>(`/api/businesses/${businessId}/locations`)
+      .then((response) => {
+        setBusinessName(response.data.business.name);
+        setLocations(response.data.locations);
+      })
+      .catch((error) => {
+        console.error("Failed to load locations:", error);
+
+        if (axios.isAxiosError<{ error?: string }>(error)) {
+          setErrorMessage(
+            error.response?.data?.error ?? "Failed to load business locations.",
+          );
+        } else {
+          setErrorMessage("Failed to load business locations.");
+        }
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, [businessId]);
 
   async function handleCreateLocation(event: FormEvent<HTMLFormElement>) {

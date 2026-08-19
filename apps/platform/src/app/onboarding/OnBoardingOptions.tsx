@@ -142,7 +142,10 @@ export default function OnBoardingOptions() {
               </h1>
 
               <p className="text-gray-500 text-center mt-1 mb-5">
-                Choose how you plan to use the platform.
+                Choose how you plan to use the platform. Don&apos;t worry, this
+                selection does not affect your role when joining a business. We
+                only use it to better understand how people use the platform, so
+                please choose the option that best describes you.
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full">
@@ -244,7 +247,7 @@ export default function OnBoardingOptions() {
             {/* ################ */}
 
             {selectedType === "staff" && (
-              <div className="max-w-[600px] mx-auto">
+              <div className="max-w-[600px] mx-auto flex flex-col items-center">
                 <div className="flex justify-center">
                   <Image
                     className="bg-gray-200 rounded-full p-2"
@@ -269,6 +272,14 @@ export default function OnBoardingOptions() {
                   Ask the business owner or an authorized administrator to
                   invite your account.
                 </p>
+
+                <button
+                  className="mt-3 bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1"
+                  type="submit"
+                  onClick={() => router.push("/businesses")}
+                >
+                  Continue
+                </button>
               </div>
             )}
 
@@ -361,7 +372,7 @@ export default function OnBoardingOptions() {
             {/* #################### */}
 
             {selectedType === "developer" && (
-              <div className="max-w-[600px] mx-auto">
+              <div className="max-w-[600px] mx-auto flex flex-col items-center">
                 <div className="flex justify-center">
                   <Image
                     className="bg-blue-200 rounded-full p-2"
@@ -385,6 +396,14 @@ export default function OnBoardingOptions() {
                   Once invited, the business will appear in your account and you
                   can access the tools available to your developer role.
                 </p>
+
+                <button
+                  className="mt-3 bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1"
+                  type="submit"
+                  onClick={() => router.push("/businesses")}
+                >
+                  Continue
+                </button>
               </div>
             )}
           </section>

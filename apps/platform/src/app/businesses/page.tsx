@@ -49,9 +49,6 @@ export default function BusinessesPage() {
   );
 
   async function getBusinesses() {
-    setIsLoading(true);
-    setErrorMessage(null);
-
     try {
       const response = await axios.get<BusinessUserJson[]>("/api/businesses");
 
@@ -72,9 +69,26 @@ export default function BusinessesPage() {
   }
 
   useEffect(() => {
-    void getBusinesses();
-  }, []);
+    axios
+      .get<BusinessUserJson[]>("/api/businesses")
+      .then((response) => {
+        setBusinesses(response.data);
+      })
+      .catch((error) => {
+        console.error("Failed to load businesses:", error);
 
+        if (axios.isAxiosError<{ error?: string }>(error)) {
+          setErrorMessage(
+            error.response?.data?.error ?? "Failed to load your businesses.",
+          );
+        } else {
+          setErrorMessage("Failed to load your businesses.");
+        }
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
   async function handleCreateBusiness(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
