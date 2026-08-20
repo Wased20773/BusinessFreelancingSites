@@ -5,6 +5,8 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
+import ExitIcon from "@/components/icons/exit-black.svg";
+import Image from "next/image";
 
 type LocationJson = {
   id: string;
@@ -278,7 +280,7 @@ export default function BusinessLocationsPage() {
               <li key={location.id}>
                 <Link
                   className="block h-full border-[0.1rem] border-gray-300 rounded-lg px-4 py-4 hover:border-blue-400 hover:bg-gray-50 transition-colors"
-                  href={`/dashboard`}
+                  href={`/businesses/${businessId}/locations/${location.id}/dashboard`}
                 >
                   <div className="flex flex-col h-full">
                     <h2 className="font-semibold text-lg">
@@ -352,7 +354,7 @@ export default function BusinessLocationsPage() {
                 disabled={isSubmitting}
                 onClick={() => setIsCreatingLocation(false)}
               >
-                ×
+                <Image src={ExitIcon} alt="" width={20} height={20} />
               </button>
             </div>
 

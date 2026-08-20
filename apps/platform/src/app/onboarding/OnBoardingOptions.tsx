@@ -29,15 +29,86 @@ type CreateBusinessResponse = {
   };
 };
 
+type OnboardingResponse = {
+  message: string;
+
+  user: {
+    onboardingIntent: Exclude<OnboardingType, null>;
+    onboardingCompleted: boolean;
+  };
+};
+
 export default function OnBoardingOptions() {
   const [selectedType, setSelectedType] = useState<OnboardingType>(null);
 
-  const [isCreatingBusiness, setIsCreatingBusiness] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { update } = useSession();
   const router = useRouter();
+
+  async function completeOnboarding(
+    onboardingIntent: Exclude<OnboardingType, null>,
+  ) {
+    return axios
+      .patch<OnboardingResponse>("/api/onboarding", {
+        onboardingIntent,
+      })
+      .then((response) => response.data);
+  }
+
+  async function handleContinue() {
+    if (!selectedType || selectedType === "business") return;
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      const onboardingToast = toast.promise<OnboardingResponse>(
+        completeOnboarding(selectedType),
+        {
+          loading: "Completing onboarding...",
+          success: {
+            message: "Onboarding complete",
+            description: "You are ready to continue.",
+          },
+          error: (error) => {
+            if (axios.isAxiosError<{ error?: string }>(error)) {
+              return {
+                message: "Failed to complete onboarding.",
+                description:
+                  error.response?.data?.error ??
+                  `Status code: ${error.response?.status ?? "No response"}`,
+              };
+            }
+
+            return {
+              message: "Unexpected error.",
+              description: "Something went wrong while completing onboarding.",
+            };
+          },
+        },
+      );
+
+      await onboardingToast.unwrap();
+
+      router.push("/businesses");
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to complete onboarding:", error);
+
+      if (axios.isAxiosError<{ error?: string }>(error)) {
+        setErrorMessage(
+          error.response?.data?.error ?? "Failed to complete onboarding.",
+        );
+      } else {
+        setErrorMessage("Failed to complete onboarding.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   async function handleBusinessSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -58,7 +129,7 @@ export default function OnBoardingOptions() {
       return;
     }
 
-    setIsCreatingBusiness(true);
+    setIsSubmitting(true);
     setErrorMessage(null);
 
     try {
@@ -96,29 +167,36 @@ export default function OnBoardingOptions() {
       await createBusinessToast.unwrap();
 
       /*
-       * Refresh the JWT/session now that the user has
-       * been linked to the newly created business.
+       * The business was created successfully, so now record why
+       * the user originally joined and mark onboarding as complete.
+       */
+      await completeOnboarding("business");
+
+      /*
+       * Refresh the JWT/session now that the user has been
+       * linked to the newly created business.
        */
       await update();
 
       /*
-       * The dashboard layout will now see the new
-       * business information in the refreshed session.
+       * Onboarding is complete. All users now enter the app
+       * through the business selection page.
        */
-      router.push("/dashboard");
+      router.push("/businesses");
       router.refresh();
     } catch (error) {
       console.error("Failed to complete business onboarding:", error);
 
       if (axios.isAxiosError<{ error?: string }>(error)) {
         setErrorMessage(
-          error.response?.data?.error ?? "Failed to create your business.",
+          error.response?.data?.error ??
+            "Failed to complete business onboarding.",
         );
       } else {
-        setErrorMessage("Failed to create your business.");
+        setErrorMessage("Failed to complete business onboarding.");
       }
     } finally {
-      setIsCreatingBusiness(false);
+      setIsSubmitting(false);
     }
   }
 
@@ -236,8 +314,11 @@ export default function OnBoardingOptions() {
             <button
               type="button"
               className="text-blue-500 mb-5 disabled:opacity-50"
-              onClick={() => setSelectedType(null)}
-              disabled={isCreatingBusiness}
+              onClick={() => {
+                setSelectedType(null);
+                setErrorMessage(null);
+              }}
+              disabled={isSubmitting}
             >
               ← Back
             </button>
@@ -273,12 +354,19 @@ export default function OnBoardingOptions() {
                   invite your account.
                 </p>
 
+                {errorMessage && (
+                  <p className="w-full mt-3 text-red-500 bg-red-100 border-[0.1rem] border-red-500 rounded-lg px-2 py-1">
+                    {errorMessage}
+                  </p>
+                )}
+
                 <button
-                  className="mt-3 bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1"
-                  type="submit"
-                  onClick={() => router.push("/businesses")}
+                  className="mt-3 bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="button"
+                  onClick={handleContinue}
+                  disabled={isSubmitting}
                 >
-                  Continue
+                  {isSubmitting ? "Continuing..." : "Continue"}
                 </button>
               </div>
             )}
@@ -324,7 +412,7 @@ export default function OnBoardingOptions() {
                       name="name"
                       type="text"
                       placeholder="Enter your business name"
-                      disabled={isCreatingBusiness}
+                      disabled={isSubmitting}
                       required
                     />
                   </div>
@@ -345,7 +433,7 @@ export default function OnBoardingOptions() {
                       name="address"
                       type="text"
                       placeholder="123 Main St"
-                      disabled={isCreatingBusiness}
+                      disabled={isSubmitting}
                       required
                     />
                   </div>
@@ -359,9 +447,9 @@ export default function OnBoardingOptions() {
                   <button
                     className="mt-3 ml-auto bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
                     type="submit"
-                    disabled={isCreatingBusiness}
+                    disabled={isSubmitting}
                   >
-                    {isCreatingBusiness ? "Creating..." : "Create Business"}
+                    {isSubmitting ? "Creating..." : "Create Business"}
                   </button>
                 </form>
               </div>
@@ -397,12 +485,19 @@ export default function OnBoardingOptions() {
                   can access the tools available to your developer role.
                 </p>
 
+                {errorMessage && (
+                  <p className="w-full mt-3 text-red-500 bg-red-100 border-[0.1rem] border-red-500 rounded-lg px-2 py-1">
+                    {errorMessage}
+                  </p>
+                )}
+
                 <button
-                  className="mt-3 bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1"
-                  type="submit"
-                  onClick={() => router.push("/businesses")}
+                  className="mt-3 bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="button"
+                  onClick={handleContinue}
+                  disabled={isSubmitting}
                 >
-                  Continue
+                  {isSubmitting ? "Continuing..." : "Continue"}
                 </button>
               </div>
             )}

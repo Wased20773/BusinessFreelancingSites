@@ -12,6 +12,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum OnboardingIntent {
+  staff
+  business
+  developer
+}
+
 enum AccessLevel {
   developer
   owner
@@ -72,6 +78,8 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  onboardingCompleted Boolean @default(false)
+  onboardingIntent OnboardingIntent?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

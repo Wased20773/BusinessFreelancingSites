@@ -10,8 +10,8 @@ export default async function OnBoarding() {
     redirect("/dashboard/login");
   }
 
-  if (session.user.businessId) {
-    redirect("/dashboard");
+  if (session.user.onboardingCompleted) {
+    redirect("/businesses");
   }
 
   return (

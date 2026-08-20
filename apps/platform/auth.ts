@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 type BusinessToken = {
   userId?: string;
+  onboardingCompleted?: boolean;
   businessId?: string;
   businessSlug?: string;
   businessName?: string;
@@ -61,11 +62,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
        */
       if (
         trigger === "update" ||
+        businessToken.onboardingCompleted === undefined ||
         !businessToken.businessId ||
         !businessToken.businessSlug ||
         !businessToken.businessName ||
         !businessToken.accessLevel
       ) {
+        const userData = await prisma.user.findUnique({
+          where: {
+            id: userId,
+          },
+          select: {
+            onboardingCompleted: true,
+          },
+        });
+
+        if (userData) {
+          businessToken.onboardingCompleted = userData.onboardingCompleted;
+        }
+
         const businessUser = await prisma.businessUser.findFirst({
           where: {
             userId,
@@ -104,6 +119,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       if (businessToken.userId) {
         session.user.id = businessToken.userId;
+      }
+
+      if (businessToken.onboardingCompleted !== undefined) {
+        session.user.onboardingCompleted = businessToken.onboardingCompleted;
       }
 
       if (businessToken.businessId) {

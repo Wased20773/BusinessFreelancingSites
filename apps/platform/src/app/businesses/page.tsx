@@ -4,6 +4,8 @@ import axios from "axios";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
+import ExitIcon from "@/components/icons/exit-black.svg";
+import Image from "next/image";
 
 type BusinessUserJson = {
   id: string;
@@ -315,7 +317,7 @@ export default function BusinessesPage() {
                 disabled={isSubmitting}
                 onClick={() => setIsCreatingBusiness(false)}
               >
-                ×
+                <Image src={ExitIcon} alt="" width={20} height={20} />
               </button>
             </div>
 

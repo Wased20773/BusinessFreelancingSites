@@ -76,23 +76,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    let slug = baseSlug;
-    let suffix = 2;
-
-    while (
-      await prisma.business.findUnique({
-        where: {
-          slug,
-        },
-        select: {
-          id: true,
-        },
-      })
-    ) {
-      // Prevent duplicate business names
-      slug = `${baseSlug}-${suffix}`;
-      suffix++;
-    }
+    const slug = baseSlug;
 
     // ################################
     // ##### Create Business Setup #####
