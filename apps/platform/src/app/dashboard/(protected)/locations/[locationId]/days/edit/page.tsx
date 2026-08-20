@@ -119,7 +119,13 @@ export default function EditBusinessDaysPage() {
              * Hours are already returned from the API
              * earliest -> latest and in HH:mm format.
              */
-            hours: [],
+            hours: selectedDay.hours.map((hour) => ({
+              id: hour.id,
+              openTime: hour.openTime,
+              closeTime: hour.closeTime,
+              title: hour.title ?? "",
+              note: hour.note ?? "",
+            })),
           };
         }
 
