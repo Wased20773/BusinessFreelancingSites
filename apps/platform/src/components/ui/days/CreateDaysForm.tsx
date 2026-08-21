@@ -3,114 +3,26 @@
 import CalendarIcon from "@/components/icons/calendar.svg";
 import EditIcon from "@/components/icons/edit.svg";
 import type { LocationJson } from "@/types/types";
-import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { toast } from "sonner";
-
-const MONDAY_SUNDAY = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-] as const;
-
-type CreateDaysResponse = {
-  message: string;
-  count: number;
-};
+import { MouseEvent } from "react";
 
 type CreateDaysFormProps = {
   locationId: string;
   locationData: LocationJson;
-  getLocationData: (showLoading?: boolean) => Promise<void>;
-  setErrorMessage: React.Dispatch<React.SetStateAction<string | null>>;
+  isActivatingDays: boolean;
+  activateBusinessDays(event: MouseEvent<HTMLButtonElement>): Promise<void>;
   handleRemoveBusinessDays: () => Promise<void>;
 };
 
 export default function CreateDaysForm({
   locationId,
   locationData,
-  getLocationData,
-  setErrorMessage,
+  isActivatingDays,
+  activateBusinessDays,
   handleRemoveBusinessDays,
 }: CreateDaysFormProps) {
-  const [isActivatingDays, setIsActivatingDays] = useState<boolean>(false);
-
   const hasBusinessDays = locationData.days.length > 0;
-
-  async function activateBusinessDays() {
-    setIsActivatingDays(true);
-    setErrorMessage(null);
-
-    const requestBody = {
-      days: MONDAY_SUNDAY.map((day) => ({
-        dayOfWeek: day,
-        isClosed: day === "Saturday" || day === "Sunday",
-      })),
-    };
-
-    try {
-      const daysToast = toast.promise<CreateDaysResponse>(
-        axios
-          .post<CreateDaysResponse>(
-            `/api/admin/locations/${locationId}/days`,
-            requestBody,
-          )
-          .then((response) => response.data),
-        {
-          loading: "Activating business days...",
-          success: "Business days activated.",
-          error: (error) => {
-            if (
-              axios.isAxiosError<{
-                error?: string;
-              }>(error)
-            ) {
-              return {
-                message: "Failed to activate business days.",
-                description:
-                  error.response?.data?.error ??
-                  `Status code: ${error.response?.status ?? "No response"}`,
-              };
-            }
-
-            return {
-              message: "Unexpected error.",
-              description:
-                "Something went wrong while activating business days.",
-            };
-          },
-        },
-      );
-
-      await daysToast.unwrap();
-
-      // Refresh so we receive the real
-      // LocationDay records and ids.
-      await getLocationData(false);
-    } catch (error) {
-      console.error("Error activating Business Days:", error);
-
-      if (
-        axios.isAxiosError<{
-          error?: string;
-        }>(error)
-      ) {
-        setErrorMessage(
-          error.response?.data?.error ?? "Failed to activate business days.",
-        );
-      } else {
-        setErrorMessage("Failed to activate business days.");
-      }
-    } finally {
-      setIsActivatingDays(false);
-    }
-  }
 
   return (
     <section

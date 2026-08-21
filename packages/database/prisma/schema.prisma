@@ -12,6 +12,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum OnboardingIntent {
+  staff
+  business
+  developer
+}
+
 enum AccessLevel {
   developer
   owner
@@ -66,14 +72,16 @@ model Business {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  name          String?
-  username      String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String            @id @default(uuid())
+  name                String?
+  username            String?
+  email               String            @unique
+  emailVerified       DateTime?
+  image               String?
+  onboardingCompleted Boolean           @default(false)
+  onboardingIntent    OnboardingIntent?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
 
   businesses BusinessUser[]
   accounts   Account[]
@@ -218,26 +226,32 @@ model LocationDay {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  hours    Hour[]
+  hour         Hour?    @relation("RegularHour")
+  specialHours Hour[]   @relation("SpecialHours")
+  location     Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
 
   @@unique([locationId, dayOfWeek])
 }
 
 model Hour {
-  id            String   @id @default(uuid())
-  locationDayId String
-  openTime      String
-  closeTime     String
-  title         String?
-  note          String?
-  isDisabled    Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id         String   @id @default(uuid())
+  openTime   String
+  closeTime  String
+  title      String?
+  note       String?
+  isDisabled Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  locationDay LocationDay @relation(fields: [locationDayId], references: [id], onDelete: Cascade)
+  // Regular weekly hour 
+  regularDayId String?      @unique
+  regularDay   LocationDay? @relation("RegularHour", fields: [regularDayId], references: [id], onDelete: Cascade)
 
-  @@unique([locationDayId, openTime, closeTime])
+  // Special hour 
+  specialDayId String?
+  specialDay   LocationDay? @relation("SpecialHours", fields: [specialDayId], references: [id], onDelete: Cascade)
+
+  @@unique([specialDayId, openTime, closeTime])
 }
 
 model Item {
