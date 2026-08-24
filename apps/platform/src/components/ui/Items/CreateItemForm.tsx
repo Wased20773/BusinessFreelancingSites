@@ -104,7 +104,7 @@ export default function CreateItemForm({
             name="price"
             type="number"
             min="0"
-            step="0.10"
+            step="0.01"
             required
           />
         </div>

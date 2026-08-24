@@ -43,6 +43,13 @@ export async function POST(
       );
     }
 
+    if (typeof body.isSpecial !== "boolean") {
+      return NextResponse.json(
+        { error: "Hour type must be provided" },
+        { status: 400 },
+      );
+    }
+
     const openTime = normalizeTime(body.openTime);
     const closeTime = normalizeTime(body.closeTime);
 
@@ -53,16 +60,37 @@ export async function POST(
       );
     }
 
+    /*
+     * Make sure the selected day belongs to
+     * the selected location and business.
+     */
     const day = await prisma.locationDay.findFirst({
       where: {
         id: dayId,
         locationId: locationId,
+
         location: {
           businessId: businessId,
         },
       },
       select: {
         id: true,
+
+        hour: {
+          select: {
+            id: true,
+            openTime: true,
+            closeTime: true,
+          },
+        },
+
+        specialHours: {
+          select: {
+            id: true,
+            openTime: true,
+            closeTime: true,
+          },
+        },
       },
     });
 
@@ -73,22 +101,58 @@ export async function POST(
       );
     }
 
-    const existingHours = await prisma.hour.findMany({
-      where: { locationDayId: day.id },
-      select: {
-        id: true,
-        openTime: true,
-        closeTime: true,
-      },
-    });
+    // ########################
+    // ##### REGULAR HOUR #####
+    // ########################
 
-    const conflictingHour = existingHours.find((hour) =>
-      checkTimeOverlap(
-        body.openTime,
-        body.closeTime,
-        hour.openTime,
-        hour.closeTime,
-      ),
+    if (!body.isSpecial) {
+      /*
+       * A LocationDay can only contain
+       * one regular Hour.
+       */
+      if (day.hour) {
+        return NextResponse.json(
+          { error: "Regular hours already exist for this day" },
+          { status: 409 },
+        );
+      }
+
+      const hour = await prisma.hour.create({
+        data: {
+          regularDayId: day.id,
+          openTime: openTime,
+          closeTime: closeTime,
+          title: body.title,
+          note: body.note,
+        },
+
+        select: {
+          id: true,
+          regularDayId: true,
+          specialDayId: true,
+          openTime: true,
+          closeTime: true,
+          title: true,
+          note: true,
+          isDisabled: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      return NextResponse.json(hour, { status: 201 });
+    }
+
+    // ########################
+    // ##### SPECIAL HOUR #####
+    // ########################
+
+    /*
+     * Special hours cannot overlap
+     * other special hours for this day.
+     */
+    const conflictingHour = day.specialHours.find((hour) =>
+      checkTimeOverlap(openTime, closeTime, hour.openTime, hour.closeTime),
     );
 
     if (conflictingHour) {
@@ -102,7 +166,7 @@ export async function POST(
 
     const hour = await prisma.hour.create({
       data: {
-        locationDayId: day.id,
+        specialDayId: day.id,
         openTime: openTime,
         closeTime: closeTime,
         title: body.title,
@@ -110,7 +174,8 @@ export async function POST(
       },
       select: {
         id: true,
-        locationDayId: true,
+        regularDayId: true,
+        specialDayId: true,
         openTime: true,
         closeTime: true,
         title: true,

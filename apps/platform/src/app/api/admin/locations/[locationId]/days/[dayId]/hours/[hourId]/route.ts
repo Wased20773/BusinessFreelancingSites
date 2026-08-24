@@ -42,17 +42,45 @@ export async function PATCH(
       return NextResponse.json({ error: "Missing hourId" }, { status: 400 });
     }
 
+    /*
+     * Find the Hour and verify that either
+     * its regular or special relation belongs
+     * to this location/day/business.
+     */
+
     const existingHour = await prisma.hour.findFirst({
       where: {
         id: hourId,
-        locationDayId: dayId,
-        locationDay: {
-          locationId: locationId,
-          location: { businessId: businessId },
-        },
+
+        OR: [
+          {
+            regularDayId: dayId,
+
+            regularDay: {
+              locationId: locationId,
+
+              location: {
+                businessId: businessId,
+              },
+            },
+          },
+
+          {
+            specialDayId: dayId,
+            specialDay: {
+              locationId: locationId,
+
+              location: {
+                businessId: businessId,
+              },
+            },
+          },
+        ],
       },
       select: {
         id: true,
+        regularDayId: true,
+        specialDayId: true,
         openTime: true,
         closeTime: true,
       },
@@ -80,42 +108,52 @@ export async function PATCH(
       );
     }
 
-    const otherHours = await prisma.hour.findMany({
-      where: {
-        locationDayId: dayId,
-        id: {
-          not: hourId,
-        },
-      },
-      select: {
-        id: true,
-        openTime: true,
-        closeTime: true,
-      },
-    });
+    /*
+     * Only special hours require overlap
+     * checks against other Hour records.
+     */
+    if (existingHour.specialDayId) {
+      const otherSpecialHours = await prisma.hour.findMany({
+        where: {
+          specialDayId: dayId,
 
-    const conflictingHour = otherHours.find((hour) =>
-      checkTimeOverlap(
-        updatedOpenTime,
-        updatedCloseTime,
-        hour.openTime,
-        hour.closeTime,
-      ),
-    );
-
-    if (conflictingHour) {
-      return NextResponse.json(
-        {
-          error: `The selected time conflicts with the existing hours ${conflictingHour.openTime} - ${conflictingHour.closeTime}`,
+          id: {
+            // Choosing the selected hour causes guaranteed conflicting hours
+            not: hourId,
+          },
         },
-        { status: 409 },
+
+        select: {
+          id: true,
+          openTime: true,
+          closeTime: true,
+        },
+      });
+
+      const conflictingHour = otherSpecialHours.find((hour) =>
+        checkTimeOverlap(
+          updatedOpenTime,
+          updatedCloseTime,
+          hour.openTime,
+          hour.closeTime,
+        ),
       );
+
+      if (conflictingHour) {
+        return NextResponse.json(
+          {
+            error: `The selected time conflicts with the existing special hours ${conflictingHour.openTime} - ${conflictingHour.closeTime}`,
+          },
+          { status: 409 },
+        );
+      }
     }
 
     const updatedHour = await prisma.hour.update({
       where: {
         id: hourId,
       },
+
       data: {
         openTime: updatedOpenTime,
         closeTime: updatedCloseTime,
@@ -123,9 +161,11 @@ export async function PATCH(
         note: body.note,
         isDisabled: body.isDisabled,
       },
+
       select: {
         id: true,
-        locationDayId: true,
+        regularDayId: true,
+        specialDayId: true,
         openTime: true,
         closeTime: true,
         title: true,
@@ -151,7 +191,13 @@ export async function DELETE(
   request: Request,
   {
     params,
-  }: { params: Promise<{ locationId: string; dayId: string; hourId: string }> },
+  }: {
+    params: Promise<{
+      locationId: string;
+      dayId: string;
+      hourId: string;
+    }>;
+  },
 ): Promise<NextResponse> {
   try {
     const authResult = await authenticateBusinessAccess(request, [
@@ -182,13 +228,32 @@ export async function DELETE(
     const deletedHour = await prisma.hour.deleteMany({
       where: {
         id: hourId,
-        locationDayId: dayId,
-        locationDay: {
-          locationId: locationId,
-          location: {
-            businessId: businessId,
+
+        OR: [
+          {
+            regularDayId: dayId,
+
+            regularDay: {
+              locationId: locationId,
+
+              location: {
+                businessId: businessId,
+              },
+            },
           },
-        },
+
+          {
+            specialDayId: dayId,
+
+            specialDay: {
+              locationId: locationId,
+
+              location: {
+                businessId: businessId,
+              },
+            },
+          },
+        ],
       },
     });
 

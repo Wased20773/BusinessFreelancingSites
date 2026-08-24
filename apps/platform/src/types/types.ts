@@ -113,7 +113,8 @@ export type LocationJson = Omit<Location, "createdAt" | "updatedAt"> & {
 export type LocationDayJson = Omit<LocationDay, "createdAt" | "updatedAt"> & {
   createdAt: string;
   updatedAt: string;
-  hours: HourJson[];
+  hour: HourJson;
+  specialHours: HourJson[];
 };
 
 export type HourJson = Omit<Hour, "createdAt" | "updatedAt"> & {

@@ -59,14 +59,28 @@ export async function GET(request: Request): Promise<NextResponse> {
                 createdAt: true,
                 updatedAt: true,
 
-                hours: {
+                hour: {
+                  select: {
+                    id: true,
+                    regularDayId: true,
+                    openTime: true,
+                    closeTime: true,
+                    title: true,
+                    note: true,
+                    isDisabled: true,
+                    createdAt: true,
+                    updatedAt: true,
+                  },
+                },
+
+                specialHours: {
                   orderBy: {
                     openTime: "asc",
                   },
 
                   select: {
                     id: true,
-                    locationDayId: true,
+                    specialDayId: true,
                     openTime: true,
                     closeTime: true,
                     title: true,

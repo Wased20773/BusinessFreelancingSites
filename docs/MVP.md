@@ -1,7 +1,7 @@
 ---
 title: MVP
 
-last-verified: 2026-07-31
+last-verified: 2026-08-22
 status: planned
 ---
 
@@ -29,6 +29,8 @@ Each business remains a custom-built frontend with its own design, domain, brand
 - Auth.js authentication
 - Business Api Key
 - Editable menu, prices, hours, locations, contacts, socials, images, and more
+- location based
+  - Every business has at least one location and each location holds its own data (showed be either shared across all locations or not)
 - First custom client website: Tacos El Guero
 
 ## Out of Scope
@@ -41,9 +43,7 @@ Each business remains a custom-built frontend with its own design, domain, brand
 - Logging service like Sentry, Logtail, Datadog, etc.
   - For checking issues from clients from a deeper perspective
 - For client business app, determining travel time to reach business location
-- location based
-  - rework how locations work and link them directly to items in a many-to-many relationship
-  - same with hours, businessUser's, categories, and even contact
+
 - 3rd-party integration
   - UberEats
   - DoorDash

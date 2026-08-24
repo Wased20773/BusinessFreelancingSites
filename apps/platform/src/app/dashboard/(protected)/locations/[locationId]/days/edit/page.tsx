@@ -1,7 +1,6 @@
 "use client";
 
 import ArrowIcon from "@/components/icons/arrow";
-import CreateHoursForm from "@/components/ui/hours/CreateHoursForm";
 import type { LocationJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
@@ -32,9 +31,19 @@ type Hour = {
 
 type DayHours = {
   id: string;
+
   isClosed: boolean;
   originalIsClosed: boolean;
-  hours: Hour[];
+
+  hour: Hour | null;
+  specialHours: Hour[];
+};
+
+const EMPTY_HOUR: Hour = {
+  openTime: "",
+  closeTime: "",
+  title: "",
+  note: "",
 };
 
 export default function EditBusinessDaysPage() {
@@ -112,14 +121,35 @@ export default function EditBusinessDaysPage() {
 
           dayState[dayName] = {
             id: selectedDay.id,
+
             isClosed: selectedDay.isClosed,
             originalIsClosed: selectedDay.isClosed,
 
             /*
-             * Hours are already returned from the API
-             * earliest -> latest and in HH:mm format.
+             * A day can only contain one regular
+             * opening and closing time.
              */
-            hours: [],
+            hour: selectedDay.hour
+              ? {
+                  id: selectedDay.hour.id,
+                  openTime: selectedDay.hour.openTime,
+                  closeTime: selectedDay.hour.closeTime,
+                  title: selectedDay.hour.title ?? "",
+                  note: selectedDay.hour.note ?? "",
+                }
+              : null,
+
+            /*
+             * Special hours may contain multiple
+             * Hour records for the same day.
+             */
+            specialHours: (selectedDay.specialHours ?? []).map((hour) => ({
+              id: hour.id,
+              openTime: hour.openTime,
+              closeTime: hour.closeTime,
+              title: hour.title ?? "",
+              note: hour.note ?? "",
+            })),
           };
         }
 
@@ -143,14 +173,27 @@ export default function EditBusinessDaysPage() {
   }, [locationId]);
 
   /*
-   * A valid form requires every day to either:
+   * Checks whether two time ranges overlap.
+   */
+  function timesOverlap(
+    firstOpenTime: string,
+    firstCloseTime: string,
+    secondOpenTime: string,
+    secondCloseTime: string,
+  ) {
+    return firstOpenTime < secondCloseTime && firstCloseTime > secondOpenTime;
+  }
+
+  /*
+   * Every day must either:
    *
    * 1. Be closed
    *
    * OR
    *
-   * 2. Have at least one hours block where every
-   *    block contains both open and close times.
+   * 2. Have a valid regular hour if one is entered,
+   *    and every special hour must contain both
+   *    an opening and closing time.
    */
   const isValid =
     days !== null &&
@@ -161,18 +204,82 @@ export default function EditBusinessDaysPage() {
         return true;
       }
 
-      return currentDay.hours.every((hour) => {
-        const hasOpenTime = hour.openTime.trim() !== "";
-        const hasCloseTime = hour.closeTime.trim() !== "";
+      /*
+       * Validate regular hours.
+       */
+      if (currentDay.hour) {
+        const hasOpenTime = currentDay.hour.openTime.trim() !== "";
+        const hasCloseTime = currentDay.hour.closeTime.trim() !== "";
 
-        // No hours entered is valid.
-        if (!hasOpenTime && !hasCloseTime) {
-          return true;
+        if (hasOpenTime !== hasCloseTime) {
+          return false;
         }
 
-        // If one time is entered, both are required.
-        return hasOpenTime && hasCloseTime;
-      });
+        if (
+          hasOpenTime &&
+          hasCloseTime &&
+          currentDay.hour.openTime >= currentDay.hour.closeTime
+        ) {
+          return false;
+        }
+      }
+
+      /*
+       * Validate special hours.
+       */
+      for (const specialHour of currentDay.specialHours) {
+        const hasOpenTime = specialHour.openTime.trim() !== "";
+        const hasCloseTime = specialHour.closeTime.trim() !== "";
+
+        /*
+         * Completely empty unsaved special hour
+         * is allowed until the user enters something.
+         */
+        if (!hasOpenTime && !hasCloseTime) {
+          continue;
+        }
+
+        if (!hasOpenTime || !hasCloseTime) {
+          return false;
+        }
+
+        if (specialHour.openTime >= specialHour.closeTime) {
+          return false;
+        }
+      }
+
+      /*
+       * Prevent special hours from overlapping
+       * with each other.
+       */
+      for (let i = 0; i < currentDay.specialHours.length; i++) {
+        const firstHour = currentDay.specialHours[i];
+
+        if (!firstHour.openTime || !firstHour.closeTime) {
+          continue;
+        }
+
+        for (let j = i + 1; j < currentDay.specialHours.length; j++) {
+          const secondHour = currentDay.specialHours[j];
+
+          if (!secondHour.openTime || !secondHour.closeTime) {
+            continue;
+          }
+
+          if (
+            timesOverlap(
+              firstHour.openTime,
+              firstHour.closeTime,
+              secondHour.openTime,
+              secondHour.closeTime,
+            )
+          ) {
+            return false;
+          }
+        }
+      }
+
+      return true;
     });
 
   /*
@@ -184,17 +291,58 @@ export default function EditBusinessDaysPage() {
     MONDAY_SUNDAY.some((day) => {
       const currentDay = days[day];
 
-      // Day open/closed status changed
+      const originalDay = locationData?.days.find(
+        (locationDay) => locationDay.id === currentDay.id,
+      );
+
+      if (!originalDay) {
+        return false;
+      }
+
+      /*
+       * Day open/closed status changed.
+       */
       if (currentDay.isClosed !== currentDay.originalIsClosed) {
         return true;
       }
 
-      return currentDay.hours.some((hour) => {
-        /*
-         * No id means this hour does not exist in
-         * the database. Only count it as new if
-         * the user actually entered something.
-         */
+      /*
+       * Regular hours changed.
+       */
+      if (!currentDay.hour && originalDay.hour) {
+        return true;
+      }
+
+      if (currentDay.hour && !originalDay.hour) {
+        return (
+          currentDay.hour.openTime.trim() !== "" ||
+          currentDay.hour.closeTime.trim() !== ""
+        );
+      }
+
+      if (currentDay.hour && originalDay.hour) {
+        if (
+          currentDay.hour.openTime !== originalDay.hour.openTime ||
+          currentDay.hour.closeTime !== originalDay.hour.closeTime
+        ) {
+          return true;
+        }
+      }
+
+      /*
+       * Special hours were removed.
+       */
+      if (
+        currentDay.specialHours.filter((hour) => hour.id).length !==
+        (originalDay.specialHours ?? []).length
+      ) {
+        return true;
+      }
+
+      /*
+       * Special hours were created or edited.
+       */
+      return currentDay.specialHours.some((hour) => {
         if (!hour.id) {
           return (
             hour.openTime.trim() !== "" ||
@@ -204,12 +352,8 @@ export default function EditBusinessDaysPage() {
           );
         }
 
-        const originalDay = locationData?.days.find(
-          (locationDay) => locationDay.id === currentDay.id,
-        );
-
-        const originalHour = originalDay?.hours?.find(
-          (locationHour) => locationHour.id === hour.id,
+        const originalHour = originalDay.specialHours?.find(
+          (specialHour) => specialHour.id === hour.id,
         );
 
         if (!originalHour) {
@@ -230,7 +374,9 @@ export default function EditBusinessDaysPage() {
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!days || !canSubmit) return;
+    if (!days || !canSubmit) {
+      return;
+    }
 
     setIsSaving(true);
     setErrorMessage(null);
@@ -241,9 +387,17 @@ export default function EditBusinessDaysPage() {
           for (const day of MONDAY_SUNDAY) {
             const currentDay = days[day];
 
+            const originalDay = locationData?.days.find(
+              (locationDay) => locationDay.id === currentDay.id,
+            );
+
+            if (!originalDay) {
+              continue;
+            }
+
             /*
-             * Only update the LocationDay when
-             * isClosed was actually changed.
+             * Only update LocationDay when
+             * isClosed actually changed.
              */
             if (currentDay.isClosed !== currentDay.originalIsClosed) {
               await axios.patch(
@@ -255,50 +409,99 @@ export default function EditBusinessDaysPage() {
             }
 
             /*
-             * Closed days don't need hour
-             * changes submitted.
+             * Closed days don't need hours submitted.
              */
             if (currentDay.isClosed) {
               continue;
             }
 
-            for (const hour of currentDay.hours) {
+            // ############################
+            // ##### REGULAR HOURS ########
+            // ############################
+
+            if (currentDay.hour) {
+              const hasRegularHour =
+                currentDay.hour.openTime.trim() !== "" ||
+                currentDay.hour.closeTime.trim() !== "";
+
+              /*
+               * Existing regular hour.
+               */
+              if (currentDay.hour.id && originalDay.hour) {
+                const hourChanged =
+                  currentDay.hour.openTime !== originalDay.hour.openTime ||
+                  currentDay.hour.closeTime !== originalDay.hour.closeTime;
+
+                if (hourChanged) {
+                  await axios.patch(
+                    `/api/admin/locations/${locationId}/days/${currentDay.id}/hours/${currentDay.hour.id}`,
+                    {
+                      openTime: currentDay.hour.openTime,
+                      closeTime: currentDay.hour.closeTime,
+                    },
+                  );
+                }
+              } else if (hasRegularHour) {
+                /*
+                 * New regular hour.
+                 */
+                await axios.post(
+                  `/api/admin/locations/${locationId}/days/${currentDay.id}/hours`,
+                  {
+                    openTime: currentDay.hour.openTime,
+                    closeTime: currentDay.hour.closeTime,
+                    isSpecial: false,
+                  },
+                );
+              }
+            }
+
+            // ############################
+            // ##### SPECIAL HOURS ########
+            // ############################
+
+            for (const specialHour of currentDay.specialHours) {
+              const hasSpecialHour =
+                specialHour.openTime.trim() !== "" ||
+                specialHour.closeTime.trim() !== "" ||
+                specialHour.title.trim() !== "" ||
+                specialHour.note.trim() !== "";
+
+              /*
+               * Ignore completely empty locally-created rows.
+               */
+              if (!specialHour.id && !hasSpecialHour) {
+                continue;
+              }
+
               const requestBody = {
-                openTime: hour.openTime,
-
-                closeTime: hour.closeTime,
-
-                title: hour.title.trim() || null,
-
-                note: hour.note.trim() || null,
+                openTime: specialHour.openTime,
+                closeTime: specialHour.closeTime,
+                title: specialHour.title.trim() || null,
+                note: specialHour.note.trim() || null,
               };
 
               /*
-               * Existing hour:
-               * only PATCH if something changed.
+               * Existing special hour.
                */
-              if (hour.id) {
-                const originalDay = locationData?.days.find(
-                  (locationDay) => locationDay.id === currentDay.id,
-                );
-
-                const originalHour = originalDay?.hours?.find(
-                  (locationHour) => locationHour.id === hour.id,
+              if (specialHour.id) {
+                const originalHour = originalDay.specialHours?.find(
+                  (hour) => hour.id === specialHour.id,
                 );
 
                 const hourChanged =
                   originalHour &&
-                  (hour.openTime !== originalHour.openTime ||
-                    hour.closeTime !== originalHour.closeTime ||
-                    hour.title !== (originalHour.title ?? "") ||
-                    hour.note !== (originalHour.note ?? ""));
+                  (specialHour.openTime !== originalHour.openTime ||
+                    specialHour.closeTime !== originalHour.closeTime ||
+                    specialHour.title !== (originalHour.title ?? "") ||
+                    specialHour.note !== (originalHour.note ?? ""));
 
                 if (!hourChanged) {
                   continue;
                 }
 
                 await axios.patch(
-                  `/api/admin/locations/${locationId}/days/${currentDay.id}/hours/${hour.id}`,
+                  `/api/admin/locations/${locationId}/days/${currentDay.id}/hours/${specialHour.id}`,
                   requestBody,
                 );
 
@@ -306,12 +509,14 @@ export default function EditBusinessDaysPage() {
               }
 
               /*
-               * No id means this was created
-               * locally with "Add Another".
+               * New special hour.
                */
               await axios.post(
                 `/api/admin/locations/${locationId}/days/${currentDay.id}/hours`,
-                requestBody,
+                {
+                  ...requestBody,
+                  isSpecial: true,
+                },
               );
             }
           }
@@ -349,8 +554,8 @@ export default function EditBusinessDaysPage() {
       await updateToast.unwrap();
 
       /*
-       * Reload so the newly-saved database
-       * values become the new original state.
+       * Reload so saved database values become
+       * the new original state.
        */
       window.location.reload();
     } catch (error) {
@@ -369,37 +574,116 @@ export default function EditBusinessDaysPage() {
     }
   }
 
-  async function removeHour(day: DayOfWeek, hourIdx: number) {
-    if (!days) return;
+  function updateRegularHour(
+    day: DayOfWeek,
+    field: "openTime" | "closeTime",
+    value: string,
+  ) {
+    setDays((currentDays) => {
+      if (!currentDays) {
+        return currentDays;
+      }
+
+      const currentHour = currentDays[day].hour ?? {
+        ...EMPTY_HOUR,
+      };
+
+      return {
+        ...currentDays,
+
+        [day]: {
+          ...currentDays[day],
+
+          hour: {
+            ...currentHour,
+            [field]: value,
+          },
+        },
+      };
+    });
+  }
+
+  function addSpecialHour(day: DayOfWeek) {
+    setDays((currentDays) => {
+      if (!currentDays) {
+        return currentDays;
+      }
+
+      return {
+        ...currentDays,
+
+        [day]: {
+          ...currentDays[day],
+
+          specialHours: [
+            ...currentDays[day].specialHours,
+            {
+              ...EMPTY_HOUR,
+            },
+          ],
+        },
+      };
+    });
+  }
+
+  function updateSpecialHour(
+    day: DayOfWeek,
+    hourIdx: number,
+    field: keyof Omit<Hour, "id">,
+    value: string,
+  ) {
+    setDays((currentDays) => {
+      if (!currentDays) {
+        return currentDays;
+      }
+
+      const specialHours = [...currentDays[day].specialHours];
+
+      specialHours[hourIdx] = {
+        ...specialHours[hourIdx],
+        [field]: value,
+      };
+
+      return {
+        ...currentDays,
+
+        [day]: {
+          ...currentDays[day],
+          specialHours,
+        },
+      };
+    });
+  }
+
+  async function removeSpecialHour(day: DayOfWeek, hourIdx: number) {
+    if (!days) {
+      return;
+    }
 
     const currentDay = days[day];
-    const hour = currentDay.hours[hourIdx];
+    const specialHour = currentDay.specialHours[hourIdx];
 
     try {
       /*
-       * If this hour already exists in the database,
-       * delete the actual Hour record first.
+       * Persisted special hour must first
+       * be deleted from the database.
        */
-      if (hour.id) {
+      if (specialHour.id) {
         const deleteToast = toast.promise(
           axios
             .delete(
-              `/api/admin/locations/${locationId}/days/${currentDay.id}/hours/${hour.id}`,
+              `/api/admin/locations/${locationId}/days/${currentDay.id}/hours/${specialHour.id}`,
             )
             .then((response) => response.data),
           {
-            loading: "Removing hours...",
+            loading: "Removing special hours...",
 
-            success: "Hours removed.",
+            success: "Special hours removed.",
 
             error: (error) => {
-              if (
-                axios.isAxiosError<{
-                  error?: string;
-                }>(error)
-              ) {
+              if (axios.isAxiosError<{ error?: string }>(error)) {
                 return {
-                  message: "Failed to remove hours.",
+                  message: "Failed to remove special hours.",
 
                   description:
                     error.response?.data?.error ??
@@ -410,7 +694,8 @@ export default function EditBusinessDaysPage() {
               return {
                 message: "Unexpected error.",
 
-                description: "Something went wrong while removing the hours.",
+                description:
+                  "Something went wrong while removing the special hours.",
               };
             },
           },
@@ -420,10 +705,8 @@ export default function EditBusinessDaysPage() {
       }
 
       /*
-       * Remove the hour from the UI.
-       *
-       * If there was no hour.id, it was never saved,
-       * so this is the only thing that needs to happen.
+       * Unsaved special hours only need
+       * to be removed from local state.
        */
       setDays((currentDays) => {
         if (!currentDays) {
@@ -436,19 +719,21 @@ export default function EditBusinessDaysPage() {
           [day]: {
             ...currentDays[day],
 
-            hours: currentDays[day].hours.filter((_, idx) => idx !== hourIdx),
+            specialHours: currentDays[day].specialHours.filter(
+              (_, idx) => idx !== hourIdx,
+            ),
           },
         };
       });
     } catch (error) {
-      console.error("Error removing location hours:", error);
+      console.error("Error removing special hours:", error);
 
       if (axios.isAxiosError<{ error?: string }>(error)) {
         setErrorMessage(
-          error.response?.data?.error ?? "Failed to remove the hours.",
+          error.response?.data?.error ?? "Failed to remove special hours.",
         );
       } else {
-        setErrorMessage("Failed to remove the hours.");
+        setErrorMessage("Failed to remove special hours.");
       }
     }
   }
@@ -490,10 +775,9 @@ export default function EditBusinessDaysPage() {
             <legend>Business Schedule</legend>
 
             <p>
-              Each open day must include business hours. Mark a day as closed if
-              this location does not operate on that day. You are not required
-              to fill this out immediately. If left empty, your customers wont
-              see your business working hours.
+              Set the regular opening and closing time for each day. Special
+              hours can be added separately when this location operates outside
+              of its normal schedule.
             </p>
 
             <div className="flex flex-col gap-5 mt-5">
@@ -541,13 +825,215 @@ export default function EditBusinessDaysPage() {
                       </label>
                     </div>
 
-                    {/* HOURS */}
-                    <CreateHoursForm
-                      day={day}
-                      currentDay={currentDay}
-                      setDays={setDays}
-                      removeHour={removeHour}
-                    />
+                    {!currentDay.isClosed && (
+                      <>
+                        {/* ######################## */}
+                        {/* ##### REGULAR HOURS #### */}
+                        {/* ######################## */}
+
+                        <div>
+                          <p className="font-semibold">Regular Hours</p>
+
+                          <p className="text-sm text-gray-500 mb-3">
+                            Set the normal opening and closing time for this
+                            day.
+                          </p>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label
+                                htmlFor={`${day}-openTime`}
+                                className="font-semibold"
+                              >
+                                Open
+                              </label>
+
+                              <input
+                                id={`${day}-openTime`}
+                                type="time"
+                                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
+                                value={currentDay.hour?.openTime ?? ""}
+                                onChange={(event) =>
+                                  updateRegularHour(
+                                    day,
+                                    "openTime",
+                                    event.target.value,
+                                  )
+                                }
+                              />
+                            </div>
+
+                            <div>
+                              <label
+                                htmlFor={`${day}-closeTime`}
+                                className="font-semibold"
+                              >
+                                Close
+                              </label>
+
+                              <input
+                                id={`${day}-closeTime`}
+                                type="time"
+                                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
+                                value={currentDay.hour?.closeTime ?? ""}
+                                onChange={(event) =>
+                                  updateRegularHour(
+                                    day,
+                                    "closeTime",
+                                    event.target.value,
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ######################## */}
+                        {/* ##### SPECIAL HOURS #### */}
+                        {/* ######################## */}
+
+                        <div className="border-t border-gray-300 mt-5 pt-5">
+                          <div className="flex justify-between items-start gap-3">
+                            <div>
+                              <p className="font-semibold">Special Hours</p>
+
+                              <p className="text-sm text-gray-500">
+                                Add temporary or alternate operating hours for
+                                this day.
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              className="border-[0.1rem] border-blue-400 rounded-lg px-3 py-1"
+                              onClick={() => addSpecialHour(day)}
+                            >
+                              Add Another
+                            </button>
+                          </div>
+
+                          {currentDay.specialHours.length > 0 && (
+                            <div className="flex flex-col gap-4 mt-4">
+                              {currentDay.specialHours.map(
+                                (specialHour, hourIdx) => (
+                                  <div
+                                    key={specialHour.id ?? hourIdx}
+                                    className="border-[0.1rem] border-gray-300 rounded-lg p-3"
+                                  >
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                      <div>
+                                        <label
+                                          htmlFor={`${day}-${hourIdx}-special-openTime`}
+                                          className="font-semibold"
+                                        >
+                                          Open
+                                        </label>
+
+                                        <input
+                                          id={`${day}-${hourIdx}-special-openTime`}
+                                          type="time"
+                                          className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
+                                          value={specialHour.openTime}
+                                          onChange={(event) =>
+                                            updateSpecialHour(
+                                              day,
+                                              hourIdx,
+                                              "openTime",
+                                              event.target.value,
+                                            )
+                                          }
+                                        />
+                                      </div>
+
+                                      <div>
+                                        <label
+                                          htmlFor={`${day}-${hourIdx}-special-closeTime`}
+                                          className="font-semibold"
+                                        >
+                                          Close
+                                        </label>
+
+                                        <input
+                                          id={`${day}-${hourIdx}-special-closeTime`}
+                                          type="time"
+                                          className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
+                                          value={specialHour.closeTime}
+                                          onChange={(event) =>
+                                            updateSpecialHour(
+                                              day,
+                                              hourIdx,
+                                              "closeTime",
+                                              event.target.value,
+                                            )
+                                          }
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="mt-3">
+                                      <label
+                                        htmlFor={`${day}-${hourIdx}-special-title`}
+                                        className="font-semibold"
+                                      >
+                                        Title
+                                      </label>
+
+                                      <input
+                                        id={`${day}-${hourIdx}-special-title`}
+                                        type="text"
+                                        className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
+                                        value={specialHour.title}
+                                        onChange={(event) =>
+                                          updateSpecialHour(
+                                            day,
+                                            hourIdx,
+                                            "title",
+                                            event.target.value,
+                                          )
+                                        }
+                                      />
+                                    </div>
+
+                                    <div className="mt-3">
+                                      <label
+                                        htmlFor={`${day}-${hourIdx}-special-note`}
+                                        className="font-semibold"
+                                      >
+                                        Note
+                                      </label>
+
+                                      <textarea
+                                        id={`${day}-${hourIdx}-special-note`}
+                                        className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
+                                        value={specialHour.note}
+                                        onChange={(event) =>
+                                          updateSpecialHour(
+                                            day,
+                                            hourIdx,
+                                            "note",
+                                            event.target.value,
+                                          )
+                                        }
+                                      />
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      className="mt-3 text-red-500"
+                                      onClick={() =>
+                                        void removeSpecialHour(day, hourIdx)
+                                      }
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })}

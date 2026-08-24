@@ -12,12 +12,28 @@ import { toast } from "sonner";
 import "../../page.css";
 import CreateDaysForm from "@/components/ui/days/CreateDaysForm";
 
+const MONDAY_SUNDAY = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+] as const;
+
+type CreateDaysResponse = {
+  message: string;
+  count: number;
+};
+
 export default function LocationPage() {
   const params = useParams<{ locationId: string }>();
 
   const locationId = params.locationId;
 
   const [locationData, setLocationData] = useState<LocationJson | null>(null);
+  const [isActivatingDays, setIsActivatingDays] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
@@ -85,6 +101,75 @@ export default function LocationPage() {
     }
   }
 
+  async function activateBusinessDays() {
+    setIsActivatingDays(true);
+    setErrorMessage(null);
+
+    const requestBody = {
+      days: MONDAY_SUNDAY.map((day) => ({
+        dayOfWeek: day,
+        isClosed: day === "Saturday" || day === "Sunday",
+      })),
+    };
+
+    try {
+      const daysToast = toast.promise<CreateDaysResponse>(
+        axios
+          .post<CreateDaysResponse>(
+            `/api/admin/locations/${locationId}/days`,
+            requestBody,
+          )
+          .then((response) => response.data),
+        {
+          loading: "Activating business days...",
+          success: "Business days activated.",
+          error: (error) => {
+            if (
+              axios.isAxiosError<{
+                error?: string;
+              }>(error)
+            ) {
+              return {
+                message: "Failed to activate business days.",
+                description:
+                  error.response?.data?.error ??
+                  `Status code: ${error.response?.status ?? "No response"}`,
+              };
+            }
+
+            return {
+              message: "Unexpected error.",
+              description:
+                "Something went wrong while activating business days.",
+            };
+          },
+        },
+      );
+
+      await daysToast.unwrap();
+
+      // Refresh so we receive the real
+      // LocationDay records and ids.
+      await getLocationData();
+    } catch (error) {
+      console.error("Error activating Business Days:", error);
+
+      if (
+        axios.isAxiosError<{
+          error?: string;
+        }>(error)
+      ) {
+        setErrorMessage(
+          error.response?.data?.error ?? "Failed to activate business days.",
+        );
+      } else {
+        setErrorMessage("Failed to activate business days.");
+      }
+    } finally {
+      setIsActivatingDays(false);
+    }
+  }
+
   async function handleRemoveBusinessDays() {
     setIsDeleting(true);
     setErrorMessage(null);
@@ -121,7 +206,8 @@ export default function LocationPage() {
 
       await deleteToast.unwrap();
 
-      router.push(`/dashboard/locations/${locationId}`);
+      // Refresh page
+      await getLocationData();
     } catch (error) {
       console.error("Error removing business days:", error);
 
@@ -172,8 +258,8 @@ export default function LocationPage() {
         <CreateDaysForm
           locationId={locationId}
           locationData={locationData}
-          getLocationData={getLocationData}
-          setErrorMessage={setErrorMessage}
+          isActivatingDays={isActivatingDays}
+          activateBusinessDays={activateBusinessDays}
           handleRemoveBusinessDays={handleRemoveBusinessDays}
         />
       </div>

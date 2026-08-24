@@ -110,7 +110,7 @@ export default function EditItemForm({
             name="price"
             type="number"
             min="0"
-            step="0.10"
+            step="0.0.1"
             defaultValue={itemData.price}
             required
           />
