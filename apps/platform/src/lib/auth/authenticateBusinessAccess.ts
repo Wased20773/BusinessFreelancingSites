@@ -6,14 +6,12 @@ import { prisma } from "@/lib/prisma";
 import { Session } from "next-auth";
 
 /**
- * Authenticates the current user and verifies that they belong to the
- * business, via their current session, with one of the allowed access levels.
- *
- * Returns The IDs needed by the route when access is granted, or a JSON error
- * response that the route can return immediately when access is denied.
+ * Authenticates the current dashboard user and verifies that they belong
+ * to the selected business with one of the allowed access levels.
  */
 export async function authenticateBusinessAccess(
   request: Request,
+  businessId: string,
   allowedRoles: AccessLevel[],
 ): Promise<NextResponse | { userId: string; businessId: string }> {
   try {
@@ -21,48 +19,47 @@ export async function authenticateBusinessAccess(
     const session: Session | null = await auth();
 
     // 2. If there is no logged-in user, block the request
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized Access" },
         { status: 401 },
       );
     }
 
-    // 3. Verify that the session contains the businessId
-    if (!session.user.businessId) {
+    // 3. Make sure the dashboard provided a businessId
+    if (!businessId) {
       return NextResponse.json(
-        { error: "No business selected" },
-        { status: 403 },
+        { error: "Missing businessId" },
+        { status: 400 },
       );
     }
 
-    // 4. Look for a BusinessUser record that connects:
-    //  - this logged-in user
-    //  - this specific business
-    //  - one of the allowed roles
+    // 4. Verify that this user belongs to the selected business
+    //    with one of the allowed access levels.
     const businessUser = await prisma.businessUser.findFirst({
       where: {
-        user: {
-          email: session.user.email,
+        userId: session.user.id,
+        businessId: businessId,
+
+        role: {
+          accessLevel: {
+            in: allowedRoles,
+          },
         },
-        businessId: session.user.businessId,
-        role: {},
       },
-      // orderBy: {
-      //   createdAt: "desc",
-      // },
+
       select: {
-        businessId: true,
         userId: true,
+        businessId: true,
       },
     });
 
-    // 5. Check if they did not meet the requirements
+    // 5. User does not have access to the selected business
     if (!businessUser) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // 6. Return userId, businessId & slug for upcoming queries
+    // 6. Return the verified IDs for the route
     return {
       userId: businessUser.userId,
       businessId: businessUser.businessId,

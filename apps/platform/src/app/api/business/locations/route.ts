@@ -1,17 +1,7 @@
 import { NextResponse } from "next/server";
-import { getBusinessResponse } from "../../route_helper";
 import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
 import { AccessLevel } from "@business-freelancer/database";
-
-const DAY_ORDER = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-] as const;
+import { prisma } from "@/lib/prisma";
 
 // GET /api/business/locations
 export async function GET(request: Request): Promise<NextResponse> {
@@ -25,107 +15,40 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     if (authentication instanceof NextResponse) return authentication;
 
-    const response = await getBusinessResponse(
-      authentication.businessId,
-      {
-        locations: {
-          orderBy: [
-            {
-              isActive: "desc",
-            },
-            {
-              createdAt: "asc",
-            },
-          ],
-          select: {
-            id: true,
-            address: true,
-            zip: true,
-            country: true,
-            state: true,
-            city: true,
-            parking: true,
-            isActive: true,
-            enableHours: true,
-            createdAt: true,
-            updatedAt: true,
-
-            days: {
-              select: {
-                id: true,
-                locationId: true,
-                dayOfWeek: true,
-                isClosed: true,
-                createdAt: true,
-                updatedAt: true,
-
-                hour: {
-                  select: {
-                    id: true,
-                    regularDayId: true,
-                    openTime: true,
-                    closeTime: true,
-                    title: true,
-                    note: true,
-                    isDisabled: true,
-                    createdAt: true,
-                    updatedAt: true,
-                  },
-                },
-
-                specialHours: {
-                  orderBy: {
-                    openTime: "asc",
-                  },
-
-                  select: {
-                    id: true,
-                    specialDayId: true,
-                    openTime: true,
-                    closeTime: true,
-                    title: true,
-                    note: true,
-                    isDisabled: true,
-                    createdAt: true,
-                    updatedAt: true,
-                  },
-                },
-              },
-            },
-          },
-        },
+    const locations = await prisma.location.findMany({
+      where: {
+        businessId: authentication.businessId,
       },
-      "location",
-    );
-
-    const data = await response.json();
-
-    if (Array.isArray(data.locations)) {
-      data.locations.forEach(
-        (location: {
-          days: {
-            dayOfWeek: (typeof DAY_ORDER)[number];
-          }[];
-        }) => {
-          location.days.sort(
-            (a, b) =>
-              DAY_ORDER.indexOf(a.dayOfWeek) - DAY_ORDER.indexOf(b.dayOfWeek),
-          );
+      orderBy: [
+        {
+          isActive: "desc",
         },
-      );
-    }
-
-    return NextResponse.json(data, {
-      status: response.status,
+        {
+          createdAt: "asc",
+        },
+      ],
+      select: {
+        id: true,
+        address: true,
+        zip: true,
+        country: true,
+        state: true,
+        city: true,
+        parking: true,
+        isActive: true,
+        enableHours: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
+
+    return NextResponse.json({ locations }, { status: 200 });
   } catch (error) {
+    console.error("Failed to fetch business locations:", error);
+
     return NextResponse.json(
-      {
-        error: `Failed to fetch business locations: ${error}`,
-      },
-      {
-        status: 400,
-      },
+      { error: `Failed to fetch business locations: ${error}` },
+      { status: 400 },
     );
   }
 }

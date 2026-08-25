@@ -12,13 +12,14 @@ type OrderModel = {
   }) => Promise<{ order: number } | null>;
 };
 
-type BusinessResourceName =
+type LocationResourceName =
   | "business"
   | "category"
   | "contact"
   | "location"
   | "menu"
-  | "social";
+  | "social"
+  | "schedule";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
 
@@ -41,25 +42,29 @@ export function getSlug(request: Request): string {
  *   Gets the response of a businesses data where <T> is the object of the
  *   Corresponding select "items" in the query.
  **/
-export async function getBusinessResponse<T extends Prisma.BusinessSelect>(
+export async function getLocationResponse<T extends Prisma.LocationSelect>(
   businessId: string,
+  locationId: string,
   select: T,
-  resourceName: BusinessResourceName,
+  resourceName: LocationResourceName,
 ): Promise<NextResponse> {
   try {
-    const business = await prisma.business.findUnique({
-      where: { id: businessId },
+    const location = await prisma.location.findFirst({
+      where: {
+        id: locationId,
+        businessId: businessId,
+      },
       select,
     });
 
-    if (!business) {
+    if (!location) {
       return NextResponse.json(
-        { error: `Business not found while fetching ${resourceName} data` },
+        { error: `Location not found while fetching ${resourceName} data` },
         { status: 404 },
       );
     }
 
-    return NextResponse.json(business, { status: 200 });
+    return NextResponse.json(location, { status: 200 });
   } catch (error) {
     console.error(`Failed to fetch ${resourceName} data:`, error);
 

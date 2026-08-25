@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { AccessLevel } from "@business-freelancer/database";
+
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { authenticateBusinessApiKey } from "@/lib/api-keys/authenticateBusinessApiKey";
 
 type BusinessReadAuthentication = {
   businessId: string;
+  locationId: string;
   authenticationType: "session" | "apiKey";
   userId?: string;
 };
@@ -14,8 +16,20 @@ export async function authenticateBusinessReadAccess(
   allowedRoles: AccessLevel[],
 ): Promise<NextResponse | BusinessReadAuthentication> {
   const authorizationHeader = request.headers.get("authorization");
+  const locationId = request.headers.get("x-location-id");
 
-  // An Authorization header means this request is explicitly using an API key.
+  if (!locationId) {
+    return NextResponse.json({ error: "Missing locationId" }, { status: 400 });
+  }
+
+  // ########################
+  // ##### CLIENT WEBSITE ###
+  // ########################
+
+  /*
+   * An Authorization header means this request is
+   * explicitly using a Business Platform API key.
+   */
   if (authorizationHeader) {
     const apiKeyAuthentication = await authenticateBusinessApiKey(request);
 
@@ -25,13 +39,28 @@ export async function authenticateBusinessReadAccess(
 
     return {
       businessId: apiKeyAuthentication.businessId,
+      locationId: locationId,
       authenticationType: "apiKey",
     };
   }
 
-  // Without an API-key header, treat it as a dashboard request.
+  // ########################
+  // ##### DASHBOARD ########
+  // ########################
+
+  /*
+   * Dashboard requests means that they must be authenticated by session
+   * and verify that they belong to the business
+   */
+  const businessId = request.headers.get("x-business-id");
+
+  if (!businessId) {
+    return NextResponse.json({ error: "Missing businessId" }, { status: 400 });
+  }
+
   const sessionAuthentication = await authenticateBusinessAccess(
     request,
+    businessId,
     allowedRoles,
   );
 
@@ -42,6 +71,7 @@ export async function authenticateBusinessReadAccess(
   return {
     userId: sessionAuthentication.userId,
     businessId: sessionAuthentication.businessId,
+    locationId: locationId,
     authenticationType: "session",
   };
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getBusinessResponse } from "../../route_helper";
+import { getLocationResponse } from "../../route_helper";
 import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
 import { AccessLevel } from "@business-freelancer/database";
 
@@ -13,32 +13,35 @@ export async function GET(request: Request): Promise<NextResponse> {
       AccessLevel.staff,
     ]);
 
-    if (authentication instanceof NextResponse) return authentication;
+    if (authentication instanceof NextResponse) {
+      return authentication;
+    }
 
-    return await getBusinessResponse(
+    return await getLocationResponse(
       authentication.businessId,
+      authentication.locationId,
       {
         categories: {
           where: { parentId: null },
-          orderBy: {
-            order: "asc",
-          },
+          orderBy: { order: "asc" },
           select: {
             id: true,
             name: true,
             description: true,
             order: true,
             isVisible: true,
-            createdAt: true,
-            updatedAt: true,
             items: true,
             subcategories: true,
+            createdAt: true,
+            updatedAt: true,
           },
         },
       },
       "category",
     );
   } catch (error) {
+    console.error("Failed to fetch business menu categories:", error);
+
     return NextResponse.json(
       { error: `Failed to fetch business menu categories: ${error}` },
       { status: 400 },

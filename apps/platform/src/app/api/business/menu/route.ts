@@ -1,4 +1,4 @@
-import { getBusinessResponse } from "../../route_helper";
+import { getLocationResponse } from "../../route_helper";
 import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
 import { NextResponse } from "next/server";
 import { AccessLevel } from "@business-freelancer/database";
@@ -14,8 +14,9 @@ export async function GET(request: Request) {
 
   if (authentication instanceof NextResponse) return authentication;
 
-  return await getBusinessResponse(
+  return await getLocationResponse(
     authentication.businessId,
+    authentication.locationId,
     {
       categories: {
         // Only return parent categories at the root level.

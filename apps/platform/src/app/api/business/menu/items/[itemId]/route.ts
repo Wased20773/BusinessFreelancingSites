@@ -28,7 +28,7 @@ export async function GET(
     const item = await prisma.item.findFirst({
       where: {
         id: itemId,
-        businessId: authentication.businessId,
+        locationId: authentication.locationId,
       },
       select: {
         id: true,
@@ -78,10 +78,10 @@ export async function GET(
       status: 200,
     });
   } catch (error) {
-    console.error("Failed to fetch business item:", error);
+    console.error("Failed to fetch item:", error);
 
     return NextResponse.json(
-      { error: "Failed to fetch business item" },
+      { error: "Failed to fetch item" },
       { status: 500 },
     );
   }
