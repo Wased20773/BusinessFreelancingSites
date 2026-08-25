@@ -203,6 +203,10 @@
                             - route.ts
 
                         - locations/
+                            - [locationId]/
+                                - schedule/
+                                    - route.ts
+                                    
                             - route.ts
 
                         - menu/
@@ -216,8 +220,110 @@
                             - route.ts
                         
                         route.ts
-            
+
+                    - businesses/                            
+                        - [businessId]/
+                            - api-keys/
+                                - [apiKeyId]/
+                                    - route.ts
+                                
+                                - route.ts
+
+                            - business-users/
+                                - [businessUserId]/
+                                    - route.ts
+
+                                - route.ts
+
+                            - locations/
+                                - [locationId]/
+                                    - categories/
+                                        - [categoryId]/
+                                            - items/
+                                                - [itemId]/
+                                                    - move-down/
+                                                        - route.ts
+                                                    - move-up/
+                                                        - route.ts
+                                            
+                                                - route.ts
+
+                                            - move-down/
+                                                - route.ts
+
+                                            - move-up/
+                                                - route.ts
+
+                                            - subcategory/
+                                                -route.ts
+
+                                            - route.ts
+
+                                        - route.ts
+
+                                    - contacts/
+                                        - [contactId]/
+                                            - route.ts
+
+                                        - route.ts
+
+                                    - days/
+                                        - [dayId]/
+                                            - hours/
+                                                - [hourId]/
+                                                    - route.ts
+
+                                                - route.ts
+
+                                            - route.ts
+
+                                        - route.ts
+
+                                    - items/
+                                        - [itemId]/
+                                            - image/
+                                                - route.ts
+                                            
+                                            - options/
+                                                - [optionId]/
+                                                    - move-down/    
+                                                        - route.ts
+                                                    
+                                                    - move-up/
+                                                        - route.ts
+
+                                                    - route.ts
+                                                
+                                                - route.ts
+
+                                            - route.ts
+
+                                    - socials/
+                                        - [socialId]
+                                            - route.ts
+
+                                        - route.ts
+
+                                - route.ts
+                            
+                            - route.ts
+
+                        - account/
+                            - search/
+                                - route.ts
+
+                            route.ts
+
+                        - route.ts
+
+                    - onboarding/
+                        - business/
+                            - route.ts
+
+                        - route.ts
+
                     - route_helper.ts
+
 
                 - dashboard/
                     - (protected)/

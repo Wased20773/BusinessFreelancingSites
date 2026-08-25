@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+// GET /api/businesses
 export async function GET(): Promise<NextResponse> {
   try {
     const session = await auth();
