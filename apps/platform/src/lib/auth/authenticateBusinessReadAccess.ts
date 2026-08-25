@@ -6,19 +6,25 @@ import { authenticateBusinessApiKey } from "@/lib/api-keys/authenticateBusinessA
 
 type BusinessReadAuthentication = {
   businessId: string;
-  locationId: string;
+  locationId?: string;
   authenticationType: "session" | "apiKey";
   userId?: string;
+};
+
+type BusinessReadAccessOptions = {
+  requireLocation?: boolean;
 };
 
 export async function authenticateBusinessReadAccess(
   request: Request,
   allowedRoles: AccessLevel[],
+  options: BusinessReadAccessOptions = {},
 ): Promise<NextResponse | BusinessReadAuthentication> {
   const authorizationHeader = request.headers.get("authorization");
   const locationId = request.headers.get("x-location-id");
+  const { requireLocation = true } = options;
 
-  if (!locationId) {
+  if (!locationId && requireLocation) {
     return NextResponse.json({ error: "Missing locationId" }, { status: 400 });
   }
 
@@ -39,7 +45,7 @@ export async function authenticateBusinessReadAccess(
 
     return {
       businessId: apiKeyAuthentication.businessId,
-      locationId: locationId,
+      locationId: locationId ?? undefined,
       authenticationType: "apiKey",
     };
   }
@@ -71,7 +77,7 @@ export async function authenticateBusinessReadAccess(
   return {
     userId: sessionAuthentication.userId,
     businessId: sessionAuthentication.businessId,
-    locationId: locationId,
+    locationId: locationId ?? undefined,
     authenticationType: "session",
   };
 }
