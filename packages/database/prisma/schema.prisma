@@ -61,14 +61,9 @@ model Business {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users      BusinessUser[]
-  categories Category[]
-  contacts   Contact[]
-  socials    Social[]
-  locations  Location[]
-  items      Item[]
-
-  apiKeys BusinessApiKey[]
+  users     BusinessUser[]
+  locations Location[]
+  apiKeys   BusinessApiKey[]
 }
 
 model User {
@@ -151,53 +146,6 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Category {
-  id          String   @id @default(uuid())
-  businessId  String
-  parentId    String?
-  name        String
-  description String?
-  order       Int      @default(1)
-  isVisible   Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  business      Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  parent        Category?  @relation("CategorySubcategories", fields: [parentId], references: [id], onDelete: Restrict)
-  subcategories Category[] @relation("CategorySubcategories")
-  items         Item[]
-
-  @@unique([businessId, parentId, name])
-  @@index([businessId, parentId])
-}
-
-model Contact {
-  id          String   @id @default(uuid())
-  businessId  String
-  phoneNumber String?
-  email       String?
-  isPersonal  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-}
-
-model Social {
-  id          String   @id @default(uuid())
-  businessId  String
-  domain      String
-  profileName String
-  url         String
-  icon        String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  @@unique([businessId, domain, profileName])
-}
-
 model Location {
   id          String   @id @default(uuid())
   businessId  String
@@ -212,10 +160,16 @@ model Location {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  business Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  days     LocationDay[]
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  days       LocationDay[]
+  categories Category[]
+  contacts   Contact[]
+  socials    Social[]
+  items      Item[]
 
   @@unique([businessId, address])
+  @@index([businessId])
 }
 
 model LocationDay {
@@ -226,11 +180,13 @@ model LocationDay {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  hour         Hour?    @relation("RegularHour")
-  specialHours Hour[]   @relation("SpecialHours")
-  location     Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  hour         Hour?  @relation("RegularHour")
+  specialHours Hour[] @relation("SpecialHours")
+
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
 
   @@unique([locationId, dayOfWeek])
+  @@index([locationId])
 }
 
 model Hour {
@@ -243,51 +199,122 @@ model Hour {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  // Regular weekly hour 
+  // Regular weekly hour
   regularDayId String?      @unique
   regularDay   LocationDay? @relation("RegularHour", fields: [regularDayId], references: [id], onDelete: Cascade)
 
-  // Special hour 
+  // Special hour
   specialDayId String?
   specialDay   LocationDay? @relation("SpecialHours", fields: [specialDayId], references: [id], onDelete: Cascade)
 
   @@unique([specialDayId, openTime, closeTime])
+  @@index([specialDayId])
+}
+
+model Category {
+  id                     String   @id @default(uuid())
+  locationId             String
+  parentId               String?
+  name                   String
+  description            String?
+  order                  Int      @default(1)
+  isVisible              Boolean  @default(true)
+  syncGroupId            String?
+  allowLocationOverrides Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  location Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  parent   Category? @relation("CategorySubcategories", fields: [parentId], references: [id], onDelete: Restrict)
+
+  subcategories Category[] @relation("CategorySubcategories")
+  items         Item[]
+
+  @@unique([locationId, parentId, name])
+  @@index([locationId, parentId])
+  @@index([syncGroupId])
+}
+
+model Contact {
+  id                     String   @id @default(uuid())
+  locationId             String
+  phoneNumber            String?
+  email                  String?
+  isPersonal             Boolean  @default(false)
+  syncGroupId            String?
+  allowLocationOverrides Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@index([locationId])
+  @@index([syncGroupId])
+}
+
+model Social {
+  id                     String   @id @default(uuid())
+  locationId             String
+  domain                 String
+  profileName            String
+  url                    String
+  icon                   String
+  syncGroupId            String?
+  allowLocationOverrides Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([locationId, domain, profileName])
+  @@index([locationId])
+  @@index([syncGroupId])
 }
 
 model Item {
-  id           String   @id @default(uuid())
-  businessId   String
-  categoryId   String
-  name         String
-  description  String?
-  containsList String[]
-  calories     Int?
-  price        Decimal  @db.Decimal(10, 2)
-  order        Int      @default(1)
-  isAvailable  Boolean  @default(true)
-  slug         String
-  imageKey     String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                     String   @id @default(uuid())
+  locationId             String
+  categoryId             String
+  name                   String
+  description            String?
+  containsList           String[]
+  calories               Int?
+  price                  Decimal  @db.Decimal(10, 2)
+  order                  Int      @default(1)
+  isAvailable            Boolean  @default(true)
+  slug                   String
+  imageKey               String?
+  syncGroupId            String?
+  allowLocationOverrides Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
-  business Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  category Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  options  ItemOption[]
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  @@unique([categoryId, slug])
+  options ItemOption[]
+
+  @@unique([locationId, slug])
+  @@index([locationId])
+  @@index([categoryId])
+  @@index([syncGroupId])
 }
 
 model ItemOption {
-  id          String   @id @default(uuid())
-  itemId      String
-  name        String
-  price       Decimal  @db.Decimal(10, 2)
-  order       Int      @default(1)
-  isAvailable Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                     String   @id @default(uuid())
+  itemId                 String
+  name                   String
+  price                  Decimal  @db.Decimal(10, 2)
+  order                  Int      @default(1)
+  isAvailable            Boolean  @default(true)
+  syncGroupId            String?
+  allowLocationOverrides Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@unique([itemId, name])
+  @@index([itemId])
+  @@index([syncGroupId])
 }
