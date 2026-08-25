@@ -1,41 +1,56 @@
 import { NextResponse } from "next/server";
 import { AccessLevel } from "@business-freelancer/database";
-
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { authenticateBusinessApiKey } from "@/lib/api-keys/authenticateBusinessApiKey";
 
+type LocationReadAuthentication = {
+  businessId: string;
+  locationId: string;
+  authenticationType: "session" | "apiKey";
+  userId?: string;
+};
+
 type BusinessReadAuthentication = {
   businessId: string;
-  locationId?: string;
   authenticationType: "session" | "apiKey";
   userId?: string;
 };
 
 type BusinessReadAccessOptions = {
-  requireLocation?: boolean;
+  requireLocation: false;
 };
 
+// Location is required by default
 export async function authenticateBusinessReadAccess(
   request: Request,
   allowedRoles: AccessLevel[],
-  options: BusinessReadAccessOptions = {},
-): Promise<NextResponse | BusinessReadAuthentication> {
+): Promise<NextResponse | LocationReadAuthentication>;
+
+// Business-level request
+export async function authenticateBusinessReadAccess(
+  request: Request,
+  allowedRoles: AccessLevel[],
+  options: BusinessReadAccessOptions,
+): Promise<NextResponse | BusinessReadAuthentication>;
+
+// Implementation
+export async function authenticateBusinessReadAccess(
+  request: Request,
+  allowedRoles: AccessLevel[],
+  options?: BusinessReadAccessOptions,
+): Promise<
+  NextResponse | LocationReadAuthentication | BusinessReadAuthentication
+> {
+  const requireLocation = options?.requireLocation !== false;
+
   const authorizationHeader = request.headers.get("authorization");
   const locationId = request.headers.get("x-location-id");
-  const { requireLocation = true } = options;
 
-  if (!locationId && requireLocation) {
+  if (requireLocation && !locationId) {
     return NextResponse.json({ error: "Missing locationId" }, { status: 400 });
   }
 
-  // ########################
-  // ##### CLIENT WEBSITE ###
-  // ########################
-
-  /*
-   * An Authorization header means this request is
-   * explicitly using a Business Platform API key.
-   */
+  // Client website
   if (authorizationHeader) {
     const apiKeyAuthentication = await authenticateBusinessApiKey(request);
 
@@ -43,21 +58,21 @@ export async function authenticateBusinessReadAccess(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (locationId) {
+      return {
+        businessId: apiKeyAuthentication.businessId,
+        locationId: locationId,
+        authenticationType: "apiKey",
+      };
+    }
+
     return {
       businessId: apiKeyAuthentication.businessId,
-      locationId: locationId ?? undefined,
       authenticationType: "apiKey",
     };
   }
 
-  // ########################
-  // ##### DASHBOARD ########
-  // ########################
-
-  /*
-   * Dashboard requests means that they must be authenticated by session
-   * and verify that they belong to the business
-   */
+  // Dashboard
   const businessId = request.headers.get("x-business-id");
 
   if (!businessId) {
@@ -74,10 +89,18 @@ export async function authenticateBusinessReadAccess(
     return sessionAuthentication;
   }
 
+  if (locationId) {
+    return {
+      userId: sessionAuthentication.userId,
+      businessId: sessionAuthentication.businessId,
+      locationId: locationId,
+      authenticationType: "session",
+    };
+  }
+
   return {
     userId: sessionAuthentication.userId,
     businessId: sessionAuthentication.businessId,
-    locationId: locationId ?? undefined,
     authenticationType: "session",
   };
 }
