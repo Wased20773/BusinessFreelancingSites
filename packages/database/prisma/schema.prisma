@@ -173,12 +173,14 @@ model Location {
 }
 
 model LocationDay {
-  id         String    @id @default(uuid())
-  locationId String
-  dayOfWeek  DayOfWeek
-  isClosed   Boolean   @default(true)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id          String    @id @default(uuid())
+  locationId  String
+  dayOfWeek   DayOfWeek
+  isClosed    Boolean   @default(true)
+  syncGroupId String?
+  isSynced    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   hour         Hour?  @relation("RegularHour")
   specialHours Hour[] @relation("SpecialHours")
@@ -190,14 +192,16 @@ model LocationDay {
 }
 
 model Hour {
-  id         String   @id @default(uuid())
-  openTime   String
-  closeTime  String
-  title      String?
-  note       String?
-  isDisabled Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(uuid())
+  openTime    String
+  closeTime   String
+  title       String?
+  note        String?
+  isDisabled  Boolean  @default(false)
+  syncGroupId String?
+  isSynced    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Regular weekly hour
   regularDayId String?      @unique
@@ -220,7 +224,7 @@ model Category {
   order       Int      @default(1)
   isVisible   Boolean  @default(true)
   syncGroupId String?
-  isSynced    Boolean  @default(true)
+  isSynced    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -260,7 +264,7 @@ model Social {
   url         String
   icon        String
   syncGroupId String?
-  isSynced    Boolean  @default(true)
+  isSynced    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -285,7 +289,7 @@ model Item {
   slug         String
   imageKey     String?
   syncGroupId  String?
-  isSynced     Boolean  @default(true)
+  isSynced     Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -308,7 +312,7 @@ model ItemOption {
   order       Int      @default(1)
   isAvailable Boolean  @default(true)
   syncGroupId String?
-  isSynced    Boolean  @default(true)
+  isSynced    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

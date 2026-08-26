@@ -55,12 +55,14 @@ type SyncPrismaModel =
   | typeof prisma.category
   | typeof prisma.social
   | typeof prisma.item
-  | typeof prisma.itemOption;
+  | typeof prisma.itemOption
+  | typeof prisma.locationDay;
 
 type LocationResourceName =
   | "business"
   | "category"
   | "contact"
+  | "day"
   | "location"
   | "menu"
   | "social"

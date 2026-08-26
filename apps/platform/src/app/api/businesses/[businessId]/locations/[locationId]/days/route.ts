@@ -1,32 +1,31 @@
-import { normalizeDayOfWeek } from "@/app/api/route_helper";
+import {
+  normalizeDayOfWeek,
+  validateBusinessLocationParams,
+} from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
-import { AccessLevel } from "@business-freelancer/database";
+import { AccessLevel, DayOfWeek } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
-// POST /api/admin/locations/[locationId]/days
+// POST /api/businesses/[businessId]/locations/[locationId]/days
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ locationId: string }> },
+  { params }: { params: Promise<{ businessId: string; locationId: string }> },
 ): Promise<NextResponse> {
   try {
-    const authResult = await authenticateBusinessAccess(request, [
+    const { businessId, locationId } = await params;
+    const paramsError = validateBusinessLocationParams(businessId, locationId);
+
+    if (paramsError) return paramsError;
+
+    const authResult = await authenticateBusinessAccess(request, businessId, [
       AccessLevel.owner,
       AccessLevel.admin,
     ]);
 
     if (authResult instanceof NextResponse) return authResult;
 
-    const { businessId } = authResult;
-    const { locationId } = await params;
     const body = await request.json();
-
-    if (!locationId) {
-      return NextResponse.json(
-        { error: "Missing locationId" },
-        { status: 400 },
-      );
-    }
 
     // A complete weekly schedule must contain all 7 days.
     if (!Array.isArray(body.days) || body.days.length !== 7) {
@@ -37,7 +36,7 @@ export async function POST(
     }
 
     // Validate and normalize every supplied day.
-    const normalizedDays = [];
+    const normalizedDays: { dayOfWeek: DayOfWeek; isClosed: boolean }[] = [];
 
     for (const day of body.days) {
       if (!day.dayOfWeek) {
@@ -74,32 +73,73 @@ export async function POST(
       );
     }
 
-    // Make sure this location belongs to the authenticated business.
-    const location = await prisma.location.findFirst({
-      where: {
-        id: locationId,
-        businessId,
-      },
-      select: {
-        id: true,
-      },
-    });
+    /*
+     * If synchronization is ON, create the full week
+     * for every location in this business.
+     *
+     * Each weekday gets its own synchronization group.
+     *
+     * Example:
+     * Monday  -> same syncGroupId across all locations
+     * Tuesday -> different syncGroupId across all locations
+     * etc.
+     */
+    if (body.isSynced === true) {
+      const locations = await prisma.location.findMany({
+        where: {
+          businessId,
+        },
+        select: {
+          id: true,
+        },
+      });
 
-    if (!location) {
+      if (locations.length === 0) {
+        return NextResponse.json(
+          {
+            error: "No locations were found for this business",
+          },
+          { status: 400 },
+        );
+      }
+
+      const daySyncGroups = new Map(
+        normalizedDays.map((day) => [day.dayOfWeek, crypto.randomUUID()]),
+      );
+
+      // Create all 7 days in a single batch operation with their
+      // individual syncGroupId's.
+      const createdDays = await prisma.locationDay.createMany({
+        data: locations.flatMap((location) =>
+          normalizedDays.map((day) => ({
+            locationId: location.id,
+            dayOfWeek: day.dayOfWeek,
+            isClosed: day.isClosed,
+            syncGroupId: daySyncGroups.get(day.dayOfWeek),
+          })),
+        ),
+      });
+
       return NextResponse.json(
         {
-          error: "This location does not exist in our records",
+          message: "Synchronized location days created successfully",
+          count: createdDays.count,
         },
-        { status: 404 },
+        { status: 201 },
       );
     }
 
-    // Create all 7 days in a single batch operation.
+    /*
+     * Synchronization is OFF:
+     * only create the 7 days for the selected location.
+     */
     const createdDays = await prisma.locationDay.createMany({
       data: normalizedDays.map((day) => ({
-        locationId: location.id,
+        locationId,
         dayOfWeek: day.dayOfWeek,
         isClosed: day.isClosed,
+        syncGroupId: null,
+        isSynced: false,
       })),
     });
 
@@ -120,53 +160,38 @@ export async function POST(
   }
 }
 
-// DELETE /api/admin/locations/[locationId]/days
+// DELETE /api/businesses/[businessId]/locations/[locationId]/days
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ locationId: string }> },
+  {
+    params,
+  }: {
+    params: Promise<{
+      businessId: string;
+      locationId: string;
+    }>;
+  },
 ): Promise<NextResponse> {
   try {
-    const authResult = await authenticateBusinessAccess(request, [
+    const { businessId, locationId } = await params;
+    const paramsError = validateBusinessLocationParams(businessId, locationId);
+
+    if (paramsError) return paramsError;
+
+    const authResult = await authenticateBusinessAccess(request, businessId, [
       AccessLevel.owner,
       AccessLevel.admin,
     ]);
 
     if (authResult instanceof NextResponse) return authResult;
 
-    const { businessId } = authResult;
-    const { locationId } = await params;
-
-    if (!locationId) {
-      return NextResponse.json(
-        { error: "Missing locationId" },
-        { status: 400 },
-      );
-    }
-
-    // Make sure this location belongs to the authenticated business.
-    const location = await prisma.location.findFirst({
-      where: {
-        id: locationId,
-        businessId,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (!location) {
-      return NextResponse.json(
-        {
-          error: "This location does not exist in our records",
-        },
-        { status: 404 },
-      );
-    }
-
-    // Delete all business days for this location in one operation.
+    /*
+     * This route deletes the complete schedule for only
+     * the currently selected location.
+     */
     const deletedDays = await prisma.locationDay.deleteMany({
       where: {
-        locationId: location.id,
+        locationId,
       },
     });
 
