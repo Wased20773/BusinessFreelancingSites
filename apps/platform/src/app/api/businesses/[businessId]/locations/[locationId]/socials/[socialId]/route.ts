@@ -1,135 +1,137 @@
-import { createSlug } from "@/app/api/route_helper";
+import {
+  createSlug,
+  deleteSyncedResource,
+  updateSyncedResource,
+  validateBusinessLocationParams,
+} from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
-// PATCH /api/admin/socials/[socialId]
+// PATCH /api/businesses/[businessId]/locations/[locationId]/socials/[socialId]
 export async function PATCH(
-    request: Request,
-    { params }: { params: Promise<{ socialId: string }> }
+  request: Request,
+  {
+    params,
+  }: {
+    params: Promise<{
+      businessId: string;
+      locationId: string;
+      socialId: string;
+    }>;
+  },
 ): Promise<NextResponse> {
-    try {
-        const authResult = await authenticateBusinessAccess(
-            request,
-            [AccessLevel.owner, AccessLevel.admin]
-        );
+  try {
+    const { businessId, locationId, socialId } = await params;
+    const paramsError = validateBusinessLocationParams(businessId, locationId);
 
-        if (authResult instanceof NextResponse) return authResult;
+    if (paramsError) return paramsError;
 
-        const { businessId } = authResult;
-        const { socialId } = await params;
-        const body = await request.json();
-
-        if (!socialId) {
-            return NextResponse.json(
-                { error: "Missing socialId" },
-                { status: 400 }
-            );
-        }
-
-        const social = await prisma.social.findFirst({
-            where: {
-                id: socialId,
-                businessId: businessId,
-            },
-            select: {
-                id: true,
-                domain: true,
-                profileName: true,
-            },
-        });
-
-        if (!social) {
-            return NextResponse.json(
-                { error: "This social does not exist in our records" },
-                { status: 404 }
-            );
-        }
-
-        // Temps to help with assignment
-        const domain = body.domain ?? social.domain;
-        const profileName = body.profileName ?? social.profileName;
-
-        const url = `https://${domain}/${(createSlug(profileName))}`;
-
-        const updatedSocial = await prisma.social.update({
-            where: {
-                id: social.id,
-            },
-            data: {
-                domain: body.domain,
-                profileName: body.profileName,
-                url: url,
-                icon: body.icon,
-            },
-            select: {
-                id: true,
-                domain: true,
-                profileName: true,
-                url: true,
-                icon: true,
-            },
-        });
-
-        return NextResponse.json(updatedSocial, { status: 200 });
-    } catch (error) {
-        console.error("Failed to update social:", error);
-
-        return NextResponse.json(
-            { error: "Failed to update social" },
-            { status: 500 }
-        );
+    if (!socialId) {
+      return NextResponse.json({ error: "Missing socialId" }, { status: 400 });
     }
+
+    const authResult = await authenticateBusinessAccess(request, businessId, [
+      AccessLevel.owner,
+      AccessLevel.admin,
+    ]);
+
+    if (authResult instanceof NextResponse) return authResult;
+
+    const body = await request.json();
+
+    if (!body.domain || !body.profileName) {
+      return NextResponse.json(
+        { error: "A social must include a domain and profile name" },
+        { status: 400 },
+      );
+    }
+
+    if (!body.icon) {
+      return NextResponse.json(
+        { error: "Social is missing an icon" },
+        { status: 400 },
+      );
+    }
+
+    const url = `https://${body.domain}/${createSlug(body.profileName)}`;
+
+    return await updateSyncedResource({
+      body,
+      model: prisma.social,
+      resourceName: "social",
+      id: socialId,
+      locationId,
+      data: {
+        domain: body.domain,
+        profileName: body.profileName,
+        url: url,
+        icon: body.icon,
+      },
+      select: {
+        id: true,
+        domain: true,
+        profileName: true,
+        url: true,
+        icon: true,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to update social:", error);
+
+    return NextResponse.json(
+      { error: "Failed to update social" },
+      { status: 500 },
+    );
+  }
 }
 
-// DELETE /api/admin/socials/[socialId]
+// DELETE /api/businesses/[businessId]/locations/[locationId]/socials/[socialId]
 export async function DELETE(
-    request: Request,
-    { params }: { params: Promise<{ socialId: string }> }
+  request: Request,
+  {
+    params,
+  }: {
+    params: Promise<{
+      businessId: string;
+      locationId: string;
+      socialId: string;
+    }>;
+  },
 ): Promise<NextResponse> {
-    try {
-        const authResult = await authenticateBusinessAccess(
-            request,
-            [AccessLevel.owner, AccessLevel.admin]
-        );
+  try {
+    const { businessId, locationId, socialId } = await params;
+    const paramsError = validateBusinessLocationParams(businessId, locationId);
 
-        if (authResult instanceof NextResponse) return authResult;
+    if (paramsError) return paramsError;
 
-        const { businessId } = authResult;
-        const { socialId } = await params;
-
-        if (!socialId) {
-            return NextResponse.json(
-                { error: "Missing socialId" },
-                { status: 400 }
-            );
-        }
-
-        const deletedSocial = await prisma.social.deleteMany({
-            where: {
-                id: socialId,
-                businessId: businessId,
-            },
-        });
-
-        if (deletedSocial.count === 0) {
-            return NextResponse.json(
-                { error: "This social does not exist in our records" },
-                { status: 404 }
-            );
-        }
-
-        return NextResponse.json(
-            { message: "Social deleted successfully" },
-            { status: 200 }
-        );
-    } catch (error) {
-        console.error("Failed to delete social:", error);
-
-        return NextResponse.json(
-            { error: "Failed to delete social" },
-            { status: 500 }
-        );
+    if (!socialId) {
+      return NextResponse.json({ error: "Missing socialId" }, { status: 400 });
     }
+
+    const authResult = await authenticateBusinessAccess(request, businessId, [
+      AccessLevel.owner,
+      AccessLevel.admin,
+    ]);
+
+    if (authResult instanceof NextResponse) return authResult;
+
+    const body = await request.json();
+
+    return await deleteSyncedResource({
+      body,
+      model: prisma.social,
+      resourceName: "social",
+      id: socialId,
+      locationId,
+    });
+  } catch (error) {
+    console.error("Failed to delete social:", error);
+
+    return NextResponse.json(
+      { error: "Failed to delete social" },
+      { status: 500 },
+    );
+  }
 }

@@ -1,4 +1,7 @@
-import { validateBusinessLocationParams } from "@/app/api/route_helper";
+import {
+  createSyncedResource,
+  validateBusinessLocationParams,
+} from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
@@ -13,9 +16,7 @@ export async function POST(
     const { businessId, locationId } = await params;
     const paramsError = validateBusinessLocationParams(businessId, locationId);
 
-    if (paramsError) {
-      return paramsError;
-    }
+    if (paramsError) return paramsError;
 
     const authResult = await authenticateBusinessAccess(request, businessId, [
       AccessLevel.owner,
@@ -33,75 +34,16 @@ export async function POST(
       );
     }
 
-    if (typeof body.isSynced !== "boolean") {
-      return NextResponse.json(
-        {
-          error: "Synchronization setting was not found",
-        },
-        { status: 400 },
-      );
-    }
-
-    if (body.isSynced === true) {
-      /*
-       * Get every location belonging to this business.
-       */
-      const locations = await prisma.location.findMany({
-        where: {
-          businessId: businessId,
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (locations.length === 0) {
-        return NextResponse.json(
-          {
-            error: "No locations were found for this business",
-          },
-          { status: 400 },
-        );
-      }
-
-      /*
-       * Generate ONE synchronization ID.
-       *
-       * Every created contact receives this exact same ID,
-       * allowing future PATCH/DELETE operations to find them
-       * as one synchronized group.
-       */
-      const syncGroupId = crypto.randomUUID();
-
-      const contacts = await prisma.contact.createMany({
-        data: locations.map((location) => ({
-          locationId: location.id,
-          phoneNumber: body.phoneNumber,
-          email: body.email,
-          isPersonal: body.isPersonal ?? false,
-          syncGroupId: syncGroupId,
-          isSynced: true,
-        })),
-      });
-
-      return NextResponse.json(
-        {
-          message: "Synchronized contacts created successfully",
-          count: contacts.count,
-          syncGroupId: syncGroupId,
-        },
-        { status: 201 },
-      );
-    }
-
-    const contact = await prisma.contact.create({
+    return await createSyncedResource({
+      body,
+      model: prisma.contact,
+      resourceName: "contact",
+      businessId,
+      locationId,
       data: {
-        locationId: locationId,
         phoneNumber: body.phoneNumber,
         email: body.email,
-        isPersonal: body.isPersonal ?? false,
-        syncGroupId: null,
-        isSynced: false,
+        isPersonal: body.isPersonal,
       },
       select: {
         id: true,
@@ -110,13 +52,10 @@ export async function POST(
         email: true,
         isPersonal: true,
         syncGroupId: true,
-        isSynced: true,
         createdAt: true,
         updatedAt: true,
       },
     });
-
-    return NextResponse.json(contact, { status: 201 });
   } catch (error) {
     console.error("Failed to create contact:", error);
 

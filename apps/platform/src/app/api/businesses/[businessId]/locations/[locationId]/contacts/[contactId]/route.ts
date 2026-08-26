@@ -25,9 +25,7 @@ export async function PATCH(
     const { businessId, locationId, contactId } = await params;
     const paramsError = validateBusinessLocationParams(businessId, locationId);
 
-    if (paramsError) {
-      return paramsError;
-    }
+    if (paramsError) return paramsError;
 
     if (!contactId) {
       return NextResponse.json({ error: "Missing contactId" }, { status: 400 });
@@ -42,23 +40,23 @@ export async function PATCH(
 
     const body = await request.json();
 
+    if (!body.phoneNumber && !body.email) {
+      return NextResponse.json(
+        { error: "A contact must include either a phone number or an email" },
+        { status: 400 },
+      );
+    }
+
     return await updateSyncedResource({
       body,
       model: prisma.contact,
       resourceName: "contact",
       id: contactId,
       locationId,
-      updateManyData: {
+      data: {
         phoneNumber: body.phoneNumber,
         email: body.email,
         isPersonal: body.isPersonal,
-        isSynced: true,
-      },
-      updateSingleData: {
-        phoneNumber: body.phoneNumber,
-        email: body.email,
-        isPersonal: body.isPersonal,
-        isSynced: body.isSynced,
       },
       select: {
         id: true,
@@ -98,9 +96,7 @@ export async function DELETE(
     const { businessId, locationId, contactId } = await params;
     const paramsError = validateBusinessLocationParams(businessId, locationId);
 
-    if (paramsError) {
-      return paramsError;
-    }
+    if (paramsError) return paramsError;
 
     if (!contactId) {
       return NextResponse.json({ error: "Missing contactId" }, { status: 400 });

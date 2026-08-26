@@ -2,19 +2,30 @@ import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAcces
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
-import { createSlug } from "../../route_helper";
+import {
+  createSlug,
+  createSyncedResource,
+  validateBusinessLocationParams,
+} from "@/app/api/route_helper";
 
-// POST /api/admin/socials
-export async function POST(request: Request): Promise<NextResponse> {
+// POST /api/businesses/[businessId]/locations/[locationId]/socials
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ businessId: string; locationId: string }> },
+): Promise<NextResponse> {
   try {
-    const authResult = await authenticateBusinessAccess(request, [
+    const { businessId, locationId } = await params;
+    const paramsError = validateBusinessLocationParams(businessId, locationId);
+
+    if (paramsError) return paramsError;
+
+    const authResult = await authenticateBusinessAccess(request, businessId, [
       AccessLevel.owner,
       AccessLevel.admin,
     ]);
 
     if (authResult instanceof NextResponse) return authResult;
 
-    const { businessId } = authResult;
     const body = await request.json();
 
     if (!body.domain) {
@@ -40,7 +51,12 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    const social = await prisma.social.create({
+    return await createSyncedResource({
+      body,
+      model: prisma.social,
+      resourceName: "social",
+      businessId,
+      locationId,
       data: {
         businessId: businessId,
         domain: body.domain,
@@ -56,8 +72,6 @@ export async function POST(request: Request): Promise<NextResponse> {
         icon: true,
       },
     });
-
-    return NextResponse.json(social, { status: 201 });
   } catch (error) {
     console.error("Failed to create social:", error);
 

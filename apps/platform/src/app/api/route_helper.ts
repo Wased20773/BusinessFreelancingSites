@@ -25,6 +25,15 @@ type SyncModel = {
     isSynced: boolean;
   } | null>;
 
+  create: (args: {
+    data: Record<string, unknown>;
+    select?: Record<string, unknown>;
+  }) => Promise<unknown>;
+
+  createMany: (args: {
+    data: Record<string, unknown>[];
+  }) => Promise<{ count: number }>;
+
   update: (args: {
     where: Record<string, unknown>;
     data: Record<string, unknown>;
@@ -126,14 +135,104 @@ export function validateBusinessLocationParams(
   return null;
 }
 
+export async function createSyncedResource({
+  body,
+  model,
+  resourceName,
+  businessId,
+  locationId,
+  data,
+  select,
+}: {
+  body: Record<string, unknown>;
+  model: SyncPrismaModel;
+  resourceName: LocationResourceName;
+  businessId: string;
+  locationId: string;
+  data: Record<string, unknown>;
+  select: Record<string, unknown>;
+}): Promise<NextResponse> {
+  const syncModel = model as unknown as SyncModel;
+
+  if (typeof body.isSynced !== "boolean") {
+    return NextResponse.json(
+      { error: "Synchronization setting was not found" },
+      { status: 400 },
+    );
+  }
+
+  /*
+   * If synchronization is ON, create the resource
+   * for every location belonging to this business.
+   */
+  if (body.isSynced === true) {
+    const locations = await prisma.location.findMany({
+      where: {
+        businessId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (locations.length === 0) {
+      return NextResponse.json(
+        { error: "No locations were found for this business" },
+        { status: 400 },
+      );
+    }
+
+    /*
+     * Generate ONE synchronization group ID.
+     * Every created resource gets this exact same value.
+     */
+    const syncGroupId = crypto.randomUUID();
+
+    const createdResources = await syncModel.createMany({
+      data: locations.map((location) => ({
+        ...data,
+        locationId: location.id,
+        syncGroupId,
+        isSynced: true,
+      })),
+    });
+
+    return NextResponse.json(
+      {
+        message: `Synchronized ${resourceName}'s created successfully`,
+        count: createdResources.count,
+        syncGroupId,
+      },
+      { status: 201 },
+    );
+  }
+
+  /*
+   * Otherwise only create the resource
+   * for the currently selected location.
+   */
+  const createdResource = await syncModel.create({
+    data: {
+      ...data,
+      locationId,
+      syncGroupId: null,
+      isSynced: false,
+    },
+    select,
+  });
+
+  return NextResponse.json(createdResource, {
+    status: 201,
+  });
+}
+
 export async function updateSyncedResource({
   body,
   model,
   resourceName,
   id,
   locationId,
-  updateManyData,
-  updateSingleData,
+  data,
   select,
 }: {
   body: Record<string, unknown>;
@@ -141,8 +240,7 @@ export async function updateSyncedResource({
   resourceName: LocationResourceName;
   id: string;
   locationId: string;
-  updateManyData: Record<string, unknown>;
-  updateSingleData: Record<string, unknown>;
+  data: Record<string, unknown>;
   select: Record<string, unknown>;
 }): Promise<NextResponse> {
   const syncModel = model as unknown as SyncModel;
@@ -188,18 +286,11 @@ export async function updateSyncedResource({
 
         // Must check if synced is ON and selecting itself as well since
         // the database record could've been false
-        OR: [
-          {
-            isSynced: true,
-          },
-          {
-            id: resource.id,
-          },
-        ],
+        OR: [{ isSynced: true }, { id: resource.id }],
       },
-
       data: {
-        ...updateManyData,
+        ...data,
+        isSynced: true,
       },
     });
 
@@ -217,11 +308,10 @@ export async function updateSyncedResource({
       id: resource.id,
       locationId,
     },
-
     data: {
-      ...updateSingleData,
+      ...data,
+      isSynced: false,
     },
-
     select,
   });
 
@@ -284,14 +374,7 @@ export async function deleteSyncedResource({
 
         // Must check if synced is ON and selecting itself as well since
         // the database record could've been false
-        OR: [
-          {
-            isSynced: true,
-          },
-          {
-            id: resource.id,
-          },
-        ],
+        OR: [{ isSynced: true }, { id: resource.id }],
       },
     });
 
