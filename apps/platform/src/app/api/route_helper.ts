@@ -12,6 +12,42 @@ type OrderModel = {
   }) => Promise<{ order: number } | null>;
 };
 
+type SyncModel = {
+  findFirst: (args: {
+    where: Record<string, unknown>;
+    select: {
+      id: true;
+      syncGroupId: true;
+    };
+  }) => Promise<{
+    id: string;
+    syncGroupId: string | null;
+    isSynced: boolean;
+  } | null>;
+
+  update: (args: {
+    where: Record<string, unknown>;
+    data: Record<string, unknown>;
+    select?: Record<string, unknown>;
+  }) => Promise<unknown>;
+
+  updateMany: (args: {
+    where: Record<string, unknown>;
+    data: Record<string, unknown>;
+  }) => Promise<unknown>;
+
+  delete: (args: { where: Record<string, unknown> }) => Promise<unknown>;
+
+  deleteMany: (args: { where: Record<string, unknown> }) => Promise<unknown>;
+};
+
+type SyncPrismaModel =
+  | typeof prisma.contact
+  | typeof prisma.category
+  | typeof prisma.social
+  | typeof prisma.item
+  | typeof prisma.itemOption;
+
 type LocationResourceName =
   | "business"
   | "category"
@@ -73,6 +109,212 @@ export async function getLocationResponse<T extends Prisma.LocationSelect>(
       { status: 500 },
     );
   }
+}
+
+export function validateBusinessLocationParams(
+  businessId?: string,
+  locationId?: string,
+): NextResponse | null {
+  if (!businessId) {
+    return NextResponse.json({ error: "Missing businessId" }, { status: 400 });
+  }
+
+  if (!locationId) {
+    return NextResponse.json({ error: "Missing locationId" }, { status: 400 });
+  }
+
+  return null;
+}
+
+export async function updateSyncedResource({
+  body,
+  model,
+  resourceName,
+  id,
+  locationId,
+  updateManyData,
+  updateSingleData,
+  select,
+}: {
+  body: Record<string, unknown>;
+  model: SyncPrismaModel;
+  resourceName: LocationResourceName;
+  id: string;
+  locationId: string;
+  updateManyData: Record<string, unknown>;
+  updateSingleData: Record<string, unknown>;
+  select: Record<string, unknown>;
+}): Promise<NextResponse> {
+  const syncModel = model as unknown as SyncModel;
+
+  if (typeof body.isSynced !== "boolean") {
+    return NextResponse.json(
+      { error: "Synchronization setting was not found" },
+      { status: 400 },
+    );
+  }
+
+  /*
+   * We need the synchronization information before deciding
+   * whether this update affects one contact or the whole group
+   */
+  const resource = await syncModel.findFirst({
+    where: {
+      id,
+      locationId,
+    },
+    select: {
+      id: true,
+      syncGroupId: true,
+    },
+  });
+
+  if (!resource) {
+    return NextResponse.json(
+      { error: `This ${resourceName} does not exist in our records` },
+      { status: 404 },
+    );
+  }
+
+  /*
+   * If this resource is synchronized, update every resource
+   * that belongs to the same synchronization group while making
+   * sure only those synced get updated
+   */
+  if (resource.syncGroupId && body.isSynced === true) {
+    await syncModel.updateMany({
+      where: {
+        syncGroupId: resource.syncGroupId,
+
+        // Must check if synced is ON and selecting itself as well since
+        // the database record could've been false
+        OR: [
+          {
+            isSynced: true,
+          },
+          {
+            id: resource.id,
+          },
+        ],
+      },
+
+      data: {
+        ...updateManyData,
+      },
+    });
+
+    return NextResponse.json(
+      { message: `Synchronized ${resourceName}'s updated successfully` },
+      { status: 200 },
+    );
+  }
+
+  /*
+   * Otherwise only update this location's contact
+   */
+  const updatedResource = await syncModel.update({
+    where: {
+      id: resource.id,
+      locationId,
+    },
+
+    data: {
+      ...updateSingleData,
+    },
+
+    select,
+  });
+
+  return NextResponse.json(updatedResource, { status: 200 });
+}
+
+export async function deleteSyncedResource({
+  body,
+  model,
+  resourceName,
+  id,
+  locationId,
+}: {
+  body: Record<string, unknown>;
+  model: SyncPrismaModel;
+  resourceName: LocationResourceName;
+  id: string;
+  locationId: string;
+}): Promise<NextResponse> {
+  const syncModel = model as unknown as SyncModel;
+
+  if (typeof body.deleteAllSynced !== "boolean") {
+    return NextResponse.json(
+      { error: "Delete synchronization option was not found" },
+      { status: 400 },
+    );
+  }
+
+  /*
+   * We need the synchronization information before deciding
+   * whether this delete affects one resource or the whole group.
+   */
+  const resource = await syncModel.findFirst({
+    where: {
+      id,
+      locationId,
+    },
+    select: {
+      id: true,
+      syncGroupId: true,
+    },
+  });
+
+  if (!resource) {
+    return NextResponse.json(
+      { error: `This ${resourceName} does not exist in our records` },
+      { status: 400 },
+    );
+  }
+
+  /*
+   * If the user explicitly wants all synchronized resources deleted,
+   * delete every currently-synced resource in the group plus the
+   * selected resource itself.
+   */
+  if (resource.syncGroupId && body.deleteAllSynced === true) {
+    await syncModel.deleteMany({
+      where: {
+        syncGroupId: resource.syncGroupId,
+
+        // Must check if synced is ON and selecting itself as well since
+        // the database record could've been false
+        OR: [
+          {
+            isSynced: true,
+          },
+          {
+            id: resource.id,
+          },
+        ],
+      },
+    });
+
+    return NextResponse.json(
+      { message: `Synchronized ${resourceName}'s deleted successfully` },
+      { status: 200 },
+    );
+  }
+
+  /*
+   * Otherwise only delete this location's resource.
+   */
+  await syncModel.delete({
+    where: {
+      id: resource.id,
+      locationId,
+    },
+  });
+
+  return NextResponse.json(
+    { message: `${resourceName.toUpperCase()} deleted successfully` },
+    { status: 200 },
+  );
 }
 
 /*

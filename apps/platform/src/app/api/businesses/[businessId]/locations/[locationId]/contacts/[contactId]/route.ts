@@ -1,125 +1,133 @@
+import {
+  deleteSyncedResource,
+  updateSyncedResource,
+  validateBusinessLocationParams,
+} from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
-// PATCH /api/admin/contacts/[contactId]
+// PATCH /api/businesses/[businessId]/locations/[locationId]/contacts/[contactId]
 export async function PATCH(
-    request: Request,
-    { params }: { params: Promise<{ contactId: string }> }
+  request: Request,
+  {
+    params,
+  }: {
+    params: Promise<{
+      businessId: string;
+      locationId: string;
+      contactId: string;
+    }>;
+  },
 ): Promise<NextResponse> {
-    try {
-        const authResult = await authenticateBusinessAccess(
-            request,
-            [AccessLevel.owner, AccessLevel.admin]
-        );
+  try {
+    const { businessId, locationId, contactId } = await params;
+    const paramsError = validateBusinessLocationParams(businessId, locationId);
 
-        if (authResult instanceof NextResponse) return authResult;
-
-        const { businessId } = authResult;
-        const { contactId } = await params;
-        const body = await request.json();
-
-        if (!contactId) {
-            return NextResponse.json(
-                { error: "Missing contactId" },
-                { status: 400 }
-            );
-        }
-
-        const contact = await prisma.contact.findFirst({
-            where: {
-                id: contactId,
-                businessId,
-            },
-            select: {
-                id: true,
-            },
-        });
-
-        if (!contact) {
-            return NextResponse.json(
-                { error: "This contact does not exist in our records" },
-                { status: 404 }
-            );
-        }
-
-        const updatedContact = await prisma.contact.update({
-            where: {
-                id: contact.id,
-            },
-            data: {
-                phoneNumber: body.phoneNumber,
-                email: body.email,
-                isPersonal: body.isPersonal,
-            },
-            select: {
-                id: true,
-                phoneNumber: true,
-                email: true,
-                isPersonal: true,
-                updatedAt: true,
-            },
-        });
-
-        return NextResponse.json(updatedContact, { status: 200 });
-    } catch (error) {
-        console.error("Failed to update contact:", error);
-
-        return NextResponse.json(
-            { error: "Failed to update contact" },
-            { status: 500 }
-        );
+    if (paramsError) {
+      return paramsError;
     }
+
+    if (!contactId) {
+      return NextResponse.json({ error: "Missing contactId" }, { status: 400 });
+    }
+
+    const authResult = await authenticateBusinessAccess(request, businessId, [
+      AccessLevel.owner,
+      AccessLevel.admin,
+    ]);
+
+    if (authResult instanceof NextResponse) return authResult;
+
+    const body = await request.json();
+
+    return await updateSyncedResource({
+      body,
+      model: prisma.contact,
+      resourceName: "contact",
+      id: contactId,
+      locationId,
+      updateManyData: {
+        phoneNumber: body.phoneNumber,
+        email: body.email,
+        isPersonal: body.isPersonal,
+        isSynced: true,
+      },
+      updateSingleData: {
+        phoneNumber: body.phoneNumber,
+        email: body.email,
+        isPersonal: body.isPersonal,
+        isSynced: body.isSynced,
+      },
+      select: {
+        id: true,
+        locationId: true,
+        phoneNumber: true,
+        email: true,
+        isPersonal: true,
+        syncGroupId: true,
+        isSynced: true,
+        updatedAt: true,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to update contact:", error);
+
+    return NextResponse.json(
+      { error: "Failed to update contact" },
+      { status: 500 },
+    );
+  }
 }
 
-// DELETE /api/admin/contacts/[contactId]
+// DELETE /api/businesses/[businessId]/locations/[locationId]/contacts/[contactId]
 export async function DELETE(
-    request: Request,
-    { params }: { params: Promise<{ contactId: string }> }
+  request: Request,
+  {
+    params,
+  }: {
+    params: Promise<{
+      businessId: string;
+      locationId: string;
+      contactId: string;
+    }>;
+  },
 ): Promise<NextResponse> {
-    try {
-        const authResult = await authenticateBusinessAccess(
-            request,
-            [AccessLevel.owner, AccessLevel.admin]
-        );
+  try {
+    const { businessId, locationId, contactId } = await params;
+    const paramsError = validateBusinessLocationParams(businessId, locationId);
 
-        if (authResult instanceof NextResponse) return authResult;
-
-        const { businessId } = authResult;
-        const { contactId } = await params;
-
-        if (!contactId) {
-            return NextResponse.json(
-                { error: "Missing contactId" },
-                { status: 400 }
-            );
-        }
-
-        const deletedContact = await prisma.contact.deleteMany({
-            where: {
-                id: contactId,
-                businessId,
-            },
-        });
-
-        if (deletedContact.count === 0) {
-            return NextResponse.json(
-                { error: "This contact does not exist in our records" },
-                { status: 404 }
-            );
-        }
-
-        return NextResponse.json(
-            { message: "Contact deleted successfully" },
-            { status: 200 }
-        );
-    } catch (error) {
-        console.error("Failed to delete contact:", error);
-
-        return NextResponse.json(
-            { error: "Failed to delete contact" },
-            { status: 500 }
-        );
+    if (paramsError) {
+      return paramsError;
     }
+
+    if (!contactId) {
+      return NextResponse.json({ error: "Missing contactId" }, { status: 400 });
+    }
+
+    const authResult = await authenticateBusinessAccess(request, businessId, [
+      AccessLevel.owner,
+      AccessLevel.admin,
+    ]);
+
+    if (authResult instanceof NextResponse) return authResult;
+
+    const body = await request.json();
+
+    return await deleteSyncedResource({
+      body,
+      model: prisma.contact,
+      resourceName: "contact",
+      id: contactId,
+      locationId,
+    });
+  } catch (error) {
+    console.error("Failed to delete contact:", error);
+
+    return NextResponse.json(
+      { error: "Failed to delete contact" },
+      { status: 500 },
+    );
+  }
 }

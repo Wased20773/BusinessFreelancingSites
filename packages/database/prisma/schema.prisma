@@ -212,17 +212,17 @@ model Hour {
 }
 
 model Category {
-  id                     String   @id @default(uuid())
-  locationId             String
-  parentId               String?
-  name                   String
-  description            String?
-  order                  Int      @default(1)
-  isVisible              Boolean  @default(true)
-  syncGroupId            String?
-  allowLocationOverrides Boolean  @default(true)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id          String   @id @default(uuid())
+  locationId  String
+  parentId    String?
+  name        String
+  description String?
+  order       Int      @default(1)
+  isVisible   Boolean  @default(true)
+  syncGroupId String?
+  isSynced    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   location Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
   parent   Category? @relation("CategorySubcategories", fields: [parentId], references: [id], onDelete: Restrict)
@@ -236,15 +236,15 @@ model Category {
 }
 
 model Contact {
-  id                     String   @id @default(uuid())
-  locationId             String
-  phoneNumber            String?
-  email                  String?
-  isPersonal             Boolean  @default(false)
-  syncGroupId            String?
-  allowLocationOverrides Boolean  @default(true)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id          String   @id @default(uuid())
+  locationId  String
+  phoneNumber String?
+  email       String?
+  isPersonal  Boolean  @default(false)
+  syncGroupId String?
+  isSynced    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
 
@@ -253,16 +253,16 @@ model Contact {
 }
 
 model Social {
-  id                     String   @id @default(uuid())
-  locationId             String
-  domain                 String
-  profileName            String
-  url                    String
-  icon                   String
-  syncGroupId            String?
-  allowLocationOverrides Boolean  @default(true)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id          String   @id @default(uuid())
+  locationId  String
+  domain      String
+  profileName String
+  url         String
+  icon        String
+  syncGroupId String?
+  isSynced    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
 
@@ -272,22 +272,22 @@ model Social {
 }
 
 model Item {
-  id                     String   @id @default(uuid())
-  locationId             String
-  categoryId             String
-  name                   String
-  description            String?
-  containsList           String[]
-  calories               Int?
-  price                  Decimal  @db.Decimal(10, 2)
-  order                  Int      @default(1)
-  isAvailable            Boolean  @default(true)
-  slug                   String
-  imageKey               String?
-  syncGroupId            String?
-  allowLocationOverrides Boolean  @default(true)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id           String   @id @default(uuid())
+  locationId   String
+  categoryId   String
+  name         String
+  description  String?
+  containsList String[]
+  calories     Int?
+  price        Decimal  @db.Decimal(10, 2)
+  order        Int      @default(1)
+  isAvailable  Boolean  @default(true)
+  slug         String
+  imageKey     String?
+  syncGroupId  String?
+  isSynced     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
   category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
@@ -301,16 +301,16 @@ model Item {
 }
 
 model ItemOption {
-  id                     String   @id @default(uuid())
-  itemId                 String
-  name                   String
-  price                  Decimal  @db.Decimal(10, 2)
-  order                  Int      @default(1)
-  isAvailable            Boolean  @default(true)
-  syncGroupId            String?
-  allowLocationOverrides Boolean  @default(true)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id          String   @id @default(uuid())
+  itemId      String
+  name        String
+  price       Decimal  @db.Decimal(10, 2)
+  order       Int      @default(1)
+  isAvailable Boolean  @default(true)
+  syncGroupId String?
+  isSynced    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
