@@ -65,6 +65,7 @@ type LocationResourceName =
   | "day"
   | "location"
   | "menu"
+  | "item"
   | "social"
   | "schedule";
 
@@ -529,15 +530,19 @@ export function checkTimeOverlap(
 /*
  *   Validates an images existence, size, and type.
  **/
-export async function imageRequestValidation(
-  request: Request,
-): Promise<NextResponse | File> {
+export async function imageRequestValidation(request: Request): Promise<
+  | NextResponse
+  | {
+      image: File;
+      isSynced: boolean;
+    }
+> {
   try {
-    // Get the image from form-data
     const formData = await request.formData();
-    const image = formData.get("image");
 
-    // Check if an image was sent
+    const image = formData.get("image");
+    const isSynced = formData.get("isSynced");
+
     if (!(image instanceof File)) {
       return NextResponse.json(
         {
@@ -548,7 +553,13 @@ export async function imageRequestValidation(
       );
     }
 
-    // Check if the image size exist
+    if (typeof isSynced !== "boolean") {
+      return NextResponse.json(
+        { error: "Synchronization setting was not found" },
+        { status: 400 },
+      );
+    }
+
     if (image.size === 0) {
       return NextResponse.json(
         { error: "The uploaded image is empty" },
@@ -556,7 +567,6 @@ export async function imageRequestValidation(
       );
     }
 
-    // Check if image payload exceeds max image size
     if (image.size > MAX_IMAGE_SIZE) {
       return NextResponse.json(
         { error: "The image cannot be larger than 2 MB" },
@@ -564,7 +574,6 @@ export async function imageRequestValidation(
       );
     }
 
-    // Check for image type support
     if (!isSupportedImageContentType(image.type)) {
       return NextResponse.json(
         {
@@ -575,7 +584,10 @@ export async function imageRequestValidation(
       );
     }
 
-    return image;
+    return {
+      image,
+      isSynced: isSynced === "true",
+    };
   } catch (error) {
     console.error("Failed to parse the image form data:", error);
 

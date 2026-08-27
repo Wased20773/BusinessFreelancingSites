@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { AccessLevel } from "@business-freelancer/database";
 
 // GET /api/business/menu
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
   const authentication = await authenticateBusinessReadAccess(request, [
     AccessLevel.developer,
     AccessLevel.owner,
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
 
         select: {
           id: true,
-          businessId: true,
+          locationId: true,
           parentId: true,
           name: true,
           description: true,
@@ -47,6 +47,7 @@ export async function GET(request: Request) {
 
             select: {
               id: true,
+              locationId: true,
               categoryId: true,
               name: true,
               description: true,
@@ -87,7 +88,7 @@ export async function GET(request: Request) {
 
             select: {
               id: true,
-              businessId: true,
+              locationId: true,
               parentId: true,
               name: true,
               description: true,
@@ -104,6 +105,7 @@ export async function GET(request: Request) {
 
                 select: {
                   id: true,
+                  locationId: true,
                   categoryId: true,
                   name: true,
                   description: true,

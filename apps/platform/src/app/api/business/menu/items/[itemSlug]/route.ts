@@ -4,12 +4,24 @@ import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
-// GET /api/business/menu/items/[itemId]
+// GET /api/business/menu/items/[itemSlug]
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ itemId: string }> },
+  {
+    params,
+  }: {
+    params: Promise<{
+      itemSlug: string;
+    }>;
+  },
 ): Promise<NextResponse> {
   try {
+    const { itemSlug } = await params;
+
+    if (!itemSlug) {
+      return NextResponse.json({ error: "Missing item slug" }, { status: 400 });
+    }
+
     const authentication = await authenticateBusinessReadAccess(request, [
       AccessLevel.developer,
       AccessLevel.owner,
@@ -19,19 +31,22 @@ export async function GET(
 
     if (authentication instanceof NextResponse) return authentication;
 
-    const { itemId } = await params;
-
-    if (!itemId) {
-      return NextResponse.json({ error: "Missing item ID" }, { status: 400 });
-    }
-
+    /*
+     * Slugs only need to be unique within a location.
+     *
+     * This allows synchronized items at different locations
+     * to share the same slug while still resolving to the
+     * correct physical Item record.
+     */
     const item = await prisma.item.findFirst({
       where: {
-        id: itemId,
+        slug: itemSlug,
         locationId: authentication.locationId,
       },
+
       select: {
         id: true,
+        locationId: true,
         categoryId: true,
         name: true,
         description: true,
@@ -64,13 +79,14 @@ export async function GET(
 
     if (!item) {
       return NextResponse.json(
-        { error: "Item not found for this business" },
+        { error: "Item not found for this location" },
         { status: 404 },
       );
     }
 
     const itemWithImageUrl = {
       ...item,
+
       imageKey: item.imageKey ? await getObjectUrl(item.imageKey) : null,
     };
 
