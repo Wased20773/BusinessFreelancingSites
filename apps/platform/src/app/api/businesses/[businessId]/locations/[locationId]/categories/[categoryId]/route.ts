@@ -1,24 +1,30 @@
+import {
+  updateSyncedResource,
+  validateBusinessLocationParams,
+} from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel, Prisma } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
-// PATCH /api/admin/categories/[categoryId]
+// PATCH /api/businesses/[businessId]/locations/[locationId]/categories/[categoryId]
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ categoryId: string }> },
+  {
+    params,
+  }: {
+    params: Promise<{
+      businessId: string;
+      locationId: string;
+      categoryId: string;
+    }>;
+  },
 ): Promise<NextResponse> {
   try {
-    const authResult = await authenticateBusinessAccess(request, [
-      AccessLevel.owner,
-      AccessLevel.admin,
-    ]);
+    const { businessId, locationId, categoryId } = await params;
+    const paramsError = validateBusinessLocationParams(businessId, locationId);
 
-    if (authResult instanceof NextResponse) return authResult;
-
-    const { businessId } = authResult;
-    const { categoryId } = await params;
-    const body = await request.json();
+    if (paramsError) return paramsError;
 
     if (!categoryId) {
       return NextResponse.json(
@@ -27,46 +33,49 @@ export async function PATCH(
       );
     }
 
-    // Get the category selected from categoryId route param
-    const category = await prisma.category.findFirst({
-      where: {
-        id: categoryId,
-        businessId: businessId,
-      },
-      select: {
-        id: true,
-      },
-    });
+    const authResult = await authenticateBusinessAccess(request, businessId, [
+      AccessLevel.owner,
+      AccessLevel.admin,
+    ]);
 
-    if (!category) {
+    if (authResult instanceof NextResponse) return authResult;
+
+    const body = await request.json();
+
+    if (!body.name) {
       return NextResponse.json(
-        { error: "This category does not exist in our records" },
-        { status: 404 },
+        { error: "Missing category name" },
+        { status: 400 },
       );
     }
 
-    const updatedCategory = await prisma.category.update({
-      where: {
-        id: category.id,
-      },
+    return await updateSyncedResource({
+      body,
+      model: prisma.category,
+      resourceName: "category",
+      id: categoryId,
+      locationId,
       data: {
         name: body.name,
         description: body.description,
         isVisible: body.isVisible,
+        isSynced: body.isSynced,
       },
       select: {
         id: true,
+        locationId: true,
         name: true,
         description: true,
         order: true,
         isVisible: true,
+        syncGroupId: true,
+        isSynced: true,
         updatedAt: true,
       },
     });
-
-    return NextResponse.json(updatedCategory, { status: 200 });
   } catch (error) {
     console.error("Failed to update category:", error);
+
     return NextResponse.json(
       { error: "Failed to update category" },
       { status: 500 },
@@ -74,21 +83,24 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/admin/categories/[categoryId]
+// DELETE /api/businesses/[businessId]/locations/[locationId]/categories/[categoryId]
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ categoryId: string }> },
+  {
+    params,
+  }: {
+    params: Promise<{
+      businessId: string;
+      locationId: string;
+      categoryId: string;
+    }>;
+  },
 ): Promise<NextResponse> {
   try {
-    const authResult = await authenticateBusinessAccess(request, [
-      AccessLevel.owner,
-      AccessLevel.admin,
-    ]);
+    const { businessId, locationId, categoryId } = await params;
+    const paramsError = validateBusinessLocationParams(businessId, locationId);
 
-    if (authResult instanceof NextResponse) return authResult;
-
-    const { businessId } = authResult;
-    const { categoryId } = await params;
+    if (paramsError) return paramsError;
 
     if (!categoryId) {
       return NextResponse.json(
@@ -97,14 +109,37 @@ export async function DELETE(
       );
     }
 
-    // Get the category selected by the categoryId route param
+    const authResult = await authenticateBusinessAccess(request, businessId, [
+      AccessLevel.owner,
+      AccessLevel.admin,
+    ]);
+
+    if (authResult instanceof NextResponse) return authResult;
+
+    const body = await request.json();
+
+    if (typeof body.deleteAllSynced !== "boolean") {
+      return NextResponse.json(
+        { error: "Delete synchronization option was not found" },
+        { status: 400 },
+      );
+    }
+
+    /*
+     * Get the selected category first so we know:
+     *
+     * - whether it belongs to a synchronization group
+     * - whether it still has items attached
+     */
     const category = await prisma.category.findFirst({
       where: {
         id: categoryId,
-        businessId,
+        locationId,
       },
       select: {
         id: true,
+        locationId: true,
+        syncGroupId: true,
         items: {
           select: {
             id: true,
@@ -113,15 +148,137 @@ export async function DELETE(
       },
     });
 
-    // Check for existence
     if (!category) {
       return NextResponse.json(
         { error: "This category does not exist in our records" },
-        { status: 404 },
+        { status: 400 },
       );
     }
 
-    // Check for items (if there is any, disallow deletion)
+    /*
+     * #############################
+     * ##### DELETE ALL SYNCED #####
+     * #############################
+     *
+     * This option only has an effect when the selected
+     * category actually belongs to a synchronization group.
+     */
+    if (category.syncGroupId && body.deleteAllSynced === true) {
+      /*
+       * Get the categories that would be deleted.
+       *
+       * As with our other sync behavior:
+       * - include currently synced categories
+       * - always include the selected category itself
+       */
+      const categoriesToDelete = await prisma.category.findMany({
+        where: {
+          syncGroupId: category.syncGroupId,
+
+          OR: [{ isSynced: true }, { id: category.id }],
+        },
+        select: {
+          id: true,
+          locationId: true,
+
+          items: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      });
+
+      /*
+       * Do not partially delete the synchronized group
+       * if one of its categories still contains items.
+       */
+      const categoryWithItems = categoriesToDelete.find(
+        (selectedCategory) => selectedCategory.items.length > 0,
+      );
+
+      if (categoryWithItems) {
+        return NextResponse.json(
+          {
+            error:
+              "These categories cannot be deleted because one or more still have items attached",
+          },
+          { status: 409 },
+        );
+      }
+
+      /*
+       * Save the affected locations before deleting.
+       * We need them afterward to rebuild Category order.
+       */
+      const affectedLocationIds = [
+        ...new Set(
+          categoriesToDelete.map(
+            (selectedCategory) => selectedCategory.locationId,
+          ),
+        ),
+      ];
+
+      /*
+       * deleteMany is one statement, so if a category
+       * still has a protected subcategory relation,
+       * the operation will fail instead of partially
+       * deleting the synchronized group.
+       */
+      await prisma.category.deleteMany({
+        where: {
+          id: {
+            in: categoriesToDelete.map(
+              (selectedCategory) => selectedCategory.id,
+            ),
+          },
+        },
+      });
+
+      /*
+       * Rebuild top-level Category order separately
+       * for every affected location.
+       */
+      for (const affectedLocationId of affectedLocationIds) {
+        const remainingCategories = await prisma.category.findMany({
+          where: {
+            locationId: affectedLocationId,
+            parentId: null,
+          },
+          orderBy: {
+            order: "asc",
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        await prisma.$transaction(
+          remainingCategories.map((remainingCategory, index) =>
+            prisma.category.update({
+              where: {
+                id: remainingCategory.id,
+              },
+              data: {
+                order: index + 1,
+              },
+            }),
+          ),
+        );
+      }
+
+      return NextResponse.json(
+        { message: "Synchronized categories deleted successfully" },
+        { status: 200 },
+      );
+    }
+
+    /*
+     * #############################
+     * ##### SINGLE DELETE #########
+     * #############################
+     */
+
     if (category.items.length > 0) {
       return NextResponse.json(
         {
@@ -132,17 +289,20 @@ export async function DELETE(
       );
     }
 
-    // Delete the category
     await prisma.category.delete({
       where: {
         id: category.id,
+        locationId,
       },
     });
 
-    // Reorganize the remaining categories order values
+    /*
+     * Reorganize only this location's top-level categories.
+     */
     const remainingCategories = await prisma.category.findMany({
       where: {
-        businessId,
+        locationId,
+        parentId: null,
       },
       orderBy: {
         order: "asc",
@@ -152,12 +312,11 @@ export async function DELETE(
       },
     });
 
-    // Reset order values for all remaining categories starting at 1
     await prisma.$transaction(
-      remainingCategories.map((category, index) =>
+      remainingCategories.map((remainingCategory, index) =>
         prisma.category.update({
           where: {
-            id: category.id,
+            id: remainingCategory.id,
           },
           data: {
             order: index + 1,
@@ -171,7 +330,10 @@ export async function DELETE(
       { status: 200 },
     );
   } catch (error) {
-    // Check if deleting restriction occured (deleting with children)
+    /*
+     * Preserve the existing protection against deleting
+     * a Category while it still owns subcategories.
+     */
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2003"
