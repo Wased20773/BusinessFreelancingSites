@@ -88,6 +88,10 @@ export async function POST(
       const locations = await prisma.location.findMany({
         where: {
           businessId,
+
+          days: {
+            none: {},
+          },
         },
         select: {
           id: true,

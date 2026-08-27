@@ -2,37 +2,32 @@ import {
   checkTimeOverlap,
   normalizeTime,
   timeToMinutes,
+  validateBusinessLocationParams,
 } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
-// PATCH /api/admin/locations/[locationId]/days/[dayId]/hours/[hourId]
+// PATCH /api/businesses/[businessId]/locations/[locationId]/days/[dayId]/hours/[hourId]
 export async function PATCH(
   request: Request,
   {
     params,
-  }: { params: Promise<{ locationId: string; dayId: string; hourId: string }> },
+  }: {
+    params: Promise<{
+      businessId: string;
+      locationId: string;
+      dayId: string;
+      hourId: string;
+    }>;
+  },
 ): Promise<NextResponse> {
   try {
-    const authResult = await authenticateBusinessAccess(request, [
-      AccessLevel.owner,
-      AccessLevel.admin,
-    ]);
+    const { businessId, locationId, dayId, hourId } = await params;
+    const paramsError = validateBusinessLocationParams(businessId, locationId);
 
-    if (authResult instanceof NextResponse) return authResult;
-
-    const { businessId } = authResult;
-    const { locationId, dayId, hourId } = await params;
-    const body = await request.json();
-
-    if (!locationId) {
-      return NextResponse.json(
-        { error: "Missing locationId" },
-        { status: 400 },
-      );
-    }
+    if (paramsError) return paramsError;
 
     if (!dayId) {
       return NextResponse.json({ error: "Missing dayId" }, { status: 400 });
@@ -42,12 +37,26 @@ export async function PATCH(
       return NextResponse.json({ error: "Missing hourId" }, { status: 400 });
     }
 
-    /*
-     * Find the Hour and verify that either
-     * its regular or special relation belongs
-     * to this location/day/business.
-     */
+    const authResult = await authenticateBusinessAccess(request, businessId, [
+      AccessLevel.owner,
+      AccessLevel.admin,
+    ]);
 
+    if (authResult instanceof NextResponse) return authResult;
+
+    const body = await request.json();
+
+    if (typeof body.isSynced !== "boolean") {
+      return NextResponse.json(
+        { error: "Synchronization setting was not found" },
+        { status: 400 },
+      );
+    }
+
+    /*
+     * Find the selected Hour and make sure it belongs
+     * to the selected LocationDay.
+     */
     const existingHour = await prisma.hour.findFirst({
       where: {
         id: hourId,
@@ -55,25 +64,11 @@ export async function PATCH(
         OR: [
           {
             regularDayId: dayId,
-
-            regularDay: {
-              locationId: locationId,
-
-              location: {
-                businessId: businessId,
-              },
-            },
+            regularDay: { locationId },
           },
-
           {
             specialDayId: dayId,
-            specialDay: {
-              locationId: locationId,
-
-              location: {
-                businessId: businessId,
-              },
-            },
+            specialDay: { locationId },
           },
         ],
       },
@@ -83,13 +78,15 @@ export async function PATCH(
         specialDayId: true,
         openTime: true,
         closeTime: true,
+        syncGroupId: true,
+        isSynced: true,
       },
     });
 
     if (!existingHour) {
       return NextResponse.json(
         { error: "This location hour does not exist in our records" },
-        { status: 404 },
+        { status: 400 },
       );
     }
 
@@ -109,73 +106,159 @@ export async function PATCH(
     }
 
     /*
-     * Only special hours require overlap
-     * checks against other Hour records.
+     * #############################
+     * ##### SINGLE UPDATE #########
+     * #############################
      */
-    if (existingHour.specialDayId) {
-      const otherSpecialHours = await prisma.hour.findMany({
-        where: {
-          specialDayId: dayId,
 
-          id: {
-            // Choosing the selected hour causes guaranteed conflicting hours
-            not: hourId,
+    if (!body.isSynced || !existingHour.syncGroupId) {
+      /*
+       * Only special hours need overlap validation.
+       */
+      if (existingHour.specialDayId) {
+        const otherSpecialHours = await prisma.hour.findMany({
+          where: {
+            specialDayId: existingHour.specialDayId,
+
+            id: {
+              not: existingHour.id,
+            },
           },
-        },
+          select: {
+            openTime: true,
+            closeTime: true,
+          },
+        });
 
+        const conflictingHour = otherSpecialHours.find((hour) =>
+          checkTimeOverlap(
+            updatedOpenTime,
+            updatedCloseTime,
+            hour.openTime,
+            hour.closeTime,
+          ),
+        );
+
+        if (conflictingHour) {
+          return NextResponse.json(
+            {
+              error: `The selected time conflicts with the existing special hours ${conflictingHour.openTime} - ${conflictingHour.closeTime}`,
+            },
+            { status: 409 },
+          );
+        }
+      }
+
+      const updatedHour = await prisma.hour.update({
+        where: {
+          id: existingHour.id,
+        },
+        data: {
+          openTime: updatedOpenTime,
+          closeTime: updatedCloseTime,
+          title: body.title,
+          note: body.note,
+          isDisabled: body.isDisabled,
+          isSynced: false,
+        },
         select: {
           id: true,
+          regularDayId: true,
+          specialDayId: true,
           openTime: true,
           closeTime: true,
+          title: true,
+          note: true,
+          isDisabled: true,
+          syncGroupId: true,
+          isSynced: true,
+          updatedAt: true,
         },
       });
 
-      const conflictingHour = otherSpecialHours.find((hour) =>
-        checkTimeOverlap(
-          updatedOpenTime,
-          updatedCloseTime,
-          hour.openTime,
-          hour.closeTime,
-        ),
-      );
+      return NextResponse.json(updatedHour, { status: 200 });
+    }
 
-      if (conflictingHour) {
-        return NextResponse.json(
-          {
-            error: `The selected time conflicts with the existing special hours ${conflictingHour.openTime} - ${conflictingHour.closeTime}`,
+    /*
+     * #############################
+     * ##### SYNCED UPDATE #########
+     * #############################
+     */
+
+    const syncedHours = await prisma.hour.findMany({
+      where: {
+        syncGroupId: existingHour.syncGroupId,
+
+        OR: [{ isSynced: true }, { id: existingHour.id }],
+      },
+      select: {
+        id: true,
+        specialDayId: true,
+      },
+    });
+
+    /*
+     * When these are special hours, validate the new
+     * range against each Hour's own parent day.
+     */
+    if (existingHour.specialDayId) {
+      for (const syncedHour of syncedHours) {
+        if (!syncedHour.specialDayId) continue;
+
+        const otherSpecialHours = await prisma.hour.findMany({
+          where: {
+            specialDayId: syncedHour.specialDayId,
+
+            id: {
+              not: syncedHour.id,
+            },
           },
-          { status: 409 },
+          select: {
+            openTime: true,
+            closeTime: true,
+          },
+        });
+
+        const conflictingHour = otherSpecialHours.find((hour) =>
+          checkTimeOverlap(
+            updatedOpenTime,
+            updatedCloseTime,
+            hour.openTime,
+            hour.closeTime,
+          ),
         );
+
+        if (conflictingHour) {
+          return NextResponse.json(
+            {
+              error: `The selected time conflicts with existing special hours ${conflictingHour.openTime} - ${conflictingHour.closeTime}`,
+            },
+            { status: 409 },
+          );
+        }
       }
     }
 
-    const updatedHour = await prisma.hour.update({
+    await prisma.hour.updateMany({
       where: {
-        id: hourId,
-      },
+        syncGroupId: existingHour.syncGroupId,
 
+        OR: [{ isSynced: true }, { id: existingHour.id }],
+      },
       data: {
         openTime: updatedOpenTime,
         closeTime: updatedCloseTime,
         title: body.title,
         note: body.note,
         isDisabled: body.isDisabled,
-      },
-
-      select: {
-        id: true,
-        regularDayId: true,
-        specialDayId: true,
-        openTime: true,
-        closeTime: true,
-        title: true,
-        note: true,
-        isDisabled: true,
-        updatedAt: true,
+        isSynced: true,
       },
     });
 
-    return NextResponse.json(updatedHour, { status: 200 });
+    return NextResponse.json(
+      { message: "Synchronized hours updated successfully" },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("Failed to update location hours:", error);
 
@@ -186,13 +269,14 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/admin/locations/[locationId]/days/[dayId]/hours/[hourId]
+// DELETE /api/businesses/[businessId]/locations/[locationId]/days/[dayId]/hours/[hourId]
 export async function DELETE(
   request: Request,
   {
     params,
   }: {
     params: Promise<{
+      businessId: string;
       locationId: string;
       dayId: string;
       hourId: string;
@@ -200,22 +284,10 @@ export async function DELETE(
   },
 ): Promise<NextResponse> {
   try {
-    const authResult = await authenticateBusinessAccess(request, [
-      AccessLevel.owner,
-      AccessLevel.admin,
-    ]);
+    const { businessId, locationId, dayId, hourId } = await params;
+    const paramsError = validateBusinessLocationParams(businessId, locationId);
 
-    if (authResult instanceof NextResponse) return authResult;
-
-    const { businessId } = authResult;
-    const { locationId, dayId, hourId } = await params;
-
-    if (!locationId) {
-      return NextResponse.json(
-        { error: "Missing locationId" },
-        { status: 400 },
-      );
-    }
+    if (paramsError) return paramsError;
 
     if (!dayId) {
       return NextResponse.json({ error: "Missing dayId" }, { status: 400 });
@@ -225,44 +297,83 @@ export async function DELETE(
       return NextResponse.json({ error: "Missing hourId" }, { status: 400 });
     }
 
-    const deletedHour = await prisma.hour.deleteMany({
+    const authResult = await authenticateBusinessAccess(request, businessId, [
+      AccessLevel.owner,
+      AccessLevel.admin,
+    ]);
+
+    if (authResult instanceof NextResponse) return authResult;
+
+    const body = await request.json();
+
+    if (typeof body.deleteAllSynced !== "boolean") {
+      return NextResponse.json(
+        { error: "Delete synchronization option was not found" },
+        { status: 400 },
+      );
+    }
+
+    const hour = await prisma.hour.findFirst({
       where: {
         id: hourId,
 
         OR: [
           {
             regularDayId: dayId,
-
             regularDay: {
-              locationId: locationId,
-
-              location: {
-                businessId: businessId,
-              },
+              locationId,
             },
           },
-
           {
             specialDayId: dayId,
-
             specialDay: {
-              locationId: locationId,
-
-              location: {
-                businessId: businessId,
-              },
+              locationId,
             },
           },
         ],
       },
+      select: {
+        id: true,
+        syncGroupId: true,
+      },
     });
 
-    if (deletedHour.count === 0) {
+    if (!hour) {
       return NextResponse.json(
         { error: "This location hour does not exist in our records" },
-        { status: 404 },
+        { status: 400 },
       );
     }
+
+    /*
+     * Explicit synchronized delete:
+     * remove every currently-synced Hour in this group
+     * plus the selected Hour itself.
+     */
+    if (hour.syncGroupId && body.deleteAllSynced === true) {
+      const deletedHours = await prisma.hour.deleteMany({
+        where: {
+          syncGroupId: hour.syncGroupId,
+
+          OR: [{ isSynced: true }, { id: hour.id }],
+        },
+      });
+
+      return NextResponse.json(
+        {
+          message: "Synchronized hours deleted successfully",
+          count: deletedHours.count,
+        },
+        { status: 200 },
+      );
+    }
+
+    /*
+     * Otherwise only delete the selected Hour.
+     */
+    await prisma.hour.delete({
+      where: { id: hour.id },
+    });
 
     return NextResponse.json(
       { message: "Location hour deleted successfully" },

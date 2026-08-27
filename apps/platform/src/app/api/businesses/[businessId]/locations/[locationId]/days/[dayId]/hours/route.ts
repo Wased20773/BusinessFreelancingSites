@@ -2,39 +2,44 @@ import {
   checkTimeOverlap,
   normalizeTime,
   timeToMinutes,
+  validateBusinessLocationParams,
 } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
-// POST /api/admin/locations/[locationId]/days/[dayId]/hours
+// POST /api/businesses/[businessId]/locations/[locationId]/days/[dayId]/hours
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ locationId: string; dayId: string }> },
+  {
+    params,
+  }: {
+    params: Promise<{
+      businessId: string;
+      locationId: string;
+      dayId: string;
+    }>;
+  },
 ): Promise<NextResponse> {
   try {
-    const authResult = await authenticateBusinessAccess(request, [
+    const { businessId, locationId, dayId } = await params;
+    const paramsError = validateBusinessLocationParams(businessId, locationId);
+
+    if (paramsError) return paramsError;
+
+    if (!dayId) {
+      return NextResponse.json({ error: "Missing dayId" }, { status: 400 });
+    }
+
+    const authResult = await authenticateBusinessAccess(request, businessId, [
       AccessLevel.owner,
       AccessLevel.admin,
     ]);
 
     if (authResult instanceof NextResponse) return authResult;
 
-    const { businessId } = authResult;
-    const { locationId, dayId } = await params;
     const body = await request.json();
-
-    if (!locationId) {
-      return NextResponse.json(
-        { error: "Missing locationId" },
-        { status: 400 },
-      );
-    }
-
-    if (!dayId) {
-      return NextResponse.json({ error: "Missing dayId" }, { status: 400 });
-    }
 
     if (!body.openTime || !body.closeTime) {
       return NextResponse.json(
@@ -50,6 +55,13 @@ export async function POST(
       );
     }
 
+    if (typeof body.isSynced !== "boolean") {
+      return NextResponse.json(
+        { error: "Synchronization setting was not found" },
+        { status: 400 },
+      );
+    }
+
     const openTime = normalizeTime(body.openTime);
     const closeTime = normalizeTime(body.closeTime);
 
@@ -61,26 +73,23 @@ export async function POST(
     }
 
     /*
-     * Make sure the selected day belongs to
-     * the selected location and business.
+     * Get the selected parent day.
+     *
+     * Its syncGroupId tells us which equivalent days
+     * exist at the other locations.
      */
     const day = await prisma.locationDay.findFirst({
       where: {
         id: dayId,
-        locationId: locationId,
-
-        location: {
-          businessId: businessId,
-        },
+        locationId,
       },
       select: {
         id: true,
+        syncGroupId: true,
 
         hour: {
           select: {
             id: true,
-            openTime: true,
-            closeTime: true,
           },
         },
 
@@ -97,35 +106,79 @@ export async function POST(
     if (!day) {
       return NextResponse.json(
         { error: "This location day does not exist in our records" },
-        { status: 404 },
+        { status: 400 },
       );
     }
 
-    // ########################
-    // ##### REGULAR HOUR #####
-    // ########################
+    /*
+     * #############################
+     * ##### SINGLE LOCATION #######
+     * #############################
+     */
 
-    if (!body.isSpecial) {
-      /*
-       * A LocationDay can only contain
-       * one regular Hour.
-       */
-      if (day.hour) {
+    if (!body.isSynced) {
+      // Regular Hour
+      if (!body.isSpecial) {
+        if (day.hour) {
+          return NextResponse.json(
+            { error: "Regular hours already exist for this day" },
+            { status: 409 },
+          );
+        }
+
+        const hour = await prisma.hour.create({
+          data: {
+            regularDayId: day.id,
+            openTime,
+            closeTime,
+            title: body.title,
+            note: body.note,
+            syncGroupId: null,
+            isSynced: false,
+          },
+          select: {
+            id: true,
+            regularDayId: true,
+            specialDayId: true,
+            openTime: true,
+            closeTime: true,
+            title: true,
+            note: true,
+            isDisabled: true,
+            syncGroupId: true,
+            isSynced: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
+
+        return NextResponse.json(hour, { status: 201 });
+      }
+
+      // Special Hour
+      const conflictingHour = day.specialHours.find((hour) =>
+        checkTimeOverlap(openTime, closeTime, hour.openTime, hour.closeTime),
+      );
+
+      if (conflictingHour) {
         return NextResponse.json(
-          { error: "Regular hours already exist for this day" },
+          {
+            error: `The selected time conflicts with the existing hours ${conflictingHour.openTime} - ${conflictingHour.closeTime}`,
+          },
           { status: 409 },
         );
       }
 
       const hour = await prisma.hour.create({
         data: {
-          regularDayId: day.id,
-          openTime: openTime,
-          closeTime: closeTime,
+          specialDayId: day.id,
+          openTime,
+          closeTime,
           title: body.title,
           note: body.note,
+          syncGroupId: null,
+          isSynced: false,
         },
-
         select: {
           id: true,
           regularDayId: true,
@@ -135,6 +188,8 @@ export async function POST(
           title: true,
           note: true,
           isDisabled: true,
+          syncGroupId: true,
+          isSynced: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -143,50 +198,122 @@ export async function POST(
       return NextResponse.json(hour, { status: 201 });
     }
 
-    // ########################
-    // ##### SPECIAL HOUR #####
-    // ########################
-
     /*
-     * Special hours cannot overlap
-     * other special hours for this day.
+     * #############################
+     * ##### SYNCHRONIZED ##########
+     * #############################
      */
-    const conflictingHour = day.specialHours.find((hour) =>
-      checkTimeOverlap(openTime, closeTime, hour.openTime, hour.closeTime),
-    );
 
-    if (conflictingHour) {
+    if (!day.syncGroupId) {
       return NextResponse.json(
         {
-          error: `The selected time conflicts with the existing hours ${conflictingHour.openTime} - ${conflictingHour.closeTime}`,
+          error: "This location day does not belong to a synchronization group",
         },
-        { status: 409 },
+        { status: 400 },
       );
     }
 
-    const hour = await prisma.hour.create({
-      data: {
-        specialDayId: day.id,
-        openTime: openTime,
-        closeTime: closeTime,
-        title: body.title,
-        note: body.note,
+    /*
+     * Find every corresponding synced day.
+     *
+     * Always include the selected day itself in case
+     * its stored isSynced value is currently false.
+     */
+    const syncedDays = await prisma.locationDay.findMany({
+      where: {
+        syncGroupId: day.syncGroupId,
+
+        OR: [{ isSynced: true }, { id: day.id }],
       },
       select: {
         id: true,
-        regularDayId: true,
-        specialDayId: true,
-        openTime: true,
-        closeTime: true,
-        title: true,
-        note: true,
-        isDisabled: true,
-        createdAt: true,
-        updatedAt: true,
+
+        hour: {
+          select: {
+            id: true,
+          },
+        },
+
+        specialHours: {
+          select: {
+            id: true,
+            openTime: true,
+            closeTime: true,
+          },
+        },
       },
     });
 
-    return NextResponse.json(hour, { status: 201 });
+    /*
+     * Regular Hours:
+     * every participating day must be free because
+     * each day may only have one regular Hour.
+     */
+    if (!body.isSpecial) {
+      const dayWithRegularHour = syncedDays.find(
+        (selectedDay) => selectedDay.hour,
+      );
+
+      if (dayWithRegularHour) {
+        return NextResponse.json(
+          {
+            error:
+              "Regular hours already exist for one or more synchronized days",
+          },
+          { status: 409 },
+        );
+      }
+    }
+
+    /*
+     * Special Hours:
+     * check every participating parent day for overlap
+     * before creating anything.
+     */
+    if (body.isSpecial) {
+      for (const selectedDay of syncedDays) {
+        const conflictingHour = selectedDay.specialHours.find((hour) =>
+          checkTimeOverlap(openTime, closeTime, hour.openTime, hour.closeTime),
+        );
+
+        if (conflictingHour) {
+          return NextResponse.json(
+            {
+              error: `The selected time conflicts with existing special hours ${conflictingHour.openTime} - ${conflictingHour.closeTime}`,
+            },
+            { status: 409 },
+          );
+        }
+      }
+    }
+
+    /*
+     * One Hour synchronization group for this logical
+     * regular/special hour across all participating days.
+     */
+    const syncGroupId = crypto.randomUUID();
+
+    const createdHours = await prisma.hour.createMany({
+      data: syncedDays.map((selectedDay) => ({
+        regularDayId: body.isSpecial ? null : selectedDay.id,
+        specialDayId: body.isSpecial ? selectedDay.id : null,
+        openTime,
+        closeTime,
+        title: body.title,
+        note: body.note,
+        syncGroupId,
+        isSynced: true,
+      })),
+    });
+
+    return NextResponse.json(
+      {
+        message: "Synchronized hours created successfully",
+        count: createdHours.count,
+        syncGroupId,
+      },
+      { status: 201 },
+    );
   } catch (error) {
     console.error("Failed to create location hours:", error);
 
