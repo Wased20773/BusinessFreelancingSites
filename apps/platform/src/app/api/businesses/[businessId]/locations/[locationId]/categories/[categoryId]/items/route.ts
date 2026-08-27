@@ -1,25 +1,31 @@
+import {
+  createSlug,
+  getNextOrder,
+  validateBusinessLocationParams,
+} from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
-import { createSlug, getNextOrder } from "../../../../route_helper";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
-// POST /api/admin/categories/[categoryId]/items
+// POST /api/businesses/[businessId]/locations/[locationId]/categories/[categoryId]/items
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ categoryId: string }> },
+  {
+    params,
+  }: {
+    params: Promise<{
+      businessId: string;
+      locationId: string;
+      categoryId: string;
+    }>;
+  },
 ): Promise<NextResponse> {
   try {
-    const authResult = await authenticateBusinessAccess(request, [
-      AccessLevel.owner,
-      AccessLevel.admin,
-    ]);
+    const { businessId, locationId, categoryId } = await params;
+    const paramsError = validateBusinessLocationParams(businessId, locationId);
 
-    if (authResult instanceof NextResponse) return authResult;
-
-    const { businessId } = authResult;
-    const { categoryId } = await params;
-    const body = await request.json();
+    if (paramsError) return paramsError;
 
     if (!categoryId) {
       return NextResponse.json(
@@ -27,6 +33,15 @@ export async function POST(
         { status: 400 },
       );
     }
+
+    const authResult = await authenticateBusinessAccess(request, businessId, [
+      AccessLevel.owner,
+      AccessLevel.admin,
+    ]);
+
+    if (authResult instanceof NextResponse) return authResult;
+
+    const body = await request.json();
 
     if (!body.name) {
       return NextResponse.json({ error: "Missing item name" }, { status: 400 });
@@ -39,35 +54,168 @@ export async function POST(
       );
     }
 
+    if (typeof body.isSynced !== "boolean") {
+      return NextResponse.json(
+        { error: "Synchronization setting was not found" },
+        { status: 400 },
+      );
+    }
+
+    const slug = createSlug(body.name);
+
+    /*
+     * Get the selected parent Category.
+     *
+     * We need its syncGroupId so synchronized Items can
+     * be attached to the corresponding Category at each location.
+     */
     const category = await prisma.category.findFirst({
       where: {
         id: categoryId,
-        businessId: businessId,
+        locationId,
       },
       select: {
         id: true,
+        locationId: true,
+        syncGroupId: true,
       },
     });
 
     if (!category) {
       return NextResponse.json(
         { error: "This category does not exist in our records" },
-        { status: 404 },
+        { status: 400 },
       );
     }
 
-    const nextOrder = await getNextOrder(prisma.item, {
-      categoryId: category.id,
+    // ############################
+    // ##### SINGLE LOCATION ######
+    // ############################
+
+    if (!body.isSynced) {
+      /*
+       * Item slugs are unique within the location.
+       */
+      const existingItem = await prisma.item.findFirst({
+        where: {
+          locationId,
+          slug,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (existingItem) {
+        return NextResponse.json(
+          {
+            error: "An item with this name already exists in this location",
+          },
+          { status: 409 },
+        );
+      }
+
+      const nextOrder = await getNextOrder(prisma.item, {
+        categoryId: category.id,
+      });
+
+      if (nextOrder instanceof NextResponse) {
+        return nextOrder;
+      }
+
+      const item = await prisma.item.create({
+        data: {
+          locationId,
+          categoryId: category.id,
+          name: body.name,
+          description: body.description,
+          containsList: body.containsList,
+          calories: body.calories,
+          price: body.price,
+          order: nextOrder,
+          isAvailable: body.isAvailable,
+          slug,
+          syncGroupId: null,
+          isSynced: false,
+        },
+
+        select: {
+          id: true,
+          locationId: true,
+          categoryId: true,
+          name: true,
+          description: true,
+          containsList: true,
+          calories: true,
+          price: true,
+          order: true,
+          isAvailable: true,
+          slug: true,
+          imageKey: true,
+          syncGroupId: true,
+          isSynced: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      return NextResponse.json(item, {
+        status: 201,
+      });
+    }
+
+    // ############################
+    // ##### SYNCHRONIZED #########
+    // ############################
+
+    /*
+     * The Item cannot be copied to corresponding Categories
+     * if the selected parent has no synchronization group.
+     */
+    if (!category.syncGroupId) {
+      return NextResponse.json(
+        { error: "This category does not belong to a synchronization group" },
+        { status: 400 },
+      );
+    }
+
+    /*
+     * Find the corresponding parent Categories at each location.
+     *
+     * Include:
+     * - currently synced Categories
+     * - the selected Category itself
+     *
+     * This allows an Item to be created from the selected
+     * Category even if that Category currently has isSynced false.
+     */
+    const parentCategories = await prisma.category.findMany({
+      where: {
+        syncGroupId: category.syncGroupId,
+
+        OR: [{ isSynced: true }, { id: category.id }],
+      },
+      select: {
+        id: true,
+        locationId: true,
+      },
     });
 
-    if (nextOrder instanceof NextResponse) return nextOrder;
-
-    const slug = createSlug(body.name);
-
+    /*
+     * Before creating anything, make sure this Item slug
+     * does not already exist at any participating location.
+     *
+     * This prevents createMany from partially conflicting
+     * with location-level Item slug uniqueness.
+     */
     const existingItem = await prisma.item.findFirst({
       where: {
-        categoryId: category.id,
         slug,
+        locationId: {
+          in: parentCategories.map(
+            (parentCategory) => parentCategory.locationId,
+          ),
+        },
       },
       select: {
         id: true,
@@ -77,45 +225,74 @@ export async function POST(
     if (existingItem) {
       return NextResponse.json(
         {
-          error: "An item with this name already exists in this category",
+          error:
+            "An item with this name already exists in one or more synchronized locations",
         },
         { status: 409 },
       );
     }
 
-    const item = await prisma.item.create({
-      data: {
-        businessId: businessId,
-        categoryId: category.id,
+    /*
+     * Get each parent's current highest Item order in one query.
+     *
+     * Ordering stays completely independent between locations.
+     */
+    const existingOrders = await prisma.item.groupBy({
+      by: ["categoryId"],
+      where: {
+        categoryId: {
+          in: parentCategories.map((parentCategory) => parentCategory.id),
+        },
+      },
+      _max: {
+        order: true,
+      },
+    });
+
+    const orderByCategoryId = new Map(
+      existingOrders.map((result) => [
+        result.categoryId,
+        result._max.order ?? 0,
+      ]),
+    );
+
+    /*
+     * One logical Item across the participating locations.
+     */
+    const syncGroupId = crypto.randomUUID();
+
+    const createdItems = await prisma.item.createMany({
+      data: parentCategories.map((parentCategory) => ({
+        locationId: parentCategory.locationId,
+        categoryId: parentCategory.id,
         name: body.name,
         description: body.description,
         containsList: body.containsList,
         calories: body.calories,
         price: body.price,
-        order: nextOrder,
+
+        /*
+         * Each parent Category receives its own next order.
+         */
+        order: (orderByCategoryId.get(parentCategory.id) ?? 0) + 1,
+
         isAvailable: body.isAvailable,
-        slug: slug,
-      },
-      select: {
-        id: true,
-        categoryId: true,
-        name: true,
-        description: true,
-        containsList: true,
-        calories: true,
-        price: true,
-        order: true,
-        isAvailable: true,
-        slug: true,
-        imageKey: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+        slug,
+        syncGroupId,
+        isSynced: true,
+      })),
     });
 
-    return NextResponse.json(item, { status: 201 });
+    return NextResponse.json(
+      {
+        message: "Synchronized category items created successfully",
+        count: createdItems.count,
+        syncGroupId,
+      },
+      { status: 201 },
+    );
   } catch (error) {
-    console.error("Failed to create category item", error);
+    console.error("Failed to create category item:", error);
 
     return NextResponse.json(
       { error: "Failed to create category item" },
