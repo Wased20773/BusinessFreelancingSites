@@ -1,23 +1,27 @@
+import { validateBusinessLocationParams } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
-// PATCH /api/admin/categories/[categoryId]/move-up
+// PATCH /api/businesses/[businessId]/locations/[locationId]/categories/[categoryId]/move-up
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ categoryId: string }> },
+  {
+    params,
+  }: {
+    params: Promise<{
+      businessId: string;
+      locationId: string;
+      categoryId: string;
+    }>;
+  },
 ): Promise<NextResponse> {
   try {
-    const authResult = await authenticateBusinessAccess(request, [
-      AccessLevel.owner,
-      AccessLevel.admin,
-    ]);
+    const { businessId, locationId, categoryId } = await params;
+    const paramsError = validateBusinessLocationParams(businessId, locationId);
 
-    if (authResult instanceof NextResponse) return authResult;
-
-    const { businessId } = authResult;
-    const { categoryId } = await params;
+    if (paramsError) return paramsError;
 
     if (!categoryId) {
       return NextResponse.json(
@@ -26,11 +30,18 @@ export async function PATCH(
       );
     }
 
-    // Find the category selected
+    const authResult = await authenticateBusinessAccess(request, businessId, [
+      AccessLevel.owner,
+      AccessLevel.admin,
+    ]);
+
+    if (authResult instanceof NextResponse) return authResult;
+
+    // Find the selected category.
     const currentCategory = await prisma.category.findFirst({
       where: {
         id: categoryId,
-        businessId,
+        locationId,
       },
       select: {
         id: true,
@@ -42,14 +53,19 @@ export async function PATCH(
     if (!currentCategory) {
       return NextResponse.json(
         { error: "This category does not exist in our records" },
-        { status: 404 },
+        { status: 400 },
       );
     }
 
-    // Find the FIRST category with a lower order value from the selected category
+    /*
+     * Find the closest category above this one.
+     *
+     * locationId keeps ordering local to this location.
+     * parentId makes sure categories only move among siblings.
+     */
     const aboveCategory = await prisma.category.findFirst({
       where: {
-        businessId: businessId,
+        locationId,
         parentId: currentCategory.parentId,
         order: {
           lt: currentCategory.order,
@@ -71,21 +87,10 @@ export async function PATCH(
       );
     }
 
-    // Temps for order values
     const currentOrder = currentCategory.order;
     const aboveOrder = aboveCategory.order;
 
-    // Swap order values from the two categories using a transaction.
-    // $transaction returns an array of results in the same order as the queries.
-    //
-    // Example:
-    // const results = await prisma.$transaction([
-    //     prisma.category.update(...), // result at index 0
-    //     prisma.category.update(...), // result at index 1
-    // ]);
-    //
-    // const [resultOne] grabs only index 0.
-    // const [resultOne, resultTwo] grabs index 0 and index 1.
+    // Swap the two local order values.
     const [updatedCategory] = await prisma.$transaction([
       prisma.category.update({
         where: {
@@ -96,12 +101,18 @@ export async function PATCH(
         },
         select: {
           id: true,
+          locationId: true,
+          parentId: true,
           name: true,
           description: true,
           order: true,
           isVisible: true,
+          syncGroupId: true,
+          isSynced: true,
+          updatedAt: true,
         },
       }),
+
       prisma.category.update({
         where: {
           id: aboveCategory.id,
@@ -112,7 +123,9 @@ export async function PATCH(
       }),
     ]);
 
-    return NextResponse.json(updatedCategory, { status: 200 });
+    return NextResponse.json(updatedCategory, {
+      status: 200,
+    });
   } catch (error) {
     console.error("Failed to move category up:", error);
 
