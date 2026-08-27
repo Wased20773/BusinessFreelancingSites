@@ -66,6 +66,7 @@ type LocationResourceName =
   | "location"
   | "menu"
   | "item"
+  | "item option"
   | "social"
   | "schedule";
 
