@@ -8,18 +8,34 @@ type CreateApiKeyBody = {
   name?: unknown;
 };
 
-// GET /api/admin/api-keys
-export async function GET(request: Request): Promise<NextResponse> {
+// GET /api/businesses/[businessId]/api-keys
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ businessId: string }> },
+): Promise<NextResponse> {
   try {
-    const authentication = await authenticateBusinessAccess(request, [
-      AccessLevel.developer,
-    ]);
+    const { businessId } = await params;
 
-    if (authentication instanceof NextResponse) return authentication;
+    if (!businessId) {
+      return NextResponse.json(
+        { error: "Missing businessId" },
+        { status: 400 },
+      );
+    }
+
+    const authentication = await authenticateBusinessAccess(
+      request,
+      businessId,
+      [AccessLevel.developer],
+    );
+
+    if (authentication instanceof NextResponse) {
+      return authentication;
+    }
 
     const apiKeys = await prisma.businessApiKey.findMany({
       where: {
-        businessId: authentication.businessId,
+        businessId,
       },
       select: {
         id: true,
@@ -34,25 +50,43 @@ export async function GET(request: Request): Promise<NextResponse> {
       },
     });
 
-    return NextResponse.json(apiKeys);
+    return NextResponse.json(apiKeys, { status: 200 });
   } catch (error) {
     console.error("Failed to retrieve business API keys:", error);
 
     return NextResponse.json(
-      { error: "Failed to retrieve business API keys" },
+      {
+        error: "Failed to retrieve business API keys",
+      },
       { status: 500 },
     );
   }
 }
 
-// POST /api/admin/api-keys
-export async function POST(request: Request): Promise<NextResponse> {
+// POST /api/businesses/[businessId]/api-keys
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ businessId: string }> },
+): Promise<NextResponse> {
   try {
-    const authentication = await authenticateBusinessAccess(request, [
-      AccessLevel.developer,
-    ]);
+    const { businessId } = await params;
 
-    if (authentication instanceof NextResponse) return authentication;
+    if (!businessId) {
+      return NextResponse.json(
+        { error: "Missing businessId" },
+        { status: 400 },
+      );
+    }
+
+    const authentication = await authenticateBusinessAccess(
+      request,
+      businessId,
+      [AccessLevel.developer],
+    );
+
+    if (authentication instanceof NextResponse) {
+      return authentication;
+    }
 
     const body = (await request.json()) as CreateApiKeyBody;
 
@@ -64,10 +98,14 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     const createdKey = await createBusinessApiKey({
-      businessId: authentication.businessId,
+      businessId,
       name: body.name.trim(),
     });
 
+    /*
+     * The complete credential is intentionally
+     * returned only when the key is created.
+     */
     return NextResponse.json(
       {
         apiKey: createdKey.apiKey,

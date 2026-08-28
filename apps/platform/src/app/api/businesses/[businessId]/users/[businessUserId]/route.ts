@@ -3,30 +3,40 @@ import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
-// PATCH /api/admin/business-users/[businessUserId]
+// PATCH /api/businesses/[businessId]/users/[businessUserId]
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ businessUserId: string }> },
+  {
+    params,
+  }: { params: Promise<{ businessId: string; businessUserId: string }> },
 ): Promise<NextResponse> {
   try {
-    const authResult = await authenticateBusinessAccess(request, [
-      AccessLevel.owner,
-      AccessLevel.admin,
-    ]);
+    const { businessId, businessUserId } = await params;
 
-    if (authResult instanceof NextResponse) return authResult;
+    if (!businessId) {
+      return NextResponse.json(
+        { error: "Missing businessId" },
+        { status: 400 },
+      );
+    }
 
-    const { businessId } = authResult;
-    const { businessUserId } = await params;
-    const body = await request.json();
-
-    // Verify everything has been passed in
     if (!businessUserId) {
       return NextResponse.json(
         { error: "Missing businessUserId" },
         { status: 400 },
       );
     }
+
+    const authResult = await authenticateBusinessAccess(request, businessId, [
+      AccessLevel.owner,
+      AccessLevel.admin,
+    ]);
+
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+
+    const body = await request.json();
 
     if (!body.accessLevel) {
       return NextResponse.json(
@@ -42,11 +52,12 @@ export async function PATCH(
       );
     }
 
-    // Grab the role from the body
+    // Grab the selected role
     const role = await prisma.role.findFirst({
       where: {
         accessLevel: body.accessLevel,
       },
+
       select: {
         id: true,
       },
@@ -59,7 +70,7 @@ export async function PATCH(
       );
     }
 
-    // 1. Verify this BusinessUser belongs to the authenticated business
+    // Verify this BusinessUser belongs to this business
     const businessUser = await prisma.businessUser.findFirst({
       where: {
         id: businessUserId,
@@ -77,7 +88,7 @@ export async function PATCH(
       );
     }
 
-    // 2. Update by unique ID and return the updated contents
+    // Update the user's role inside this business
     const updatedBusinessUser = await prisma.businessUser.update({
       where: {
         id: businessUser.id,
@@ -91,6 +102,19 @@ export async function PATCH(
       },
       select: {
         id: true,
+        businessId: true,
+        userId: true,
+        roleId: true,
+        updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            email: true,
+            image: true,
+          },
+        },
         role: {
           select: {
             id: true,
@@ -112,33 +136,55 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/admin/business-users/[businessUserId]
+// DELETE /api/businesses/[businessId]/users/[businessUserId]
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ businessUserId: string }> },
+  {
+    params,
+  }: {
+    params: Promise<{
+      businessId: string;
+      businessUserId: string;
+    }>;
+  },
 ): Promise<NextResponse> {
   try {
-    const authResult = await authenticateBusinessAccess(request, [
-      AccessLevel.owner,
-      AccessLevel.admin,
-    ]);
+    const { businessId, businessUserId } = await params;
 
-    if (authResult instanceof NextResponse) return authResult;
+    if (!businessId) {
+      return NextResponse.json(
+        { error: "Missing businessId" },
+        { status: 400 },
+      );
+    }
 
-    const { businessId } = authResult;
-    const { businessUserId } = await params;
-
-    if (!businessUserId)
+    if (!businessUserId) {
       return NextResponse.json(
         { error: "Missing businessUserId" },
         { status: 400 },
       );
+    }
 
-    // Using 'deleteMany()' to get a count rather than a thrown error from prisma 'delete()'
+    const authResult = await authenticateBusinessAccess(request, businessId, [
+      AccessLevel.owner,
+      AccessLevel.admin,
+    ]);
+
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+
+    /*
+     * deleteMany is intentional here.
+     *
+     * It lets us scope the deletion to BOTH the BusinessUser ID
+     * and the businessId while also receiving a count when nothing
+     * matched instead of relying on Prisma throwing an error.
+     */
     const deletedBusinessUser = await prisma.businessUser.deleteMany({
       where: {
         id: businessUserId,
-        businessId: businessId,
+        businessId,
       },
     });
 

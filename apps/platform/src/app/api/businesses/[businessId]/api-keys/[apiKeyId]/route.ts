@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { AccessLevel } from "@business-freelancer/database";
-
 import { prisma } from "@/lib/prisma";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 
 type RouteContext = {
   params: Promise<{
+    businessId: string;
     apiKeyId: string;
   }>;
 };
@@ -15,19 +15,35 @@ type UpdateApiKeyBody = {
   isActive?: unknown;
 };
 
-// PATCH /api/admin/api-keys/[apiKeyId]
+// PATCH /api/businesses/[businessId]/api-keys/[apiKeyId]
 export async function PATCH(
   request: Request,
   context: RouteContext,
 ): Promise<NextResponse> {
   try {
-    const authentication = await authenticateBusinessAccess(request, [
-      AccessLevel.developer,
-    ]);
+    const { businessId, apiKeyId } = await context.params;
 
-    if (authentication instanceof NextResponse) return authentication;
+    if (!businessId) {
+      return NextResponse.json(
+        { error: "Missing businessId" },
+        { status: 400 },
+      );
+    }
 
-    const { apiKeyId } = await context.params;
+    if (!apiKeyId) {
+      return NextResponse.json({ error: "Missing apiKeyId" }, { status: 400 });
+    }
+
+    const authentication = await authenticateBusinessAccess(
+      request,
+      businessId,
+      [AccessLevel.developer],
+    );
+
+    if (authentication instanceof NextResponse) {
+      return authentication;
+    }
+
     const body = (await request.json()) as UpdateApiKeyBody;
 
     const updateData: {
@@ -64,18 +80,22 @@ export async function PATCH(
       );
     }
 
+    // Make sure this API key actually belongs
+    // to the selected business.
     const existingKey = await prisma.businessApiKey.findFirst({
       where: {
         id: apiKeyId,
-        businessId: authentication.businessId,
+        businessId,
       },
+
       select: {
         id: true,
       },
     });
 
-    if (!existingKey)
+    if (!existingKey) {
       return NextResponse.json({ error: "API key not found" }, { status: 404 });
+    }
 
     const updatedKey = await prisma.businessApiKey.update({
       where: {
@@ -92,7 +112,7 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(updatedKey);
+    return NextResponse.json(updatedKey, { status: 200 });
   } catch (error) {
     console.error("Failed to update business API key:", error);
 
@@ -103,28 +123,43 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/admin/api-keys/[apiKeyId]
+// DELETE /api/businesses/[businessId]/api-keys/[apiKeyId]
 export async function DELETE(
   request: Request,
   context: RouteContext,
 ): Promise<NextResponse> {
   try {
-    const authentication = await authenticateBusinessAccess(request, [
-      AccessLevel.owner,
-      AccessLevel.admin,
-    ]);
+    const { businessId, apiKeyId } = await context.params;
+
+    if (!businessId) {
+      return NextResponse.json(
+        { error: "Missing businessId" },
+        { status: 400 },
+      );
+    }
+
+    if (!apiKeyId) {
+      return NextResponse.json({ error: "Missing apiKeyId" }, { status: 400 });
+    }
+
+    const authentication = await authenticateBusinessAccess(
+      request,
+      businessId,
+      [AccessLevel.owner, AccessLevel.admin],
+    );
 
     if (authentication instanceof NextResponse) {
       return authentication;
     }
 
-    const { apiKeyId } = await context.params;
-
+    // Make sure this API key actually belongs
+    // to the selected business.
     const existingKey = await prisma.businessApiKey.findFirst({
       where: {
         id: apiKeyId,
-        businessId: authentication.businessId,
+        businessId,
       },
+
       select: {
         id: true,
       },
@@ -140,9 +175,10 @@ export async function DELETE(
       },
     });
 
-    return NextResponse.json({
-      message: "API key deleted successfully",
-    });
+    return NextResponse.json(
+      { message: "API key deleted successfully" },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("Failed to delete business API key:", error);
 

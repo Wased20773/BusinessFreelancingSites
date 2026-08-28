@@ -156,11 +156,11 @@ export async function POST(
     }
 
     /*
-     * Your current schema has:
+     * Schema has:
      *
      * @@unique([businessId, address])
      *
-     * so check before attempting to create it.
+     * so check that before attempting to create it.
      */
     const existingLocation = await prisma.location.findUnique({
       where: {
