@@ -119,6 +119,7 @@ export async function POST(
             locationId: location.id,
             dayOfWeek: day.dayOfWeek,
             isClosed: day.isClosed,
+            isSynced: true,
             syncGroupId: daySyncGroups.get(day.dayOfWeek),
           })),
         ),

@@ -20,7 +20,7 @@ export default function LocationInfo({
       <div className="flex justify-between items-center">
         <h2 id="location-info-heading">Location Information</h2>
 
-        <Link href={`${locationId}/edit`} className="shrink-0">
+        <Link href="location/edit" className="shrink-0">
           <Image
             src={EditIcon}
             alt=""

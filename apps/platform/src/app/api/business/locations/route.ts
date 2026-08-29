@@ -6,12 +6,16 @@ import { prisma } from "@/lib/prisma";
 // GET /api/business/locations
 export async function GET(request: Request): Promise<NextResponse> {
   try {
-    const authentication = await authenticateBusinessReadAccess(request, [
-      AccessLevel.developer,
-      AccessLevel.owner,
-      AccessLevel.admin,
-      AccessLevel.staff,
-    ]);
+    const authentication = await authenticateBusinessReadAccess(
+      request,
+      [
+        AccessLevel.developer,
+        AccessLevel.owner,
+        AccessLevel.admin,
+        AccessLevel.staff,
+      ],
+      { requireLocation: false },
+    );
 
     if (authentication instanceof NextResponse) return authentication;
 
@@ -19,14 +23,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       where: {
         businessId: authentication.businessId,
       },
-      orderBy: [
-        {
-          isActive: "desc",
-        },
-        {
-          createdAt: "asc",
-        },
-      ],
+      orderBy: [{ isActive: "desc" }, { createdAt: "asc" }],
       select: {
         id: true,
         address: true,

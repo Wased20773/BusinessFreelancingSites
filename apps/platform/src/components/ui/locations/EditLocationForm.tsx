@@ -1,5 +1,5 @@
 import { LocationJson } from "@/types/types";
-import { InputEvent, SubmitEvent } from "react";
+import { Dispatch, InputEvent, SetStateAction, SubmitEvent } from "react";
 import "@/app/dashboard/(protected)/page.css";
 import RequiredField from "../RequiredField";
 
@@ -12,7 +12,7 @@ type EditLocationFormProps = {
   canSubmit: boolean;
   isSaving: boolean;
   isDeleting: boolean;
-  handleDelete(): Promise<void>;
+  handleDelete(): void;
 };
 
 export default function EditCategoryForm({

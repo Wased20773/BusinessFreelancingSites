@@ -5,23 +5,27 @@ import EditIcon from "@/components/icons/edit.svg";
 import type { LocationJson } from "@/types/types";
 import Image from "next/image";
 import Link from "next/link";
-import { MouseEvent } from "react";
+import { useState } from "react";
 
 type CreateDaysFormProps = {
-  locationId: string;
   locationData: LocationJson;
+  hasMultipleLocations: boolean;
   isActivatingDays: boolean;
-  activateBusinessDays(event: MouseEvent<HTMLButtonElement>): Promise<void>;
+  isDeleting: boolean;
+  activateBusinessDays: (isSynced: boolean) => Promise<void>;
   handleRemoveBusinessDays: () => Promise<void>;
 };
 
 export default function CreateDaysForm({
-  locationId,
   locationData,
+  hasMultipleLocations,
   isActivatingDays,
+  isDeleting,
   activateBusinessDays,
   handleRemoveBusinessDays,
 }: CreateDaysFormProps) {
+  const [syncBusinessDays, setSyncBusinessDays] = useState<boolean>(false);
+
   const hasBusinessDays = locationData.days.length > 0;
 
   return (
@@ -44,7 +48,7 @@ export default function CreateDaysForm({
 
         {hasBusinessDays && (
           <Link
-            href={`${locationId}/days/edit`}
+            href={"location/days/edit"}
             className="shrink-0"
             aria-label="Edit business days"
           >
@@ -66,17 +70,45 @@ export default function CreateDaysForm({
             open or closed.
           </p>
 
+          {hasMultipleLocations && (
+            <label
+              htmlFor="sync-business-days"
+              className="flex items-start gap-2 cursor-pointer mt-4"
+            >
+              <input
+                id="sync-business-days"
+                name="sync-business-days"
+                type="checkbox"
+                className="mt-1"
+                checked={syncBusinessDays}
+                onChange={(event) => setSyncBusinessDays(event.target.checked)}
+                disabled={isActivatingDays}
+              />
+
+              <span>
+                <span className="font-semibold block">
+                  Add to all locations
+                </span>
+
+                <span className="text-sm text-gray-500">
+                  Create these business days for the other locations and keep
+                  them synchronized.
+                </span>
+              </span>
+            </label>
+          )}
+
           <button
             className="w-full sm:w-[50%] sm:mx-auto md:w-fit md:ml-auto md:mr-0 block bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1 mt-5 disabled:opacity-50 disabled:cursor-not-allowed"
             type="button"
             disabled={isActivatingDays}
-            onClick={activateBusinessDays}
+            onClick={() => void activateBusinessDays(syncBusinessDays)}
           >
             {isActivatingDays ? "Activating..." : "Activate Business Days"}
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 mt-3">
           <p>Manage which days this location is open or closed.</p>
 
           <div className="flex flex-col">
@@ -86,18 +118,18 @@ export default function CreateDaysForm({
                 className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0"
               >
                 <p className="font-semibold">{day.dayOfWeek}</p>
-
                 <p>{day.isClosed ? "Closed" : "Open"}</p>
               </div>
             ))}
           </div>
 
           <button
-            className="w-fit bg-red-200 border-[0.1rem] border-red-500 rounded-md px-2 py-1 text-red-500"
+            className="w-fit bg-red-200 border-[0.1rem] border-red-500 rounded-md px-2 py-1 text-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
             type="button"
-            onClick={handleRemoveBusinessDays}
+            disabled={isDeleting}
+            onClick={() => void handleRemoveBusinessDays()}
           >
-            Remove Business Days
+            {isDeleting ? "Removing..." : "Remove Business Days"}
           </button>
         </div>
       )}

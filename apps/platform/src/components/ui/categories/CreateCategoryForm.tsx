@@ -1,5 +1,5 @@
 import ChevronIcon from "@/components/icons/chevron";
-import { InputEvent, SubmitEvent } from "react";
+import { Dispatch, InputEvent, SetStateAction, SubmitEvent } from "react";
 import RequiredField from "../RequiredField";
 
 type CreateCategoryFormProps = {
@@ -9,6 +9,9 @@ type CreateCategoryFormProps = {
   errorMessage: string | null;
   canSubmit: boolean;
   legend: string;
+  isSynced: boolean;
+  isCreating: boolean;
+  setIsSynced: Dispatch<SetStateAction<boolean>>;
   latestOrder: number;
 };
 
@@ -19,6 +22,9 @@ export default function CreateCategoryForm({
   isLoading,
   canSubmit,
   latestOrder,
+  isSynced,
+  isCreating,
+  setIsSynced,
   errorMessage,
 }: CreateCategoryFormProps) {
   return (
@@ -82,6 +88,30 @@ export default function CreateCategoryForm({
       <p className="w-fit border-[0.1rem] border-b-[0.2rem] rounded-lg border-gray-400 bg-gray-100 px-3 py-2">
         Display Order: {latestOrder}
       </p>
+
+      <label
+        htmlFor="apply-to-synced"
+        className="flex items-start gap-2 cursor-pointer"
+      >
+        <input
+          id="apply-to-synced"
+          name="apply-to-synced"
+          type="checkbox"
+          className="mt-1"
+          checked={isSynced}
+          onChange={(event) => setIsSynced(event.target.checked)}
+          disabled={isCreating}
+        />
+
+        <span>
+          <span className="font-semibold block">Apply to all locations</span>
+
+          <span className="text-sm text-gray-500">
+            All locations will get there own version of this category and will
+            stay in sync between updates.
+          </span>
+        </span>
+      </label>
 
       {errorMessage && <p role="alert">{errorMessage}</p>}
 

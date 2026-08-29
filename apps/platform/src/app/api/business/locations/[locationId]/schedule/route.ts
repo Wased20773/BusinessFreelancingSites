@@ -46,8 +46,15 @@ export async function GET(
       },
       select: {
         id: true,
+        businessId: true,
+        address: true,
+        zip: true,
+        country: true,
+        state: true,
+        city: true,
+        parking: true,
+        isActive: true,
         enableHours: true,
-
         days: {
           select: {
             id: true,
@@ -56,7 +63,6 @@ export async function GET(
             isClosed: true,
             createdAt: true,
             updatedAt: true,
-
             hour: {
               select: {
                 id: true,
@@ -70,7 +76,6 @@ export async function GET(
                 updatedAt: true,
               },
             },
-
             specialHours: {
               orderBy: {
                 openTime: "asc",

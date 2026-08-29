@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import "./SideBar.css";
 import Logo from "../../../../public/logo.svg";
-import { usePathname } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { dashboardLinks } from "@/data/dashboardLinks";
 import PlaceHolderAccountBlack from "@/components/icons/placeholder-account-black.svg";
 import SettingsIconBlack from "@/components/icons/settings-black.svg";
@@ -15,6 +15,16 @@ export default function SideBar({
   currentAccount,
 }: DashboardNavProps) {
   const pathname = usePathname();
+
+  const params = useParams<{
+    businessId: string;
+    locationId: string;
+  }>();
+
+  const businessId = params.businessId;
+  const locationId = params.locationId;
+
+  const links = dashboardLinks(businessId, locationId);
 
   const settingsSelected = pathname === "/dashboard/settings";
 
@@ -40,7 +50,7 @@ export default function SideBar({
         aria-label="Dashboard Navigation"
       >
         <ul className="flex flex-col gap-1">
-          {dashboardLinks.map((link) => {
+          {links.map((link) => {
             const isSelected =
               link.href === "/dashboard"
                 ? pathname === "/dashboard"

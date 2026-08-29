@@ -3,33 +3,40 @@ export type DashboardLink = {
   href: string;
 };
 
-export const dashboardLinks: DashboardLink[] = [
-  {
-    name: "Overview",
-    href: "/dashboard",
-  },
-  {
-    name: "Business",
-    href: "/dashboard/business",
-  },
-  {
-    name: "Users",
-    href: "/dashboard/users",
-  },
-  {
-    name: "Menu",
-    href: "/dashboard/menu",
-  },
-  {
-    name: "Locations",
-    href: "/dashboard/locations",
-  },
-  {
-    name: "Contacts",
-    href: "/dashboard/contacts",
-  },
-  {
-    name: "Socials",
-    href: "/dashboard/socials",
-  },
-];
+export const dashboardLinks = (
+  businessId: string,
+  locationId: string,
+): DashboardLink[] => {
+  const dashboardPath = `/businesses/${businessId}/locations/${locationId}/dashboard`;
+
+  return [
+    {
+      name: "Overview",
+      href: dashboardPath,
+    },
+    {
+      name: "Business",
+      href: `${dashboardPath}/business`,
+    },
+    {
+      name: "Users",
+      href: `${dashboardPath}/users`,
+    },
+    {
+      name: "Menu",
+      href: `${dashboardPath}/menu`,
+    },
+    {
+      name: "Location",
+      href: `${dashboardPath}/location`,
+    },
+    {
+      name: "Contacts",
+      href: `${dashboardPath}/contacts`,
+    },
+    {
+      name: "Socials",
+      href: `${dashboardPath}/socials`,
+    },
+  ];
+};
