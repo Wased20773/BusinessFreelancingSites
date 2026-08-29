@@ -15,15 +15,8 @@ type OrderModel = {
 type SyncModel = {
   findFirst: (args: {
     where: Record<string, unknown>;
-    select: {
-      id: true;
-      syncGroupId: true;
-    };
-  }) => Promise<{
-    id: string;
-    syncGroupId: string | null;
-    isSynced: boolean;
-  } | null>;
+    select: Record<string, unknown>;
+  }) => Promise<Record<string, unknown>>;
 
   create: (args: {
     data: Record<string, unknown>;
@@ -70,7 +63,7 @@ type LocationResourceName =
   | "social"
   | "schedule";
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 /*
  *   Gets the slug from the HTTP request via the search param.
@@ -265,10 +258,7 @@ export async function updateSyncedResource({
       id,
       locationId,
     },
-    select: {
-      id: true,
-      syncGroupId: true,
-    },
+    select,
   });
 
   if (!resource) {
@@ -299,7 +289,10 @@ export async function updateSyncedResource({
     });
 
     return NextResponse.json(
-      { message: `Synchronized ${resourceName}'s updated successfully` },
+      {
+        message: `Synchronized ${resourceName}'s updated successfully`,
+        ...resource,
+      },
       { status: 200 },
     );
   }
@@ -554,7 +547,7 @@ export async function imageRequestValidation(request: Request): Promise<
       );
     }
 
-    if (typeof isSynced !== "boolean") {
+    if (isSynced !== "true" && isSynced !== "false") {
       return NextResponse.json(
         { error: "Synchronization setting was not found" },
         { status: 400 },

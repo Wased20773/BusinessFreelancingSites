@@ -69,7 +69,7 @@ export default function MobileNavBar({
 
       {/* Slide Into View After Clicking Burger Button */}
       <div
-        className={["mobile-nav-group bg-gray-900", isOpen && "open-nav"]
+        className={["mobile-nav-group", isOpen && "open-nav"]
           .filter(Boolean)
           .join(" ")}
       >

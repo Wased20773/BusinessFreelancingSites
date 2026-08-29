@@ -108,9 +108,7 @@ export async function POST(
 
       if (existingItem) {
         return NextResponse.json(
-          {
-            error: "An item with this name already exists in this location",
-          },
+          { error: "An item with this name already exists in this location" },
           { status: 409 },
         );
       }
@@ -261,32 +259,51 @@ export async function POST(
      */
     const syncGroupId = crypto.randomUUID();
 
+    const itemsToCreate = parentCategories.map((parentCategory) => ({
+      id: crypto.randomUUID(),
+      locationId: parentCategory.locationId,
+      categoryId: parentCategory.id,
+      name: body.name,
+      description: body.description,
+      containsList: body.containsList,
+      calories: body.calories,
+      price: body.price,
+
+      /*
+       * Each parent Category receives its own next order.
+       */
+      order: (orderByCategoryId.get(parentCategory.id) ?? 0) + 1,
+
+      isAvailable: body.isAvailable,
+      slug,
+      syncGroupId,
+      isSynced: true,
+    }));
+
+    /**
+     * Grab the Item ID for the location the user is currently
+     * working inside.
+     */
+    const selectedItem = itemsToCreate.find(
+      (item) => item.locationId === locationId,
+    );
+
+    if (!selectedItem) {
+      return NextResponse.json(
+        { error: "Failed to determine the selected location item" },
+        { status: 500 },
+      );
+    }
+
     const createdItems = await prisma.item.createMany({
-      data: parentCategories.map((parentCategory) => ({
-        locationId: parentCategory.locationId,
-        categoryId: parentCategory.id,
-        name: body.name,
-        description: body.description,
-        containsList: body.containsList,
-        calories: body.calories,
-        price: body.price,
-
-        /*
-         * Each parent Category receives its own next order.
-         */
-        order: (orderByCategoryId.get(parentCategory.id) ?? 0) + 1,
-
-        isAvailable: body.isAvailable,
-        slug,
-        syncGroupId,
-        isSynced: true,
-      })),
+      data: itemsToCreate,
     });
 
     return NextResponse.json(
       {
         message: "Synchronized category items created successfully",
         count: createdItems.count,
+        id: selectedItem.id,
         syncGroupId,
       },
       { status: 201 },

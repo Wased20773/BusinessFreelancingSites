@@ -14,14 +14,14 @@ export const dashboardLinks = (
       name: "Overview",
       href: dashboardPath,
     },
-    {
-      name: "Business",
-      href: `${dashboardPath}/business`,
-    },
-    {
-      name: "Users",
-      href: `${dashboardPath}/users`,
-    },
+    // {
+    //   name: "Business",
+    //   href: `${dashboardPath}/business`,
+    // },
+    // {
+    //   name: "Users",
+    //   href: `${dashboardPath}/users`,
+    // },
     {
       name: "Menu",
       href: `${dashboardPath}/menu`,

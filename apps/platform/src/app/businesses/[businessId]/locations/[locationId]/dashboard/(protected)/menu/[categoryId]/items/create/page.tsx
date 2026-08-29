@@ -11,14 +11,22 @@ import type { ItemJson } from "@/types/types";
 import CreateItemForm from "@/components/ui/items/CreateItemForm";
 
 export default function CreateItemPage() {
-  const params = useParams<{ categoryId: string }>();
+  const params = useParams<{
+    businessId: string;
+    locationId: string;
+    categoryId: string;
+  }>();
 
+  const businessId = params.businessId;
+  const locationId = params.locationId;
   const categoryId = params.categoryId;
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
   const [latestOrder, setLatestOrder] = useState<number>(0);
+  const [isSynced, setIsSynced] = useState<boolean>(false);
+  const [hasSyncGroup, setHasSyncGroup] = useState<boolean>(false);
 
   const router = useRouter();
 
@@ -28,9 +36,15 @@ export default function CreateItemPage() {
         const response = await axios.get<{
           categories: {
             id: string;
+            syncGroupId: boolean | null;
             items: ItemJson[];
           }[];
-        }>("/api/business/menu");
+        }>("/api/business/menu", {
+          headers: {
+            "x-business-id": businessId,
+            "x-location-id": locationId,
+          },
+        });
 
         const category = response.data.categories.find(
           (category) => category.id === categoryId,
@@ -46,13 +60,14 @@ export default function CreateItemPage() {
         );
 
         setLatestOrder(highestOrder + 1);
+        setHasSyncGroup(Boolean(category.syncGroupId));
       } catch (error) {
         console.error("Failed to get latest item order:", error);
       }
     }
 
     void getLatestOrder();
-  }, [categoryId]);
+  }, [businessId, locationId, categoryId]);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -73,12 +88,10 @@ export default function CreateItemPage() {
 
     const requestBody = {
       name: typeof name === "string" ? name.trim() : "",
-
       description:
         typeof description === "string" && description.trim()
           ? description.trim()
           : null,
-
       containsList:
         typeof containsList === "string" && containsList.trim()
           ? containsList
@@ -87,15 +100,14 @@ export default function CreateItemPage() {
               .filter(Boolean)
               .map((item) => item.charAt(0).toUpperCase() + item.slice(1))
           : [],
-
       calories:
         typeof calories === "string" && calories !== ""
           ? Number(calories)
           : null,
-
       price: typeof price === "string" && price !== "" ? Number(price) : null,
-
       isAvailable: isAvailable !== null,
+
+      isSynced,
     };
 
     if (!requestBody.name) {
@@ -114,7 +126,7 @@ export default function CreateItemPage() {
       const createItem = async (): Promise<ItemJson> => {
         // Create the item first.
         const itemResponse = await axios.post<ItemJson>(
-          `/api/admin/categories/${categoryId}/items`,
+          `/api/businesses/${businessId}/locations/${locationId}/categories/${categoryId}/items`,
           requestBody,
         );
 
@@ -125,16 +137,29 @@ export default function CreateItemPage() {
           const imageFormData = new FormData();
 
           imageFormData.append("image", image);
+          imageFormData.append("isSynced", String(isSynced));
 
           try {
             await axios.post(
-              `/api/admin/items/${item.id}/image`,
+              `/api/businesses/${businessId}/locations/${locationId}/items/${item.id}/image`,
               imageFormData,
             );
           } catch (error) {
-            console.error("Item created, but image upload failed:", error);
+            if (axios.isAxiosError<{ error?: string }>(error)) {
+              console.error(
+                "Item created, but image upload failed:",
+                error.response?.data,
+              );
 
-            toast.error("Item created, but image upload failed.");
+              toast.error(
+                error.response?.data?.error ??
+                  "Item created, but image upload failed.",
+              );
+            } else {
+              console.error("Item created, but image upload failed:", error);
+
+              toast.error("Item created, but image upload failed.");
+            }
           }
         }
 
@@ -165,7 +190,11 @@ export default function CreateItemPage() {
 
       form.reset();
       setCanSubmit(false);
-      router.push(`/dashboard/menu/${categoryId}`);
+      setIsSynced(false);
+
+      router.push(
+        `/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}`,
+      );
     } catch (error) {
       console.error("Error in Create Item page:", error);
 
@@ -198,7 +227,7 @@ export default function CreateItemPage() {
     <section aria-labelledby="create-item-heading">
       <header className="flex items-center gap-3">
         <Link
-          href={`/dashboard/menu/${categoryId}`}
+          href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}`}
           aria-label="Return to parent category"
         >
           <ArrowIcon direction="left" size={50} />
@@ -216,6 +245,9 @@ export default function CreateItemPage() {
           errorMessage={errorMessage}
           canSubmit={canSubmit}
           latestOrder={latestOrder || 1}
+          hasSyncGroup={hasSyncGroup}
+          isSynced={isSynced}
+          setIsSynced={setIsSynced}
         />
       </div>
     </section>

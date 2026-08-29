@@ -51,10 +51,7 @@ export default function SideBar({
       >
         <ul className="flex flex-col gap-1">
           {links.map((link) => {
-            const isSelected =
-              link.href === "/dashboard"
-                ? pathname === "/dashboard"
-                : pathname.startsWith(link.href);
+            const isSelected = pathname === link.href;
 
             return (
               <li key={link.href}>

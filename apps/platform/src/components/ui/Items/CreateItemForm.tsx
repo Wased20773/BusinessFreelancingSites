@@ -1,6 +1,7 @@
 import ChevronIcon from "@/components/icons/chevron";
-import { InputEvent, SubmitEvent } from "react";
+import { Dispatch, InputEvent, SetStateAction, SubmitEvent } from "react";
 import RequiredField from "../RequiredField";
+import IsSyncedCheckbox from "../IsSyncedCheckbox";
 
 type CreateItemFormProps = {
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
@@ -9,6 +10,9 @@ type CreateItemFormProps = {
   errorMessage: string | null;
   canSubmit: boolean;
   latestOrder: number;
+  hasSyncGroup: boolean;
+  isSynced: boolean;
+  setIsSynced: Dispatch<SetStateAction<boolean>>;
 };
 
 export default function CreateItemForm({
@@ -18,6 +22,9 @@ export default function CreateItemForm({
   errorMessage,
   canSubmit,
   latestOrder,
+  hasSyncGroup,
+  isSynced,
+  setIsSynced,
 }: CreateItemFormProps) {
   return (
     <form
@@ -130,6 +137,18 @@ export default function CreateItemForm({
       <p className="w-fit border-[0.1rem] border-b-[0.2rem] rounded-lg border-gray-400 bg-gray-100 px-3 py-2">
         Display Order: {latestOrder}
       </p>
+
+      <IsSyncedCheckbox
+        hasSyncGroup={hasSyncGroup}
+        htmlFor={"sync-items"}
+        inputName={"sync-items"}
+        isSynced={isSynced}
+        setIsSynced={setIsSynced}
+        isSaving={isLoading}
+        description={
+          "Creates this item for all locations in the same synced category."
+        }
+      />
 
       {errorMessage && <p role="alert">{errorMessage}</p>}
 

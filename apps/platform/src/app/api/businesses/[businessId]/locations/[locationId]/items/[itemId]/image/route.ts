@@ -450,9 +450,7 @@ export async function DELETE(
 
     if (typeof body.deleteAllSynced !== "boolean") {
       return NextResponse.json(
-        {
-          error: "Synchronization setting was not found",
-        },
+        { error: "Synchronization setting was not found" },
         { status: 400 },
       );
     }

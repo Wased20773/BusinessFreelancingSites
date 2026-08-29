@@ -10,9 +10,16 @@ import { InputEvent, SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function EditCategoryPage() {
-  const params = useParams<{ categoryId: string }>();
+  const params = useParams<{
+    businessId: string;
+    locationId: string;
+    categoryId: string;
+  }>();
+
   const router = useRouter();
 
+  const businessId = params.businessId;
+  const locationId = params.locationId;
   const categoryId = params.categoryId;
 
   const [categoryData, setCategoryData] = useState<CategoryJson | null>(null);
@@ -20,6 +27,7 @@ export default function EditCategoryPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [isSynced, setIsSynced] = useState<boolean>(false);
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
@@ -32,7 +40,12 @@ export default function EditCategoryPage() {
       try {
         const categoriesToast = toast.promise<CategoryJson[]>(
           axios
-            .get<{ categories: CategoryJson[] }>("/api/business/categories")
+            .get<{ categories: CategoryJson[] }>("/api/business/categories", {
+              headers: {
+                "x-business-id": businessId,
+                "x-location-id": locationId,
+              },
+            })
             .then((response) => response.data.categories),
           {
             loading: "Loading category...",
@@ -67,6 +80,7 @@ export default function EditCategoryPage() {
         }
 
         setCategoryData(selectedCategory);
+        setIsSynced(selectedCategory.isSynced);
         setCanSubmit(Boolean(selectedCategory.name.trim()));
       } catch (error) {
         console.error("Error in Edit Category page:", error);
@@ -84,7 +98,7 @@ export default function EditCategoryPage() {
     }
 
     void getCategoryData();
-  }, [categoryId]);
+  }, [businessId, locationId, categoryId]);
 
   function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
@@ -107,13 +121,12 @@ export default function EditCategoryPage() {
 
     const requestBody = {
       name: typeof name === "string" ? name.trim() : "",
-
       description:
         typeof description === "string" && description.trim()
           ? description.trim()
           : null,
-
       isVisible: isVisible !== null,
+      isSynced,
     };
 
     if (!requestBody.name || requestBody.name.length === 0) {
@@ -128,7 +141,7 @@ export default function EditCategoryPage() {
       const updateToast = toast.promise<CategoryJson>(
         axios
           .patch<CategoryJson>(
-            `/api/admin/categories/${categoryId}`,
+            `/api/businesses/${businessId}/locations/${locationId}/categories/${categoryId}`,
             requestBody,
           )
           .then((response) => response.data),
@@ -178,7 +191,9 @@ export default function EditCategoryPage() {
     try {
       const deleteToast = toast.promise(
         axios
-          .delete(`/api/admin/categories/${categoryId}`)
+          .delete(
+            `/api/businesses/${businessId}/locations/${locationId}/categories/${categoryId}`,
+          )
           .then((response) => response.data),
         {
           loading: "Deleting category...",
@@ -203,7 +218,9 @@ export default function EditCategoryPage() {
 
       await deleteToast.unwrap();
 
-      router.push("/dashboard/menu");
+      router.push(
+        `/businesses/${businessId}/locations/${locationId}/dashboard/menu`,
+      );
     } catch (error) {
       console.error("Error deleting category:", error);
 
@@ -237,7 +254,7 @@ export default function EditCategoryPage() {
     <section aria-labelledby="edit-category-heading">
       <header className="flex items-center gap-3">
         <Link
-          href={`/dashboard/menu/${categoryData.id}`}
+          href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryData.id}`}
           aria-label="Return to menu"
         >
           <ArrowIcon direction="left" size={50} />
@@ -257,6 +274,8 @@ export default function EditCategoryPage() {
           canSubmit={canSubmit}
           isSaving={isSaving}
           isDeleting={isDeleting}
+          isSynced={isSynced}
+          setIsSynced={setIsSynced}
         />
       </div>
     </section>

@@ -32,6 +32,11 @@ export async function GET(request: Request): Promise<NextResponse> {
             isVisible: true,
             items: true,
             subcategories: true,
+
+            ...(authentication.authenticationType === "session"
+              ? { syncGroupId: true, isSynced: true }
+              : {}),
+
             createdAt: true,
             updatedAt: true,
           },

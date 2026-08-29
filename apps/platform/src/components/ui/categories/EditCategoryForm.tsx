@@ -1,7 +1,8 @@
 import { CategoryJson } from "@/types/types";
-import { InputEvent, SubmitEvent } from "react";
+import { Dispatch, InputEvent, SetStateAction, SubmitEvent } from "react";
 import "@/app/dashboard/(protected)/page.css";
 import RequiredField from "../RequiredField";
+import IsSyncedCheckbox from "../IsSyncedCheckbox";
 
 type EditCategoryFormParams = {
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
@@ -12,6 +13,8 @@ type EditCategoryFormParams = {
   canSubmit: boolean;
   isSaving: boolean;
   isDeleting: boolean;
+  isSynced: boolean;
+  setIsSynced: Dispatch<SetStateAction<boolean>>;
   handleDelete(): Promise<void>;
 };
 
@@ -25,6 +28,8 @@ export default function EditCategoryForm({
   canSubmit,
   isSaving,
   isDeleting,
+  isSynced,
+  setIsSynced,
 }: EditCategoryFormParams) {
   return (
     <form
@@ -84,6 +89,16 @@ export default function EditCategoryForm({
       <p className="w-fit border-[0.1rem] border-b-[0.2rem] rounded-lg border-gray-400 bg-gray-100 px-3 py-2">
         Display Order: {categoryData.order}
       </p>
+
+      <IsSyncedCheckbox
+        hasSyncGroup={Boolean(categoryData.syncGroupId)}
+        htmlFor={"sync-categories"}
+        inputName={"sync-categories"}
+        isSynced={isSynced}
+        setIsSynced={setIsSynced}
+        isSaving={isSaving}
+        description={"Apply changes to synchronized copies across locations"}
+      />
 
       {errorMessage && <p role="alert">{errorMessage}</p>}
 

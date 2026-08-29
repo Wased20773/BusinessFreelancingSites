@@ -17,8 +17,14 @@ import SubcategoriesList from "@/components/ui/subcategories/SubcategoriesList";
 import ItemsList from "@/components/ui/items/ItemsList";
 
 export default function CategoryPage() {
-  const params = useParams<{ categoryId: string }>();
+  const params = useParams<{
+    businessId: string;
+    locationId: string;
+    categoryId: string;
+  }>();
 
+  const businessId = params.businessId;
+  const locationId = params.locationId;
   const categoryId = params.categoryId;
 
   const [categoryData, setCategoryData] = useState<CategoryJson | null>(null);
@@ -33,7 +39,12 @@ export default function CategoryPage() {
       try {
         const categoryToast = toast.promise<CategoryJson[]>(
           axios
-            .get<{ categories: CategoryJson[] }>("/api/business/menu")
+            .get<{ categories: CategoryJson[] }>("/api/business/menu", {
+              headers: {
+                "x-business-id": businessId,
+                "x-location-id": locationId,
+              },
+            })
             .then((response) => response.data.categories),
           {
             loading: "Loading category...",
@@ -84,7 +95,7 @@ export default function CategoryPage() {
     }
 
     void getCategoryData();
-  }, [categoryId]);
+  }, [businessId, locationId, categoryId]);
 
   if (isLoading) {
     return <p>Loading category...</p>;
@@ -102,7 +113,10 @@ export default function CategoryPage() {
     <section aria-labelledby="category-heading">
       {/* HEADER */}
       <header className="flex items-center gap-3">
-        <Link href="/dashboard/menu" aria-label="Return to menu">
+        <Link
+          href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu`}
+          aria-label="Return to menu"
+        >
           <ArrowIcon direction="left" size={50} />
         </Link>
 
@@ -115,7 +129,7 @@ export default function CategoryPage() {
         {/* ACTIONS */}
         <nav className="dashboard-card">
           <ActionItem
-            href={`${categoryId}/items/create`}
+            href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/items/create`}
             icon={CreateButtonIcon}
             label="Create Item"
           />
@@ -123,7 +137,7 @@ export default function CategoryPage() {
           <Divider />
 
           <ActionItem
-            href={`${categoryId}/subcategories/create`}
+            href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/create`}
             icon={CreateButtonIcon}
             label="Create Subcategory"
           />
@@ -143,6 +157,7 @@ export default function CategoryPage() {
           setErrorMessage={setErrorMessage}
           setCategoryData={setCategoryData}
         />
+
         <Divider />
 
         {/* SUBCATEGORIES */}

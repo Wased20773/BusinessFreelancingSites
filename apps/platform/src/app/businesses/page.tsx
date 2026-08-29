@@ -255,7 +255,7 @@ export default function BusinessesPage() {
               <li key={businessUser.id}>
                 <Link
                   className="block h-full border-[0.1rem] border-gray-300 rounded-lg px-4 py-4 hover:border-blue-400 hover:bg-gray-50 transition-colors"
-                  href={`/businesses/${businessUser.business.id}`}
+                  href={`/businesses/${businessUser.business.id}/locations`}
                 >
                   <div className="flex flex-col h-full">
                     <h2 className="font-semibold text-lg">
