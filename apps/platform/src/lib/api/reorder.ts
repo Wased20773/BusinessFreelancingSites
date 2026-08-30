@@ -3,22 +3,25 @@ import axios from "axios";
 export type ReorderContext = "category" | "item" | "itemOption";
 export type ReorderDirection = "up" | "down";
 
-type MoveCategoryParams = {
-  context: "category";
+type MoveBaseParams = {
+  businessId: string;
+  locationId: string;
   direction: ReorderDirection;
+};
+
+type MoveCategoryParams = MoveBaseParams & {
+  context: "category";
   categoryId: string;
 };
 
-type MoveItemParams = {
+type MoveItemParams = MoveBaseParams & {
   context: "item";
-  direction: ReorderDirection;
   categoryId: string;
   itemId: string;
 };
 
-type MoveItemOptionParams = {
+type MoveItemOptionParams = MoveBaseParams & {
   context: "itemOption";
-  direction: ReorderDirection;
   itemId: string;
   optionId: string;
 };
@@ -29,7 +32,7 @@ type MoveParams = MoveCategoryParams | MoveItemParams | MoveItemOptionParams;
 // MOVE UP & DOWN OPERATIONS
 // ----------------------------
 /*
- * Changes the order the selected context is rendered in the frontend. Uses the move-up,
+ * Changes the order the selected context is rendered in the frontend. Uses the move-up
  * and move-down endpoints and the context is decided via a switch block.
  **/
 
@@ -38,13 +41,29 @@ export async function moveOrder(params: MoveParams) {
 
   switch (params.context) {
     case "category":
-      url = `/api/admin/categories/${params.categoryId}/move-${params.direction}`;
+      url =
+        `/api/businesses/${params.businessId}` +
+        `/locations/${params.locationId}` +
+        `/categories/${params.categoryId}` +
+        `/move-${params.direction}`;
       break;
+
     case "item":
-      url = `/api/admin/categories/${params.categoryId}/items/${params.itemId}/move-${params.direction}`;
+      url =
+        `/api/businesses/${params.businessId}` +
+        `/locations/${params.locationId}` +
+        `/categories/${params.categoryId}` +
+        `/items/${params.itemId}` +
+        `/move-${params.direction}`;
       break;
+
     case "itemOption":
-      url = `/api/admin/items/${params.itemId}/options/${params.optionId}/move-${params.direction}`;
+      url =
+        `/api/businesses/${params.businessId}` +
+        `/locations/${params.locationId}` +
+        `/items/${params.itemId}` +
+        `/options/${params.optionId}` +
+        `/move-${params.direction}`;
       break;
   }
 

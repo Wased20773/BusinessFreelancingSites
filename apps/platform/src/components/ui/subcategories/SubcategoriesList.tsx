@@ -143,19 +143,6 @@ export default function SubcategoriesList({
                     </Link>
                   </div>
 
-                  {/* <Link
-                    href={`${categoryId}/subcategories/${subcategory.id}`}
-                    aria-label={`Open ${subcategory.name}`}
-                  >
-                    <Image
-                      src={EditIcon}
-                      alt=""
-                      width={50}
-                      height={50}
-                      aria-hidden="true"
-                    />
-                  </Link> */}
-
                   {categoryData.subcategories?.length !== idx + 1 && (
                     <div className="col-span-2">
                       <Divider />
@@ -168,11 +155,10 @@ export default function SubcategoriesList({
 
           {/* DESKTOP */}
           <div className="hidden overflow-x-auto md:block">
-            <table className="w-full border-collapse text-left">
-              <caption className="sr-only">
-                Subcategories inside {categoryData.name}
-              </caption>
-
+            <table
+              className="w-full border-collapse text-left"
+              aria-labelledby="subcategory-heading"
+            >
               <thead>
                 <tr className="border-b border-gray-600">
                   <th scope="col" className="px-3 py-2 font-semibold">
@@ -187,9 +173,7 @@ export default function SubcategoriesList({
                     Visible
                   </th>
 
-                  <th scope="col" className="w-12 px-3 py-2">
-                    <span className="sr-only">Open subcategory</span>
-                  </th>
+                  <th scope="col" className="w-12 px-3 py-2"></th>
                 </tr>
               </thead>
 

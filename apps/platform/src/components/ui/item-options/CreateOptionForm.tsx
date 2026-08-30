@@ -1,14 +1,21 @@
-import { SubmitEvent } from "react";
+import { Dispatch, SetStateAction, SubmitEvent } from "react";
 import RequiredField from "../RequiredField";
+import IsSyncedCheckbox from "../IsSyncedCheckbox";
 
 type CreateOptionFormParams = {
   handleCreateOption(event: SubmitEvent<HTMLFormElement>): Promise<void>;
   isCreatingOption: boolean;
+  hasSyncGroup: boolean;
+  isSynced: boolean;
+  setIsSynced: Dispatch<SetStateAction<boolean>>;
 };
 
 export default function CreateOptionForm({
   handleCreateOption,
   isCreatingOption,
+  hasSyncGroup,
+  isSynced,
+  setIsSynced,
 }: CreateOptionFormParams) {
   return (
     <form
@@ -52,6 +59,16 @@ export default function CreateOptionForm({
             required
           />
         </div>
+
+        <IsSyncedCheckbox
+          hasSyncGroup={hasSyncGroup}
+          htmlFor={"sync-item-option"}
+          inputName={"sync-item-option"}
+          isSynced={isSynced}
+          setIsSynced={setIsSynced}
+          isSaving={isCreatingOption}
+          description={"Adding synchronization"}
+        />
 
         <button
           className="w-fit ml-auto bg-emerald-300 border-[0.1rem] border-emerald-500 rounded-md text-emerald-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"

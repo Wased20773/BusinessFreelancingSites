@@ -6,7 +6,7 @@ import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
 import { mockPrisma } from "@/__tests__/mocks/prisma";
-import { GET } from "@/app/api/business/menu/items/[itemSlug]/route";
+import { GET } from "@/app/api/business/menu/items/[itemId]/route";
 import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
 
 jest.mock("@/lib/prisma", () => ({

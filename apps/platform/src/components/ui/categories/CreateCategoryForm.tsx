@@ -1,6 +1,7 @@
 import ChevronIcon from "@/components/icons/chevron";
 import { Dispatch, InputEvent, SetStateAction, SubmitEvent } from "react";
 import RequiredField from "../RequiredField";
+import IsSyncedCheckbox from "../IsSyncedCheckbox";
 
 type CreateCategoryFormProps = {
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
@@ -9,10 +10,11 @@ type CreateCategoryFormProps = {
   errorMessage: string | null;
   canSubmit: boolean;
   legend: string;
-  isSynced: boolean;
   isCreating: boolean;
-  setIsSynced: Dispatch<SetStateAction<boolean>>;
   latestOrder: number;
+  isSynced: boolean;
+  setIsSynced: Dispatch<SetStateAction<boolean>>;
+  hasSyncGroup: boolean;
 };
 
 export default function CreateCategoryForm({
@@ -22,10 +24,11 @@ export default function CreateCategoryForm({
   isLoading,
   canSubmit,
   latestOrder,
-  isSynced,
   isCreating,
-  setIsSynced,
   errorMessage,
+  isSynced,
+  setIsSynced,
+  hasSyncGroup,
 }: CreateCategoryFormProps) {
   return (
     <form
@@ -89,29 +92,17 @@ export default function CreateCategoryForm({
         Display Order: {latestOrder}
       </p>
 
-      <label
-        htmlFor="apply-to-synced"
-        className="flex items-start gap-2 cursor-pointer"
-      >
-        <input
-          id="apply-to-synced"
-          name="apply-to-synced"
-          type="checkbox"
-          className="mt-1"
-          checked={isSynced}
-          onChange={(event) => setIsSynced(event.target.checked)}
-          disabled={isCreating}
-        />
-
-        <span>
-          <span className="font-semibold block">Apply to all locations</span>
-
-          <span className="text-sm text-gray-500">
-            All locations will get there own version of this category and will
-            stay in sync between updates.
-          </span>
-        </span>
-      </label>
+      <IsSyncedCheckbox
+        hasSyncGroup={hasSyncGroup}
+        htmlFor={"sync-subcategory"}
+        inputName={"sync-subcategory"}
+        isSynced={isSynced}
+        setIsSynced={setIsSynced}
+        isSaving={isCreating}
+        description={
+          "All locations will get there own version of this subcategory and will stay in sync between updates"
+        }
+      />
 
       {errorMessage && <p role="alert">{errorMessage}</p>}
 

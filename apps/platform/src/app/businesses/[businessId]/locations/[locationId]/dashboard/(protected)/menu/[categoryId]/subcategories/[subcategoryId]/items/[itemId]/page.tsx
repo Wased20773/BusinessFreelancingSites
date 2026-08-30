@@ -33,6 +33,8 @@ import EditItemForm from "@/components/ui/items/EditItemForm";
 
 export default function EditItemPage() {
   const params = useParams<{
+    businessId: string;
+    locationId: string;
     categoryId: string;
     subcategoryId: string;
     itemId: string;
@@ -40,17 +42,19 @@ export default function EditItemPage() {
 
   const router = useRouter();
 
+  const businessId = params.businessId;
+  const locationId = params.locationId;
   const categoryId = params.categoryId;
   const subcategoryId = params.subcategoryId;
   const itemId = params.itemId;
 
   const [itemData, setItemData] = useState<ItemJson | null>(null);
-
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isUpdatingImage, setIsUpdatingImage] = useState<boolean>(false);
   const [isCreatingOption, setIsCreatingOption] = useState<boolean>(false);
+  const [isDeletingOption, setIsDeletingOption] = useState<boolean>(false);
   const [processingOptionId, setProcessingOptionId] = useState<string | null>(
     null,
   );
@@ -58,9 +62,11 @@ export default function EditItemPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isSynced, setIsSynced] = useState<boolean>(false);
+  const [hasSyncGroup, setHasSyncGroup] = useState<boolean>(false);
 
   async function refreshItemData() {
-    const refreshedItem = await getItem(itemId);
+    const refreshedItem = await getItem(businessId, locationId, itemId);
 
     setItemData(refreshedItem);
     setImagePreview(refreshedItem.imageKey ?? null);
@@ -72,30 +78,35 @@ export default function EditItemPage() {
       setErrorMessage(null);
 
       try {
-        const itemToast = toast.promise<ItemJson>(getItem(itemId), {
-          loading: "Loading item...",
-          success: "Item loaded.",
+        const itemToast = toast.promise<ItemJson>(
+          getItem(businessId, locationId, itemId),
+          {
+            loading: "Loading item...",
+            success: "Item loaded.",
 
-          error: (error) => {
-            if (axios.isAxiosError(error)) {
+            error: (error) => {
+              if (axios.isAxiosError(error)) {
+                return {
+                  message: "Failed to load item.",
+                  description: `Status code: ${
+                    error.response?.status ?? "No response"
+                  }`,
+                };
+              }
+
               return {
-                message: "Failed to load item.",
-                description: `Status code: ${
-                  error.response?.status ?? "No response"
-                }`,
+                message: "Unexpected error.",
+                description: "Something went wrong while loading the item.",
               };
-            }
-
-            return {
-              message: "Unexpected error.",
-              description: "Something went wrong while loading the item.",
-            };
+            },
           },
-        });
+        );
 
         const selectedItem = await itemToast.unwrap();
 
         setItemData(selectedItem);
+        setIsSynced(selectedItem.isSynced);
+        setHasSyncGroup(Boolean(selectedItem.syncGroupId));
         setImagePreview(selectedItem.imageKey ?? null);
         setCanSubmit(
           Boolean(selectedItem.name.trim() && selectedItem.price !== null),
@@ -109,7 +120,7 @@ export default function EditItemPage() {
     }
 
     void getItemData();
-  }, [itemId]);
+  }, [businessId, locationId, itemId]);
 
   function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
@@ -174,6 +185,7 @@ export default function EditItemPage() {
           : null,
       price: typeof price === "string" && price !== "" ? Number(price) : 0,
       isAvailable: isAvailable !== null,
+      isSynced,
     };
 
     if (!requestBody.name) {
@@ -191,7 +203,12 @@ export default function EditItemPage() {
 
     try {
       const updateItemRequest = async (): Promise<ItemJson> => {
-        const updatedItem = await updateItem(itemId, requestBody);
+        const updatedItem = await updateItem(
+          businessId,
+          locationId,
+          itemId,
+          requestBody,
+        );
 
         // Images use their own route
         if (image instanceof File && image.size > 0) {
@@ -203,10 +220,22 @@ export default function EditItemPage() {
           try {
             // Existing image -> replace it
             if (itemData?.imageKey) {
-              await updateItemImage(itemId, image);
+              await updateItemImage(
+                businessId,
+                locationId,
+                itemId,
+                image,
+                isSynced,
+              );
             } else {
               // No image -> create the first image
-              await createItemImage(itemId, image);
+              await createItemImage(
+                businessId,
+                locationId,
+                itemId,
+                image,
+                isSynced,
+              );
             }
           } finally {
             setIsUpdatingImage(false);
@@ -261,25 +290,28 @@ export default function EditItemPage() {
     setErrorMessage(null);
 
     try {
-      const imageToast = toast.promise(deleteItemImage(itemId), {
-        loading: "Deleting image...",
-        success: "Image deleted.",
-        error: (error) => {
-          if (axios.isAxiosError(error)) {
-            return {
-              message: "Failed to delete image.",
-              description: `Status code: ${
-                error.response?.status ?? "No response"
-              }`,
-            };
-          }
+      const imageToast = toast.promise(
+        deleteItemImage(businessId, locationId, itemId, isSynced),
+        {
+          loading: "Deleting image...",
+          success: "Image deleted.",
+          error: (error) => {
+            if (axios.isAxiosError(error)) {
+              return {
+                message: "Failed to delete image.",
+                description: `Status code: ${
+                  error.response?.status ?? "No response"
+                }`,
+              };
+            }
 
-          return {
-            message: "Unexpected error.",
-            description: "Something went wrong while deleting the image.",
-          };
+            return {
+              message: "Unexpected error.",
+              description: "Something went wrong while deleting the image.",
+            };
+          },
         },
-      });
+      );
 
       await imageToast.unwrap();
 
@@ -310,30 +342,33 @@ export default function EditItemPage() {
     setErrorMessage(null);
 
     try {
-      const deleteToast = toast.promise(deleteItem(itemId), {
-        loading: "Deleting item...",
-        success: "Item deleted.",
-        error: (error) => {
-          if (axios.isAxiosError(error)) {
-            return {
-              message: "Failed to delete item.",
-              description: `Status code: ${
-                error.response?.status ?? "No response"
-              }`,
-            };
-          }
+      const deleteToast = toast.promise(
+        deleteItem(businessId, locationId, itemId, isSynced),
+        {
+          loading: "Deleting item...",
+          success: "Item deleted.",
+          error: (error) => {
+            if (axios.isAxiosError(error)) {
+              return {
+                message: "Failed to delete item.",
+                description: `Status code: ${
+                  error.response?.status ?? "No response"
+                }`,
+              };
+            }
 
-          return {
-            message: "Unexpected error.",
-            description: "Something went wrong while deleting the item.",
-          };
+            return {
+              message: "Unexpected error.",
+              description: "Something went wrong while deleting the item.",
+            };
+          },
         },
-      });
+      );
 
       await deleteToast.unwrap();
 
       router.push(
-        `/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`,
+        `/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`,
       );
     } catch (error) {
       console.error("Error deleting item:", error);
@@ -356,10 +391,12 @@ export default function EditItemPage() {
 
     const name = formData.get("name");
     const price = formData.get("price");
+    const optionIsSynced = Boolean(formData.get("sync-item-option"));
 
     const requestBody = {
       name: typeof name === "string" ? name.trim() : "",
       price: typeof price === "string" && price !== "" ? Number(price) : 0,
+      isSynced: optionIsSynced,
     };
 
     if (!requestBody.name) {
@@ -376,25 +413,28 @@ export default function EditItemPage() {
     setErrorMessage(null);
 
     try {
-      const optionToast = toast.promise(createItemOption(itemId, requestBody), {
-        loading: "Creating option...",
-        success: "Option created.",
-        error: (error) => {
-          if (axios.isAxiosError(error)) {
-            return {
-              message: "Failed to create option.",
-              description: `Status code: ${
-                error.response?.status ?? "No response"
-              }`,
-            };
-          }
+      const optionToast = toast.promise(
+        createItemOption(businessId, locationId, itemId, requestBody),
+        {
+          loading: "Creating option...",
+          success: "Option created.",
+          error: (error) => {
+            if (axios.isAxiosError(error)) {
+              return {
+                message: "Failed to create option.",
+                description: `Status code: ${
+                  error.response?.status ?? "No response"
+                }`,
+              };
+            }
 
-          return {
-            message: "Unexpected error.",
-            description: "Something went wrong while creating the option.",
-          };
+            return {
+              message: "Unexpected error.",
+              description: "Something went wrong while creating the option.",
+            };
+          },
         },
-      });
+      );
 
       await optionToast.unwrap();
 
@@ -424,11 +464,13 @@ export default function EditItemPage() {
     const name = formData.get("name");
     const price = formData.get("price");
     const isAvailable = formData.get("isAvailable");
+    const optionIsSynced = Boolean(formData.get("sync-item-option"));
 
     const requestBody = {
       name: typeof name === "string" ? name.trim() : "",
       price: typeof price === "string" && price !== "" ? Number(price) : 0,
       isAvailable: isAvailable !== null,
+      isSynced: optionIsSynced,
     };
 
     if (!requestBody.name) {
@@ -446,7 +488,7 @@ export default function EditItemPage() {
 
     try {
       const optionToast = toast.promise(
-        updateItemOption(itemId, optionId, requestBody),
+        updateItemOption(businessId, locationId, itemId, optionId, requestBody),
         {
           loading: "Updating option...",
           success: "Option updated.",
@@ -482,30 +524,54 @@ export default function EditItemPage() {
   // DELETE ITEM OPTION
   // ----------------------------
 
-  async function handleDeleteOption(optionId: string) {
+  async function handleDeleteOption(
+    event: React.MouseEvent<HTMLButtonElement>,
+    optionId: string,
+  ) {
     setProcessingOptionId(optionId);
+    setIsDeletingOption(true);
     setErrorMessage(null);
 
-    try {
-      const optionToast = toast.promise(deleteItemOption(itemId, optionId), {
-        loading: "Deleting option...",
-        success: "Option deleted.",
-        error: (error) => {
-          if (axios.isAxiosError(error)) {
-            return {
-              message: "Failed to delete option.",
-              description: `Status code: ${
-                error.response?.status ?? "No response"
-              }`,
-            };
-          }
+    const form = event.currentTarget.form;
 
-          return {
-            message: "Unexpected error.",
-            description: "Something went wrong while deleting the option.",
-          };
+    if (!form) {
+      setErrorMessage("A form could not be found when attempting to delete.");
+      return;
+    }
+
+    const formData = new FormData(form);
+
+    const deleteAllSynced = Boolean(formData.get("sync-item-option"));
+
+    try {
+      const optionToast = toast.promise(
+        deleteItemOption(
+          businessId,
+          locationId,
+          itemId,
+          optionId,
+          deleteAllSynced,
+        ),
+        {
+          loading: "Deleting option...",
+          success: "Option deleted.",
+          error: (error) => {
+            if (axios.isAxiosError(error)) {
+              return {
+                message: "Failed to delete option.",
+                description: `Status code: ${
+                  error.response?.status ?? "No response"
+                }`,
+              };
+            }
+
+            return {
+              message: "Unexpected error.",
+              description: "Something went wrong while deleting the option.",
+            };
+          },
         },
-      });
+      );
 
       await optionToast.unwrap();
       await refreshItemData();
@@ -514,6 +580,7 @@ export default function EditItemPage() {
       setErrorMessage("Failed to delete the option.");
     } finally {
       setProcessingOptionId(null);
+      setIsDeletingOption(false);
     }
   }
 
@@ -530,6 +597,8 @@ export default function EditItemPage() {
       const moveToast = toast.promise(
         moveOrder({
           context: "itemOption",
+          businessId,
+          locationId,
           direction,
           itemId,
           optionId,
@@ -585,7 +654,7 @@ export default function EditItemPage() {
     <section aria-labelledby="edit-item-heading">
       <header className="flex items-center gap-3">
         <Link
-          href={`/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`}
+          href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`}
           aria-label="Return to subcategory"
         >
           <ArrowIcon direction="left" size={50} />
@@ -603,6 +672,9 @@ export default function EditItemPage() {
           isProcessing={isProcessing}
           isSaving={isSaving}
           isDeleting={isDeleting}
+          isSynced={isSynced}
+          setIsSynced={setIsSynced}
+          hasSyncGroup={hasSyncGroup}
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}
           handleImageChange={handleImageChange}
@@ -615,8 +687,12 @@ export default function EditItemPage() {
           options={options}
           processingOptionId={processingOptionId}
           isCreatingOption={isCreatingOption}
+          createOptionIsSynced={Boolean(itemData.syncGroupId)}
+          hasSyncGroup={hasSyncGroup}
+          isDeletingOption={isDeletingOption}
           handleCreateOption={handleCreateOption}
           handleUpdateOption={handleUpdateOption}
+          setCreateOptionIsSynced={setIsCreatingOption}
           handleMoveOption={handleMoveOption}
           handleDeleteOption={handleDeleteOption}
         />

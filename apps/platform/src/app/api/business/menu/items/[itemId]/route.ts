@@ -4,22 +4,22 @@ import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
-// GET /api/business/menu/items/[itemSlug]
+// GET /api/business/menu/items/[itemId]
 export async function GET(
   request: Request,
   {
     params,
   }: {
     params: Promise<{
-      itemSlug: string;
+      itemId: string;
     }>;
   },
 ): Promise<NextResponse> {
   try {
-    const { itemSlug } = await params;
+    const { itemId } = await params;
 
-    if (!itemSlug) {
-      return NextResponse.json({ error: "Missing item slug" }, { status: 400 });
+    if (!itemId) {
+      return NextResponse.json({ error: "Missing item id" }, { status: 400 });
     }
 
     const authentication = await authenticateBusinessReadAccess(request, [
@@ -31,16 +31,9 @@ export async function GET(
 
     if (authentication instanceof NextResponse) return authentication;
 
-    /*
-     * Slugs only need to be unique within a location.
-     *
-     * This allows synchronized items at different locations
-     * to share the same slug while still resolving to the
-     * correct physical Item record.
-     */
     const item = await prisma.item.findFirst({
       where: {
-        slug: itemSlug,
+        id: itemId,
         locationId: authentication.locationId,
       },
 
@@ -57,6 +50,11 @@ export async function GET(
         isAvailable: true,
         slug: true,
         imageKey: true,
+
+        ...(authentication.authenticationType === "session"
+          ? { syncGroupId: true, isSynced: true }
+          : {}),
+
         createdAt: true,
         updatedAt: true,
         options: {
@@ -70,6 +68,11 @@ export async function GET(
             price: true,
             order: true,
             isAvailable: true,
+
+            ...(authentication.authenticationType === "session"
+              ? { syncGroupId: true, isSynced: true }
+              : {}),
+
             createdAt: true,
             updatedAt: true,
           },

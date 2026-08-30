@@ -9,6 +9,10 @@ import type {
   LocationDay,
   Hour,
 } from "@business-freelancer/database";
+import {
+  Item,
+  ItemOption,
+} from "@business-freelancer/database/generated/prisma/client";
 
 // --------------------
 // MODEL TYPES
@@ -62,31 +66,13 @@ export type CategoryJson = Omit<Category, "createdAt" | "updatedAt"> & {
 };
 
 // Item
-
-export type ItemJson = {
-  id: string;
-  categoryId: string;
-  name: string;
-  description: string | null;
-  containsList: string[];
-  calories: number | null;
-  price: number;
-  order: number;
-  isAvailable: boolean;
-  slug: string;
-  imageKey: string | null;
+export type ItemJson = Omit<Item, "createdAt" | "updatedAt"> & {
   createdAt: string;
   updatedAt: string;
   options: ItemOptionsJson[];
 };
 
-export type ItemOptionsJson = {
-  id: string;
-  itemId: string;
-  name: string;
-  price: number;
-  order: number;
-  isAvailable: boolean;
+export type ItemOptionsJson = Omit<ItemOption, "createdAt" | "updatedAt"> & {
   createdAt: string;
   updatedAt: string;
 };

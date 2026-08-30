@@ -40,6 +40,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           ...(authentication.authenticationType === "session"
             ? { syncGroupId: true, isSynced: true }
             : {}),
+
           createdAt: true,
           updatedAt: true,
 
@@ -100,6 +101,10 @@ export async function GET(request: Request): Promise<NextResponse> {
               isVisible: true,
               createdAt: true,
               updatedAt: true,
+
+              ...(authentication.authenticationType === "session"
+                ? { syncGroupId: true, isSynced: true }
+                : {}),
 
               // Items belonging to this subcategory
               items: {

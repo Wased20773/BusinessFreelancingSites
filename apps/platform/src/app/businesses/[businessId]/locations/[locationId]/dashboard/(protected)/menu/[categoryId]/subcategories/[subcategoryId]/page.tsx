@@ -15,8 +15,15 @@ import ItemsList from "@/components/ui/items/ItemsList";
 import CategoryInfo from "@/components/ui/categories/CategoryInfo";
 
 export default function CategoryPage() {
-  const params = useParams<{ categoryId: string; subcategoryId: string }>();
+  const params = useParams<{
+    businessId: string;
+    locationId: string;
+    categoryId: string;
+    subcategoryId: string;
+  }>();
 
+  const businessId = params.businessId;
+  const locationId = params.locationId;
   const categoryId = params.categoryId;
   const subcategoryId = params.subcategoryId;
 
@@ -35,7 +42,12 @@ export default function CategoryPage() {
       try {
         const categoryToast = toast.promise<CategoryJson[]>(
           axios
-            .get<{ categories: CategoryJson[] }>("/api/business/menu")
+            .get<{ categories: CategoryJson[] }>("/api/business/menu", {
+              headers: {
+                "x-business-id": businessId,
+                "x-location-id": locationId,
+              },
+            })
             .then((response) => response.data.categories),
           {
             loading: "Loading subcategory...",
@@ -98,7 +110,7 @@ export default function CategoryPage() {
     }
 
     void getCategoryData();
-  }, [categoryId, subcategoryId]);
+  }, [businessId, locationId, categoryId, subcategoryId]);
 
   if (isLoading) {
     return <p>Loading category...</p>;
@@ -117,7 +129,7 @@ export default function CategoryPage() {
       {/* HEADER */}
       <header className="flex items-center gap-3">
         <Link
-          href={`/dashboard/menu/${categoryId}`}
+          href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}`}
           aria-label="Return to parent category"
         >
           <ArrowIcon direction="left" size={50} />
@@ -130,7 +142,7 @@ export default function CategoryPage() {
         {/* ACTIONS */}
         <nav className="dashboard-card">
           <ActionItem
-            href={`${subcategoryId}/items/create`}
+            href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}/items/create`}
             icon={CreateButtonIcon}
             label="Create Item"
           />

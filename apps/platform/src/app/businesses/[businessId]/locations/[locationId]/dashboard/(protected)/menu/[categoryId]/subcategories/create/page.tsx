@@ -12,14 +12,21 @@ import CreateCategoryForm from "@/components/ui/categories/CreateCategoryForm";
 
 export default function CreateCategoryPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isCreating, setIsCreating] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
   const [latestOrder, setLatestOrder] = useState<number>(0);
+  const [isSynced, setIsSynced] = useState<boolean>(false);
+  const [hasSyncGroup, setHasSyncGroup] = useState<boolean>(false);
 
   const params = useParams<{
+    businessId: string;
+    locationId: string;
     categoryId: string;
   }>();
 
+  const businessId = params.businessId;
+  const locationId = params.locationId;
   const categoryId = params.categoryId;
 
   const router = useRouter();
@@ -29,13 +36,25 @@ export default function CreateCategoryPage() {
       try {
         const response = await axios.get<{
           categories: CategoryJson[];
-        }>("/api/business/categories");
+        }>("/api/business/categories", {
+          headers: {
+            "x-business-id": businessId,
+            "x-location-id": locationId,
+          },
+        });
 
         const category = response.data.categories.find(
           (category) => category.id === categoryId,
         );
 
-        if (!category || !category.subcategories?.length) {
+        if (!category) {
+          setErrorMessage("The selected subcategory could not be found.");
+          return;
+        }
+
+        setHasSyncGroup(Boolean(category.syncGroupId));
+
+        if (!category.subcategories?.length) {
           setLatestOrder(1);
           return;
         }
@@ -51,12 +70,13 @@ export default function CreateCategoryPage() {
     }
 
     void getLatestOrder();
-  }, [categoryId]);
+  }, [businessId, locationId, categoryId]);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setIsLoading(true);
+    setIsCreating(true);
     setErrorMessage(null);
 
     const form = event.currentTarget;
@@ -71,6 +91,7 @@ export default function CreateCategoryPage() {
         typeof description === "string" && description.trim()
           ? description.trim()
           : null,
+      isSynced,
     };
 
     if (!requestBody.name) {
@@ -83,7 +104,7 @@ export default function CreateCategoryPage() {
       const categoryToast = toast.promise<CategoryJson>(
         axios
           .post<CategoryJson>(
-            `/api/admin/categories/${categoryId}/subcategory`,
+            `/api/businesses/${businessId}/locations/${locationId}/categories/${categoryId}/subcategory`,
             requestBody,
           )
           .then((response) => response.data),
@@ -112,7 +133,9 @@ export default function CreateCategoryPage() {
       // On successful creation, clear the form for re-use.
       form.reset();
       setCanSubmit(false);
-      router.push(`/dashboard/menu/${categoryId}`);
+      router.push(
+        `/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}`,
+      );
     } catch (error) {
       console.error("Error in Create Subcategory page:", error);
 
@@ -141,7 +164,7 @@ export default function CreateCategoryPage() {
     <section aria-labelledby="create-category-heading">
       <header className="flex items-center gap-3">
         <Link
-          href={`/dashboard/menu/${categoryId}`}
+          href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}`}
           aria-label="Return to menu"
         >
           <ArrowIcon direction="left" size={50} />
@@ -158,7 +181,11 @@ export default function CreateCategoryPage() {
           isLoading={isLoading}
           errorMessage={errorMessage}
           canSubmit={canSubmit}
+          isCreating={isCreating}
           latestOrder={latestOrder || 1}
+          isSynced={isSynced}
+          setIsSynced={setIsSynced}
+          hasSyncGroup={hasSyncGroup}
         />
       </div>
     </section>

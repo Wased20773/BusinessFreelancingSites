@@ -11,8 +11,15 @@ import type { CategoryJson, ItemJson } from "@/types/types";
 import CreateItemForm from "@/components/ui/items/CreateItemForm";
 
 export default function CreateItemPage() {
-  const params = useParams<{ categoryId: string; subcategoryId: string }>();
+  const params = useParams<{
+    businessId: string;
+    locationId: string;
+    categoryId: string;
+    subcategoryId: string;
+  }>();
 
+  const businessId = params.businessId;
+  const locationId = params.locationId;
   const categoryId = params.categoryId;
   const subcategoryId = params.subcategoryId;
 
@@ -20,6 +27,8 @@ export default function CreateItemPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
   const [latestOrder, setLatestOrder] = useState<number>(1);
+  const [isSynced, setIsSynced] = useState<boolean>(false);
+  const [hasSyncGroup, setHasSyncGroup] = useState<boolean>(false);
 
   const router = useRouter();
 
@@ -28,7 +37,12 @@ export default function CreateItemPage() {
       try {
         const response = await axios.get<{
           categories: CategoryJson[];
-        }>("/api/business/menu");
+        }>("/api/business/menu", {
+          headers: {
+            "x-business-id": businessId,
+            "x-location-id": locationId,
+          },
+        });
 
         const selectedCategory = response.data.categories.find(
           (category) => category.id === categoryId,
@@ -38,7 +52,15 @@ export default function CreateItemPage() {
           (subcategory) => subcategory.id === subcategoryId,
         );
 
-        if (!selectedSubcategory?.items?.length) {
+        if (!selectedSubcategory) {
+          setErrorMessage("This subcategory could not be found.");
+          return;
+        }
+
+        setHasSyncGroup(Boolean(selectedSubcategory.syncGroupId));
+        setIsSynced(selectedSubcategory.isSynced);
+
+        if (!selectedSubcategory.items?.length) {
           setLatestOrder(1);
           return;
         }
@@ -54,7 +76,7 @@ export default function CreateItemPage() {
     }
 
     void getLatestOrder();
-  }, [categoryId, subcategoryId]);
+  }, [businessId, locationId, categoryId, subcategoryId]);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -70,17 +92,14 @@ export default function CreateItemPage() {
     const containsList = formData.get("containsList");
     const calories = formData.get("calories");
     const price = formData.get("price");
-    const isAvailable = formData.get("isAvailable");
     const image = formData.get("image");
 
     const requestBody = {
       name: typeof name === "string" ? name.trim() : "",
-
       description:
         typeof description === "string" && description.trim()
           ? description.trim()
           : null,
-
       containsList:
         typeof containsList === "string" && containsList.trim()
           ? containsList
@@ -89,15 +108,13 @@ export default function CreateItemPage() {
               .filter(Boolean)
               .map((item) => item.charAt(0).toUpperCase() + item.slice(1))
           : [],
-
       calories:
         typeof calories === "string" && calories !== ""
           ? Number(calories)
           : null,
-
       price: typeof price === "string" && price !== "" ? Number(price) : null,
-
-      isAvailable: isAvailable !== null,
+      isAvailable: true,
+      isSynced,
     };
 
     if (!requestBody.name) {
@@ -116,7 +133,7 @@ export default function CreateItemPage() {
       const createItem = async (): Promise<ItemJson> => {
         // Create the item first.
         const itemResponse = await axios.post<ItemJson>(
-          `/api/admin/categories/${subcategoryId}/items`,
+          `/api/businesses/${businessId}/locations/${locationId}/categories/${subcategoryId}/items`,
           requestBody,
         );
 
@@ -127,10 +144,11 @@ export default function CreateItemPage() {
           const imageFormData = new FormData();
 
           imageFormData.append("image", image);
+          imageFormData.append("isSynced", String(isSynced));
 
           try {
             await axios.post(
-              `/api/admin/items/${item.id}/image`,
+              `/api/businesses/${businessId}/locations/${locationId}/items/${item.id}/image`,
               imageFormData,
             );
           } catch (error) {
@@ -168,7 +186,7 @@ export default function CreateItemPage() {
       form.reset();
       setCanSubmit(false);
       router.push(
-        `/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`,
+        `/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`,
       );
     } catch (error) {
       console.error("Error in Create Item page:", error);
@@ -192,7 +210,6 @@ export default function CreateItemPage() {
     const price = formData.get("price");
 
     const hasName = typeof name === "string" && name.trim() !== "";
-
     const hasPrice = typeof price === "string" && price.trim() !== "";
 
     setCanSubmit(hasName && hasPrice);
@@ -202,7 +219,7 @@ export default function CreateItemPage() {
     <section aria-labelledby="create-item-heading">
       <header className="flex items-center gap-3">
         <Link
-          href={`/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`}
+          href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`}
           aria-label="Return to subcategory"
         >
           <ArrowIcon direction="left" size={50} />
@@ -219,6 +236,9 @@ export default function CreateItemPage() {
           errorMessage={errorMessage}
           canSubmit={canSubmit}
           latestOrder={latestOrder}
+          isSynced={isSynced}
+          setIsSynced={setIsSynced}
+          hasSyncGroup={hasSyncGroup}
         />
       </div>
     </section>

@@ -172,6 +172,7 @@ export default function CreateCategoryPage() {
           isCreating={isCreating}
           isSynced={isSynced}
           setIsSynced={setIsSynced}
+          hasSyncGroup={true}
         />
       </div>
     </section>

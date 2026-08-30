@@ -156,11 +156,10 @@ export default function ItemsList({
 
           {/* DESKTOP */}
           <div className="hidden overflow-x-auto md:block">
-            <table className="w-full border-collapse text-left">
-              <caption className="sr-only">
-                Items inside {categoryData.name}
-              </caption>
-
+            <table
+              className="w-full border-collapse text-left"
+              aria-labelledby="category-items-heading"
+            >
               <thead>
                 <tr className="border-b border-gray-600">
                   <th scope="col" className="px-3 py-2 font-semibold">

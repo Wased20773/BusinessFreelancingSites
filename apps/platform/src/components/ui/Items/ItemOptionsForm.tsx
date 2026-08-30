@@ -1,22 +1,31 @@
 import "@/app/dashboard/(protected)/page.css";
 import type { ReorderDirection } from "@/lib/api/reorder";
 import type { ItemOptionsJson } from "@/types/types";
-import type { SubmitEvent } from "react";
+import type { Dispatch, SetStateAction, SubmitEvent } from "react";
+import CreateOptionForm from "../item-options/CreateOptionForm";
+import ExistingOptionsForm from "../item-options/ExistingOptionsForm";
 
-type ItemOptionsFormParams = {
+type ItemOptionsFormProps = {
   options: ItemOptionsJson[];
   processingOptionId: string | null;
   isCreatingOption: boolean;
+  createOptionIsSynced: boolean;
+  hasSyncGroup: boolean;
+  isDeletingOption: boolean;
   handleCreateOption(event: SubmitEvent<HTMLFormElement>): Promise<void>;
   handleUpdateOption(
     event: SubmitEvent<HTMLFormElement>,
     optionId: string,
   ): Promise<void>;
+  setCreateOptionIsSynced: Dispatch<SetStateAction<boolean>>;
   handleMoveOption(
     optionId: string,
     direction: ReorderDirection,
   ): Promise<void>;
-  handleDeleteOption(optionId: string): Promise<void>;
+  handleDeleteOption(
+    event: React.MouseEvent<HTMLButtonElement>,
+    optionId: string,
+  ): Promise<void>;
 };
 
 export default function ItemOptionsForm({
@@ -24,10 +33,14 @@ export default function ItemOptionsForm({
   isCreatingOption,
   options,
   processingOptionId,
+  createOptionIsSynced,
+  setCreateOptionIsSynced,
+  hasSyncGroup,
   handleUpdateOption,
   handleMoveOption,
   handleDeleteOption,
-}: ItemOptionsFormParams) {
+  isDeletingOption,
+}: ItemOptionsFormProps) {
   return (
     <section
       className="dashboard-card mt-[1.5rem] p-4"
@@ -36,154 +49,23 @@ export default function ItemOptionsForm({
       <h2 id="item-options-heading">Item Options</h2>
 
       {/* CREATE OPTION */}
-      <form
-        className="mt-4 border-b border-gray-300 pb-5"
-        onSubmit={handleCreateOption}
-      >
-        <fieldset
-          className="grid gap-3 md:grid-cols-[1fr_150px_auto]"
-          disabled={isCreatingOption}
-        >
-          <div>
-            <label htmlFor="new-option-name">Name</label>
-
-            <input
-              className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-              id="new-option-name"
-              name="name"
-              type="text"
-              placeholder="Extra Cheese"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="new-option-price">Price</label>
-
-            <input
-              className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-              id="new-option-price"
-              name="price"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="1.50"
-            />
-          </div>
-
-          <button
-            className="self-end bg-emerald-300 border-[0.1rem] border-emerald-500 rounded-md text-emerald-900 px-3 py-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-            type="submit"
-            disabled={isCreatingOption}
-          >
-            {isCreatingOption ? "Adding..." : "Add Option"}
-          </button>
-        </fieldset>
-      </form>
+      <CreateOptionForm
+        handleCreateOption={handleCreateOption}
+        isCreatingOption={isCreatingOption}
+        isSynced={createOptionIsSynced}
+        setIsSynced={setCreateOptionIsSynced}
+        hasSyncGroup={hasSyncGroup}
+      />
 
       {/* EXISTING OPTIONS */}
-      {options.length === 0 ? (
-        <p className="pt-4">This item has no options</p>
-      ) : (
-        <div>
-          {options.map((option, idx) => {
-            const isProcessingOption = processingOptionId === option.id;
-
-            const isFirst = idx === 0;
-
-            const isLast = idx === options.length - 1;
-
-            return (
-              <form
-                key={option.id}
-                className="border-b border-gray-300 py-4 last:border-b-0"
-                onSubmit={(event) => handleUpdateOption(event, option.id)}
-              >
-                <fieldset className="grid gap-3" disabled={isProcessingOption}>
-                  <div className="grid gap-3 md:grid-cols-[1fr_150px_auto]">
-                    <div>
-                      <label htmlFor={`option-name-${option.id}`}>Name</label>
-
-                      <input
-                        className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                        id={`option-name-${option.id}`}
-                        name="name"
-                        type="text"
-                        defaultValue={option.name}
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor={`option-price-${option.id}`}>Price</label>
-
-                      <input
-                        className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                        id={`option-price-${option.id}`}
-                        name="price"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        defaultValue={option.price}
-                      />
-                    </div>
-
-                    <label
-                      className="flex items-end gap-2 pb-2 cursor-pointer"
-                      htmlFor={`option-available-${option.id}`}
-                    >
-                      <input
-                        id={`option-available-${option.id}`}
-                        name="isAvailable"
-                        type="checkbox"
-                        defaultChecked={option.isAvailable}
-                      />
-                      Available?
-                    </label>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      className="border-[0.1rem] border-gray-500 rounded-md px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                      type="button"
-                      disabled={isProcessingOption || isFirst}
-                      onClick={() => handleMoveOption(option.id, "up")}
-                    >
-                      Move Up
-                    </button>
-
-                    <button
-                      className="border-[0.1rem] border-gray-500 rounded-md px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                      type="button"
-                      disabled={isProcessingOption || isLast}
-                      onClick={() => handleMoveOption(option.id, "down")}
-                    >
-                      Move Down
-                    </button>
-
-                    <span>Order: {option.order}</span>
-
-                    <button
-                      className="bg-emerald-300 border-[0.1rem] border-emerald-500 rounded-md text-emerald-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                      type="submit"
-                      disabled={isProcessingOption}
-                    >
-                      {isProcessingOption ? "Saving..." : "Save"}
-                    </button>
-
-                    <button
-                      className="bg-red-300 border-[0.1rem] border-red-500 rounded-md text-red-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                      type="button"
-                      disabled={isProcessingOption}
-                      onClick={() => handleDeleteOption(option.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </fieldset>
-              </form>
-            );
-          })}
-        </div>
-      )}
+      <ExistingOptionsForm
+        options={options}
+        processingOptionId={processingOptionId}
+        handleUpdateOption={handleUpdateOption}
+        handleMoveOption={handleMoveOption}
+        handleDeleteOption={handleDeleteOption}
+        isDeletingOption={isDeletingOption}
+      />
     </section>
   );
 }

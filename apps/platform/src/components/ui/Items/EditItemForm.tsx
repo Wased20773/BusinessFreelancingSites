@@ -2,8 +2,15 @@
 
 import { ItemJson } from "@/types/types";
 import Image from "next/image";
-import { ChangeEvent, InputEvent, SubmitEvent } from "react";
+import {
+  ChangeEvent,
+  Dispatch,
+  InputEvent,
+  SetStateAction,
+  SubmitEvent,
+} from "react";
 import RequiredField from "../RequiredField";
+import IsSyncedCheckbox from "../IsSyncedCheckbox";
 
 type EditItemFormParams = {
   itemData: ItemJson;
@@ -12,6 +19,9 @@ type EditItemFormParams = {
   isProcessing: boolean;
   isSaving: boolean;
   isDeleting: boolean;
+  isSynced: boolean;
+  setIsSynced: Dispatch<SetStateAction<boolean>>;
+  hasSyncGroup: boolean;
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
   handleFormInput(event: InputEvent<HTMLFormElement>): void;
   handleImageChange(event: ChangeEvent<HTMLInputElement>): void;
@@ -29,6 +39,9 @@ export default function EditItemForm({
   handleDeleteImage,
   canSubmit,
   isSaving,
+  isSynced,
+  setIsSynced,
+  hasSyncGroup,
   handleDelete,
   isDeleting,
 }: EditItemFormParams) {
@@ -110,8 +123,8 @@ export default function EditItemForm({
             name="price"
             type="number"
             min="0"
-            step="0.0.1"
-            defaultValue={itemData.price}
+            step="0.01"
+            defaultValue={Number(itemData.price)}
             required
           />
         </div>
@@ -177,6 +190,16 @@ export default function EditItemForm({
       <p className="w-fit border-[0.1rem] border-b-[0.2rem] rounded-lg border-gray-400 bg-gray-100 px-3 py-2">
         Display Order: {itemData.order}
       </p>
+
+      <IsSyncedCheckbox
+        hasSyncGroup={hasSyncGroup}
+        htmlFor={"sync-item"}
+        inputName={"sync-item"}
+        isSynced={isSynced}
+        setIsSynced={setIsSynced}
+        isSaving={isSaving}
+        description={"Apply changes to synchronized copies across locations."}
+      />
 
       <button
         className="bg-emerald-300 border-[0.1rem] border-emerald-500 rounded-md text-emerald-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
