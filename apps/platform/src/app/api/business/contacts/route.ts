@@ -33,6 +33,11 @@ export async function GET(request: Request): Promise<NextResponse> {
             phoneNumber: true,
             email: true,
             isPersonal: true,
+
+            ...(authentication.authenticationType === "session"
+              ? { syncGroupId: true, isSynced: true }
+              : {}),
+
             createdAt: true,
             updatedAt: true,
           },

@@ -1,5 +1,6 @@
 import { ContactJson } from "@/types/types";
-import { InputEvent, SubmitEvent } from "react";
+import { Dispatch, InputEvent, SetStateAction, SubmitEvent } from "react";
+import IsSyncedCheckbox from "../IsSyncedCheckbox";
 
 type EditContactFormParams = {
   contactData: ContactJson;
@@ -8,6 +9,8 @@ type EditContactFormParams = {
   canSubmit: boolean;
   isSaving: boolean;
   isDeleting: boolean;
+  isSynced: boolean;
+  setIsSynced: Dispatch<SetStateAction<boolean>>;
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
   handleFormInput(event: InputEvent<HTMLFormElement>): void;
   handleDelete(): Promise<void>;
@@ -20,6 +23,8 @@ export default function EditContactForm({
   canSubmit,
   isSaving,
   isDeleting,
+  isSynced,
+  setIsSynced,
   handleSubmit,
   handleFormInput,
   handleDelete,
@@ -64,6 +69,7 @@ export default function EditContactForm({
 
       <fieldset disabled={isProcessing}>
         <legend>Contact type</legend>
+
         <p>
           Personal contacts belong to an individual while a business contact
           belongs to the business itself. This helps developers display either
@@ -81,6 +87,16 @@ export default function EditContactForm({
           Is this a personal contact?
         </label>
       </fieldset>
+
+      <IsSyncedCheckbox
+        hasSyncGroup={Boolean(contactData.syncGroupId)}
+        htmlFor="sync-contact"
+        inputName="sync-contact"
+        isSynced={isSynced}
+        setIsSynced={setIsSynced}
+        isSaving={isProcessing}
+        description="Synchronize this contact across locations"
+      />
 
       {errorMessage && <p role="alert">{errorMessage}</p>}
 

@@ -1,10 +1,13 @@
-import { InputEvent, SubmitEvent } from "react";
+import IsSyncedCheckbox from "../IsSyncedCheckbox";
+import { Dispatch, InputEvent, SetStateAction, SubmitEvent } from "react";
 
 type CreateContactFormParams = {
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
   handleFormInput(event: InputEvent<HTMLFormElement>): void;
   isLoading: boolean;
   canSubmit: boolean;
+  isSynced: boolean;
+  setIsSynced: Dispatch<SetStateAction<boolean>>;
 };
 
 export default function CreateContactForm({
@@ -12,6 +15,8 @@ export default function CreateContactForm({
   handleFormInput,
   isLoading,
   canSubmit,
+  isSynced,
+  setIsSynced,
 }: CreateContactFormParams) {
   return (
     <form
@@ -22,6 +27,7 @@ export default function CreateContactForm({
       <fieldset>
         <legend>Contact info</legend>
         <p>Please provide one of the following.</p>
+
         <div>
           <label htmlFor="contact-phone-number">Phone number</label>
           <input
@@ -51,11 +57,13 @@ export default function CreateContactForm({
 
       <fieldset>
         <legend>Contact type</legend>
+
         <p>
           Personal contacts belong to an individual while a business contact
           belongs to the business itself. This helps developers display either
           type, both, or neither on your website.
         </p>
+
         <label htmlFor="contact-personal" className="cursor-pointer">
           <input
             className="mr-2"
@@ -66,6 +74,16 @@ export default function CreateContactForm({
           Is this a personal contact?
         </label>
       </fieldset>
+
+      <IsSyncedCheckbox
+        hasSyncGroup={true}
+        htmlFor="sync-contact"
+        inputName="sync-contact"
+        isSynced={isSynced}
+        setIsSynced={setIsSynced}
+        isSaving={isLoading}
+        description="Add this contact to all locations"
+      />
 
       <button
         className="
