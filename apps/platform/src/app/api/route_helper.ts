@@ -251,7 +251,7 @@ export async function updateSyncedResource({
 
   /*
    * We need the synchronization information before deciding
-   * whether this update affects one contact or the whole group
+   * whether this update affects one resource or the whole group
    */
   const resource = await syncModel.findFirst({
     where: {
@@ -288,17 +288,32 @@ export async function updateSyncedResource({
       },
     });
 
+    const updatedResource = await syncModel.findFirst({
+      where: {
+        id: resource.id,
+        locationId,
+      },
+      select,
+    });
+
+    if (!updatedResource) {
+      return NextResponse.json(
+        { error: `This ${resourceName} could not be found after updating` },
+        { status: 404 },
+      );
+    }
+
     return NextResponse.json(
       {
         message: `Synchronized ${resourceName}'s updated successfully`,
-        ...resource,
+        ...updatedResource,
       },
       { status: 200 },
     );
   }
 
   /*
-   * Otherwise only update this location's contact
+   * Otherwise only update this location's resource
    */
   const updatedResource = await syncModel.update({
     where: {

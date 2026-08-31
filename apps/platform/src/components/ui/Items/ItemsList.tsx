@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import axios from "axios";
 import { getCategories } from "@/lib/api/categories";
 import ReorderControls from "../controls/ReorderControls";
+import { useParams } from "next/navigation";
 
 type ItemsListParams = {
   categoryId: string;
@@ -25,10 +26,18 @@ export default function ItemsList({
   setErrorMessage,
   setCategoryData,
 }: ItemsListParams) {
+  const params = useParams<{
+    businessId: string;
+    locationId: string;
+  }>();
+
+  const businessId = params.businessId;
+  const locationId = params.locationId;
+
   const [processingItemId, setProcessingItemId] = useState<string | null>(null);
 
   async function refreshCategoryData() {
-    const refreshedCategory = await getCategories();
+    const refreshedCategory = await getCategories(businessId, locationId);
 
     const selectedCategory =
       refreshedCategory.find((category) => category.id === categoryId) ??
@@ -55,6 +64,8 @@ export default function ItemsList({
         moveOrder({
           context: "item",
           direction,
+          businessId,
+          locationId,
           categoryId,
           itemId,
         }),

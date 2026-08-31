@@ -24,7 +24,7 @@ export default function CreateItemPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
-  const [latestOrder, setLatestOrder] = useState<number>(0);
+  const [latestOrder, setLatestOrder] = useState<number>(1);
   const [isSynced, setIsSynced] = useState<boolean>(false);
   const [hasSyncGroup, setHasSyncGroup] = useState<boolean>(false);
 
@@ -36,6 +36,7 @@ export default function CreateItemPage() {
         const response = await axios.get<{
           categories: {
             id: string;
+            isSynced: boolean;
             syncGroupId: boolean | null;
             items: ItemJson[];
           }[];
@@ -50,8 +51,17 @@ export default function CreateItemPage() {
           (category) => category.id === categoryId,
         );
 
-        if (!category || category.items.length === 0) {
-          setLatestOrder(0);
+        if (!category) {
+          toast.error(
+            "Creating an item with the selected category does not exist in our records",
+          );
+          return;
+        }
+
+        setHasSyncGroup(Boolean(category.syncGroupId));
+        setIsSynced(category.isSynced);
+
+        if (category.items.length === 0) {
           return;
         }
 
@@ -60,7 +70,6 @@ export default function CreateItemPage() {
         );
 
         setLatestOrder(highestOrder + 1);
-        setHasSyncGroup(Boolean(category.syncGroupId));
       } catch (error) {
         console.error("Failed to get latest item order:", error);
       }
@@ -217,7 +226,6 @@ export default function CreateItemPage() {
     const price = formData.get("price");
 
     const hasName = typeof name === "string" && name.trim() !== "";
-
     const hasPrice = typeof price === "string" && price.trim() !== "";
 
     setCanSubmit(hasName && hasPrice);
@@ -244,7 +252,7 @@ export default function CreateItemPage() {
           isLoading={isLoading}
           errorMessage={errorMessage}
           canSubmit={canSubmit}
-          latestOrder={latestOrder || 1}
+          latestOrder={latestOrder}
           hasSyncGroup={hasSyncGroup}
           isSynced={isSynced}
           setIsSynced={setIsSynced}

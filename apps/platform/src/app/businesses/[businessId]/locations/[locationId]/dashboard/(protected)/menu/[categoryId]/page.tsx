@@ -12,9 +12,8 @@ import { toast } from "sonner";
 import "../../page.css";
 import type { CategoryJson } from "@/types/types";
 import CategoryInfo from "@/components/ui/categories/CategoryInfo";
-
-import SubcategoriesList from "@/components/ui/subcategories/SubcategoriesList";
 import ItemsList from "@/components/ui/items/ItemsList";
+import CategoryList from "@/components/ui/categories/CategoriesList";
 
 export default function CategoryPage() {
   const params = useParams<{
@@ -161,11 +160,22 @@ export default function CategoryPage() {
         <Divider />
 
         {/* SUBCATEGORIES */}
-        <SubcategoriesList
-          categoryId={categoryId}
-          categoryData={categoryData}
-          setCategoryData={setCategoryData}
-          setErrorMessage={setErrorMessage}
+        <CategoryList
+          type="subcategory"
+          parentCategoryId={categoryData.id}
+          isLoading={isLoading}
+          categoryData={categoryData.subcategories ?? []}
+          errorMessage={errorMessage}
+          setCategoryData={(subcategories) => {
+            setCategoryData((currentCategory) => {
+              if (!currentCategory) return currentCategory;
+
+              return {
+                ...currentCategory,
+                subcategories,
+              };
+            });
+          }}
         />
       </div>
     </section>

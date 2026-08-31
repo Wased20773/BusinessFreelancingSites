@@ -83,7 +83,7 @@ export default function CreateItemForm({
             name="calories"
             type="number"
             min="0"
-            step="10"
+            step="5"
           />
         </div>
 

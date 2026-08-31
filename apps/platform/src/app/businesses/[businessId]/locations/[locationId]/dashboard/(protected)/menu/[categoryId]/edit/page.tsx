@@ -193,6 +193,11 @@ export default function EditCategoryPage() {
         axios
           .delete(
             `/api/businesses/${businessId}/locations/${locationId}/categories/${categoryId}`,
+            {
+              data: {
+                deleteAllSynced: isSynced,
+              },
+            },
           )
           .then((response) => response.data),
         {

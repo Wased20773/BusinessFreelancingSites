@@ -106,7 +106,7 @@ export default function EditItemForm({
             name="calories"
             type="number"
             min="0"
-            step="10"
+            step="5"
             defaultValue={itemData.calories ?? ""}
           />
         </div>

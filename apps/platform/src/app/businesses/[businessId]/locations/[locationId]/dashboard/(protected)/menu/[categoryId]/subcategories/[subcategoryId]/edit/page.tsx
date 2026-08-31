@@ -1,6 +1,7 @@
 "use client";
 
 import ArrowIcon from "@/components/icons/arrow";
+import EditCategoryForm from "@/components/ui/categories/EditCategoryForm";
 import type { CategoryJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
@@ -8,16 +9,19 @@ import { useParams, useRouter } from "next/navigation";
 import { InputEvent, SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../../../../page.css";
-import EditCategoryForm from "@/components/ui/categories/EditCategoryForm";
 
 export default function EditSubcategoryPage() {
   const params = useParams<{
+    businessId: string;
+    locationId: string;
     categoryId: string;
     subcategoryId: string;
   }>();
 
   const router = useRouter();
 
+  const businessId = params.businessId;
+  const locationId = params.locationId;
   const categoryId = params.categoryId;
   const subcategoryId = params.subcategoryId;
 
@@ -28,6 +32,7 @@ export default function EditSubcategoryPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [isSynced, setIsSynced] = useState<boolean>(false);
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
@@ -40,11 +45,17 @@ export default function EditSubcategoryPage() {
       try {
         const categoriesToast = toast.promise<CategoryJson[]>(
           axios
-            .get<{ categories: CategoryJson[] }>("/api/business/categories")
+            .get<{ categories: CategoryJson[] }>("/api/business/categories", {
+              headers: {
+                "x-business-id": businessId,
+                "x-location-id": locationId,
+              },
+            })
             .then((response) => response.data.categories),
           {
             loading: "Loading subcategory...",
             success: "Subcategory loaded.",
+
             error: (error) => {
               if (axios.isAxiosError<{ error?: string }>(error)) {
                 return {
@@ -87,6 +98,7 @@ export default function EditSubcategoryPage() {
         }
 
         setSubcategoryData(selectedSubcategory);
+        setIsSynced(selectedSubcategory.isSynced);
         setCanSubmit(Boolean(selectedSubcategory.name.trim()));
       } catch (error) {
         console.error("Error in Edit Subcategory page:", error);
@@ -104,7 +116,7 @@ export default function EditSubcategoryPage() {
     }
 
     void getSubcategoryData();
-  }, [categoryId, subcategoryId]);
+  }, [businessId, locationId, categoryId, subcategoryId]);
 
   function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
@@ -127,13 +139,12 @@ export default function EditSubcategoryPage() {
 
     const requestBody = {
       name: typeof name === "string" ? name.trim() : "",
-
       description:
         typeof description === "string" && description.trim()
           ? description.trim()
           : null,
-
       isVisible: isVisible !== null,
+      isSynced,
     };
 
     if (!requestBody.name) {
@@ -148,13 +159,14 @@ export default function EditSubcategoryPage() {
       const updateToast = toast.promise<CategoryJson>(
         axios
           .patch<CategoryJson>(
-            `/api/admin/categories/${subcategoryId}`,
+            `/api/businesses/${businessId}/locations/${locationId}/categories/${subcategoryId}`,
             requestBody,
           )
           .then((response) => response.data),
         {
           loading: "Updating subcategory...",
           success: "Subcategory updated.",
+
           error: (error) => {
             if (axios.isAxiosError<{ error?: string }>(error)) {
               return {
@@ -177,6 +189,7 @@ export default function EditSubcategoryPage() {
       const updatedSubcategory = await updateToast.unwrap();
 
       setSubcategoryData(updatedSubcategory);
+      setIsSynced(updatedSubcategory.isSynced);
     } catch (error) {
       console.error("Error updating subcategory:", error);
 
@@ -199,11 +212,19 @@ export default function EditSubcategoryPage() {
     try {
       const deleteToast = toast.promise(
         axios
-          .delete(`/api/admin/categories/${subcategoryId}`)
+          .delete(
+            `/api/businesses/${businessId}/locations/${locationId}/categories/${subcategoryId}`,
+            {
+              data: {
+                deleteAllSynced: isSynced,
+              },
+            },
+          )
           .then((response) => response.data),
         {
           loading: "Deleting subcategory...",
           success: "Subcategory deleted.",
+
           error: (error) => {
             if (axios.isAxiosError<{ error?: string }>(error)) {
               return {
@@ -226,7 +247,9 @@ export default function EditSubcategoryPage() {
       await deleteToast.unwrap();
 
       // Return to the parent category after deleting the subcategory.
-      router.push(`/dashboard/menu/${categoryId}`);
+      router.push(
+        `/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}`,
+      );
     } catch (error) {
       console.error("Error deleting subcategory:", error);
 
@@ -260,7 +283,7 @@ export default function EditSubcategoryPage() {
     <section aria-labelledby="edit-subcategory-heading">
       <header className="flex items-center gap-3">
         <Link
-          href={`/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`}
+          href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`}
           aria-label="Return to subcategory"
         >
           <ArrowIcon direction="left" size={50} />
@@ -280,6 +303,8 @@ export default function EditSubcategoryPage() {
           canSubmit={canSubmit}
           isSaving={isSaving}
           isDeleting={isDeleting}
+          isSynced={isSynced}
+          setIsSynced={setIsSynced}
         />
       </div>
     </section>

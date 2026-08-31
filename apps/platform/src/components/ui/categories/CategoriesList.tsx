@@ -3,19 +3,22 @@ import { CategoryJson } from "@/types/types";
 import Image from "next/image";
 import Link from "next/link";
 import EditIcon from "@/components/icons/edit.svg";
-import { Dispatch, SetStateAction, useState } from "react";
 import ReorderControls from "../controls/ReorderControls";
 import { getCategories } from "@/lib/api/categories";
 import { toast } from "sonner";
 import { moveOrder, ReorderDirection } from "@/lib/api/reorder";
 import axios from "axios";
 import ChevronIcon from "@/components/icons/chevron";
+import { useParams } from "next/navigation";
+import { useState } from "react";
 
 type CategoryListParams = {
   isLoading: boolean;
   categoryData: CategoryJson[];
   errorMessage: string | null;
-  setCategoryData: Dispatch<SetStateAction<CategoryJson[]>>;
+  setCategoryData: (categories: CategoryJson[]) => void;
+  type?: "category" | "subcategory";
+  parentCategoryId?: string;
 };
 
 export default function CategoryList({
@@ -23,15 +26,40 @@ export default function CategoryList({
   categoryData,
   errorMessage,
   setCategoryData,
+  type = "category",
+  parentCategoryId,
 }: CategoryListParams) {
+  const params = useParams<{
+    businessId: string;
+    locationId: string;
+  }>();
+
+  const businessId = params.businessId;
+  const locationId = params.locationId;
+
   const [processingCategoryId, setProcessingCategoryId] = useState<
     string | null
   >(null);
 
-  async function refreshCategoryData() {
-    const refreshedCategories = await getCategories();
+  const isSubcategory = type === "subcategory";
 
-    setCategoryData(refreshedCategories);
+  async function refreshCategoryData() {
+    const refreshedCategories = await getCategories(businessId, locationId);
+
+    if (!isSubcategory) {
+      setCategoryData(refreshedCategories);
+      return;
+    }
+
+    const selectedCategory = refreshedCategories.find(
+      (category) => category.id === parentCategoryId,
+    );
+
+    if (!selectedCategory) {
+      return;
+    }
+
+    setCategoryData(selectedCategory.subcategories ?? []);
   }
 
   // ----------------------------
@@ -48,16 +76,26 @@ export default function CategoryList({
         moveOrder({
           context: "category",
           direction,
+          businessId,
+          locationId,
           categoryId,
         }),
         {
           loading:
-            direction === "up" ? "Moving category up" : "Moving category down",
-          success: "Item order updated",
+            direction === "up"
+              ? `Moving ${isSubcategory ? "subcategory" : "category"} up`
+              : `Moving ${isSubcategory ? "subcategory" : "category"} down`,
+
+          success: isSubcategory
+            ? "Subcategory order updated"
+            : "Category order updated",
+
           error: (error) => {
             if (axios.isAxiosError(error)) {
               return {
-                message: "Failed to move category.",
+                message: `Failed to move ${
+                  isSubcategory ? "subcategory" : "category"
+                }.`,
                 description: `Status code: ${
                   error.response?.status ?? "No response"
                 }`,
@@ -66,7 +104,9 @@ export default function CategoryList({
 
             return {
               message: "Unexpected error.",
-              description: "Something went wrong while moving the category",
+              description: `Something went wrong while moving the ${
+                isSubcategory ? "subcategory" : "category"
+              }`,
             };
           },
         },
@@ -75,24 +115,51 @@ export default function CategoryList({
       await moveToast.unwrap();
       await refreshCategoryData();
     } catch (error) {
-      console.error("Error moving category: ", error);
+      console.error(
+        `Error moving ${isSubcategory ? "subcategory" : "category"}: `,
+        error,
+      );
     } finally {
       setProcessingCategoryId(null);
     }
   }
 
+  function getCategoryHref(categoryId: string) {
+    if (isSubcategory && parentCategoryId) {
+      return `${parentCategoryId}/subcategories/${categoryId}`;
+    }
+
+    return `menu/${categoryId}`;
+  }
+
+  const label = isSubcategory ? "Subcategory" : "Category";
+  const labelLowercase = isSubcategory ? "subcategory" : "category";
+
   return (
-    <div className="dashboard-card">
+    <section
+      className="dashboard-card"
+      aria-labelledby={`${isSubcategory ? "subcategory" : "category"}-heading`}
+    >
+      <h2
+        id={`${isSubcategory ? "subcategory" : "category"}-heading`}
+        className="px-3 py-2"
+      >
+        {isSubcategory ? "Subcategories" : "Categories"}
+      </h2>
       {isLoading ? (
-        <p>Loading categories...</p>
+        <p>Loading {isSubcategory ? "subcategories" : "categories"}...</p>
       ) : errorMessage ? (
         <p role="alert">{errorMessage}</p>
       ) : categoryData.length === 0 ? (
         <div>
-          <p className="font-semibold">You have no categories</p>
+          <p className="font-semibold">
+            You have no {isSubcategory ? "subcategories" : "categories"}
+          </p>
+
           <p className="text-gray-500">
-            Create a category to start organizing the items shown on your
-            website.
+            {isSubcategory
+              ? "Create a subcategory to start organizing the items shown on your website."
+              : "Create a category to start organizing the items shown on your website."}
           </p>
         </div>
       ) : (
@@ -103,7 +170,7 @@ export default function CategoryList({
               const isProcessingCategory = processingCategoryId === category.id;
 
               const isFirst = idx === 0;
-              const isLast = idx === (categoryData.length ?? 0) - 1;
+              const isLast = idx === categoryData.length - 1;
 
               return (
                 <li key={category.id} className="grid grid-cols-[1fr_auto]">
@@ -115,8 +182,9 @@ export default function CategoryList({
                       isLast={isLast}
                       handleMove={handleMoveCategory}
                     />
+
                     <Link
-                      href={`menu/${category.id}`}
+                      href={getCategoryHref(category.id)}
                       className="flex-1 min-w-0 flex items-center"
                       aria-label={`Edit ${category.name}`}
                     >
@@ -124,10 +192,12 @@ export default function CategoryList({
                         <p className="font-semibold truncate">
                           {category.name}
                         </p>
+
                         <p className="text-gray-500 truncate">
                           Order: {category.order}
                         </p>
                       </div>
+
                       <div className="shrink-0">
                         <ChevronIcon direction="right" size={35} />
                       </div>
@@ -148,13 +218,14 @@ export default function CategoryList({
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full border-collapse text-left">
               <caption className="sr-only">
-                Business categories and their display order
+                Business {isSubcategory ? "subcategories" : "categories"} and
+                their display order
               </caption>
 
               <thead>
                 <tr className="border-b border-gray-600">
                   <th scope="col" className="px-3 py-2 font-semibold">
-                    Category
+                    {label}
                   </th>
 
                   <th scope="col" className="px-3 py-2 font-semibold">
@@ -166,7 +237,7 @@ export default function CategoryList({
                   </th>
 
                   <th scope="col" className="w-12 px-3 py-2">
-                    <span className="sr-only">Edit category</span>
+                    <span className="sr-only">Edit {labelLowercase}</span>
                   </th>
                 </tr>
               </thead>
@@ -177,7 +248,7 @@ export default function CategoryList({
                     processingCategoryId === category.id;
 
                   const isFirst = idx === 0;
-                  const isLast = idx === (categoryData.length ?? 0) - 1;
+                  const isLast = idx === categoryData.length - 1;
 
                   return (
                     <tr key={category.id} className="border-gray-300">
@@ -186,6 +257,7 @@ export default function CategoryList({
                       </th>
 
                       <td className="px-3 py-2">{category.order}</td>
+
                       <td className="px-3 py-2">
                         <ReorderControls
                           id={category.id}
@@ -198,7 +270,7 @@ export default function CategoryList({
 
                       <td>
                         <Link
-                          href={`menu/${category.id}`}
+                          href={getCategoryHref(category.id)}
                           aria-label={`Edit ${category.name}`}
                           className="flex justify-center w-fit"
                         >
@@ -219,6 +291,6 @@ export default function CategoryList({
           </div>
         </>
       )}
-    </div>
+    </section>
   );
 }

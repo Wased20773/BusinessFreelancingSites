@@ -36,7 +36,15 @@ export default function CreateItemPage() {
     async function getLatestOrder() {
       try {
         const response = await axios.get<{
-          categories: CategoryJson[];
+          categories: {
+            id: string;
+            subcategories: {
+              id: string;
+              isSynced: boolean;
+              syncGroupId: string;
+              items: ItemJson[];
+            }[];
+          }[];
         }>("/api/business/menu", {
           headers: {
             "x-business-id": businessId,
@@ -53,15 +61,16 @@ export default function CreateItemPage() {
         );
 
         if (!selectedSubcategory) {
-          setErrorMessage("This subcategory could not be found.");
+          toast.error(
+            "Creating an item with the selected subcategory does not exist in our records",
+          );
           return;
         }
 
         setHasSyncGroup(Boolean(selectedSubcategory.syncGroupId));
         setIsSynced(selectedSubcategory.isSynced);
 
-        if (!selectedSubcategory.items?.length) {
-          setLatestOrder(1);
+        if (selectedSubcategory.items.length === 0) {
           return;
         }
 
