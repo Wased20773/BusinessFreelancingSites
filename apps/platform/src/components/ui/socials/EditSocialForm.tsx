@@ -1,6 +1,9 @@
 import { Dispatch, InputEvent, SetStateAction, SubmitEvent } from "react";
 import { SOCIAL_PLATFORMS } from "@/data/socials";
 import "@/app/dashboard/(protected)/page.css";
+import IsSyncedCheckbox from "../IsSyncedCheckbox";
+import type { SocialJson } from "@/types/types";
+
 type SocialPlatform = keyof typeof SOCIAL_PLATFORMS;
 
 type EditSocialFormParams = {
@@ -17,6 +20,9 @@ type EditSocialFormParams = {
   canSubmit: boolean;
   isSaving: boolean;
   isDeleting: boolean;
+  socialData: SocialJson;
+  isSynced: boolean;
+  setIsSynced: Dispatch<SetStateAction<boolean>>;
 };
 
 export default function EditSocialForm({
@@ -33,6 +39,9 @@ export default function EditSocialForm({
   canSubmit,
   isSaving,
   isDeleting,
+  socialData,
+  isSynced,
+  setIsSynced,
 }: EditSocialFormParams) {
   return (
     <form
@@ -58,6 +67,7 @@ export default function EditSocialForm({
             <option value="" disabled>
               Select a platform
             </option>
+
             <option value="instagram">Instagram</option>
             <option value="facebook">Facebook</option>
             <option value="youtube">YouTube</option>
@@ -94,6 +104,16 @@ export default function EditSocialForm({
           />
         </div>
       </fieldset>
+
+      <IsSyncedCheckbox
+        hasSyncGroup={Boolean(socialData.syncGroupId)}
+        htmlFor="sync-social"
+        inputName="sync-social"
+        isSynced={isSynced}
+        setIsSynced={setIsSynced}
+        isSaving={isProcessing}
+        description="Synchronize this social across locations"
+      />
 
       {errorMessage && <p role="alert">{errorMessage}</p>}
 

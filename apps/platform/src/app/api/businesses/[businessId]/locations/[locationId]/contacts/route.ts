@@ -51,6 +51,7 @@ export async function POST(
         phoneNumber: true,
         email: true,
         isPersonal: true,
+        isSynced: true,
         syncGroupId: true,
         createdAt: true,
         updatedAt: true,

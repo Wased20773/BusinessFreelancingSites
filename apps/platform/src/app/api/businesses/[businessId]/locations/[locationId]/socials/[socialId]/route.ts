@@ -75,6 +75,8 @@ export async function PATCH(
         profileName: true,
         url: true,
         icon: true,
+        syncGroupId: true,
+        isSynced: true,
       },
     });
   } catch (error) {

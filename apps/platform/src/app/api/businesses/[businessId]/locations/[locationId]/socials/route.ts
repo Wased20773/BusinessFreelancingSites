@@ -58,7 +58,6 @@ export async function POST(
       businessId,
       locationId,
       data: {
-        businessId: businessId,
         domain: body.domain,
         profileName: body.profileName,
         url: url,
@@ -66,10 +65,15 @@ export async function POST(
       },
       select: {
         id: true,
+        locationId: true,
         domain: true,
         profileName: true,
         url: true,
         icon: true,
+        isSynced: true,
+        syncGroupId: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
   } catch (error) {
