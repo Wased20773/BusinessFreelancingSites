@@ -26,6 +26,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           orderBy: { order: "asc" },
           select: {
             id: true,
+            locationId: true,
             name: true,
             description: true,
             order: true,

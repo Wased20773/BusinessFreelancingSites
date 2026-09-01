@@ -30,6 +30,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           ],
           select: {
             id: true,
+            locationId: true,
             phoneNumber: true,
             email: true,
             isPersonal: true,

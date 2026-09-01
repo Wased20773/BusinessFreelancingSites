@@ -40,6 +40,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         ],
         select: {
           id: true,
+          locationId: true,
           domain: true,
           profileName: true,
           url: true,
