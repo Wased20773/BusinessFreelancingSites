@@ -5,8 +5,7 @@ import BurgerButton from "@/components/icons/burger-button.svg";
 import ExitButtonWhite from "@/components/icons/exit-white.svg";
 import { useState } from "react";
 import Link from "next/link";
-import { dashboardLinks } from "@/data/dashboardLinks";
-import { useParams, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import "@/components/layout/dashboard/MobileNavBar.css";
 import Logo from "../../../../public/logo.svg";
 import SettingsIconWhite from "@/components/icons/settings-white.svg";
@@ -17,20 +16,14 @@ import { DashboardNavProps } from "@/types/types";
 export default function MobileNavBar({
   currentBusiness,
   currentAccount,
+  variant,
+  navLinks,
+  businesses,
+  locations,
 }: DashboardNavProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const pathname = usePathname();
-
-  const params = useParams<{
-    businessId: string;
-    locationId: string;
-  }>();
-
-  const businessId = params.businessId;
-  const locationId = params.locationId;
-
-  const links = dashboardLinks(businessId, locationId);
 
   const settingsSelected = pathname === "/dashboard/settings";
 
@@ -53,19 +46,24 @@ export default function MobileNavBar({
         />
       </button>
 
-      {/* Client Logo + Name */}
-      <div className="flex flex-row items-center gap-3">
-        <span className="text-gray-900 font-semibold">
-          {currentBusiness.name}
-        </span>
-        <Image
-          src={Logo}
-          alt="Client Logo"
-          width={50}
-          height={50}
-          loading="eager"
-        />
-      </div>
+      {variant === "workspace" && <>{/* Location Select */}</>}
+      {variant === "dashboard" && (
+        <>
+          {/* Client Logo + Name */}
+          <div className="flex flex-row items-center gap-3">
+            <span className="text-gray-900 font-semibold">
+              {currentBusiness.name}
+            </span>
+            <Image
+              src={Logo}
+              alt="Client Logo"
+              width={50}
+              height={50}
+              loading="eager"
+            />
+          </div>
+        </>
+      )}
 
       {/* Slide Into View After Clicking Burger Button */}
       <div
@@ -108,7 +106,7 @@ export default function MobileNavBar({
         {/* Navigation */}
         <nav className="min-h-0 overflow-y-auto border-b border-gray-500">
           <ul>
-            {links.map((link) => {
+            {navLinks.map((link) => {
               const isSelected = pathname === link.href;
 
               return (

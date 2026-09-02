@@ -43,66 +43,6 @@ async function getBusinessAccess(userId: string, businessId: string) {
   });
 }
 
-// GET /api/businesses/[businessId]/locations
-export async function GET(
-  request: Request,
-  { params }: RouteContext,
-): Promise<NextResponse> {
-  try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { businessId } = await params;
-
-    // Verify the current user is linked to this business.
-    const businessAccess = await getBusinessAccess(session.user.id, businessId);
-
-    if (!businessAccess) {
-      return NextResponse.json(
-        { error: "You do not have access to this business" },
-        { status: 403 },
-      );
-    }
-
-    const locations = await prisma.location.findMany({
-      where: {
-        businessId,
-      },
-      select: {
-        id: true,
-        address: true,
-        zip: true,
-        country: true,
-        state: true,
-        city: true,
-        parking: true,
-        isActive: true,
-      },
-      orderBy: {
-        createdAt: "asc",
-      },
-    });
-
-    return NextResponse.json(
-      {
-        business: businessAccess.business,
-        locations,
-      },
-      { status: 200 },
-    );
-  } catch (error) {
-    console.error("Failed to fetch business locations:", error);
-
-    return NextResponse.json(
-      { error: "Failed to fetch business locations" },
-      { status: 500 },
-    );
-  }
-}
-
 // POST /api/businesses/[businessId]/locations
 export async function POST(
   request: Request,

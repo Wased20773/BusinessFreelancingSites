@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 export default async function Login() {
   const session = await auth();
 
+  if (session?.user?.businessId) {
+    redirect(`/businesses/${session.user.businessId}`);
+  }
+
   if (session?.user) {
     redirect("/businesses");
   }

@@ -4,8 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import "./SideBar.css";
 import Logo from "../../../../public/logo.svg";
-import { useParams, usePathname } from "next/navigation";
-import { dashboardLinks } from "@/data/dashboardLinks";
+import { usePathname } from "next/navigation";
 import PlaceHolderAccountBlack from "@/components/icons/placeholder-account-black.svg";
 import SettingsIconBlack from "@/components/icons/settings-black.svg";
 import { DashboardNavProps } from "@/types/types";
@@ -13,36 +12,35 @@ import { DashboardNavProps } from "@/types/types";
 export default function SideBar({
   currentBusiness,
   currentAccount,
+  variant,
+  navLinks,
+  businesses,
+  locations,
 }: DashboardNavProps) {
   const pathname = usePathname();
-
-  const params = useParams<{
-    businessId: string;
-    locationId: string;
-  }>();
-
-  const businessId = params.businessId;
-  const locationId = params.locationId;
-
-  const links = dashboardLinks(businessId, locationId);
 
   const settingsSelected = pathname === "/dashboard/settings";
 
   return (
     <aside className="hidden h-screen w-[250px] grid-rows-[auto_minmax(0,1fr)_auto] md:grid bg-gray-50 border-r border-gray-300">
-      {/* Client Logo + Name */}
-      <div className="border-b border-gray-300 p-2 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-1">
-        <Image
-          src={Logo}
-          alt="Client logo"
-          width={50}
-          height={50}
-          loading="eager"
-        />
-        <span className="min-w-0 text-gray-900 font-semibold px-2 truncate">
-          {currentBusiness.name}
-        </span>
-      </div>
+      {variant === "workspace" && <>{/* Business Select */}</>}
+      {variant === "dashboard" && (
+        <>
+          {/* Client Logo + Name */}
+          <div className="border-b border-gray-300 p-2 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-1">
+            <Image
+              src={Logo}
+              alt="Client logo"
+              width={50}
+              height={50}
+              loading="eager"
+            />
+            <span className="min-w-0 text-gray-900 font-semibold px-2 truncate">
+              {currentBusiness.name}
+            </span>
+          </div>
+        </>
+      )}
 
       {/* Navigation Links */}
       <nav
@@ -50,7 +48,7 @@ export default function SideBar({
         aria-label="Dashboard Navigation"
       >
         <ul className="flex flex-col gap-1">
-          {links.map((link) => {
+          {navLinks.map((link) => {
             const isSelected = pathname === link.href;
 
             return (

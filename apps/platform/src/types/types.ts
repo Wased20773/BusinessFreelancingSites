@@ -23,6 +23,12 @@ export type BusinessJson = Omit<Business, "createdAt" | "updatedAt"> & {
   updatedAt: string;
 };
 
+export type BusinessOwnerShip = {
+  id: string;
+  role: { accessLevel: AccessLevel };
+  business: BusinessJson;
+};
+
 // BusinessUser
 export type BusinessUserJson = {
   id: string;
@@ -135,4 +141,11 @@ export type DashboardNavAccount = {
 export type DashboardNavProps = {
   currentBusiness: DashboardNavBusiness;
   currentAccount: DashboardNavAccount;
+  variant: "workspace" | "dashboard";
+  navLinks: {
+    name: string;
+    href: string;
+  }[];
+  businesses?: BusinessOwnerShip[];
+  locations?: LocationJson[];
 };
