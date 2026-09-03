@@ -1,5 +1,4 @@
-import { BusinessJson, BusinessOwnerShip } from "@/types/types";
-import { AccessLevel } from "@business-freelancer/database";
+import { BusinessOwnerShip } from "@/types/types";
 import axios from "axios";
 
 export async function getBusinesses() {

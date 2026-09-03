@@ -38,7 +38,7 @@ export async function GET(): Promise<NextResponse> {
       },
     });
 
-    return NextResponse.json(businessUsers);
+    return NextResponse.json(businessUsers, { status: 200 });
   } catch (error) {
     console.error("Failed to fetch user businesses:", error);
 

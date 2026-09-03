@@ -8,10 +8,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import "@/components/layout/dashboard/MobileNavBar.css";
 import Logo from "../../../../public/logo.svg";
-import SettingsIconWhite from "@/components/icons/settings-white.svg";
-import SettingsIconBlack from "@/components/icons/settings-black.svg";
-import PlaceHolderAccountWhite from "@/components/icons/placeholder-account-white.svg";
 import { DashboardNavProps } from "@/types/types";
+import EnterDashboardDropdown from "@/components/ui/dropdown/EnterDashboardDropdown";
+import BusinessesDropdown from "@/components/ui/dropdown/BusinessesDropdown";
+import AccountDropdown from "@/components/ui/dropdown/AccountDropdown";
 
 export default function MobileNavBar({
   currentBusiness,
@@ -19,13 +19,12 @@ export default function MobileNavBar({
   variant,
   navLinks,
   businesses,
+  businessId,
   locations,
 }: DashboardNavProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const pathname = usePathname();
-
-  const settingsSelected = pathname === "/dashboard/settings";
 
   return (
     <header className="md:hidden flex justify-between items-center gap-1 border-b border-gray-300 bg-gray-50 p-2 z-20">
@@ -46,7 +45,15 @@ export default function MobileNavBar({
         />
       </button>
 
-      {variant === "workspace" && <>{/* Location Select */}</>}
+      {variant === "workspace" && businesses && businessId && locations && (
+        <>
+          {/* Location Select */}
+          <EnterDashboardDropdown
+            businessId={businessId}
+            locations={locations}
+          />
+        </>
+      )}
       {variant === "dashboard" && (
         <>
           {/* Client Logo + Name */}
@@ -72,19 +79,27 @@ export default function MobileNavBar({
           .join(" ")}
       >
         {/* Header */}
-        <div className="flex justify-between items-center p-3">
-          <div className="flex flex-row items-center gap-3">
-            <Image
-              src={Logo}
-              alt="Client logo"
-              width={50}
-              height={50}
-              loading="eager"
-            />
-            <span className="font-semibold text-gray-100">
-              {currentBusiness.name}
-            </span>
-          </div>
+        <div className="flex justify-between items-center p-3 gap-3">
+          {variant === "workspace" && businesses && (
+            <div className="flex-1">
+              {/* Business Select */}
+              <BusinessesDropdown businesses={businesses} />
+            </div>
+          )}
+          {variant === "dashboard" && (
+            <div className="flex flex-row items-center gap-3">
+              <Image
+                src={Logo}
+                alt="Client logo"
+                width={50}
+                height={50}
+                loading="eager"
+              />
+              <span className="font-semibold text-gray-100">
+                {currentBusiness.name}
+              </span>
+            </div>
+          )}
 
           <button
             className="cursor-pointer"
@@ -128,8 +143,9 @@ export default function MobileNavBar({
         </nav>
 
         {/* Account */}
-        <div className="grid grid-cols-[1fr_auto_auto]">
-          <div className="flex flex-row items-center justify-evenly">
+        <div className="p-3">
+          {/* <div className="grid grid-cols-[1fr_auto_auto]"> */}
+          {/* <div className="flex flex-row items-center justify-evenly">
             <Link
               href="/dashboard/settings"
               className={[
@@ -172,25 +188,10 @@ export default function MobileNavBar({
             </Link>
           </div>
 
-          <div className="border-l border-gray-500 w-0 ml-3 mr-3"></div>
+          <div className="border-l border-gray-500 w-0 ml-3 mr-3"></div> */}
 
-          <div className="grid grid-cols-[auto_auto] items-center justify-center">
-            <Image
-              className="border-[2px] border-gray-100 rounded-[50%] overflow-hidden"
-              src={currentAccount.image || PlaceHolderAccountWhite}
-              alt="Account profile"
-              width={40}
-              height={40}
-              loading="eager"
-            />
-            <div className="max-w-[150px] flex flex-col px-2">
-              <span className="text-gray-300 truncate">
-                {currentAccount.name}
-              </span>
-              <span className="text-gray-500 truncate">
-                {currentAccount.accessLevel}
-              </span>
-            </div>
+          <div className="flex items-center py-2">
+            <AccountDropdown theme={"dark"} currentAccount={currentAccount} />
           </div>
         </div>
       </div>

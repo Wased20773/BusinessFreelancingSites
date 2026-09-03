@@ -1,6 +1,6 @@
 "use client";
 
-import "@/app/businesses/[businessId]/locations/[locationId]/dashboard/(protected)/page.css";
+import "@/app/businesses/[businessId]/(dashboard)/locations/[locationId]/dashboard/(protected)/page.css";
 
 import Divider from "@/components/layout/Divider";
 import CreateDaysForm from "@/components/ui/days/CreateDaysForm";

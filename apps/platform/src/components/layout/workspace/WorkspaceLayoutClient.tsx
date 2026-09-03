@@ -2,6 +2,7 @@
 
 import MobileNavBar from "@/components/layout/dashboard/MobileNavBar";
 import SideBar from "@/components/layout/dashboard/SideBar";
+import EnterDashboardDropdown from "@/components/ui/dropdown/EnterDashboardDropdown";
 import { workspaceLinks } from "@/data/workspaceLinks";
 import { getBusinesses } from "@/lib/api/business";
 import { getLocations } from "@/lib/api/locations";
@@ -64,24 +65,31 @@ export default function WorkspaceLayoutClient({
   const navLinks = workspaceLinks(businessId);
 
   return (
-    <div className="h-screen grid grid-rows-[auto_1fr] md:grid-cols-[auto_1fr] md:grid-rows-1">
-      <SideBar
-        variant="workspace"
-        currentBusiness={currentBusiness}
-        currentAccount={currentAccount}
-        navLinks={navLinks}
-        businesses={businesses}
-        locations={locations}
-      />
+    <div className="h-screen grid grid-rows-[auto_1fr] md:grid-cols-[auto_1fr] md:grid-rows-[auto_1fr]">
+      <div className="md:col-start-1 md:row-start-1 md:row-span-2">
+        <SideBar
+          variant="workspace"
+          currentBusiness={currentBusiness}
+          currentAccount={currentAccount}
+          navLinks={navLinks}
+          businesses={businesses}
+        />
 
-      <MobileNavBar
-        variant="workspace"
-        currentBusiness={currentBusiness}
-        currentAccount={currentAccount}
-        navLinks={navLinks}
-        businesses={businesses}
-        locations={locations}
-      />
+        <MobileNavBar
+          variant="workspace"
+          currentBusiness={currentBusiness}
+          currentAccount={currentAccount}
+          navLinks={navLinks}
+          businesses={businesses}
+          businessId={selectedBusiness.business.id}
+          locations={locations}
+        />
+      </div>
+
+      <div className="hidden md:block border-b border-gray-300">
+        {/* Location / Enter Dashboard control */}
+        <EnterDashboardDropdown businessId={businessId} locations={locations} />
+      </div>
 
       <main className="min-h-0 overflow-y-scroll p-5">{children}</main>
     </div>

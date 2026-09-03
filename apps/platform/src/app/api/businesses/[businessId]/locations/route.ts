@@ -14,6 +14,7 @@ type CreateLocationBody = {
   state?: string | null;
   zip?: string | null;
   country?: string | null;
+  parking: true | false;
 };
 
 async function getBusinessAccess(userId: string, businessId: string) {
@@ -133,6 +134,7 @@ export async function POST(
         state: body.state?.trim() || null,
         zip: body.zip?.trim() || null,
         country: body.country?.trim() || null,
+        parking: body.parking || false,
       },
       select: {
         id: true,

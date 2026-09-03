@@ -39,7 +39,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       },
     });
 
-    return NextResponse.json({ locations }, { status: 200 });
+    return NextResponse.json(locations, { status: 200 });
   } catch (error) {
     console.error("Failed to fetch business locations:", error);
 

@@ -44,14 +44,12 @@ export default function EditLocationPage() {
          */
         const locationsToast = toast.promise<LocationJson[]>(
           axios
-            .get<{
-              locations: LocationJson[];
-            }>("/api/business/locations", {
+            .get<LocationJson[]>("/api/business/locations", {
               headers: {
                 "x-business-id": businessId,
               },
             })
-            .then((response) => response.data.locations),
+            .then((response) => response.data),
           {
             loading: "Loading location...",
             success: "Location loaded.",

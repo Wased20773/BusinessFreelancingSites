@@ -8,6 +8,8 @@ import { usePathname } from "next/navigation";
 import PlaceHolderAccountBlack from "@/components/icons/placeholder-account-black.svg";
 import SettingsIconBlack from "@/components/icons/settings-black.svg";
 import { DashboardNavProps } from "@/types/types";
+import BusinessesDropdown from "@/components/ui/dropdown/BusinessesDropdown";
+import AccountDropdown from "@/components/ui/dropdown/AccountDropdown";
 
 export default function SideBar({
   currentBusiness,
@@ -15,7 +17,6 @@ export default function SideBar({
   variant,
   navLinks,
   businesses,
-  locations,
 }: DashboardNavProps) {
   const pathname = usePathname();
 
@@ -23,11 +24,16 @@ export default function SideBar({
 
   return (
     <aside className="hidden h-screen w-[250px] grid-rows-[auto_minmax(0,1fr)_auto] md:grid bg-gray-50 border-r border-gray-300">
-      {variant === "workspace" && <>{/* Business Select */}</>}
+      {variant === "workspace" && businesses && (
+        <>
+          {/* Business Select */}
+          <BusinessesDropdown businesses={businesses} />
+        </>
+      )}
       {variant === "dashboard" && (
         <>
           {/* Client Logo + Name */}
-          <div className="border-b border-gray-300 p-2 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-1">
+          <div className=" border-gray-300 p-2 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-1">
             <Image
               src={Logo}
               alt="Client logo"
@@ -44,7 +50,7 @@ export default function SideBar({
 
       {/* Navigation Links */}
       <nav
-        className="border-b border-gray-300 p-2 overflow-y-scroll min-h-0"
+        className="border-b border-gray-300 overflow-y-scroll min-h-0 border-t p-2"
         aria-label="Dashboard Navigation"
       >
         <ul className="flex flex-col gap-1">
@@ -69,8 +75,8 @@ export default function SideBar({
       </nav>
 
       {/* Account */}
-      <div className="flex flex-col p-2 gap-1">
-        <Link
+      <div className="p-2">
+        {/* <Link
           className={["sidebar-nav-links", settingsSelected && "selected"]
             .filter(Boolean)
             .join(" ")}
@@ -102,7 +108,8 @@ export default function SideBar({
               {currentAccount.accessLevel}
             </span>
           </div>
-        </div>
+        </div> */}
+        <AccountDropdown theme={"light"} currentAccount={currentAccount} />
       </div>
     </aside>
   );

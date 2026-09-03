@@ -147,5 +147,6 @@ export type DashboardNavProps = {
     href: string;
   }[];
   businesses?: BusinessOwnerShip[];
+  businessId?: string;
   locations?: LocationJson[];
 };
