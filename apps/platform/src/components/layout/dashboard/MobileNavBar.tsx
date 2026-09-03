@@ -12,6 +12,7 @@ import { DashboardNavProps } from "@/types/types";
 import EnterDashboardDropdown from "@/components/ui/dropdown/EnterDashboardDropdown";
 import BusinessesDropdown from "@/components/ui/dropdown/BusinessesDropdown";
 import AccountDropdown from "@/components/ui/dropdown/AccountDropdown";
+import ArrowIcon from "@/components/icons/arrow";
 
 export default function MobileNavBar({
   currentBusiness,
@@ -143,57 +144,38 @@ export default function MobileNavBar({
         </nav>
 
         {/* Account */}
-        <div className="p-3">
-          {/* <div className="grid grid-cols-[1fr_auto_auto]"> */}
-          {/* <div className="flex flex-row items-center justify-evenly">
-            <Link
-              href="/dashboard/settings"
-              className={[
-                "group mobile-bottom-nav-link",
-                settingsSelected && "selected",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              onClick={() => setIsOpen(false)}
-            >
-              <div className="relative h-[40px] w-[40px]">
-                <Image
-                  src={SettingsIconWhite}
-                  alt="Settings icon"
-                  fill
-                  className={[
-                    "object-contain transition-opacity duration-200",
-                    settingsSelected
-                      ? "opacity-0"
-                      : "opacity-100 group-hover:opacity-0",
-                  ].join(" ")}
-                  loading="eager"
-                />
-                <Image
-                  src={SettingsIconBlack}
-                  alt=""
-                  aria-hidden="true"
-                  fill
-                  className={[
-                    "object-contain opacity-0 transition-opacity duration-200",
-                    settingsSelected
-                      ? "opacity-100"
-                      : "opacity-0 group-hover:opacity-100",
-                  ].join(" ")}
-                  loading="eager"
+        {variant === "dashboard" && (
+          <div className="grid grid-cols-[1fr_auto_auto]">
+            <div className="flex flex-row items-center justify-evenly p-3">
+              <Link
+                href={`/businesses/${businessId}`}
+                className="flex items-center gap-2 px-2"
+              >
+                <ArrowIcon direction="left" size={20} theme="dark" />
+                <span className="text-gray-300">Go Back</span>
+              </Link>
+            </div>
+
+            <div className="border-l border-gray-500 w-0"></div>
+
+            <div className="flex flex-col items-center p-3">
+              <div className="flex items-center py-2">
+                <AccountDropdown
+                  theme={"dark"}
+                  currentAccount={currentAccount}
                 />
               </div>
-
-              <span>Settings</span>
-            </Link>
+            </div>
           </div>
+        )}
 
-          <div className="border-l border-gray-500 w-0 ml-3 mr-3"></div> */}
-
-          <div className="flex items-center py-2">
-            <AccountDropdown theme={"dark"} currentAccount={currentAccount} />
+        {variant === "workspace" && (
+          <div className="p-3">
+            <div className="flex items-center py-2">
+              <AccountDropdown theme={"dark"} currentAccount={currentAccount} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </header>
   );

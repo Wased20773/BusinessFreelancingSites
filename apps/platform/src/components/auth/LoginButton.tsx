@@ -1,22 +1,23 @@
-import { signIn } from '@/auth';
+import { signIn } from "@/auth";
 
 export default function LoginButton() {
-
-    return (
-        <>
-            <form
-                action={async () => {
-                    'use server';
-                    await signIn('google', {
-                        redirectTo: '/dashboard',
-                    });
-                }}
-            >
-                <button
-                    type='submit'
-                    className='border border-sky-600 rounded p-2 bg-sky-300'
-                >Signin with Google</button>
-            </form>
-        </>
-    )
+  return (
+    <>
+      <form
+        action={async () => {
+          "use server";
+          await signIn("google", {
+            redirectTo: "/businesses",
+          });
+        }}
+      >
+        <button
+          type="submit"
+          className="border border-sky-600 rounded p-2 bg-sky-300"
+        >
+          Signin with Google
+        </button>
+      </form>
+    </>
+  );
 }

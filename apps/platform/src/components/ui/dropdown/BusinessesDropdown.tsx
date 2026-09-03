@@ -15,6 +15,7 @@ import { SubmitEvent, useState } from "react";
 import CreateBusinessModal from "../modal/CreateBusinessModal";
 import axios from "axios";
 import { toast } from "sonner";
+import { usePathname } from "next/navigation";
 
 type CreateBusinessResponse = {
   message: string;
@@ -54,6 +55,8 @@ export default function BusinessesDropdown({
     null,
   );
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  const pathname = usePathname();
 
   async function handleCreateBusiness(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -154,13 +157,25 @@ export default function BusinessesDropdown({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            {businesses.map((businessUser) => (
-              <DropdownMenuItem key={businessUser.business.id} asChild>
-                <Link href={`/businesses/${businessUser.business.id}`}>
-                  {businessUser.business.name}
-                </Link>
-              </DropdownMenuItem>
-            ))}
+            {businesses.map((businessUser) => {
+              const href = `/businesses/${businessUser.business.id}`;
+              const isSelected =
+                pathname === href || pathname.startsWith(`${href}/`);
+
+              return (
+                <DropdownMenuItem
+                  key={businessUser.business.id}
+                  asChild
+                  className={
+                    isSelected ? "bg-accent text-accent-foreground" : undefined
+                  }
+                >
+                  <Link href={`/businesses/${businessUser.business.id}`}>
+                    {businessUser.business.name}
+                  </Link>
+                </DropdownMenuItem>
+              );
+            })}
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>

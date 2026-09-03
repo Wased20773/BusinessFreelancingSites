@@ -65,12 +65,14 @@ export default async function DashboardLayout({
           currentAccount={currentAccount}
           variant="dashboard"
           navLinks={navLinks}
+          businessId={businessId}
         />
         <MobileNavBar
           currentBusiness={currentBusiness}
           currentAccount={currentAccount}
           variant="dashboard"
           navLinks={navLinks}
+          businessId={businessId}
         />
 
         <main className="min-h-0 overflow-y-scroll p-5">{children}</main>

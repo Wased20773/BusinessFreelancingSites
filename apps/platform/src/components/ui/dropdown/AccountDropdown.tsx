@@ -16,6 +16,7 @@ import {
 import Image from "next/image";
 import { DashboardNavAccount } from "@/types/types";
 import PlaceHolderAccountWhite from "@/components/icons/placeholder-account-white.svg";
+import { signOut } from "next-auth/react";
 
 type AccountDropdownProps = {
   currentAccount: DashboardNavAccount;
@@ -53,7 +54,7 @@ export default function AccountDropdown({
               theme === "dark"
                 ? "text-gray-300"
                 : theme === "light"
-                  ? "text-gray-800"
+                  ? "text-black"
                   : undefined
             }
           >
@@ -73,16 +74,11 @@ export default function AccountDropdown({
             <CreditCardIcon />
             Billing
           </DropdownMenuItem>
-
-          <DropdownMenuItem>
-            <BellIcon />
-            Notifications
-          </DropdownMenuItem>
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => signOut()}>
           <LogOutIcon />
           Sign Out
         </DropdownMenuItem>

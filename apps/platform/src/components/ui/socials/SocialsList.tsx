@@ -42,11 +42,6 @@ export default function SocialsList({
             {/* DESKTOP */}
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full border-collapse text-left">
-                <caption className="sr-only">
-                  Business socials, including profile name, domain, and the
-                  platform
-                </caption>
-
                 <thead>
                   <tr className="border-b border-gray-600">
                     <th scope="col" className="px-3 py-2 font-semibold">
@@ -61,14 +56,11 @@ export default function SocialsList({
                       Platform
                     </th>
 
-                    <th scope="col" className="w-12 px-3 py-2">
-                      <span className="sr-only">Edit socials</span>
-                    </th>
+                    <th scope="col" className="w-12 px-3 py-2"></th>
                   </tr>
                 </thead>
 
                 <tbody className="divide-y">
-                  {/* TODO: Render the desktop view socials */}
                   {socialsData.map((social) => (
                     <ListCard
                       key={social.id}

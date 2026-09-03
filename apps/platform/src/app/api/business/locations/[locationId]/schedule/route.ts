@@ -47,14 +47,6 @@ export async function GET(
       select: {
         id: true,
         businessId: true,
-        address: true,
-        zip: true,
-        country: true,
-        state: true,
-        city: true,
-        parking: true,
-        isActive: true,
-        enableHours: true,
         days: {
           select: {
             id: true,

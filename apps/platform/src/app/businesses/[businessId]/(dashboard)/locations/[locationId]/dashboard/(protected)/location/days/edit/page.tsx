@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { type SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
-import "@/app/businesses/[businessId]/locations/[locationId]/dashboard/(protected)/page.css";
+import "../../../page.css";
 
 const MONDAY_SUNDAY = [
   "Monday",

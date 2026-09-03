@@ -44,11 +44,6 @@ export default function ContactsList({
             {/* DESKTOP */}
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full border-collapse text-left">
-                <caption className="sr-only">
-                  Business contacts, including email addresses, phone numbers,
-                  and contact types
-                </caption>
-
                 <thead>
                   <tr className="border-b border-gray-600">
                     <th scope="col" className="px-3 py-2 font-semibold">
@@ -63,9 +58,7 @@ export default function ContactsList({
                       Type
                     </th>
 
-                    <th scope="col" className="w-12 px-3 py-2">
-                      <span className="sr-only">View contact</span>
-                    </th>
+                    <th scope="col" className="w-12 px-3 py-2"></th>
                   </tr>
                 </thead>
 

@@ -4,6 +4,7 @@ type ArrowIconProps = {
   direction?: ArrowDirection;
   strokeWidth?: number;
   size?: number;
+  theme?: "dark" | "light";
 };
 
 const rotation: Record<ArrowDirection, number> = {
@@ -17,6 +18,7 @@ export default function ArrowIcon({
   direction,
   strokeWidth = 2,
   size = 30,
+  theme,
 }: ArrowIconProps) {
   return (
     <svg
@@ -27,6 +29,8 @@ export default function ArrowIcon({
       aria-hidden="true"
       style={{
         transform: `rotate(${rotation[direction ?? "right"]}deg)`,
+        color:
+          theme === "dark" ? "white" : theme === "light" ? "black" : undefined,
       }}
     >
       <path

@@ -5,11 +5,10 @@ import Link from "next/link";
 import "./SideBar.css";
 import Logo from "../../../../public/logo.svg";
 import { usePathname } from "next/navigation";
-import PlaceHolderAccountBlack from "@/components/icons/placeholder-account-black.svg";
-import SettingsIconBlack from "@/components/icons/settings-black.svg";
 import { DashboardNavProps } from "@/types/types";
 import BusinessesDropdown from "@/components/ui/dropdown/BusinessesDropdown";
 import AccountDropdown from "@/components/ui/dropdown/AccountDropdown";
+import ArrowIcon from "@/components/icons/arrow";
 
 export default function SideBar({
   currentBusiness,
@@ -17,13 +16,12 @@ export default function SideBar({
   variant,
   navLinks,
   businesses,
+  businessId,
 }: DashboardNavProps) {
   const pathname = usePathname();
 
-  const settingsSelected = pathname === "/dashboard/settings";
-
   return (
-    <aside className="hidden h-screen w-[250px] grid-rows-[auto_minmax(0,1fr)_auto] md:grid bg-gray-50 border-r border-gray-300">
+    <aside className="hidden h-screen w-fit  grid-rows-[auto_minmax(0,1fr)_auto] md:grid bg-gray-50 border-r border-gray-300">
       {variant === "workspace" && businesses && (
         <>
           {/* Business Select */}
@@ -75,7 +73,7 @@ export default function SideBar({
       </nav>
 
       {/* Account */}
-      <div className="p-2">
+      <div className="flex flex-col items-start gap-3 p-2">
         {/* <Link
           className={["sidebar-nav-links", settingsSelected && "selected"]
             .filter(Boolean)
@@ -109,6 +107,16 @@ export default function SideBar({
             </span>
           </div>
         </div> */}
+
+        {variant === "dashboard" && (
+          <Link
+            href={`/businesses/${businessId}`}
+            className="flex items-center gap-2 px-2"
+          >
+            <ArrowIcon direction="left" size={20} />
+            <span>Go Back</span>
+          </Link>
+        )}
         <AccountDropdown theme={"light"} currentAccount={currentAccount} />
       </div>
     </aside>

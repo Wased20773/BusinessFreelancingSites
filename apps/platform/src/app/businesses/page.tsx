@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import ExitIcon from "@/components/icons/exit-black.svg";
 import Image from "next/image";
+import ArrowIcon from "@/components/icons/arrow";
 
 type BusinessUserJson = {
   id: string;
@@ -200,7 +201,7 @@ export default function BusinessesPage() {
           <h1 className="text-2xl font-semibold">Your Businesses</h1>
 
           <p className="text-gray-500 mt-1">
-            Select a business to view its locations.
+            Select a business to get started.
           </p>
         </div>
 
@@ -272,8 +273,9 @@ export default function BusinessesPage() {
                       </p>
                     )}
 
-                    <p className="text-blue-500 mt-auto pt-5">
-                      View locations →
+                    <p className="flex items-center gap-2 text-blue-500 mt-auto pt-5">
+                      <span>View locations</span>
+                      <ArrowIcon size={15} />
                     </p>
                   </div>
                 </Link>

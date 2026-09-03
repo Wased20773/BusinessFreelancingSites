@@ -1,6 +1,6 @@
 "use client";
 
-import "@/app/businesses/[businessId]/(dashboard)/locations/[locationId]/dashboard/(protected)/page.css";
+import "../page.css";
 
 import Divider from "@/components/layout/Divider";
 import CreateDaysForm from "@/components/ui/days/CreateDaysForm";
@@ -59,9 +59,7 @@ export default function LocationPage() {
         Promise.all([
           // Get all locations attached to the selected business.
           // This lets us know whether the sync option should be shown.
-          axios.get<{
-            locations: LocationJson[];
-          }>("/api/business/locations", {
+          axios.get<LocationJson[]>("/api/business/locations", {
             headers: {
               "x-business-id": businessId,
             },
@@ -78,7 +76,7 @@ export default function LocationPage() {
             },
           ),
         ]).then(([locationsResponse, scheduleResponse]) => ({
-          locations: locationsResponse.data.locations,
+          locations: locationsResponse.data,
           schedule: scheduleResponse.data,
         })),
         {
@@ -103,6 +101,9 @@ export default function LocationPage() {
       );
 
       const { locations, schedule } = await locationToast.unwrap();
+
+      console.log(locations);
+      console.log(schedule);
 
       setLocationCount(locations.length);
 
