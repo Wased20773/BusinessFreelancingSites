@@ -102,9 +102,6 @@ export default function LocationPage() {
 
       const { locations, schedule } = await locationToast.unwrap();
 
-      console.log(locations);
-      console.log(schedule);
-
       setLocationCount(locations.length);
 
       const selectedLocation = locations.find(

@@ -99,7 +99,6 @@ export default function EditSocialPage() {
 
         const platform = getPlatformFromDomain(selectedSocial.domain) ?? "";
 
-        console.log(selectedSocial);
         setSocialData(selectedSocial);
         setSelectedPlatform(platform);
         setProfileName(selectedSocial.profileName);

@@ -176,7 +176,6 @@ export default function CreateLocationModal({
                 name="zip"
                 type="text"
                 disabled={isSubmitting}
-                required
               />
             </div>
           </div>
@@ -193,7 +192,6 @@ export default function CreateLocationModal({
                 name="country"
                 type="checkbox"
                 disabled={isSubmitting}
-                required
               />
               <span className="font-semibold">Parking Available</span>
             </label>

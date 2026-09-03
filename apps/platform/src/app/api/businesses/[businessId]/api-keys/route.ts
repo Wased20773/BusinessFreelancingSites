@@ -26,7 +26,12 @@ export async function GET(
     const authentication = await authenticateBusinessAccess(
       request,
       businessId,
-      [AccessLevel.developer],
+      [
+        AccessLevel.developer,
+        AccessLevel.owner,
+        AccessLevel.admin,
+        AccessLevel.staff,
+      ],
     );
 
     if (authentication instanceof NextResponse) {
@@ -39,6 +44,7 @@ export async function GET(
       },
       select: {
         id: true,
+        businessId: true,
         name: true,
         keyPrefix: true,
         isActive: true,

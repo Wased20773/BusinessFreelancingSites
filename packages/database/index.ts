@@ -21,5 +21,6 @@ export {
   type Location,
   type LocationDay,
   type Hour,
+  type BusinessApiKey,
 } from "./generated/prisma/client";
 export { AccessLevel, DayOfWeek } from "./generated/prisma/enums";

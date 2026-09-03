@@ -5,6 +5,7 @@ import type {
   Social,
   Contact,
   AccessLevel,
+  BusinessApiKey,
   Location,
   LocationDay,
   Hour,
@@ -16,6 +17,15 @@ import {
 
 // --------------------
 // MODEL TYPES
+
+// API Keys
+export type BusinessApiKeyJson = Omit<
+  BusinessApiKey,
+  "createdAt" | "updatedAt"
+> & {
+  createdAt: string;
+  updatedAt: string;
+};
 
 // Business
 export type BusinessJson = Omit<Business, "createdAt" | "updatedAt"> & {
