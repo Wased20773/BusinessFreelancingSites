@@ -21,17 +21,11 @@ export default function WorkspacePage() {
   const businessId = params.businessId;
 
   const { data: session, status } = useSession();
-
   const [businessData, setBusinessData] = useState<BusinessJson | null>(null);
-
   const [locationCount, setLocationCount] = useState<number>(0);
-
   const [memberCount, setMemberCount] = useState<number>(0);
-
   const [apiKeyCount, setApiKeyCount] = useState<number>(0);
-
   const [isLoading, setIsLoading] = useState<boolean>(true);
-
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const accessLevel = session?.user?.accessLevel;

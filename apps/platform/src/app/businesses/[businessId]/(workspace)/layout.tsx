@@ -19,7 +19,7 @@ export default async function WorkspaceLayout({
   const session = await auth();
 
   if (!session?.user) redirect("/dashboard/login");
-  if (!session.user.accessLevel) return <div>something wrong happened</div>;
+  // if (!session.user.accessLevel) return <div>something wrong happened</div>;
 
   const currentAccount = {
     name: session.user.name,
@@ -30,7 +30,7 @@ export default async function WorkspaceLayout({
   const { businessId } = await params;
 
   return (
-    <AuthSessionProvider>
+    <>
       <ResponsiveToaster />
 
       <WorkspaceLayoutClient
@@ -39,6 +39,6 @@ export default async function WorkspaceLayout({
       >
         {children}
       </WorkspaceLayoutClient>
-    </AuthSessionProvider>
+    </>
   );
 }

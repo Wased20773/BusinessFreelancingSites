@@ -19,6 +19,7 @@ type CategoryListParams = {
   setCategoryData: (categories: CategoryJson[]) => void;
   type?: "category" | "subcategory";
   parentCategoryId?: string;
+  canManage: boolean;
 };
 
 export default function CategoryList({
@@ -28,6 +29,7 @@ export default function CategoryList({
   setCategoryData,
   type = "category",
   parentCategoryId,
+  canManage,
 }: CategoryListParams) {
   const params = useParams<{
     businessId: string;
@@ -174,20 +176,38 @@ export default function CategoryList({
 
               return (
                 <li key={category.id} className="grid grid-cols-[1fr_auto]">
-                  <div className="min-w-0 px-3 flex items-center gap-5">
-                    <ReorderControls
-                      id={category.id}
-                      isProcessing={isProcessingCategory}
-                      isFirst={isFirst}
-                      isLast={isLast}
-                      handleMove={handleMoveCategory}
-                    />
+                  <div className="min-w-0 px-3 py-2 flex items-center gap-5">
+                    {canManage && (
+                      <ReorderControls
+                        id={category.id}
+                        isProcessing={isProcessingCategory}
+                        isFirst={isFirst}
+                        isLast={isLast}
+                        handleMove={handleMoveCategory}
+                      />
+                    )}
 
-                    <Link
-                      href={getCategoryHref(category.id)}
-                      className="flex-1 min-w-0 flex items-center"
-                      aria-label={`Edit ${category.name}`}
-                    >
+                    {canManage ? (
+                      <Link
+                        href={getCategoryHref(category.id)}
+                        className="flex-1 min-w-0 flex items-center"
+                        aria-label={`Edit ${category.name}`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold truncate">
+                            {category.name}
+                          </p>
+
+                          <p className="text-gray-500 truncate">
+                            Order: {category.order}
+                          </p>
+                        </div>
+
+                        <div className="shrink-0">
+                          <ChevronIcon direction="right" size={35} />
+                        </div>
+                      </Link>
+                    ) : (
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold truncate">
                           {category.name}
@@ -197,11 +217,7 @@ export default function CategoryList({
                           Order: {category.order}
                         </p>
                       </div>
-
-                      <div className="shrink-0">
-                        <ChevronIcon direction="right" size={35} />
-                      </div>
-                    </Link>
+                    )}
                   </div>
 
                   {categoryData.length !== idx + 1 && (
@@ -227,11 +243,15 @@ export default function CategoryList({
                     Order
                   </th>
 
-                  <th scope="col" className="px-3 py-2 font-semibold">
-                    Reorder
-                  </th>
+                  {canManage && (
+                    <>
+                      <th scope="col" className="px-3 py-2 font-semibold">
+                        Reorder
+                      </th>
 
-                  <th scope="col" className="w-12 px-3 py-2"></th>
+                      <th scope="col" className="w-12 px-3 py-2"></th>
+                    </>
+                  )}
                 </tr>
               </thead>
 
@@ -251,31 +271,35 @@ export default function CategoryList({
 
                       <td className="px-3 py-2">{category.order}</td>
 
-                      <td className="px-3 py-2">
-                        <ReorderControls
-                          id={category.id}
-                          isProcessing={isProcessingCategory}
-                          isFirst={isFirst}
-                          isLast={isLast}
-                          handleMove={handleMoveCategory}
-                        />
-                      </td>
+                      {canManage && (
+                        <>
+                          <td className="px-3 py-2">
+                            <ReorderControls
+                              id={category.id}
+                              isProcessing={isProcessingCategory}
+                              isFirst={isFirst}
+                              isLast={isLast}
+                              handleMove={handleMoveCategory}
+                            />
+                          </td>
 
-                      <td>
-                        <Link
-                          href={getCategoryHref(category.id)}
-                          aria-label={`Edit ${category.name}`}
-                          className="flex justify-center w-fit"
-                        >
-                          <Image
-                            src={EditIcon}
-                            alt=""
-                            width={30}
-                            height={30}
-                            aria-hidden="true"
-                          />
-                        </Link>
-                      </td>
+                          <td>
+                            <Link
+                              href={getCategoryHref(category.id)}
+                              aria-label={`Edit ${category.name}`}
+                              className="flex justify-center w-fit"
+                            >
+                              <Image
+                                src={EditIcon}
+                                alt=""
+                                width={30}
+                                height={30}
+                                aria-hidden="true"
+                              />
+                            </Link>
+                          </td>
+                        </>
+                      )}
                     </tr>
                   );
                 })}

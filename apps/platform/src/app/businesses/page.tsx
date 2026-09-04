@@ -2,11 +2,13 @@
 
 import axios from "axios";
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import ExitIcon from "@/components/icons/exit-black.svg";
 import Image from "next/image";
 import ArrowIcon from "@/components/icons/arrow";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 type BusinessUserJson = {
   id: string;
@@ -51,6 +53,17 @@ export default function BusinessesPage() {
     null,
   );
 
+  const { update } = useSession();
+  const router = useRouter();
+
+  async function handleBusinessSelect(businessId: string) {
+    await update({
+      businessId,
+    });
+
+    router.push(`/businesses/${businessId}`);
+  }
+
   async function getBusinesses() {
     try {
       const response = await axios.get<BusinessUserJson[]>("/api/businesses");
@@ -92,7 +105,7 @@ export default function BusinessesPage() {
         setIsLoading(false);
       });
   }, []);
-  async function handleCreateBusiness(event: FormEvent<HTMLFormElement>) {
+  async function handleCreateBusiness(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const form = event.currentTarget;
@@ -254,9 +267,12 @@ export default function BusinessesPage() {
           <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {businesses.map((businessUser) => (
               <li key={businessUser.id}>
-                <Link
-                  className="block h-full border-[0.1rem] border-gray-300 rounded-lg px-4 py-4 hover:border-blue-400 hover:bg-gray-50 transition-colors"
-                  href={`/businesses/${businessUser.business.id}`}
+                <button
+                  type="button"
+                  onClick={() =>
+                    void handleBusinessSelect(businessUser.business.id)
+                  }
+                  className="block w-full h-full text-left border-[0.1rem] border-gray-300 rounded-lg px-4 py-4 hover:border-blue-400 hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex flex-col h-full">
                     <h2 className="font-semibold text-lg">
@@ -278,7 +294,7 @@ export default function BusinessesPage() {
                       <ArrowIcon size={15} />
                     </p>
                   </div>
-                </Link>
+                </button>
               </li>
             ))}
           </ul>

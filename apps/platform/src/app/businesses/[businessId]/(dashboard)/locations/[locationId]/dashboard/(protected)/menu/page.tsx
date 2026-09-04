@@ -10,6 +10,7 @@ import "../page.css";
 import ActionItem from "@/components/ui/ActionItem";
 import CreateButtonIcon from "@/components/icons/create-button.svg";
 import CategoryList from "@/components/ui/categories/CategoriesList";
+import { useSession } from "next-auth/react";
 
 export default function CategoriesPage() {
   const params = useParams<{
@@ -20,9 +21,19 @@ export default function CategoriesPage() {
   const businessId = params.businessId;
   const locationId = params.locationId;
 
+  const { data: session, status } = useSession();
+
   const [categoryData, setCategoryData] = useState<CategoryJson[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const accessLevel = session?.user?.accessLevel;
+
+  const canManageMenu = accessLevel === "owner" || accessLevel === "admin";
+
+  const canViewMenu = canManageMenu || accessLevel === "staff";
+
+  const isDeveloper = accessLevel === "developer";
 
   useEffect(() => {
     async function getCategoriesData() {
@@ -79,35 +90,69 @@ export default function CategoriesPage() {
       }
     }
 
-    void getCategoriesData();
-  }, [businessId, locationId]);
+    /*
+     * Developer accounts should not retrieve
+     * dashboard menu data at all.
+     */
+    if (status === "authenticated" && canViewMenu) {
+      void getCategoriesData();
+    }
+  }, [businessId, locationId, status, canViewMenu]);
 
-  return (
-    <>
-      <section aria-labelledby="categories-heading">
-        <h1 id="categories-heading">Menu</h1>
+  if (status === "loading") {
+    return <p>Loading session...</p>;
+  }
+
+  if (status === "unauthenticated") {
+    return <p>You must be signed in to view this page.</p>;
+  }
+
+  if (isDeveloper || !canViewMenu) {
+    return (
+      <section aria-labelledby="menu-heading">
+        <h1 id="menu-heading">Menu</h1>
 
         <div className="mt-[1.5rem]">
-          {/* Links */}
-          <nav className="dashboard-card" aria-label="Category actions">
-            {/* Create Category */}
-            <ActionItem
-              href="menu/create"
-              icon={CreateButtonIcon}
-              label="Create Category"
-            />
-          </nav>
+          <div className="dashboard-card">
+            <h2 className="text-xl font-semibold">Menu unavailable</h2>
 
-          <Divider />
-
-          <CategoryList
-            isLoading={isLoading}
-            categoryData={categoryData}
-            errorMessage={errorMessage}
-            setCategoryData={setCategoryData}
-          />
+            <p className="text-gray-500 mt-1">
+              Your current access level does not include dashboard menu access.
+            </p>
+          </div>
         </div>
       </section>
-    </>
+    );
+  }
+
+  return (
+    <section aria-labelledby="categories-heading">
+      <h1 id="categories-heading">Menu</h1>
+
+      <div className="mt-[1.5rem]">
+        {/* Management Actions */}
+        {canManageMenu && (
+          <>
+            <nav className="dashboard-card" aria-label="Category actions">
+              <ActionItem
+                href="menu/create"
+                icon={CreateButtonIcon}
+                label="Create Category"
+              />
+            </nav>
+
+            <Divider />
+          </>
+        )}
+
+        <CategoryList
+          isLoading={isLoading}
+          categoryData={categoryData}
+          errorMessage={errorMessage}
+          setCategoryData={setCategoryData}
+          canManage={canManageMenu}
+        />
+      </div>
+    </section>
   );
 }

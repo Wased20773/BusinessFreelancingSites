@@ -1,4 +1,3 @@
-import SignOutButton from "@/components/auth/SignOutButton";
 import "./page.css";
 import Image from "next/image";
 import EditIcon from "@/components/icons/edit.svg";

@@ -53,7 +53,7 @@ export default async function DashboardLayout({
   const navLinks = dashboardLinks(businessId, locationId);
 
   return (
-    <AuthSessionProvider>
+    <>
       <ResponsiveToaster />
       <div className="h-screen grid grid-rows-[auto_1fr] md:grid-cols-[auto_1fr] md:grid-rows-1">
         <SideBar
@@ -73,6 +73,6 @@ export default async function DashboardLayout({
 
         <main className="min-h-0 overflow-y-scroll p-5">{children}</main>
       </div>
-    </AuthSessionProvider>
+    </>
   );
 }
