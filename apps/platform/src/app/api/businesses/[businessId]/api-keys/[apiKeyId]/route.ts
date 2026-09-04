@@ -145,7 +145,7 @@ export async function DELETE(
     const authentication = await authenticateBusinessAccess(
       request,
       businessId,
-      [AccessLevel.owner, AccessLevel.admin],
+      [AccessLevel.developer],
     );
 
     if (authentication instanceof NextResponse) {

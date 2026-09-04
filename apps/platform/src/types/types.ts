@@ -27,6 +27,19 @@ export type BusinessApiKeyJson = Omit<
   updatedAt: string;
 };
 
+export type CreateBusinessApiKeyResponse = {
+  apiKey: string;
+  key: Pick<
+    BusinessApiKeyJson,
+    "id" | "name" | "keyPrefix" | "isActive" | "createdAt"
+  >;
+};
+
+export type UpdateBusinessApiKeyResponse = Pick<
+  BusinessApiKeyJson,
+  "id" | "name" | "keyPrefix" | "isActive" | "createdAt" | "updatedAt"
+>;
+
 // Business
 export type BusinessJson = Omit<Business, "createdAt" | "updatedAt"> & {
   createdAt: string;

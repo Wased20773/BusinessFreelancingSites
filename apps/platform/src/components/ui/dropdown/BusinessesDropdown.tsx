@@ -10,12 +10,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { BusinessOwnerShip } from "@/types/types";
 import { Plus } from "lucide-react";
-import Link from "next/link";
 import { SubmitEvent, useState } from "react";
 import CreateBusinessModal from "../modal/CreateBusinessModal";
 import axios from "axios";
 import { toast } from "sonner";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 type CreateBusinessResponse = {
   message: string;
@@ -57,6 +57,23 @@ export default function BusinessesDropdown({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const pathname = usePathname();
+  const router = useRouter();
+  const { update } = useSession();
+
+  async function handleBusinessSelect(businessId: string) {
+    if (
+      pathname === `/businesses/${businessId}` ||
+      pathname.startsWith(`/businesses/${businessId}/`)
+    ) {
+      return;
+    }
+
+    await update({
+      businessId,
+    });
+
+    router.push(`/businesses/${businessId}`);
+  }
 
   async function handleCreateBusiness(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -165,14 +182,14 @@ export default function BusinessesDropdown({
               return (
                 <DropdownMenuItem
                   key={businessUser.business.id}
-                  asChild
                   className={
                     isSelected ? "bg-accent text-accent-foreground" : undefined
                   }
+                  onSelect={() =>
+                    void handleBusinessSelect(businessUser.business.id)
+                  }
                 >
-                  <Link href={`/businesses/${businessUser.business.id}`}>
-                    {businessUser.business.name}
-                  </Link>
+                  {businessUser.business.name}
                 </DropdownMenuItem>
               );
             })}

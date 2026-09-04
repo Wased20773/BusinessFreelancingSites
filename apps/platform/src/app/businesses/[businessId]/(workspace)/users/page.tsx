@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import ActionItem from "@/components/ui/ActionItem";
 import { getBusinessUsers } from "@/lib/api/users";
 import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 const USERS_PER_PAGE = 5;
 
@@ -26,16 +27,27 @@ export default function UsersPage() {
 
   const businessId = params.businessId;
 
+  const { data: session, status } = useSession();
+
   const [businessUserData, setBusinessUserData] = useState<BusinessUserJson[]>(
     [],
   );
+
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [visibleUsers, setVisibleUsers] = useState<number>(USERS_PER_PAGE);
 
+  const accessLevel = session?.user?.accessLevel;
+
+  const canManageMembers = accessLevel === "owner" || accessLevel === "admin";
+
+  const isStaff = accessLevel === "staff";
+  const isDeveloper = accessLevel === "developer";
+
   useEffect(() => {
     async function getBusinessUserData() {
       setIsLoading(true);
+      setErrorMessage(null);
 
       try {
         const usersToast = toast.promise<BusinessUserJson[]>(
@@ -65,12 +77,12 @@ export default function UsersPage() {
         const data: BusinessUserJson[] = await usersToast.unwrap();
 
         setBusinessUserData(data);
-      } catch (e) {
-        console.error("Error in Business User's page: ", e);
+      } catch (error) {
+        console.error("Error in Business User's page:", error);
 
-        if (axios.isAxiosError<{ error?: string }>(e)) {
+        if (axios.isAxiosError<{ error?: string }>(error)) {
           setErrorMessage(
-            e.response?.data?.error ?? "Failed to load business user data.",
+            error.response?.data?.error ?? "Failed to load business user data.",
           );
         } else {
           setErrorMessage("Failed to load business user data.");
@@ -80,11 +92,39 @@ export default function UsersPage() {
       }
     }
 
-    void getBusinessUserData();
-  }, []);
+    /*
+     * Don't fetch this page's data if the selected
+     * business role is developer-only.
+     */
+    if (status === "authenticated" && !isDeveloper) {
+      void getBusinessUserData();
+    }
+  }, [businessId, status, isDeveloper]);
+
+  if (status === "loading") {
+    return <p>Loading session...</p>;
+  }
+
+  if (status === "unauthenticated") {
+    return <p>You must be signed in to view this page.</p>;
+  }
+
+  if (isDeveloper) {
+    return (
+      <section className="max-w-[1000px] mx-auto">
+        <div className="border border-gray-300 rounded-xl p-5">
+          <h1 className="text-2xl font-semibold">Members unavailable</h1>
+
+          <p className="text-gray-500 mt-1">
+            Developer access does not include member management.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   if (isLoading) {
-    return <p>Loading Users</p>;
+    return <p>Loading members...</p>;
   }
 
   if (errorMessage) {
@@ -100,26 +140,30 @@ export default function UsersPage() {
         </h1>
 
         <p className="text-gray-500 mt-1">
-          Manage the people who have access to this business.
+          {canManageMembers
+            ? "Manage the people who have access to this business."
+            : "View the people who have access to this business."}
         </p>
       </div>
 
       {/* Actions */}
-      <section className="workspace-card mb-5">
-        <ActionItem
-          href={`/businesses/${businessId}/users/access-level`}
-          icon={KeyIcon}
-          label="Access Levels"
-        />
+      {canManageMembers && (
+        <section className="workspace-card mb-5">
+          <ActionItem
+            href={`/businesses/${businessId}/users/access-level`}
+            icon={KeyIcon}
+            label="Access Levels"
+          />
 
-        <Divider />
+          <Divider />
 
-        <ActionItem
-          href={`/businesses/${businessId}/users/search`}
-          icon={SearchIcon}
-          label="Add Member"
-        />
-      </section>
+          <ActionItem
+            href={`/businesses/${businessId}/users/search`}
+            icon={SearchIcon}
+            label="Add Member"
+          />
+        </section>
+      )}
 
       {/* Members */}
       <section className="border border-gray-300 rounded-xl p-5">
@@ -128,7 +172,9 @@ export default function UsersPage() {
             <h2 className="text-xl font-semibold">Business Members</h2>
 
             <p className="text-sm text-gray-500 mt-1">
-              View and manage member access for this business.
+              {canManageMembers
+                ? "View and manage member access for this business."
+                : "View members and their assigned access levels."}
             </p>
           </div>
 
@@ -143,77 +189,112 @@ export default function UsersPage() {
             <p className="font-semibold">No members found</p>
 
             <p className="text-sm text-gray-500 mt-1">
-              Add a member by searching for their email address.
+              {canManageMembers
+                ? "Add a member by searching for their email address."
+                : "There are no other members attached to this business."}
             </p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {businessUserData.slice(0, visibleUsers).map((businessUser) => (
-              <Link
-                key={businessUser.id}
-                href={`/businesses/${businessId}/users/${
-                  businessUser.user?.id || "not-found"
-                }`}
-                className="
-                grid grid-cols-[auto_minmax(0,1fr)_auto]
-                items-center gap-3
-                border border-gray-200 rounded-lg
-                px-4 py-3
-                hover:bg-gray-50 hover:border-gray-300
-                transition-colors
-              "
-              >
-                {/* Profile */}
-                <Image
-                  className="rounded-full border border-gray-300 shrink-0"
-                  src={businessUser.user?.image || PlaceholderAccountIcon}
-                  alt="Profile picture"
-                  width={40}
-                  height={40}
-                />
+            {businessUserData.slice(0, visibleUsers).map((businessUser) => {
+              const memberContent = (
+                <>
+                  {/* Profile */}
+                  <Image
+                    className="rounded-full border border-gray-300 shrink-0"
+                    src={businessUser.user?.image || PlaceholderAccountIcon}
+                    alt="Profile picture"
+                    width={40}
+                    height={40}
+                  />
 
-                {/* Member Info */}
-                <div className="min-w-0">
-                  <p className="font-medium truncate">
-                    {businessUser.user?.name || "Missing name"}
-                  </p>
+                  {/* Member Info */}
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">
+                      {businessUser.user?.name || "Missing name"}
+                    </p>
 
-                  <div className="flex items-center gap-2 mt-1 min-w-0">
-                    <Image
-                      src={GoogleLogoIcon}
-                      alt="Google account provider"
-                      width={14}
-                      height={14}
-                    />
+                    <div className="flex items-center gap-2 mt-1 min-w-0">
+                      <Image
+                        src={GoogleLogoIcon}
+                        alt="Google account provider"
+                        width={14}
+                        height={14}
+                      />
 
-                    <span className="text-sm text-gray-500 truncate">
-                      {businessUser.user?.email || "Missing email"}
-                    </span>
+                      <span className="text-sm text-gray-500 truncate">
+                        {businessUser.user?.email || "Missing email"}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Role */}
-                <span className="text-sm capitalize bg-gray-100 border border-gray-200 rounded-md px-2 py-1">
-                  {businessUser.role?.accessLevel || "Missing role"}
-                </span>
-              </Link>
-            ))}
+                  {/* Role */}
+                  <span className="text-sm capitalize bg-gray-100 border border-gray-200 rounded-md px-2 py-1">
+                    {businessUser.role?.accessLevel || "Missing role"}
+                  </span>
+                </>
+              );
+
+              /*
+               * Owner/Admin:
+               * clickable row → member management page
+               *
+               * Staff:
+               * same information, but read-only
+               */
+              if (canManageMembers) {
+                return (
+                  <Link
+                    key={businessUser.id}
+                    href={`/businesses/${businessId}/users/${
+                      businessUser.user?.id || "not-found"
+                    }`}
+                    className="
+                        grid grid-cols-[auto_minmax(0,1fr)_auto]
+                        items-center gap-3
+                        border border-gray-200 rounded-lg
+                        px-4 py-3
+                        hover:bg-gray-50
+                        hover:border-gray-300
+                        transition-colors
+                      "
+                  >
+                    {memberContent}
+                  </Link>
+                );
+              }
+
+              return (
+                <div
+                  key={businessUser.id}
+                  className="
+                      grid grid-cols-[auto_minmax(0,1fr)_auto]
+                      items-center gap-3
+                      border border-gray-200 rounded-lg
+                      px-4 py-3
+                    "
+                >
+                  {memberContent}
+                </div>
+              );
+            })}
 
             {visibleUsers < businessUserData.length && (
               <button
                 className="
-                flex justify-center items-center gap-1
-                border border-gray-300 rounded-lg
-                py-2 mt-2
-                hover:bg-gray-50
-                transition-colors
-              "
+                  flex justify-center items-center gap-1
+                  border border-gray-300 rounded-lg
+                  py-2 mt-2
+                  hover:bg-gray-50
+                  transition-colors
+                "
                 type="button"
                 onClick={() =>
                   setVisibleUsers((current) => current + USERS_PER_PAGE)
                 }
               >
                 <span>Load More</span>
+
                 <ArrowIcon direction="down" size={16} />
               </button>
             )}

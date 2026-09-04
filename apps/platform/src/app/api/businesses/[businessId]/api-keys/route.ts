@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { AccessLevel } from "@business-freelancer/database";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
-import { createBusinessApiKey } from "@/lib/api-keys/createBusinessApiKey";
 import { prisma } from "@/lib/prisma";
+import { generateBusinessApiKey } from "@/lib/api-keys/generateBusinessApiKey";
 
 type CreateApiKeyBody = {
   name?: unknown;
@@ -103,9 +103,22 @@ export async function POST(
       );
     }
 
-    const createdKey = await createBusinessApiKey({
-      businessId,
-      name: body.name.trim(),
+    const { apiKey, keyHash, keyPrefix } = generateBusinessApiKey();
+
+    const createdKey = await prisma.businessApiKey.create({
+      data: {
+        businessId,
+        name: body.name.trim(),
+        keyHash,
+        keyPrefix,
+      },
+      select: {
+        id: true,
+        name: true,
+        keyPrefix: true,
+        isActive: true,
+        createdAt: true,
+      },
     });
 
     /*
@@ -114,8 +127,8 @@ export async function POST(
      */
     return NextResponse.json(
       {
-        apiKey: createdKey.apiKey,
-        key: createdKey.credential,
+        apiKey: apiKey,
+        key: createdKey,
       },
       { status: 201 },
     );

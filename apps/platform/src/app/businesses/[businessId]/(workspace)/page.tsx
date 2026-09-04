@@ -5,10 +5,11 @@ import { getBusiness } from "@/lib/api/business";
 import { getLocations } from "@/lib/api/locations";
 import { getBusinessUsers } from "@/lib/api/users";
 import { formatDateTime } from "@/lib/dateTime/formatDateTime";
-import { BusinessJson } from "@/types/types";
+import type { BusinessJson } from "@/types/types";
 import axios from "axios";
 import { ExternalLink } from "lucide-react";
 import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -16,14 +17,59 @@ export default function WorkspacePage() {
   const params = useParams<{
     businessId: string;
   }>();
-  const [businessData, setBusinessData] = useState<BusinessJson | null>(null);
-  const [locationCount, setLocationCount] = useState<number>(0);
-  const [memberCount, setMemberCount] = useState<number>(0);
-  const [apiKeyCount, setApiKeyCount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const businessId = params.businessId;
+
+  const { data: session, status } = useSession();
+
+  const [businessData, setBusinessData] = useState<BusinessJson | null>(null);
+
+  const [locationCount, setLocationCount] = useState<number>(0);
+
+  const [memberCount, setMemberCount] = useState<number>(0);
+
+  const [apiKeyCount, setApiKeyCount] = useState<number>(0);
+
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const accessLevel = session?.user?.accessLevel;
+
+  /*
+   * Location information is part of the normal
+   * business workspace.
+   *
+   * Developers are limited to developer resources.
+   */
+  const canViewLocations =
+    accessLevel === "owner" ||
+    accessLevel === "admin" ||
+    accessLevel === "staff";
+
+  /*
+   * Member information is visible to:
+   *
+   * Owner/Admin -> manageable
+   * Staff       -> read-only
+   * Developer   -> unavailable
+   */
+  const canViewMembers =
+    accessLevel === "owner" ||
+    accessLevel === "admin" ||
+    accessLevel === "staff";
+
+  /*
+   * API key information is visible to:
+   *
+   * Developer   -> manageable
+   * Owner/Admin -> read-only
+   * Staff       -> unavailable
+   */
+  const canViewApiKeys =
+    accessLevel === "developer" ||
+    accessLevel === "owner" ||
+    accessLevel === "admin";
 
   useEffect(() => {
     async function getOverviewData() {
@@ -31,20 +77,34 @@ export default function WorkspacePage() {
       setErrorMessage(null);
 
       try {
-        const overViewToast = toast.promise(
+        /*
+         * Only request resources the current access
+         * level is actually allowed to view.
+         *
+         * Promise.resolve(null) keeps Promise.all nice
+         * and predictable without making the request.
+         */
+        const overviewToast = toast.promise(
           Promise.all([
             getBusiness(businessId),
-            getLocations(businessId),
-            getBusinessUsers(businessId),
-            getApiKeys(businessId),
+
+            canViewLocations ? getLocations(businessId) : Promise.resolve(null),
+
+            canViewMembers
+              ? getBusinessUsers(businessId)
+              : Promise.resolve(null),
+
+            canViewApiKeys ? getApiKeys(businessId) : Promise.resolve(null),
           ]),
           {
-            loading: "Loading business...",
-            success: "Business loaded.",
+            loading: "Loading business overview...",
+            success: "Business overview loaded.",
+
             error: (error) => {
               if (axios.isAxiosError<{ error?: string }>(error)) {
                 return {
-                  message: "Failed to load business.",
+                  message: "Failed to load business overview.",
+
                   description:
                     error.response?.data?.error ??
                     `Status code: ${error.response?.status ?? "No response"}`,
@@ -53,45 +113,86 @@ export default function WorkspacePage() {
 
               return {
                 message: "Unexpected error.",
-                description: "Something went wrong while loading the business.",
+
+                description:
+                  "Something went wrong while loading the business overview.",
               };
             },
           },
         );
 
         const [business, locations, members, apiKeys] =
-          await overViewToast.unwrap();
+          await overviewToast.unwrap();
 
         setBusinessData(business);
-        setLocationCount(locations.length);
-        // count auth user
-        setMemberCount(members.length + 1);
-        setApiKeyCount(apiKeys.length);
+
+        if (locations) {
+          setLocationCount(locations.length);
+        }
+
+        if (members) {
+          /*
+           * Keeping your existing behavior:
+           * getBusinessUsers() does not include the
+           * authenticated user in this count.
+           */
+          setMemberCount(members.length + 1);
+        }
+
+        if (apiKeys) {
+          setApiKeyCount(apiKeys.length);
+        }
       } catch (error) {
-        console.error("Error in business page:", error);
+        console.error("Error in business overview page:", error);
 
         if (axios.isAxiosError<{ error?: string }>(error)) {
           setErrorMessage(
-            error.response?.data?.error ?? "Failed to load business data.",
+            error.response?.data?.error ?? "Failed to load business overview.",
           );
         } else {
-          setErrorMessage("Failed to load business data.");
+          setErrorMessage("Failed to load business overview.");
         }
       } finally {
         setIsLoading(false);
       }
     }
-    void getOverviewData();
-  }, [businessId]);
 
-  if (isLoading) return <p>Loading business...</p>;
+    /*
+     * Wait until Auth knows which business role
+     * is currently selected before deciding which
+     * overview requests should run.
+     */
+    if (status === "authenticated") {
+      void getOverviewData();
+    }
+  }, [businessId, status, canViewLocations, canViewMembers, canViewApiKeys]);
 
-  if (!businessData) return <p>Business could not be found.</p>;
+  if (status === "loading") {
+    return <p>Loading session...</p>;
+  }
+
+  if (status === "unauthenticated") {
+    return <p>You must be signed in to view this page.</p>;
+  }
+
+  if (isLoading) {
+    return <p>Loading business...</p>;
+  }
+
+  if (errorMessage) {
+    return <p>{errorMessage}</p>;
+  }
+
+  if (!businessData) {
+    return <p>Business could not be found.</p>;
+  }
 
   return (
     <section className="max-w-[1000px] mx-auto">
+      {/* Heading */}
       <div className="mb-6">
         <h1 className="text-3xl font-semibold">Overview</h1>
+
         <p className="text-gray-500 mt-1">
           View your business details and workspace activity.
         </p>
@@ -107,7 +208,7 @@ export default function WorkspacePage() {
               href={`https://${businessData.domain}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-blue-600 hover:underline w-fit"
+              className="flex items-center gap-2 text-blue-600 hover:underline w-fit"
             >
               <ExternalLink size={15} />
               https://{businessData.domain}
@@ -124,26 +225,58 @@ export default function WorkspacePage() {
       <section className="border border-gray-300 rounded-xl p-5">
         <div className="mb-4">
           <h2 className="text-xl font-semibold">Workspace Summary</h2>
+
           <p className="text-sm text-gray-500 mt-1">
-            Resources currently connected to this business.
+            Resources available to you within this business.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          <div className="border border-gray-200 rounded-lg p-4">
-            <p className="text-sm text-gray-500">Locations</p>
-            <p className="text-3xl font-semibold mt-1">{locationCount}</p>
-          </div>
+        <div
+          className={`
+            grid grid-cols-1 gap-3
+            ${
+              canViewLocations && canViewMembers && canViewApiKeys
+                ? "sm:grid-cols-2 md:grid-cols-3"
+                : "sm:grid-cols-2"
+            }
+          `}
+        >
+          {/* Locations */}
+          {canViewLocations && (
+            <div className="border border-gray-200 rounded-lg p-4">
+              <p className="text-sm text-gray-500">Locations</p>
 
-          <div className="border border-gray-200 rounded-lg p-4">
-            <p className="text-sm text-gray-500">Members</p>
-            <p className="text-3xl font-semibold mt-1">{memberCount}</p>
-          </div>
+              <p className="text-3xl font-semibold mt-1">{locationCount}</p>
+            </div>
+          )}
 
-          <div className="border border-gray-200 rounded-lg p-4 sm:col-span-2 sm:w-1/2 sm:justify-self-center md:col-span-1 md:w-full">
-            <p className="text-sm text-gray-500">API Keys</p>
-            <p className="text-3xl font-semibold mt-1">{apiKeyCount}</p>
-          </div>
+          {/* Members */}
+          {canViewMembers && (
+            <div className="border border-gray-200 rounded-lg p-4">
+              <p className="text-sm text-gray-500">Members</p>
+
+              <p className="text-3xl font-semibold mt-1">{memberCount}</p>
+            </div>
+          )}
+
+          {/* API Keys */}
+          {canViewApiKeys && (
+            <div
+              className={`
+                border border-gray-200
+                rounded-lg p-4
+                ${
+                  canViewLocations && canViewMembers
+                    ? "sm:col-span-2 sm:w-1/2 sm:justify-self-center md:col-span-1 md:w-full"
+                    : ""
+                }
+              `}
+            >
+              <p className="text-sm text-gray-500">API Keys</p>
+
+              <p className="text-3xl font-semibold mt-1">{apiKeyCount}</p>
+            </div>
+          )}
         </div>
       </section>
     </section>

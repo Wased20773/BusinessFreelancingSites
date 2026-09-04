@@ -66,7 +66,7 @@ export default function WorkspaceLayoutClient({
 
   return (
     <div className="h-screen grid grid-rows-[auto_1fr] md:grid-cols-[auto_1fr] md:grid-rows-[auto_1fr]">
-      <div className="md:col-start-1 md:row-start-1 md:row-span-2">
+      <div className="relative z-20 md:static md:z-auto md:col-start-1 md:row-start-1 md:row-span-2">
         <SideBar
           variant="workspace"
           currentBusiness={currentBusiness}
