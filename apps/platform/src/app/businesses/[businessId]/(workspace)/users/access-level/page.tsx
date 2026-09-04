@@ -1,68 +1,96 @@
+"use client";
+
 import ArrowIcon from "@/components/icons/arrow";
-import Divider from "@/components/layout/Divider";
 import Link from "next/link";
 import "../../page.css";
+import Divider from "@/components/layout/Divider";
+import { useParams } from "next/navigation";
 
 export default function AccessLevelsPage() {
+  const params = useParams<{
+    businessId: string;
+  }>();
+
+  const businessId = params.businessId;
+
   return (
-    <div aria-labelledby="access-level-heading">
-      <div className="flex items-center gap-2 mb-[1.5rem]">
-        <Link href="/dashboard/users">
-          <ArrowIcon direction="left" size={50} />
+    <section className="max-w-[1000px] mx-auto">
+      <div className="flex items-center gap-3 mb-6">
+        <Link
+          href={`/businesses/${businessId}/users`}
+          aria-label="Return to members"
+          className="shrink-0"
+        >
+          <ArrowIcon direction="left" size={42} />
         </Link>
-        <h1 id="access-level-heading">Access Level</h1>
+
+        <div>
+          <h1 className="text-3xl font-semibold">Access Levels</h1>
+          <p className="text-gray-500 mt-1">
+            Understand what each business role is allowed to manage.
+          </p>
+        </div>
       </div>
 
-      <div className="dashboard-card">
-        <p>
-          This defines the permissions a user has in a business. This allows
-          certain users to add, update, or delete content from their business
-          while others cant. Please read the
-          <span className="font-semibold"> Access Level</span> descriptions
-          carefully before making a decision.
+      <section className="border border-gray-300 rounded-xl p-5">
+        <p className="text-gray-600 mb-6 max-w-[750px]">
+          Access levels determine what a member can view or manage within a
+          business. Review each role carefully before assigning permissions.
         </p>
 
-        <Divider />
-
-        {/* Business.Role: accessLevel, description */}
-
-        <article className="flex flex-col gap-3">
-          <div>
-            <p className="font-bold">Developer</p>
-            <p>
+        <div className="flex flex-col">
+          <article className="pb-5">
+            <h2 className="text-lg font-semibold">Developer</h2>
+            <p className="text-sm text-gray-500 mt-1 mb-2">
+              Technical integration access
+            </p>
+            <p className="text-gray-700">
               Responsible for the technical integration of the business website.
               Can create, view, rotate, deactivate, and delete Business API keys
               used by the website.
             </p>
-          </div>
+          </article>
 
-          <div>
-            <p className="font-bold">Owner</p>
-            <p>
-              Full business-level access. Can add, update, and change business
-              content, manage users/roles, and transfer ownership.
+          <Divider />
+
+          <article className="py-5">
+            <h2 className="text-lg font-semibold">Owner</h2>
+            <p className="text-sm text-gray-500 mt-1 mb-2">
+              Full business access
             </p>
-          </div>
+            <p className="text-gray-700">
+              Full business-level access. Can add, update, and change business
+              content, manage users and roles, and transfer ownership.
+            </p>
+          </article>
 
-          <div>
-            <p className="font-bold">Admin</p>
-            <p>
+          <Divider />
+
+          <article className="py-5">
+            <h2 className="text-lg font-semibold">Admin</h2>
+            <p className="text-sm text-gray-500 mt-1 mb-2">
+              Business management access
+            </p>
+            <p className="text-gray-700">
               Can add, update, and delete business content. Can manage general
-              user information, but cannot remove an owner, or transfer
+              user information, but cannot remove an owner or transfer
               ownership.
             </p>
-          </div>
+          </article>
 
-          <div>
-            <p className="font-bold">Staff</p>
-            <p>
-              View-only access. Can view business information but cannot add,
-              update, or delete business content. Free to update their
-              credentials but not role.
+          <Divider />
+
+          <article className="pt-5">
+            <h2 className="text-lg font-semibold">Staff</h2>
+            <p className="text-sm text-gray-500 mt-1 mb-2">View-only access</p>
+            <p className="text-gray-700">
+              Can view business information but cannot add, update, or delete
+              business content. Members can update their own credentials, but
+              not their assigned role.
             </p>
-          </div>
-        </article>
-      </div>
-    </div>
+          </article>
+        </div>
+      </section>
+    </section>
   );
 }

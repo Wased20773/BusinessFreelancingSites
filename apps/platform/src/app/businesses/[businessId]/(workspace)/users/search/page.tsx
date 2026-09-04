@@ -13,8 +13,16 @@ import { useState } from "react";
 import type { SubmitEvent } from "react";
 import axios from "axios";
 import { toast } from "sonner";
+import { useParams } from "next/navigation";
+import { addUserToBusiness, searchForUser } from "@/lib/api/users";
 
 export default function SearchPage() {
+  const params = useParams<{
+    businessId: string;
+  }>();
+
+  const businessId = params.businessId;
+
   const [searchData, setSearchData] = useState<UserJson | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -40,11 +48,7 @@ export default function SearchPage() {
 
     try {
       const searchToast = toast.promise<UserJson>(
-        axios
-          .get<UserJson>("/api/admin/account/search", {
-            params: { email: normalizedEmail },
-          })
-          .then((response) => response.data),
+        searchForUser(businessId, { email: normalizedEmail }),
         {
           loading: "Searching for user...",
           success: "User found.",
@@ -109,12 +113,7 @@ export default function SearchPage() {
 
     try {
       const addToast = toast.promise<BusinessUserJson>(
-        axios
-          .post<BusinessUserJson>("/api/admin/business-users", {
-            email,
-            accessLevel: "staff",
-          })
-          .then((response) => response.data),
+        addUserToBusiness(businessId, email),
         {
           loading: "Adding user to business...",
           success: (data) => ({
@@ -157,32 +156,61 @@ export default function SearchPage() {
   }
 
   return (
-    <div aria-labelledby="search-heading">
-      <div className="flex items-center gap-2 mb-[1.5rem]">
-        <Link href="/dashboard/users">
-          <ArrowIcon direction="left" size={50} />
+    <section
+      className="max-w-[1000px] mx-auto"
+      aria-labelledby="search-heading"
+    >
+      {/* Heading */}
+      <div className="flex items-center gap-3 mb-6">
+        <Link
+          href={`/businesses/${businessId}/users`}
+          aria-label="Return to members"
+          className="shrink-0"
+        >
+          <ArrowIcon direction="left" size={42} />
         </Link>
-        <h1 id="search-heading">Search</h1>
+
+        <div>
+          <h1 id="search-heading" className="text-3xl font-semibold">
+            Add Member
+          </h1>
+
+          <p className="text-gray-500 mt-1">
+            Search for an existing account and add them to this business.
+          </p>
+        </div>
       </div>
 
-      <section>
+      {/* Search */}
+      <section className="border border-gray-300 rounded-xl p-5">
+        <div className="mb-5">
+          <h2 className="text-xl font-semibold">Find a Member</h2>
+
+          <p className="text-sm text-gray-500 mt-1">
+            Accounts are uniquely identified by their email address.
+          </p>
+        </div>
+
         <form
-          className="mb-5 grid grid-cols-[1fr_auto] gap-2"
+          className="flex items-stretch gap-2"
           role="search"
           onSubmit={searchUser}
         >
-          <label className="col-span-2" htmlFor="user-email">
-            A user is unique by email. Enter an email address to search for a
-            user.
-          </label>
-
           <input
             id="user-email"
             name="email"
-            className="w-full rounded-lg border-[0.1rem] border-b-[0.2rem] border-blue-400 bg-gray-50 px-3 py-1"
+            className="
+            min-w-0 flex-1
+            rounded-lg
+            border-[0.1rem] border-b-[0.2rem] border-blue-400
+            bg-gray-50
+            px-3 py-2
+            disabled:opacity-50
+          "
             type="email"
             placeholder="user@email.com"
             autoComplete="email"
+            aria-label="User email address"
             required
             disabled={isLoading}
           />
@@ -191,71 +219,119 @@ export default function SearchPage() {
             type="submit"
             aria-label="Search for user"
             disabled={isLoading}
-            className="disabled:cursor-not-allowed disabled:opacity-50"
+            className="
+            flex items-center justify-center
+            rounded-lg
+            border border-gray-300
+            px-4
+            hover:bg-gray-100
+            transition-colors
+            disabled:cursor-not-allowed
+            disabled:opacity-50
+          "
           >
-            <Image src={SearchIcon} alt="" width={25} height={25} />
+            <Image src={SearchIcon} alt="" width={20} height={20} />
           </button>
         </form>
 
-        <ul className="dashboard-card">
+        {/* Result */}
+        <div className="border-t border-gray-200 mt-5 pt-5">
           {isLoading ? (
-            <li className="p-4 text-center">Searching users...</li>
+            <div className="py-8 text-center">
+              <p className="font-medium">Searching...</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Looking for an account with that email address.
+              </p>
+            </div>
           ) : searchData ? (
-            <li key={searchData.id}>
-              <article>
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-2">
+                Search Result
+              </p>
+
+              <div
+                className="
+                grid grid-cols-[auto_minmax(0,1fr)_auto]
+                items-center gap-3
+                border border-gray-200
+                rounded-lg
+                p-3
+              "
+              >
+                {/* Profile */}
+                <Image
+                  className="rounded-full border border-gray-300 shrink-0"
+                  src={searchData.image || PlaceholderAccountIcon}
+                  alt="Profile picture"
+                  width={42}
+                  height={42}
+                />
+
+                {/* Account */}
+                <div className="min-w-0">
+                  <p className="font-medium truncate">
+                    {searchData.name || "Unnamed Account"}
+                  </p>
+
+                  <div className="flex items-center gap-1.5 mt-1 min-w-0">
+                    <Image
+                      src={GoogleLogoIcon}
+                      alt="Google account provider"
+                      width={14}
+                      height={14}
+                    />
+
+                    <span className="text-sm text-gray-500 truncate">
+                      {searchData.email}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Add */}
                 <button
-                  className="w-full flex flex-row items-center justify-between rounded-md p-2"
+                  type="button"
+                  className="
+                  flex items-center justify-center
+                  rounded-lg
+                  border border-gray-300
+                  p-2
+                  hover:bg-gray-100
+                  transition-colors
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
                   aria-label={`Add ${searchData.email}`}
                   disabled={addingUserEmail !== null}
                   onClick={() => addUser(searchData.email)}
                 >
-                  <div className="flex items-center overflow-x-auto">
-                    <Image
-                      className="rounded-full border-[2px] border-gray-800"
-                      src={searchData.image || PlaceholderAccountIcon}
-                      alt="Profile picture"
-                      width={50}
-                      height={50}
-                    />
-                    <div className="ml-[0.5rem] flex min-w-max items-center">
-                      <Image
-                        src={GoogleLogoIcon}
-                        alt="Google account provider"
-                        width={15}
-                        height={15}
-                      />
-                      <span className="ml-[0.25rem]">{searchData.email}</span>
-                    </div>
-                  </div>
-
-                  <div className="shrink-0">
-                    <button
-                      type="button"
-                      className="shrink-0 rounded-full border-2 border-gray-400 p-1.5 disabled:cursor-not-allowed disabled:opacity-50"
-                      aria-label={`Add ${searchData.email}`}
-                      disabled={addingUserEmail !== null}
-                    >
-                      <Image src={AddIcon} alt="" width={20} height={20} />
-                    </button>
-                  </div>
+                  <Image src={AddIcon} alt="" width={18} height={18} />
                 </button>
-              </article>
-            </li>
-          ) : hasSearched ? (
-            <li className="p-4 text-center">
-              <p className="font-medium">No user found</p>
-              <p className="mt-1 text-sm text-gray-600">
-                {errorMessage ??
-                  "Check the email address and try again. If the user is already in a business, they will not appear here again."}
+              </div>
+
+              <p className="text-sm text-gray-500 mt-2">
+                New members are added with Staff access by default.
               </p>
-            </li>
+            </div>
+          ) : hasSearched ? (
+            <div className="py-8 text-center">
+              <p className="font-medium">No account found</p>
+
+              <p className="text-sm text-gray-500 mt-1">
+                {errorMessage ??
+                  "Check the email address and try your search again."}
+              </p>
+            </div>
           ) : (
-            <li className="p-4 text-center text-gray-600">
-              Enter an email address to search for a user.
-            </li>
+            <div className="py-8 text-center">
+              <p className="font-medium">Search for an account</p>
+
+              <p className="text-sm text-gray-500 mt-1">
+                Enter an email address above to get started.
+              </p>
+            </div>
           )}
-        </ul>
+        </div>
       </section>
-    </div>
+    </section>
   );
 }

@@ -11,26 +11,37 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import type { BusinessUserJson } from "@/types/types";
 import type { SubmitEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import ExitIconBlack from "@/components/icons/exit-black.svg";
 import { toast } from "sonner";
 import RequiredField from "@/components/ui/RequiredField";
+import {
+  deleteUserFromBusiness,
+  getBusinessUsers,
+  updateUsersAccessLevel,
+} from "@/lib/api/users";
+import { AccessLevel } from "@business-freelancer/database";
+import { formatDateTime } from "@/lib/dateTime/formatDateTime";
 
-type UserDetailsPageProps = {
-  params: Promise<{
+export default function UserDetailsPage() {
+  const params = useParams<{
+    businessId: string;
     userId: string;
-  }>;
-};
+  }>();
 
-export default function UserDetailsPage({ params }: UserDetailsPageProps) {
-  const [userData, setUserData] = useState<BusinessUserJson[]>([]);
+  const businessId = params.businessId;
+  const userId = params.userId;
+
+  const [userData, setUserData] = useState<BusinessUserJson | null>(null);
+
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [isEdit, setIsEdit] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  const [selectedAccessLevel, setSelectedAccessLevel] = useState<string>("");
+  const [selectedAccessLevel, setSelectedAccessLevel] =
+    useState<AccessLevel | null>(null);
 
   const [clickedDelete, setClickedDelete] = useState<boolean>(false);
   const [loadingDelete, setLoadingDelete] = useState<boolean>(false);
@@ -41,20 +52,24 @@ export default function UserDetailsPage({ params }: UserDetailsPageProps) {
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!userData) {
+      return;
+    }
+
+    if (!selectedAccessLevel) {
+      setErrorMessage("An access level must be selected.");
+      return;
+    }
+
     setIsSaving(true);
+    setErrorMessage(null);
 
     try {
       const updateResponse = toast.promise<BusinessUserJson>(
-        axios
-          .patch<BusinessUserJson>(
-            `/api/admin/business-users/${userData[0].id}`,
-            {
-              accessLevel: selectedAccessLevel,
-            },
-          )
-          .then((response) => response.data),
+        updateUsersAccessLevel(businessId, userData.id, selectedAccessLevel),
         {
           loading: "Updating access level...",
+
           success: (data) => {
             const accessLevel = data.role?.accessLevel;
 
@@ -70,29 +85,41 @@ export default function UserDetailsPage({ params }: UserDetailsPageProps) {
 
             return {
               message: `${formattedAccessLevel} access granted.`,
-              description: `${userData[0].user?.name ? userData[0].user.name : "This user"} now has ${accessLevel} access.`,
+              description: `${
+                userData.user?.name ? userData.user.name : "This user"
+              } now has ${accessLevel} access.`,
             };
           },
+
           error: "Failed to update the user's access level.",
         },
       );
 
-      const updatedUser: BusinessUserJson = await updateResponse.unwrap();
+      const updatedUser = await updateResponse.unwrap();
 
       setUserData((current) =>
-        current.map((businessUser) =>
-          businessUser.id === updatedUser.id
-            ? {
-                ...businessUser,
-                role: updatedUser.role,
-              }
-            : businessUser,
-        ),
+        current
+          ? {
+              ...current,
+              role: updatedUser.role,
+            }
+          : current,
       );
 
+      setSelectedAccessLevel(updatedUser.role?.accessLevel ?? null);
+
       setIsEdit(false);
-    } catch (e) {
-      console.error("Failed to update business user: ", e);
+    } catch (error) {
+      console.error("Failed to update business user:", error);
+
+      if (axios.isAxiosError<{ error?: string }>(error)) {
+        setErrorMessage(
+          error.response?.data?.error ??
+            "Failed to update the user's access level.",
+        );
+      } else {
+        setErrorMessage("Failed to update the user's access level.");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -101,19 +128,20 @@ export default function UserDetailsPage({ params }: UserDetailsPageProps) {
   async function handleDelete(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (deleteVerification !== userData[0].user?.email) {
+    if (!userData?.user?.email) {
+      return;
+    }
+
+    if (deleteVerification !== userData.user.email) {
       return;
     }
 
     setLoadingDelete(true);
+    setErrorMessage(null);
 
     try {
       const deleteToast = toast.promise<{ message: string }>(
-        axios
-          .delete<{
-            message: string;
-          }>(`/api/admin/business-users/${userData[0].id}`)
-          .then((response) => response.data),
+        deleteUserFromBusiness(businessId, userData.id),
         {
           loading: "Removing user...",
           success: (data) => data.message,
@@ -123,12 +151,21 @@ export default function UserDetailsPage({ params }: UserDetailsPageProps) {
 
       await deleteToast.unwrap();
 
-      router.push("/dashboard/users");
+      router.push(`/businesses/${businessId}/users`);
 
       setClickedDelete(false);
       setDeleteVerification("");
-    } catch (e) {
-      console.error("Failed to remove user from business: ", e);
+    } catch (error) {
+      console.error("Failed to remove user from business:", error);
+
+      if (axios.isAxiosError<{ error?: string }>(error)) {
+        setErrorMessage(
+          error.response?.data?.error ??
+            "Failed to remove the user from the business.",
+        );
+      } else {
+        setErrorMessage("Failed to remove the user from the business.");
+      }
     } finally {
       setLoadingDelete(false);
     }
@@ -136,42 +173,28 @@ export default function UserDetailsPage({ params }: UserDetailsPageProps) {
 
   useEffect(() => {
     async function getUserData() {
-      const { userId } = await params;
-
       setIsLoading(true);
+      setErrorMessage(null);
 
       try {
         const userResponse = toast.promise<BusinessUserJson[]>(
-          axios
-            .get<
-              BusinessUserJson[]
-            >("/api/admin/business-users", { params: { userId } })
-            .then((response) => response.data),
+          getBusinessUsers(businessId),
           {
             loading: "Loading user info...",
-            success: (data) => {
-              if (data.length === 0) {
-                return {
-                  message: "User not found.",
-                  description:
-                    "This user may have already been removed from the business.",
-                };
-              }
-              return {
-                message: "User loaded.",
-                description: `${data[0].user?.name ?? "The user"} was found.`,
-              };
-            },
+            success: "User information loaded.",
+
             error: (error) => {
               if (axios.isAxiosError(error)) {
                 return {
                   message: "Failed to load user info.",
-                  description: `Status code: ${error.response?.status ?? "No response"}`,
+                  description: `Status code: ${
+                    error.response?.status ?? "No response"
+                  }`,
                 };
               }
 
               return {
-                message: "Unexpected error:",
+                message: "Unexpected error.",
                 description:
                   "Something went wrong while loading the user information.",
               };
@@ -179,16 +202,36 @@ export default function UserDetailsPage({ params }: UserDetailsPageProps) {
           },
         );
 
-        const data: BusinessUserJson[] = await userResponse.unwrap();
+        const data = await userResponse.unwrap();
 
-        setUserData(data);
-        setSelectedAccessLevel(data[0]?.role?.accessLevel ?? "");
-      } catch (e) {
-        console.error("Error in User's page: ", e);
+        /*
+         * The route returns all users attached to this business.
+         * The userId in the URL represents the actual User record,
+         * so find the BusinessUser whose nested user.id matches it.
+         */
+        const selectedUser = data.find(
+          (businessUser) => businessUser.user?.id === userId,
+        );
 
-        if (axios.isAxiosError(e)) {
+        if (!selectedUser) {
+          setUserData(null);
+          setSelectedAccessLevel(null);
+          setErrorMessage("User not found.");
+          return;
+        }
+
+        setUserData(selectedUser);
+
+        setSelectedAccessLevel(selectedUser.role?.accessLevel ?? null);
+      } catch (error) {
+        console.error("Error in User's page:", error);
+
+        setUserData(null);
+        setSelectedAccessLevel(null);
+
+        if (axios.isAxiosError<{ error?: string }>(error)) {
           setErrorMessage(
-            e.response?.data?.error ?? "Failed to load user data.",
+            error.response?.data?.error ?? "Failed to load business user data.",
           );
         } else {
           setErrorMessage("Failed to load business user data.");
@@ -199,169 +242,264 @@ export default function UserDetailsPage({ params }: UserDetailsPageProps) {
     }
 
     void getUserData();
-  }, [params]);
+  }, [businessId, userId]);
 
   if (isLoading) {
     return <p>Loading user...</p>;
   }
 
-  if (errorMessage) {
+  if (errorMessage && !userData) {
     return <p>{errorMessage}</p>;
   }
 
-  if (userData.length === 0) {
+  if (!userData?.user?.email) {
     return <p>User not found.</p>;
   }
 
-  if (!userData[0].user?.email) {
-    return <p>User not found</p>;
-  }
-
   return (
-    <div aria-labelledby="user-details-heading">
-      <div className="flex items-center gap-2 mb-[1.5rem]">
-        <Link href="/dashboard/users">
-          <ArrowIcon direction="left" size={50} />
+    <section
+      className="max-w-[1000px] mx-auto"
+      aria-labelledby="user-details-heading"
+    >
+      {/* Heading */}
+      <div className="flex items-center gap-3 mb-6">
+        <Link
+          href={`/businesses/${businessId}/users`}
+          aria-label="Return to members"
+          className="shrink-0"
+        >
+          <ArrowIcon direction="left" size={42} />
         </Link>
-        <h1 id="user-details-heading">User details</h1>
-      </div>
-      {/* BusinessUser.Role: accessLevel */}
-      {/* BusinessUser.User: image, name, username, email, emailVerified, createdAt, updatedAt */}
-      {/* BusinessUser.User.Account: provider */}
 
-      <section className="dashboard-card mb-4">
-        <h2>General</h2>
-
-        <div className="flex flex-col">
-          <p>
-            Name: <span>{userData[0].user.name ?? "Missing name"}</span>
-          </p>
-          <p>
-            Email: <span>{userData[0].user.email ?? "Missing email"}</span>
-          </p>
-          <p>
-            Username: <span>{userData[0].user.username}</span>
-          </p>
-        </div>
-      </section>
-
-      <section className="dashboard-card mb-4">
-        <div className="flex justify-between">
-          <h2>Permissions</h2>
-
-          <button
-            type="button"
-            aria-label="Edit user permissions"
-            onClick={() => setIsEdit((prev) => !prev)}
+        <div className="min-w-0">
+          <h1
+            id="user-details-heading"
+            className="text-3xl font-semibold truncate"
           >
-            <Image src={EditIcon} alt="" width={30} height={30} />
-          </button>
+            {userData.user?.name ?? "Member Details"}
+          </h1>
+
+          <p className="text-gray-500 mt-1">
+            View account information and manage this member&apos;s access.
+          </p>
+        </div>
+      </div>
+
+      {/* Member Information */}
+      <section className="border border-gray-300 rounded-xl p-5">
+        {/* General */}
+        <div>
+          <h2 className="text-xl font-semibold">Member Information</h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
+            <div>
+              <p className="text-sm text-gray-500">Name</p>
+              <p className="font-medium mt-1">
+                {userData.user?.name ?? "Missing name"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-500">Email</p>
+              <p className="font-medium mt-1 break-all">
+                {userData.user?.email ?? "Missing email"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-500">Username</p>
+              <p className="font-medium mt-1">
+                {userData.user?.username ?? "Not provided"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-500">Access Level</p>
+
+              <span className="inline-flex mt-1 capitalize rounded-md border border-gray-300 bg-gray-100 px-2 py-1 text-sm font-medium">
+                {userData.role?.accessLevel ?? "Missing role"}
+              </span>
+            </div>
+          </div>
         </div>
 
-        {isEdit ? (
-          <form onSubmit={handleSubmit}>
-            <label htmlFor="user-access-level">
-              Access Level: <RequiredField />
-            </label>
-            <select
-              id="user-access-level"
-              className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-              name="access-level"
-              value={selectedAccessLevel}
-              onChange={(event) => setSelectedAccessLevel(event.target.value)}
-              required
-            >
-              {/* TODO: Only owner can pass ownership */}
-              <option value="developer">Developer</option>
-              <option value="admin">Admin</option>
-              <option value="staff">Staff</option>
-            </select>
+        <div className="border-t border-gray-200 my-6" />
+
+        {/* Permissions */}
+        <div>
+          <div className="flex justify-between items-start gap-4">
+            <div>
+              <h2 className="text-xl font-semibold">Permissions</h2>
+
+              <p className="text-sm text-gray-500 mt-1">
+                Control what this member can access within the business.
+              </p>
+            </div>
 
             <button
-              className="mt-3 ml-auto bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
-              type="submit"
-              disabled={isSaving}
+              type="button"
+              aria-label="Edit user permissions"
+              className="shrink-0 rounded-lg p-2 hover:bg-gray-100 transition-colors"
+              onClick={() => setIsEdit((current) => !current)}
             >
-              {isSaving ? "Saving..." : "Save Changes"}
+              <Image src={EditIcon} alt="" width={22} height={22} />
             </button>
-          </form>
-        ) : (
-          <p>
-            Access Level:{" "}
-            <span className="block w-full border-[0.1rem] rounded-lg border-gray-300 bg-gray-100 px-3 py-2 text-gray-500">
-              {userData[0].role?.accessLevel}
-            </span>
-          </p>
-        )}
-      </section>
+          </div>
 
-      <section className="dashboard-card">
-        <h2>Timestamps</h2>
+          {isEdit ? (
+            <form className="mt-4" onSubmit={handleSubmit}>
+              <label className="font-semibold" htmlFor="user-access-level">
+                Access Level <RequiredField />
+              </label>
 
-        <div className="flex flex-col">
-          <h3>User</h3>
-          <p>
-            createdAt: <span>{userData[0].user?.createdAt}</span>
-          </p>
-          <p>
-            updatedAt: <span>{userData[0].user?.updatedAt}</span>
-          </p>
-          <h3>Business</h3>
-          <p>
-            createdAt: <span>{userData[0].createdAt}</span>
-          </p>
-          <p>
-            updatedAt: <span>{userData[0].updatedAt}</span>
-          </p>
+              <select
+                id="user-access-level"
+                className="block w-full mt-1 border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
+                name="access-level"
+                value={selectedAccessLevel ?? ""}
+                onChange={(event) =>
+                  setSelectedAccessLevel(
+                    event.target.value as typeof selectedAccessLevel,
+                  )
+                }
+                required
+              >
+                <option value="developer">Developer</option>
+                <option value="admin">Admin</option>
+                <option value="staff">Staff</option>
+              </select>
+
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  type="button"
+                  className="border border-gray-300 rounded-lg px-3 py-2 hover:bg-gray-100 transition-colors"
+                  disabled={isSaving}
+                  onClick={() => {
+                    setSelectedAccessLevel(userData.role?.accessLevel ?? null);
+                    setIsEdit(false);
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  className="bg-emerald-300 border border-green-500 rounded-lg text-green-900 px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="submit"
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="mt-4">
+              <p className="text-sm text-gray-500">Current Access</p>
+
+              <span className="inline-flex mt-1 capitalize rounded-md border border-gray-300 bg-gray-100 px-3 py-1.5 font-medium">
+                {userData.role?.accessLevel ?? "Missing role"}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-gray-200 my-6" />
+
+        {/* Timestamps */}
+        <div>
+          <h2 className="text-xl font-semibold">Activity</h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
+            <div>
+              <p className="text-sm text-gray-500">Account Created</p>
+              <p className="mt-1">
+                {userData.user?.createdAt
+                  ? formatDateTime(userData.user.createdAt, "date")
+                  : "Unavailable"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-500">Account Updated</p>
+              <p className="mt-1">
+                {userData.user?.updatedAt
+                  ? formatDateTime(userData.user.updatedAt, "date")
+                  : "Unavailable"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-500">Added to Business</p>
+              <p className="mt-1">
+                {userData.createdAt
+                  ? formatDateTime(userData.createdAt, "date")
+                  : "Unavailable"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-500">Membership Updated</p>
+              <p className="mt-1">
+                {userData.updatedAt
+                  ? formatDateTime(userData.updatedAt, "date")
+                  : "Unavailable"}
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-      <Divider />
+      {/* Danger Zone */}
+      <section className="border border-red-400 bg-red-50 rounded-xl p-5 mt-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-red-700">
+              Remove Member
+            </h2>
 
-      <button
-        className="w-full border border-red-500 rounded-2xl bg-red-300 flex justify-center items-center px-3 py-1"
-        type="button"
-        aria-label="Remove user from business"
-        onClick={() => setClickedDelete(true)}
-      >
-        <Image src={TrashIcon} alt="" />
-      </button>
+            <p className="text-sm text-red-400 mt-1">
+              Remove this member&apos;s access to the business and its content.
+            </p>
+          </div>
 
-      {/* Model for delete notice */}
+          <button
+            className="shrink-0 border border-red-400 rounded-lg bg-red-100 text-red-700 font-medium px-4 py-2 hover:bg-red-200 transition-colors"
+            type="button"
+            onClick={() => setClickedDelete(true)}
+          >
+            Remove Member
+          </button>
+        </div>
+      </section>
+
+      {/* Delete Modal */}
       {clickedDelete && (
-        <div className="fixed inset-0 z-10 flex justify-center items-center bg-black/25">
-          <div className="bg-gray-50 mx-3 p-5 rounded-lg ">
-            <div className="flex justify-between items-center">
-              <h4>Remove</h4>
+        <div className="fixed inset-0 z-50 flex justify-center items-center bg-black/40 px-5">
+          <div className="w-full max-w-[500px] bg-white border border-gray-300 rounded-xl p-5">
+            <div className="flex justify-between items-start gap-5">
+              <div>
+                <h2 className="text-xl font-semibold">Remove Member?</h2>
+
+                <p className="text-gray-500 mt-1">
+                  This member will immediately lose access to this business.
+                </p>
+              </div>
+
               <button
                 type="button"
                 className="p-1"
-                aria-label="Exit this action"
+                aria-label="Close remove member modal"
+                disabled={loadingDelete}
                 onClick={() => {
                   setClickedDelete(false);
                   setDeleteVerification("");
                 }}
               >
-                <Image
-                  src={ExitIconBlack}
-                  alt=""
-                  width={30}
-                  height={30}
-                  loading="eager"
-                />
+                <Image src={ExitIconBlack} alt="" width={22} height={22} />
               </button>
             </div>
 
-            <div>
-              <p>Are you sure you want to remove this user?</p>
-              <p>
-                This user will no longer have access to this business or its
-                contents. You can add them back by searching them in the{" "}
-                <span className="font-semibold">Users </span>page.
-              </p>
-            </div>
-
             <form
+              className="mt-5"
               onSubmit={handleDelete}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
@@ -369,10 +507,14 @@ export default function UserDetailsPage({ params }: UserDetailsPageProps) {
                 }
               }}
             >
-              <p>To remove type:</p>
-              <label className="text-gray-500" htmlFor="remove-user">
-                {userData[0].user.email}
-              </label>
+              <p className="text-sm text-gray-600">
+                To confirm, type the member&apos;s email address:
+              </p>
+
+              <p className="font-semibold break-all mt-1">
+                {userData.user.email}
+              </p>
+
               <input
                 type="text"
                 id="remove-user"
@@ -381,26 +523,46 @@ export default function UserDetailsPage({ params }: UserDetailsPageProps) {
                 onChange={(event) => setDeleteVerification(event.target.value)}
                 autoComplete="off"
                 spellCheck={false}
-                className="w-full rounded border px-3 py-2 bg-gray-200 mt-2 mb-4"
-              ></input>
-              <button
-                className="
-                  flex w-full items-center justify-center rounded-2xl
-                  border border-red-300 bg-red-100 px-3 py-1
-                  disabled:cursor-not-allowed disabled:opacity-50
-                "
-                type="submit"
-                disabled={
-                  deleteVerification !== userData[0].user.email || loadingDelete
-                }
-                aria-label="Remove user from business"
-              >
-                <Image src={TrashIcon} alt="" />
-              </button>
+                disabled={loadingDelete}
+                className="w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 mt-3 disabled:opacity-50"
+              />
+
+              <div className="flex justify-end gap-2 mt-5">
+                <button
+                  type="button"
+                  className="border border-gray-300 rounded-lg px-3 py-2"
+                  disabled={loadingDelete}
+                  onClick={() => {
+                    setClickedDelete(false);
+                    setDeleteVerification("");
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  className="rounded-lg border border-red-400 bg-red-100 text-red-700 font-medium px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  type="submit"
+                  disabled={
+                    deleteVerification !== userData.user.email || loadingDelete
+                  }
+                >
+                  {loadingDelete ? "Removing..." : "Remove Member"}
+                </button>
+              </div>
             </form>
           </div>
         </div>
       )}
-    </div>
+
+      {errorMessage && (
+        <p
+          role="alert"
+          className="text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mt-4"
+        >
+          {errorMessage}
+        </p>
+      )}
+    </section>
   );
 }

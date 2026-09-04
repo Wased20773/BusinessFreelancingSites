@@ -11,7 +11,7 @@ export const workspaceLinks = (businessId: string): WorkspaceLinks[] => {
     },
     {
       name: "Members",
-      href: `/businesses/${businessId}/members`,
+      href: `/businesses/${businessId}/users`,
     },
     {
       name: "API Keys",
