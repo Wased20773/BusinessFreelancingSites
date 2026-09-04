@@ -72,6 +72,23 @@ export default function MobileNavBar({
           </div>
         </>
       )}
+      {variant === "settings" && (
+        <>
+          {/* BusinessPlatform Logo */}
+          <div className="flex flex-row items-center gap-3">
+            <span className="text-gray-900 font-semibold">
+              Business Platform
+            </span>
+            <Image
+              src={Logo}
+              alt="Client Logo"
+              width={50}
+              height={50}
+              loading="eager"
+            />
+          </div>
+        </>
+      )}
 
       {/* Slide Into View After Clicking Burger Button */}
       <div
@@ -98,6 +115,20 @@ export default function MobileNavBar({
               />
               <span className="font-semibold text-gray-100">
                 {currentBusiness.name}
+              </span>
+            </div>
+          )}
+          {variant === "settings" && (
+            <div className="flex flex-row items-center gap-3">
+              <Image
+                src={Logo}
+                alt="Client logo"
+                width={50}
+                height={50}
+                loading="eager"
+              />
+              <span className="font-semibold text-gray-100">
+                Business Platform
               </span>
             </div>
           )}
@@ -143,8 +174,21 @@ export default function MobileNavBar({
           </ul>
         </nav>
 
-        {/* Account */}
+        {/* Extras */}
         {variant === "dashboard" && (
+          <div className="p-3">
+            <Link
+              href={`/businesses/${businessId}`}
+              className="flex items-center justify-center gap-2 px-2 py-2"
+              onClick={() => setIsOpen(false)}
+            >
+              <ArrowIcon direction="left" size={20} theme="dark" />
+
+              <span className="text-gray-300">Go Back to Workspace</span>
+            </Link>
+          </div>
+        )}
+        {variant === "settings" && (
           <div className="p-3">
             <Link
               href={`/businesses/${businessId}`}

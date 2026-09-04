@@ -164,7 +164,7 @@ export type DashboardNavAccount = {
 export type DashboardNavProps = {
   currentBusiness: DashboardNavBusiness;
   currentAccount: DashboardNavAccount;
-  variant: "workspace" | "dashboard";
+  variant: "workspace" | "dashboard" | "settings";
   navLinks: {
     name: string;
     href: string;

@@ -1,9 +1,4 @@
-import {
-  BadgeCheckIcon,
-  BellIcon,
-  CreditCardIcon,
-  LogOutIcon,
-} from "lucide-react";
+import { BadgeCheckIcon, CreditCardIcon, LogOutIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,6 +12,7 @@ import Image from "next/image";
 import { DashboardNavAccount } from "@/types/types";
 import PlaceHolderAccountWhite from "@/components/icons/placeholder-account-white.svg";
 import { signOut } from "next-auth/react";
+import { redirect } from "next/navigation";
 
 type AccountDropdownProps = {
   currentAccount: DashboardNavAccount;
@@ -54,23 +50,38 @@ export default function AccountDropdown({
             height={40}
             loading="eager"
           />
-          <span
+          <div
             className={[
-              "min-w-0 flex-1 truncate text-left",
+              "min-w-0 flex-1 text-left",
               layout === "compact-mobile"
                 ? "hidden min-[400px]:block"
                 : "block",
-              theme === "dark" ? "text-gray-300" : "text-black",
             ].join(" ")}
           >
-            {currentAccount.name}
-          </span>
+            <p
+              className={[
+                "truncate",
+                theme === "dark" ? "text-gray-300" : "text-black",
+              ].join(" ")}
+            >
+              {currentAccount.name}
+            </p>
+
+            <p
+              className={[
+                "text-xs capitalize truncate",
+                theme === "dark" ? "text-gray-500" : "text-gray-500",
+              ].join(" ")}
+            >
+              {currentAccount.accessLevel}
+            </p>
+          </div>
         </Button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="start">
         <DropdownMenuGroup>
-          <DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => redirect("/settings/account")}>
             <BadgeCheckIcon />
             Account
           </DropdownMenuItem>

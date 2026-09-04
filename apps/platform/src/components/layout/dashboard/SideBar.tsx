@@ -35,12 +35,29 @@ export default function SideBar({
             <Image
               src={Logo}
               alt="Client logo"
-              width={50}
-              height={50}
+              width={35}
+              height={35}
               loading="eager"
             />
             <span className="min-w-0 text-gray-900 font-semibold px-2 truncate">
               {currentBusiness.name}
+            </span>
+          </div>
+        </>
+      )}
+      {variant === "settings" && (
+        <>
+          {/* Client Logo + Name */}
+          <div className=" border-gray-300 p-2 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-1">
+            <Image
+              src={Logo}
+              alt="Client logo"
+              width={35}
+              height={35}
+              loading="eager"
+            />
+            <span className="min-w-0 text-gray-900 font-semibold px-2 truncate">
+              Business Platform
             </span>
           </div>
         </>
@@ -72,7 +89,7 @@ export default function SideBar({
         </ul>
       </nav>
 
-      {/* Account */}
+      {/* Extras */}
       <div className="min-w-0 flex flex-col gap-3 p-2">
         {/* <Link
           className={["sidebar-nav-links", settingsSelected && "selected"]
@@ -105,20 +122,28 @@ export default function SideBar({
             <span className="text-gray-500 truncate">
               {currentAccount.accessLevel}
             </span>
-          </div>
-        </div> */}
-
+            </div>
+            </div> */}
+        {variant === "workspace" && (
+          <AccountDropdown theme={"light"} currentAccount={currentAccount} />
+        )}
         {variant === "dashboard" && (
           <Link
             href={`/businesses/${businessId}`}
             className="flex items-center gap-2 px-2"
           >
             <ArrowIcon direction="left" size={20} />
-            <span>Go Back</span>
+            <span>Go Back to Workspace</span>
           </Link>
         )}
-        {variant === "workspace" && (
-          <AccountDropdown theme={"light"} currentAccount={currentAccount} />
+        {variant === "settings" && (
+          <Link
+            href={`/businesses/${businessId}`}
+            className="flex items-center gap-2 px-2"
+          >
+            <ArrowIcon direction="left" size={20} />
+            <span>Go Back to Workspace</span>
+          </Link>
         )}
       </div>
     </aside>
