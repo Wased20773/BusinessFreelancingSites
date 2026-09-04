@@ -21,7 +21,7 @@ export default function SideBar({
   const pathname = usePathname();
 
   return (
-    <aside className="hidden h-screen w-fit  grid-rows-[auto_minmax(0,1fr)_auto] md:grid bg-gray-50 border-r border-gray-300">
+    <aside className="hidden h-screen w-[250px] grid-rows-[auto_minmax(0,1fr)_auto] md:grid bg-gray-50 border-r border-gray-300">
       {variant === "workspace" && businesses && (
         <>
           {/* Business Select */}
@@ -73,7 +73,7 @@ export default function SideBar({
       </nav>
 
       {/* Account */}
-      <div className="flex flex-col items-start gap-3 p-2">
+      <div className="min-w-0 flex flex-col gap-3 p-2">
         {/* <Link
           className={["sidebar-nav-links", settingsSelected && "selected"]
             .filter(Boolean)
@@ -117,7 +117,9 @@ export default function SideBar({
             <span>Go Back</span>
           </Link>
         )}
-        <AccountDropdown theme={"light"} currentAccount={currentAccount} />
+        {variant === "workspace" && (
+          <AccountDropdown theme={"light"} currentAccount={currentAccount} />
+        )}
       </div>
     </aside>
   );
