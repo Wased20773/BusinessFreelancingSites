@@ -1,6 +1,7 @@
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
+import { Turret_Road } from "next/font/google";
 import { NextResponse } from "next/server";
 
 // PATCH /api/businesses/[businessId]/users/[businessUserId]
@@ -36,6 +37,11 @@ export async function PATCH(
       return authResult;
     }
 
+    const {
+      userId: authenticatedUserId,
+      accessLevel: authenticatedAccessLevel,
+    } = authResult;
+
     const body = await request.json();
 
     if (!body.accessLevel) {
@@ -53,22 +59,7 @@ export async function PATCH(
     }
 
     // Grab the selected role
-    const role = await prisma.role.findFirst({
-      where: {
-        accessLevel: body.accessLevel,
-      },
-
-      select: {
-        id: true,
-      },
-    });
-
-    if (!role) {
-      return NextResponse.json(
-        { error: "Invalid access level selection" },
-        { status: 400 },
-      );
-    }
+    const requestedAccessLevel = body.accessLevel as AccessLevel;
 
     // Verify this BusinessUser belongs to this business
     const businessUser = await prisma.businessUser.findFirst({
@@ -78,6 +69,12 @@ export async function PATCH(
       },
       select: {
         id: true,
+        userId: true,
+        role: {
+          select: {
+            accessLevel: true,
+          },
+        },
       },
     });
 
@@ -88,7 +85,110 @@ export async function PATCH(
       );
     }
 
-    // Update the user's role inside this business
+    // Check for self assignment
+    if (businessUser.userId === authResult.userId) {
+      return NextResponse.json(
+        { error: "You cannot change your own access level." },
+        { status: 403 },
+      );
+    }
+
+    // Admin cannot demote or otherwise modify the owner's role.
+    if (
+      businessUser.role.accessLevel === AccessLevel.owner &&
+      authenticatedAccessLevel !== AccessLevel.owner
+    ) {
+      return NextResponse.json(
+        { error: "Administrators cannot modify the business owner." },
+        { status: 403 },
+      );
+    }
+
+    /**
+     * ##############################
+     * ##### OWNERSHIP TRANSFER #####
+     * ##############################
+     */
+
+    if (requestedAccessLevel === AccessLevel.owner) {
+      if (authenticatedAccessLevel !== AccessLevel.owner) {
+        return NextResponse.json(
+          { error: "Only the business owner can transfer ownership." },
+          { status: 403 },
+        );
+      }
+      const updatedBusinessUser = await prisma.$transaction(async (tx) => {
+        /**
+         * Demote the authenticated owner to admin.
+         *
+         * We already know exactly who the owner is:
+         *  authResult.userId.
+         */
+        await tx.businessUser.update({
+          where: {
+            businessId_userId: {
+              businessId,
+              userId: authenticatedUserId,
+            },
+          },
+          data: {
+            role: {
+              connect: {
+                accessLevel: AccessLevel.admin,
+              },
+            },
+          },
+        });
+
+        /**
+         * Promote the selected member to Owner
+         */
+        return tx.businessUser.update({
+          where: {
+            id: businessUser.id,
+          },
+          data: {
+            role: {
+              connect: {
+                accessLevel: AccessLevel.owner,
+              },
+            },
+          },
+          select: {
+            id: true,
+            businessId: true,
+            userId: true,
+            roleId: true,
+            updatedAt: true,
+            createdAt: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                username: true,
+                email: true,
+                image: true,
+              },
+            },
+            role: {
+              select: {
+                id: true,
+                accessLevel: true,
+                description: true,
+              },
+            },
+          },
+        });
+      });
+
+      return NextResponse.json(updatedBusinessUser, { status: 200 });
+    }
+
+    /**
+     * ##############################
+     * ##### NORMAL ROLE CHANGE #####
+     * ##############################
+     */
     const updatedBusinessUser = await prisma.businessUser.update({
       where: {
         id: businessUser.id,
@@ -96,7 +196,7 @@ export async function PATCH(
       data: {
         role: {
           connect: {
-            id: role.id,
+            accessLevel: requestedAccessLevel,
           },
         },
       },
@@ -174,26 +274,72 @@ export async function DELETE(
       return authResult;
     }
 
+    const {
+      userId: authenticatedUserId,
+      accessLevel: authenticatedAccessLevel,
+    } = authResult;
+
     /*
-     * deleteMany is intentional here.
-     *
-     * It lets us scope the deletion to BOTH the BusinessUser ID
-     * and the businessId while also receiving a count when nothing
-     * matched instead of relying on Prisma throwing an error.
+     * We need the selected BusinessUser before
+     * deleting so we can enforce self/owner rules.
      */
-    const deletedBusinessUser = await prisma.businessUser.deleteMany({
+    const businessUser = await prisma.businessUser.findFirst({
       where: {
         id: businessUserId,
         businessId,
       },
+
+      select: {
+        id: true,
+        userId: true,
+
+        role: {
+          select: {
+            accessLevel: true,
+          },
+        },
+      },
     });
 
-    if (deletedBusinessUser.count === 0) {
+    if (!businessUser) {
       return NextResponse.json(
         { error: "This business user does not exist in our records" },
         { status: 404 },
       );
     }
+
+    /*
+     * Removing yourself is a separate action from
+     * managing another member.
+     */
+    if (businessUser.userId === authenticatedUserId) {
+      return NextResponse.json(
+        {
+          error:
+            "You cannot remove yourself from the business through member management.",
+        },
+        { status: 403 },
+      );
+    }
+
+    /*
+     * Admins cannot remove the owner.
+     */
+    if (
+      businessUser.role.accessLevel === AccessLevel.owner &&
+      authenticatedAccessLevel !== AccessLevel.owner
+    ) {
+      return NextResponse.json(
+        { error: "Administrators cannot remove the business owner." },
+        { status: 403 },
+      );
+    }
+
+    await prisma.businessUser.delete({
+      where: {
+        id: businessUser.id,
+      },
+    });
 
     return NextResponse.json(
       { message: "Business user deleted successfully" },

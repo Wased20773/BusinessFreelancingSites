@@ -13,7 +13,14 @@ export async function authenticateBusinessAccess(
   request: Request,
   businessId: string,
   allowedRoles: AccessLevel[],
-): Promise<NextResponse | { userId: string; businessId: string }> {
+): Promise<
+  | NextResponse
+  | {
+      userId: string;
+      businessId: string;
+      accessLevel: string;
+    }
+> {
   try {
     // 1. Ask Auth.js if there is a logged-in user
     const session: Session | null = await auth();
@@ -51,6 +58,12 @@ export async function authenticateBusinessAccess(
       select: {
         userId: true,
         businessId: true,
+        role: {
+          select: {
+            id: true,
+            accessLevel: true,
+          },
+        },
       },
     });
 
@@ -63,6 +76,7 @@ export async function authenticateBusinessAccess(
     return {
       userId: businessUser.userId,
       businessId: businessUser.businessId,
+      accessLevel: businessUser.role.accessLevel,
     };
   } catch (error) {
     console.error("Failed to authenticate:", error);

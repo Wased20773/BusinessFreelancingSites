@@ -4,16 +4,27 @@ import type {
   User,
   Social,
   Contact,
-  AccessLevel,
   BusinessApiKey,
   Location,
   LocationDay,
   Hour,
 } from "@business-freelancer/database";
+export type AccessLevel = (typeof ACCESS_LEVEL)[keyof typeof ACCESS_LEVEL];
 import {
   Item,
   ItemOption,
 } from "@business-freelancer/database/generated/prisma/client";
+
+// --------------------
+// ENUMS
+
+// Access Level
+export const ACCESS_LEVEL = {
+  developer: "developer",
+  owner: "owner",
+  admin: "admin",
+  staff: "staff",
+} as const;
 
 // --------------------
 // MODEL TYPES

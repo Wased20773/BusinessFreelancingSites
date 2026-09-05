@@ -3,13 +3,15 @@
 import ArrowIcon from "@/components/icons/arrow";
 import Link from "next/link";
 import "../../page.css";
-import Divider from "@/components/layout/Divider";
 import Image from "next/image";
-import TrashIcon from "@/components/icons/trash-red.svg";
 import EditIcon from "@/components/icons/edit.svg";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import type { BusinessUserJson } from "@/types/types";
+import {
+  ACCESS_LEVEL,
+  type AccessLevel,
+  type BusinessUserJson,
+} from "@/types/types";
 import type { SubmitEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import ExitIconBlack from "@/components/icons/exit-black.svg";
@@ -20,8 +22,8 @@ import {
   getBusinessUsers,
   updateUsersAccessLevel,
 } from "@/lib/api/users";
-import { AccessLevel } from "@business-freelancer/database";
 import { formatDateTime } from "@/lib/dateTime/formatDateTime";
+import { useSession } from "next-auth/react";
 
 export default function UserDetailsPage() {
   const params = useParams<{
@@ -35,31 +37,80 @@ export default function UserDetailsPage() {
   const [userData, setUserData] = useState<BusinessUserJson | null>(null);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [isEdit, setIsEdit] = useState<boolean>(false);
+
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   const [selectedAccessLevel, setSelectedAccessLevel] =
     useState<AccessLevel | null>(null);
 
   const [clickedDelete, setClickedDelete] = useState<boolean>(false);
+
   const [loadingDelete, setLoadingDelete] = useState<boolean>(false);
+
   const [deleteVerification, setDeleteVerification] = useState<string>("");
 
   const router = useRouter();
 
+  const { data: session, status, update } = useSession();
+
+  const currentAccessLevel = session?.user?.accessLevel;
+
+  const isCurrentUser = session?.user?.id === userData?.user?.id;
+
+  const targetIsOwner = userData?.role?.accessLevel === ACCESS_LEVEL.owner;
+
+  const canManageMembers =
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin;
+
+  const canViewMembers =
+    canManageMembers || currentAccessLevel === ACCESS_LEVEL.staff;
+
+  /*
+   * Nobody can modify themselves.
+   *
+   * Admins also cannot modify the owner.
+   */
+  const canModifySelectedUser =
+    canManageMembers &&
+    !isCurrentUser &&
+    !(currentAccessLevel === ACCESS_LEVEL.admin && targetIsOwner);
+
+  const canDeleteSelectedUser = canModifySelectedUser;
+
+  /*
+   * Only the current owner can transfer
+   * ownership to another member.
+   */
+  const canTransferOwnership =
+    currentAccessLevel === ACCESS_LEVEL.owner && !isCurrentUser;
+
+  const isOwnershipTransfer =
+    selectedAccessLevel === ACCESS_LEVEL.owner &&
+    currentAccessLevel === ACCESS_LEVEL.owner;
+
+  const accessLevelChanged =
+    selectedAccessLevel !== userData?.role?.accessLevel;
+
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!userData) {
+    if (!userData || !selectedAccessLevel || !canModifySelectedUser) {
       return;
     }
 
-    if (!selectedAccessLevel) {
-      setErrorMessage("An access level must be selected.");
+    if (selectedAccessLevel === userData.role?.accessLevel) {
+      setIsEdit(false);
       return;
     }
+
+    const transferringOwnership =
+      selectedAccessLevel === ACCESS_LEVEL.owner &&
+      currentAccessLevel === ACCESS_LEVEL.owner;
 
     setIsSaving(true);
     setErrorMessage(null);
@@ -68,7 +119,9 @@ export default function UserDetailsPage() {
       const updateResponse = toast.promise<BusinessUserJson>(
         updateUsersAccessLevel(businessId, userData.id, selectedAccessLevel),
         {
-          loading: "Updating access level...",
+          loading: transferringOwnership
+            ? "Transferring ownership..."
+            : "Updating access level...",
 
           success: (data) => {
             const accessLevel = data.role?.accessLevel;
@@ -80,18 +133,45 @@ export default function UserDetailsPage() {
               };
             }
 
+            if (accessLevel === ACCESS_LEVEL.owner) {
+              return {
+                message: "Ownership transferred.",
+                description: `${
+                  userData.user?.name ?? "This member"
+                } is now the business owner.`,
+              };
+            }
+
             const formattedAccessLevel =
               accessLevel.charAt(0).toUpperCase() + accessLevel.slice(1);
 
             return {
               message: `${formattedAccessLevel} access granted.`,
               description: `${
-                userData.user?.name ? userData.user.name : "This user"
+                userData.user?.name ?? "This member"
               } now has ${accessLevel} access.`,
             };
           },
 
-          error: "Failed to update the user's access level.",
+          error: (error) => {
+            if (
+              axios.isAxiosError<{
+                error?: string;
+              }>(error)
+            ) {
+              return {
+                message: "Failed to update access level.",
+                description:
+                  error.response?.data?.error ??
+                  `Status code: ${error.response?.status ?? "No response"}`,
+              };
+            }
+
+            return {
+              message: "Unexpected error.",
+              description: "Something went wrong while updating this member.",
+            };
+          },
         },
       );
 
@@ -102,17 +182,36 @@ export default function UserDetailsPage() {
           ? {
               ...current,
               role: updatedUser.role,
+              updatedAt: updatedUser.updatedAt,
             }
           : current,
       );
 
       setSelectedAccessLevel(updatedUser.role?.accessLevel ?? null);
 
+      /*
+       * Ownership transfer changes the
+       * authenticated owner to admin.
+       *
+       * Refresh the Auth.js business context
+       * immediately so the dashboard UI gets
+       * the new access level.
+       */
+      if (transferringOwnership) {
+        await update({
+          businessId,
+        });
+      }
+
       setIsEdit(false);
     } catch (error) {
       console.error("Failed to update business user:", error);
 
-      if (axios.isAxiosError<{ error?: string }>(error)) {
+      if (
+        axios.isAxiosError<{
+          error?: string;
+        }>(error)
+      ) {
         setErrorMessage(
           error.response?.data?.error ??
             "Failed to update the user's access level.",
@@ -128,7 +227,7 @@ export default function UserDetailsPage() {
   async function handleDelete(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!userData?.user?.email) {
+    if (!userData?.user?.email || !canDeleteSelectedUser) {
       return;
     }
 
@@ -145,7 +244,26 @@ export default function UserDetailsPage() {
         {
           loading: "Removing user...",
           success: (data) => data.message,
-          error: "Failed to remove user from the business.",
+
+          error: (error) => {
+            if (
+              axios.isAxiosError<{
+                error?: string;
+              }>(error)
+            ) {
+              return {
+                message: "Failed to remove user.",
+                description:
+                  error.response?.data?.error ??
+                  `Status code: ${error.response?.status ?? "No response"}`,
+              };
+            }
+
+            return {
+              message: "Unexpected error.",
+              description: "Something went wrong while removing this member.",
+            };
+          },
         },
       );
 
@@ -158,7 +276,11 @@ export default function UserDetailsPage() {
     } catch (error) {
       console.error("Failed to remove user from business:", error);
 
-      if (axios.isAxiosError<{ error?: string }>(error)) {
+      if (
+        axios.isAxiosError<{
+          error?: string;
+        }>(error)
+      ) {
         setErrorMessage(
           error.response?.data?.error ??
             "Failed to remove the user from the business.",
@@ -204,11 +326,6 @@ export default function UserDetailsPage() {
 
         const data = await userResponse.unwrap();
 
-        /*
-         * The route returns all users attached to this business.
-         * The userId in the URL represents the actual User record,
-         * so find the BusinessUser whose nested user.id matches it.
-         */
         const selectedUser = data.find(
           (businessUser) => businessUser.user?.id === userId,
         );
@@ -229,7 +346,11 @@ export default function UserDetailsPage() {
         setUserData(null);
         setSelectedAccessLevel(null);
 
-        if (axios.isAxiosError<{ error?: string }>(error)) {
+        if (
+          axios.isAxiosError<{
+            error?: string;
+          }>(error)
+        ) {
           setErrorMessage(
             error.response?.data?.error ?? "Failed to load business user data.",
           );
@@ -241,8 +362,30 @@ export default function UserDetailsPage() {
       }
     }
 
-    void getUserData();
-  }, [businessId, userId]);
+    if (status === "authenticated" && canViewMembers) {
+      void getUserData();
+    }
+  }, [businessId, userId, status, canViewMembers]);
+
+  if (status === "loading") {
+    return <p>Loading session...</p>;
+  }
+
+  if (status === "unauthenticated") {
+    return <p>You must be signed in to view this page.</p>;
+  }
+
+  if (!canViewMembers) {
+    return (
+      <section className="max-w-[1000px] mx-auto">
+        <h1 className="text-3xl font-semibold">Member unavailable</h1>
+
+        <p className="text-gray-500 mt-1">
+          Your current access level does not include member information.
+        </p>
+      </section>
+    );
+  }
 
   if (isLoading) {
     return <p>Loading user...</p>;
@@ -294,6 +437,7 @@ export default function UserDetailsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
             <div>
               <p className="text-sm text-gray-500">Name</p>
+
               <p className="font-medium mt-1">
                 {userData.user?.name ?? "Missing name"}
               </p>
@@ -301,6 +445,7 @@ export default function UserDetailsPage() {
 
             <div>
               <p className="text-sm text-gray-500">Email</p>
+
               <p className="font-medium mt-1 break-all">
                 {userData.user?.email ?? "Missing email"}
               </p>
@@ -308,6 +453,7 @@ export default function UserDetailsPage() {
 
             <div>
               <p className="text-sm text-gray-500">Username</p>
+
               <p className="font-medium mt-1">
                 {userData.user?.username ?? "Not provided"}
               </p>
@@ -336,17 +482,19 @@ export default function UserDetailsPage() {
               </p>
             </div>
 
-            <button
-              type="button"
-              aria-label="Edit user permissions"
-              className="shrink-0 rounded-lg p-2 hover:bg-gray-100 transition-colors"
-              onClick={() => setIsEdit((current) => !current)}
-            >
-              <Image src={EditIcon} alt="" width={22} height={22} />
-            </button>
+            {canModifySelectedUser && !isEdit && (
+              <button
+                type="button"
+                aria-label="Edit user permissions"
+                className="shrink-0 rounded-lg p-2 hover:bg-gray-100 transition-colors"
+                onClick={() => setIsEdit(true)}
+              >
+                <Image src={EditIcon} alt="" width={22} height={22} />
+              </button>
+            )}
           </div>
 
-          {isEdit ? (
+          {isEdit && canModifySelectedUser ? (
             <form className="mt-4" onSubmit={handleSubmit}>
               <label className="font-semibold" htmlFor="user-access-level">
                 Access Level <RequiredField />
@@ -358,16 +506,34 @@ export default function UserDetailsPage() {
                 name="access-level"
                 value={selectedAccessLevel ?? ""}
                 onChange={(event) =>
-                  setSelectedAccessLevel(
-                    event.target.value as typeof selectedAccessLevel,
-                  )
+                  setSelectedAccessLevel(event.target.value as AccessLevel)
                 }
+                disabled={isSaving}
                 required
               >
-                <option value="developer">Developer</option>
-                <option value="admin">Admin</option>
-                <option value="staff">Staff</option>
+                <option value={ACCESS_LEVEL.developer}>Developer</option>
+
+                <option value={ACCESS_LEVEL.admin}>Admin</option>
+
+                <option value={ACCESS_LEVEL.staff}>Staff</option>
+
+                {canTransferOwnership && (
+                  <option value={ACCESS_LEVEL.owner}>Owner</option>
+                )}
               </select>
+
+              {isOwnershipTransfer && (
+                <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-3">
+                  <p className="font-semibold text-amber-900">
+                    Transfer Ownership
+                  </p>
+
+                  <p className="text-sm text-amber-800 mt-1">
+                    This member will become the business owner and your access
+                    level will change to Admin.
+                  </p>
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 mt-4">
                 <button
@@ -376,6 +542,7 @@ export default function UserDetailsPage() {
                   disabled={isSaving}
                   onClick={() => {
                     setSelectedAccessLevel(userData.role?.accessLevel ?? null);
+
                     setIsEdit(false);
                   }}
                 >
@@ -385,9 +552,15 @@ export default function UserDetailsPage() {
                 <button
                   className="bg-emerald-300 border border-green-500 rounded-lg text-green-900 px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   type="submit"
-                  disabled={isSaving}
+                  disabled={isSaving || !accessLevelChanged}
                 >
-                  {isSaving ? "Saving..." : "Save Changes"}
+                  {isSaving
+                    ? isOwnershipTransfer
+                      ? "Transferring..."
+                      : "Saving..."
+                    : isOwnershipTransfer
+                      ? "Transfer Ownership"
+                      : "Save Changes"}
                 </button>
               </div>
             </form>
@@ -398,6 +571,25 @@ export default function UserDetailsPage() {
               <span className="inline-flex mt-1 capitalize rounded-md border border-gray-300 bg-gray-100 px-3 py-1.5 font-medium">
                 {userData.role?.accessLevel ?? "Missing role"}
               </span>
+
+              {isCurrentUser && (
+                <p className="text-sm text-gray-500 mt-3">
+                  You cannot change your own access level through member
+                  management.
+                </p>
+              )}
+
+              {currentAccessLevel === ACCESS_LEVEL.admin && targetIsOwner && (
+                <p className="text-sm text-gray-500 mt-3">
+                  Only the business owner can manage ownership.
+                </p>
+              )}
+
+              {currentAccessLevel === ACCESS_LEVEL.staff && (
+                <p className="text-sm text-gray-500 mt-3">
+                  Your access level provides read-only member access.
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -411,6 +603,7 @@ export default function UserDetailsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
             <div>
               <p className="text-sm text-gray-500">Account Created</p>
+
               <p className="mt-1">
                 {userData.user?.createdAt
                   ? formatDateTime(userData.user.createdAt, "date")
@@ -420,6 +613,7 @@ export default function UserDetailsPage() {
 
             <div>
               <p className="text-sm text-gray-500">Account Updated</p>
+
               <p className="mt-1">
                 {userData.user?.updatedAt
                   ? formatDateTime(userData.user.updatedAt, "date")
@@ -429,6 +623,7 @@ export default function UserDetailsPage() {
 
             <div>
               <p className="text-sm text-gray-500">Added to Business</p>
+
               <p className="mt-1">
                 {userData.createdAt
                   ? formatDateTime(userData.createdAt, "date")
@@ -438,6 +633,7 @@ export default function UserDetailsPage() {
 
             <div>
               <p className="text-sm text-gray-500">Membership Updated</p>
+
               <p className="mt-1">
                 {userData.updatedAt
                   ? formatDateTime(userData.updatedAt, "date")
@@ -449,30 +645,33 @@ export default function UserDetailsPage() {
       </section>
 
       {/* Danger Zone */}
-      <section className="border border-red-400 bg-red-50 rounded-xl p-5 mt-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold text-red-700">
+      {canDeleteSelectedUser && (
+        <section className="border border-red-400 bg-red-50 rounded-xl p-5 mt-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold text-red-700">
+                Remove Member
+              </h2>
+
+              <p className="text-sm text-red-400 mt-1">
+                Remove this member&apos;s access to the business and its
+                content.
+              </p>
+            </div>
+
+            <button
+              className="shrink-0 border border-red-400 rounded-lg bg-red-100 text-red-700 font-medium px-4 py-2 hover:bg-red-200 transition-colors"
+              type="button"
+              onClick={() => setClickedDelete(true)}
+            >
               Remove Member
-            </h2>
-
-            <p className="text-sm text-red-400 mt-1">
-              Remove this member&apos;s access to the business and its content.
-            </p>
+            </button>
           </div>
-
-          <button
-            className="shrink-0 border border-red-400 rounded-lg bg-red-100 text-red-700 font-medium px-4 py-2 hover:bg-red-200 transition-colors"
-            type="button"
-            onClick={() => setClickedDelete(true)}
-          >
-            Remove Member
-          </button>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Delete Modal */}
-      {clickedDelete && (
+      {clickedDelete && canDeleteSelectedUser && (
         <div className="fixed inset-0 z-50 flex justify-center items-center bg-black/40 px-5">
           <div className="w-full max-w-[500px] bg-white border border-gray-300 rounded-xl p-5">
             <div className="flex justify-between items-start gap-5">

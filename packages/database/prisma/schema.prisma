@@ -100,7 +100,7 @@ model BusinessUser {
 
 model Role {
   id          String      @id @default(uuid())
-  accessLevel AccessLevel
+  accessLevel AccessLevel @unique
   description String
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
