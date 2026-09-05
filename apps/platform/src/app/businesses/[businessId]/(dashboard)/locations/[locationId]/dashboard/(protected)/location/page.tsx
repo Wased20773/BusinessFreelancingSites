@@ -11,6 +11,7 @@ import axios from "axios";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 const MONDAY_SUNDAY = [
   "Monday",
@@ -43,9 +44,21 @@ export default function LocationPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
+  const { data: session, status } = useSession();
+
+  const accessLevel = session?.user?.accessLevel;
+
+  const canManageLocation = accessLevel === "owner" || accessLevel === "admin";
+
+  const canViewLocation = canManageLocation || accessLevel === "staff";
+
+  const isDeveloper = accessLevel === "developer";
+
   useEffect(() => {
-    void getLocationData();
-  }, [businessId, locationId]);
+    if (status === "authenticated" && canViewLocation) {
+      void getLocationData();
+    }
+  }, [businessId, locationId, status, canViewLocation]);
 
   async function getLocationData() {
     setIsLoading(true);
@@ -250,6 +263,33 @@ export default function LocationPage() {
     }
   }
 
+  if (status === "loading") {
+    return <p>Loading session...</p>;
+  }
+
+  if (status === "unauthenticated") {
+    return <p>You must be signed in to view this page.</p>;
+  }
+
+  if (isDeveloper || !canViewLocation) {
+    return (
+      <section aria-labelledby="location-heading">
+        <h1 id="location-heading">Location</h1>
+
+        <div className="mt-[1.5rem]">
+          <div className="dashboard-card">
+            <h2 className="text-xl font-semibold">Location unavailable</h2>
+
+            <p className="text-gray-500 mt-1">
+              Your current access level does not include location dashboard
+              access.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (isLoading) {
     return <p>Loading location...</p>;
   }
@@ -273,7 +313,11 @@ export default function LocationPage() {
 
       <div className="mt-[1.5rem]">
         {/* LOCATION INFORMATION */}
-        <LocationInfo locationId={locationId} locationData={locationData} />
+        <LocationInfo
+          locationId={locationId}
+          locationData={locationData}
+          canManage={canManageLocation}
+        />
 
         <Divider />
 
@@ -285,6 +329,7 @@ export default function LocationPage() {
           isDeleting={isDeleting}
           activateBusinessDays={activateBusinessDays}
           handleRemoveBusinessDays={handleRemoveBusinessDays}
+          canManage={canManageLocation}
         />
 
         {errorMessage && (

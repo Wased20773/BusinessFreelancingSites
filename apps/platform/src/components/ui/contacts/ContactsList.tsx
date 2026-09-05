@@ -1,27 +1,40 @@
-import { ContactJson } from "@/types/types";
-import PersonalIcon from "@/components/icons/placeholder-account-black.svg";
 import BusinessIcon from "@/components/icons/business.svg";
+import PersonalIcon from "@/components/icons/placeholder-account-black.svg";
+import type { ContactJson } from "@/types/types";
 import ListCard from "../ListCard";
 
 type ContactsListParams = {
   isLoading: boolean;
   contactData: ContactJson[];
+  errorMessage: string | null;
+  canManage: boolean;
 };
 
 export default function ContactsList({
   isLoading,
   contactData,
+  errorMessage,
+  canManage,
 }: ContactsListParams) {
   return (
-    <section aria-label="contacts-list-heading">
+    <section aria-labelledby="contacts-list-heading">
       <div className="dashboard-card">
+        <h2 id="contacts-list-heading" className="px-3 py-2">
+          Contacts
+        </h2>
+
         {isLoading ? (
           <p>Loading contacts...</p>
+        ) : errorMessage ? (
+          <p role="alert">{errorMessage}</p>
         ) : contactData.length === 0 ? (
           <div>
             <p className="font-semibold">You have no contacts</p>
+
             <p className="text-gray-500">
-              Add a contact to help customers know who to contact
+              {canManage
+                ? "Add a contact to help customers know who to contact."
+                : "No contacts have been added to this location."}
             </p>
           </div>
         ) : (
@@ -33,7 +46,7 @@ export default function ContactsList({
                   key={contact.id}
                   variant="mobile"
                   id={contact.id}
-                  path={`contacts/${contact.id}`}
+                  path={canManage ? `contacts/${contact.id}` : undefined}
                   icon={contact.isPersonal ? PersonalIcon : BusinessIcon}
                   title={contact.phoneNumber}
                   subtitle={contact.email}
@@ -41,6 +54,7 @@ export default function ContactsList({
                 />
               ))}
             </ul>
+
             {/* DESKTOP */}
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full border-collapse text-left">
@@ -58,7 +72,7 @@ export default function ContactsList({
                       Type
                     </th>
 
-                    <th scope="col" className="w-12 px-3 py-2"></th>
+                    {canManage && <th scope="col" className="w-12 px-3 py-2" />}
                   </tr>
                 </thead>
 
@@ -68,7 +82,7 @@ export default function ContactsList({
                       key={contact.id}
                       variant="desktop"
                       id={contact.id}
-                      path={`contacts/${contact.id}`}
+                      path={canManage ? `contacts/${contact.id}` : undefined}
                       icon={contact.isPersonal ? PersonalIcon : BusinessIcon}
                       title={contact.phoneNumber}
                       subtitle={contact.email}

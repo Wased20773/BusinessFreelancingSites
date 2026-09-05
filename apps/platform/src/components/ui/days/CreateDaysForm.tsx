@@ -12,6 +12,7 @@ type CreateDaysFormProps = {
   hasMultipleLocations: boolean;
   isActivatingDays: boolean;
   isDeleting: boolean;
+  canManage: boolean;
   activateBusinessDays: (isSynced: boolean) => Promise<void>;
   handleRemoveBusinessDays: () => Promise<void>;
 };
@@ -21,6 +22,7 @@ export default function CreateDaysForm({
   hasMultipleLocations,
   isActivatingDays,
   isDeleting,
+  canManage,
   activateBusinessDays,
   handleRemoveBusinessDays,
 }: CreateDaysFormProps) {
@@ -46,7 +48,7 @@ export default function CreateDaysForm({
           <h2 id="business-days-heading">Business Days</h2>
         </div>
 
-        {hasBusinessDays && (
+        {hasBusinessDays && canManage && (
           <Link
             href={"location/days/edit"}
             className="shrink-0"
@@ -65,37 +67,42 @@ export default function CreateDaysForm({
       {!hasBusinessDays ? (
         <div className="mt-3">
           <p>
-            Business days have not been activated for this location. Activating
-            business days will allow you to manage which days this location is
-            open or closed.
+            Business days have not been activated for this location.{" "}
+            {canManage &&
+              " Activating business days will allow you to manage which days this location is open or closed."}
           </p>
+          {canManage && (
+            <>
+              {hasMultipleLocations && (
+                <label
+                  htmlFor="sync-business-days"
+                  className="flex items-start gap-2 cursor-pointer mt-4"
+                >
+                  <input
+                    id="sync-business-days"
+                    name="sync-business-days"
+                    type="checkbox"
+                    className="mt-1"
+                    checked={syncBusinessDays}
+                    onChange={(event) =>
+                      setSyncBusinessDays(event.target.checked)
+                    }
+                    disabled={isActivatingDays}
+                  />
 
-          {hasMultipleLocations && (
-            <label
-              htmlFor="sync-business-days"
-              className="flex items-start gap-2 cursor-pointer mt-4"
-            >
-              <input
-                id="sync-business-days"
-                name="sync-business-days"
-                type="checkbox"
-                className="mt-1"
-                checked={syncBusinessDays}
-                onChange={(event) => setSyncBusinessDays(event.target.checked)}
-                disabled={isActivatingDays}
-              />
+                  <span>
+                    <span className="font-semibold block">
+                      Add to all locations
+                    </span>
 
-              <span>
-                <span className="font-semibold block">
-                  Add to all locations
-                </span>
-
-                <span className="text-sm text-gray-500">
-                  Create these business days for the other locations and keep
-                  them synchronized.
-                </span>
-              </span>
-            </label>
+                    <span className="text-sm text-gray-500">
+                      Create these business days for the other locations and
+                      keep them synchronized.
+                    </span>
+                  </span>
+                </label>
+              )}
+            </>
           )}
 
           <button
@@ -123,14 +130,16 @@ export default function CreateDaysForm({
             ))}
           </div>
 
-          <button
-            className="w-fit bg-red-200 border-[0.1rem] border-red-500 rounded-md px-2 py-1 text-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            type="button"
-            disabled={isDeleting}
-            onClick={() => void handleRemoveBusinessDays()}
-          >
-            {isDeleting ? "Removing..." : "Remove Business Days"}
-          </button>
+          {canManage && (
+            <button
+              className="w-fit bg-red-200 border-[0.1rem] border-red-500 rounded-md px-2 py-1 text-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              type="button"
+              disabled={isDeleting}
+              onClick={() => void handleRemoveBusinessDays()}
+            >
+              {isDeleting ? "Removing..." : "Remove Business Days"}
+            </button>
+          )}
         </div>
       )}
     </section>

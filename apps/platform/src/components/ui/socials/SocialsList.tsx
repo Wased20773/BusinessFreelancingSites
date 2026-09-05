@@ -1,25 +1,38 @@
-import { SocialJson } from "@/types/types";
+import type { SocialJson } from "@/types/types";
 import ListCard from "../ListCard";
 
 type SocialListParams = {
   socialsData: SocialJson[];
   isLoading: boolean;
+  errorMessage: string | null;
+  canManage: boolean;
 };
 
 export default function SocialsList({
   socialsData,
   isLoading,
+  errorMessage,
+  canManage,
 }: SocialListParams) {
   return (
-    <section aria-label="socials-list-heading">
+    <section aria-labelledby="socials-list-heading">
       <div className="dashboard-card">
+        <h2 id="socials-list-heading" className="px-3 py-2">
+          Socials
+        </h2>
+
         {isLoading ? (
           <p>Loading socials...</p>
+        ) : errorMessage ? (
+          <p role="alert">{errorMessage}</p>
         ) : socialsData.length === 0 ? (
           <div>
             <p className="font-semibold">You have no socials</p>
+
             <p className="text-gray-500">
-              Add a social to help customers know where else they can find you
+              {canManage
+                ? "Add a social to help customers know where else they can find you."
+                : "No socials have been added to this location."}
             </p>
           </div>
         ) : (
@@ -31,7 +44,7 @@ export default function SocialsList({
                   key={social.id}
                   variant="mobile"
                   id={social.id}
-                  path={`socials/${social.id}`}
+                  path={canManage ? `socials/${social.id}` : undefined}
                   icon={social.icon}
                   title={social.profileName}
                   subtitle={social.domain}
@@ -39,6 +52,7 @@ export default function SocialsList({
                 />
               ))}
             </ul>
+
             {/* DESKTOP */}
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full border-collapse text-left">
@@ -56,7 +70,7 @@ export default function SocialsList({
                       Platform
                     </th>
 
-                    <th scope="col" className="w-12 px-3 py-2"></th>
+                    {canManage && <th scope="col" className="w-12 px-3 py-2" />}
                   </tr>
                 </thead>
 
@@ -66,7 +80,7 @@ export default function SocialsList({
                       key={social.id}
                       variant="desktop"
                       id={social.id}
-                      path={`socials/${social.id}`}
+                      path={canManage ? `socials/${social.id}` : undefined}
                       icon={social.icon}
                       title={social.profileName}
                       subtitle={social.domain}
