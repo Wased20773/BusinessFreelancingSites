@@ -35,22 +35,16 @@ export default function UserDetailsPage() {
   const userId = params.userId;
 
   const [userData, setUserData] = useState<BusinessUserJson | null>(null);
-
   const [isLoading, setIsLoading] = useState<boolean>(false);
-
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [isEdit, setIsEdit] = useState<boolean>(false);
-
   const [isSaving, setIsSaving] = useState<boolean>(false);
-
   const [selectedAccessLevel, setSelectedAccessLevel] =
     useState<AccessLevel | null>(null);
-
   const [clickedDelete, setClickedDelete] = useState<boolean>(false);
 
   const [loadingDelete, setLoadingDelete] = useState<boolean>(false);
-
   const [deleteVerification, setDeleteVerification] = useState<string>("");
 
   const router = useRouter();
@@ -58,17 +52,16 @@ export default function UserDetailsPage() {
   const { data: session, status, update } = useSession();
 
   const currentAccessLevel = session?.user?.accessLevel;
-
   const isCurrentUser = session?.user?.id === userData?.user?.id;
-
   const targetIsOwner = userData?.role?.accessLevel === ACCESS_LEVEL.owner;
 
   const canManageMembers =
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin;
 
-  const canViewMembers =
-    canManageMembers || currentAccessLevel === ACCESS_LEVEL.staff;
+  const canViewMemberDetails =
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin;
 
   /*
    * Nobody can modify themselves.
@@ -362,10 +355,10 @@ export default function UserDetailsPage() {
       }
     }
 
-    if (status === "authenticated" && canViewMembers) {
+    if (status === "authenticated" && canViewMemberDetails) {
       void getUserData();
     }
-  }, [businessId, userId, status, canViewMembers]);
+  }, [businessId, userId, status, canViewMemberDetails]);
 
   if (status === "loading") {
     return <p>Loading session...</p>;
@@ -375,13 +368,13 @@ export default function UserDetailsPage() {
     return <p>You must be signed in to view this page.</p>;
   }
 
-  if (!canViewMembers) {
+  if (!canViewMemberDetails) {
     return (
       <section className="max-w-[1000px] mx-auto">
         <h1 className="text-3xl font-semibold">Member unavailable</h1>
 
         <p className="text-gray-500 mt-1">
-          Your current access level does not include member information.
+          Your current access level does not include access to member details.
         </p>
       </section>
     );
@@ -512,11 +505,8 @@ export default function UserDetailsPage() {
                 required
               >
                 <option value={ACCESS_LEVEL.developer}>Developer</option>
-
                 <option value={ACCESS_LEVEL.admin}>Admin</option>
-
                 <option value={ACCESS_LEVEL.staff}>Staff</option>
-
                 {canTransferOwnership && (
                   <option value={ACCESS_LEVEL.owner}>Owner</option>
                 )}
@@ -582,12 +572,6 @@ export default function UserDetailsPage() {
               {currentAccessLevel === ACCESS_LEVEL.admin && targetIsOwner && (
                 <p className="text-sm text-gray-500 mt-3">
                   Only the business owner can manage ownership.
-                </p>
-              )}
-
-              {currentAccessLevel === ACCESS_LEVEL.staff && (
-                <p className="text-sm text-gray-500 mt-3">
-                  Your access level provides read-only member access.
                 </p>
               )}
             </div>
