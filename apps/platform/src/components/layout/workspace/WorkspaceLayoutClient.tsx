@@ -12,6 +12,8 @@ import type {
   LocationJson,
 } from "@/types/types";
 import { ReactNode, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 type WorkspaceLayoutClientProps = {
   children: ReactNode;
@@ -27,6 +29,10 @@ export default function WorkspaceLayoutClient({
   const [businesses, setBusinesses] = useState<BusinessOwnerShip[]>([]);
   const [locations, setLocations] = useState<LocationJson[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const pathname = usePathname();
+
+  const { data: session, update } = useSession();
 
   useEffect(() => {
     async function loadWorkspace() {
@@ -46,6 +52,19 @@ export default function WorkspaceLayoutClient({
     void loadWorkspace();
   }, [businessId]);
 
+  /*
+   * Refresh the selected business context whenever
+   * the user navigates within the workspace.
+   *
+   * auth.ts will retrieve the latest BusinessUser role
+   * and update session.user.accessLevel.
+   */
+  useEffect(() => {
+    void update({
+      businessId,
+    });
+  }, [businessId, pathname]);
+
   const selectedBusiness = businesses.find(
     (businessUser) => businessUser.business?.id === businessId,
   );
@@ -62,6 +81,12 @@ export default function WorkspaceLayoutClient({
     name: selectedBusiness.business.name,
   };
 
+  const activeAccount: DashboardNavAccount = {
+    name: session?.user?.name ?? currentAccount.name,
+    image: session?.user?.image ?? currentAccount.image,
+    accessLevel: session?.user?.accessLevel ?? currentAccount.accessLevel,
+  };
+
   const navLinks = workspaceLinks(businessId);
 
   return (
@@ -70,7 +95,7 @@ export default function WorkspaceLayoutClient({
         <SideBar
           variant="workspace"
           currentBusiness={currentBusiness}
-          currentAccount={currentAccount}
+          currentAccount={activeAccount}
           navLinks={navLinks}
           businesses={businesses}
         />
@@ -78,7 +103,7 @@ export default function WorkspaceLayoutClient({
         <MobileNavBar
           variant="workspace"
           currentBusiness={currentBusiness}
-          currentAccount={currentAccount}
+          currentAccount={activeAccount}
           navLinks={navLinks}
           businesses={businesses}
           businessId={selectedBusiness.business.id}
@@ -91,7 +116,7 @@ export default function WorkspaceLayoutClient({
         <EnterDashboardDropdown businessId={businessId} locations={locations} />
       </div>
 
-      <main className="min-h-0 overflow-y-scroll p-5">{children}</main>
+      <main className="min-h-0 overflow-y-auto p-5">{children}</main>
     </div>
   );
 }

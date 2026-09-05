@@ -65,7 +65,7 @@ export default function SideBar({
 
       {/* Navigation Links */}
       <nav
-        className="border-b border-gray-300 overflow-y-scroll min-h-0 border-t p-2"
+        className="border-b border-gray-300 overflow-y-auto min-h-0 border-t p-2"
         aria-label="Dashboard Navigation"
       >
         <ul className="flex flex-col gap-1">
