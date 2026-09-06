@@ -2,11 +2,13 @@
 
 import ArrowIcon from "@/components/icons/arrow";
 import EditContactForm from "@/components/ui/contacts/EditContactForm";
-import type { ContactJson } from "@/types/types";
+import { ACCESS_LEVEL, type ContactJson } from "@/types/types";
+import { useSession } from "next-auth/react";
+import PageState from "@/components/ui/PageState";
 import axios from "axios";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useState } from "react";
+import { InputEvent, SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function EditContactPage() {
@@ -27,12 +29,19 @@ export default function EditContactPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
-
   const [isSynced, setIsSynced] = useState<boolean>(false);
-
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
+
+  const { data: session, status } = useSession();
+
+  const currentAccessLevel = session?.user?.accessLevel;
+
+  const canManageContacts =
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin;
+
+  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
     async function getContactData() {
@@ -102,10 +111,12 @@ export default function EditContactPage() {
       }
     }
 
-    void getContactData();
-  }, [businessId, locationId, contactId]);
+    if (status === "authenticated" && canManageContacts) {
+      void getContactData();
+    }
+  }, [businessId, locationId, contactId, status, canManageContacts]);
 
-  function handleFormInput(event: FormEvent<HTMLFormElement>) {
+  function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
 
     const phoneNumber = formData.get("phoneNumber");
@@ -119,7 +130,7 @@ export default function EditContactPage() {
     setCanSubmit(hasPhoneNumber || hasEmail);
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
@@ -257,26 +268,43 @@ export default function EditContactPage() {
     }
   }
 
-  if (isLoading) {
-    return <p>Loading contact</p>;
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canManageContacts,
+    pageTitle: "Contacts",
+    reason: "Your current access level does not allow contact management.",
+  });
+
+  if (pageState) {
+    return pageState;
   }
 
   if (errorMessage && !contactData) {
-    return <p>{errorMessage}</p>;
+    return (
+      <p role="alert" className="p-5">
+        {errorMessage}
+      </p>
+    );
   }
 
   if (!contactData) {
-    return <p>This contact could not be found.</p>;
+    return <p className="p-5">This contact could not be found.</p>;
   }
 
   const isProcessing = isSaving || isDeleting;
 
   return (
-    <section aria-labelledby="edit-contact-heading">
+    <section
+      aria-labelledby="edit-contact-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       <header className="flex items-center gap-3">
         <Link
           href={`/businesses/${businessId}/locations/${locationId}/dashboard/contacts`}
           aria-label="Return to contacts"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={50} />
         </Link>

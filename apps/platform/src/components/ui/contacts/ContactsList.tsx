@@ -2,9 +2,11 @@ import BusinessIcon from "@/components/icons/business.svg";
 import PersonalIcon from "@/components/icons/placeholder-account-black.svg";
 import type { ContactJson } from "@/types/types";
 import ListCard from "../ListCard";
+import { Dispatch, SetStateAction } from "react";
 
 type ContactsListParams = {
   isLoading: boolean;
+  setIsLoading: Dispatch<SetStateAction<boolean>>;
   contactData: ContactJson[];
   errorMessage: string | null;
   canManage: boolean;
@@ -12,6 +14,7 @@ type ContactsListParams = {
 
 export default function ContactsList({
   isLoading,
+  setIsLoading,
   contactData,
   errorMessage,
   canManage,
@@ -19,10 +22,6 @@ export default function ContactsList({
   return (
     <section aria-labelledby="contacts-list-heading">
       <div className="dashboard-card">
-        <h2 id="contacts-list-heading" className="px-3 py-2">
-          Contacts
-        </h2>
-
         {isLoading ? (
           <p>Loading contacts...</p>
         ) : errorMessage ? (
@@ -51,6 +50,7 @@ export default function ContactsList({
                   title={contact.phoneNumber}
                   subtitle={contact.email}
                   isLast={contactData.length !== idx + 1}
+                  setIsLoading={setIsLoading}
                 />
               ))}
             </ul>
@@ -86,6 +86,7 @@ export default function ContactsList({
                       icon={contact.isPersonal ? PersonalIcon : BusinessIcon}
                       title={contact.phoneNumber}
                       subtitle={contact.email}
+                      setIsLoading={setIsLoading}
                     />
                   ))}
                 </tbody>

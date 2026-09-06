@@ -4,7 +4,7 @@ import { Dispatch, InputEvent, SetStateAction, SubmitEvent } from "react";
 type CreateContactFormParams = {
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
   handleFormInput(event: InputEvent<HTMLFormElement>): void;
-  isLoading: boolean;
+  isCreating: boolean;
   canSubmit: boolean;
   isSynced: boolean;
   setIsSynced: Dispatch<SetStateAction<boolean>>;
@@ -13,7 +13,7 @@ type CreateContactFormParams = {
 export default function CreateContactForm({
   handleSubmit,
   handleFormInput,
-  isLoading,
+  isCreating,
   canSubmit,
   isSynced,
   setIsSynced,
@@ -37,7 +37,7 @@ export default function CreateContactForm({
             type="tel"
             autoComplete="tel"
             pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
-            disabled={isLoading}
+            disabled={isCreating}
             placeholder="123-456-7890"
           />
         </div>
@@ -50,7 +50,7 @@ export default function CreateContactForm({
             name="email"
             type="email"
             autoComplete="email"
-            disabled={isLoading}
+            disabled={isCreating}
           />
         </div>
       </fieldset>
@@ -81,7 +81,7 @@ export default function CreateContactForm({
         inputName="sync-contact"
         isSynced={isSynced}
         setIsSynced={setIsSynced}
-        isSaving={isLoading}
+        isSaving={isCreating}
         description="Add this contact to all locations"
       />
 
@@ -92,9 +92,9 @@ export default function CreateContactForm({
                 transition-opacity disabled:cursor-not-allowed disabled:opacity-50
                 px-2 py-1"
         type="submit"
-        disabled={isLoading || !canSubmit}
+        disabled={isCreating || !canSubmit}
       >
-        {isLoading ? "Creating..." : "Create"}
+        {isCreating ? "Creating..." : "Create"}
       </button>
     </form>
   );

@@ -11,6 +11,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../page.css";
+import PageState from "@/components/ui/PageState";
 
 export default function ContactsPage() {
   const params = useParams<{
@@ -24,17 +25,12 @@ export default function ContactsPage() {
   const { data: session, status } = useSession();
 
   const [contactData, setContactData] = useState<ContactJson[]>([]);
-
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const accessLevel = session?.user?.accessLevel;
-
   const canManageContacts = accessLevel === "owner" || accessLevel === "admin";
-
   const canViewContacts = canManageContacts || accessLevel === "staff";
-
   const isDeveloper = accessLevel === "developer";
 
   useEffect(() => {
@@ -114,35 +110,25 @@ export default function ContactsPage() {
     }
   }, [businessId, locationId, status, canViewContacts]);
 
-  if (status === "loading") {
-    return <p>Loading session...</p>;
-  }
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canViewContacts,
+    pageTitle: "Contacts",
+    reason:
+      "Your current access level does not include dashboard contact access.",
+  });
 
-  if (status === "unauthenticated") {
-    return <p>You must be signed in to view this page.</p>;
-  }
-
-  if (isDeveloper || !canViewContacts) {
-    return (
-      <section aria-labelledby="contacts-heading">
-        <h1 id="contacts-heading">Contacts</h1>
-
-        <div className="mt-[1.5rem]">
-          <div className="dashboard-card">
-            <h2 className="text-xl font-semibold">Contacts unavailable</h2>
-
-            <p className="text-gray-500 mt-1">
-              Your current access level does not include dashboard contact
-              access.
-            </p>
-          </div>
-        </div>
-      </section>
-    );
+  if (pageState) {
+    return pageState;
   }
 
   return (
-    <section aria-labelledby="contacts-heading">
+    <section
+      aria-labelledby="contacts-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       <h1 id="contacts-heading">Contacts</h1>
 
       <div className="mt-[1.5rem]">
@@ -154,6 +140,7 @@ export default function ContactsPage() {
                 href={`/businesses/${businessId}/locations/${locationId}/dashboard/contacts/create`}
                 icon={CreateButtonIcon}
                 label="Create Contact"
+                setIsLoading={setIsLoading}
               />
             </nav>
 
@@ -166,6 +153,7 @@ export default function ContactsPage() {
           contactData={contactData}
           errorMessage={errorMessage}
           canManage={canManageContacts}
+          setIsLoading={setIsLoading}
         />
       </div>
     </section>

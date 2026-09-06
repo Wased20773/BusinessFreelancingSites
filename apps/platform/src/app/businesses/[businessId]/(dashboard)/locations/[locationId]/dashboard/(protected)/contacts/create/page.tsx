@@ -2,7 +2,9 @@
 
 import ArrowIcon from "@/components/icons/arrow";
 import CreateContactForm from "@/components/ui/contacts/CreateContactForm";
-import { ContactJson } from "@/types/types";
+import { ACCESS_LEVEL, type ContactJson } from "@/types/types";
+import { useSession } from "next-auth/react";
+import PageState from "@/components/ui/PageState";
 import axios from "axios";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -19,6 +21,7 @@ export default function CreateContactPage() {
   const locationId = params.locationId;
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isCreating, setIsCreating] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
 
@@ -26,10 +29,20 @@ export default function CreateContactPage() {
 
   const router = useRouter();
 
+  const { data: session, status } = useSession();
+
+  const currentAccessLevel = session?.user?.accessLevel;
+
+  const canCreateContact =
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin;
+
+  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
+
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    setIsLoading(true);
+    setIsCreating(true);
     setErrorMessage(null);
 
     const form = event.currentTarget;
@@ -56,7 +69,7 @@ export default function CreateContactPage() {
       setErrorMessage(
         "A contact must include either a phone number or an email",
       );
-      setIsLoading(false);
+      setIsCreating(false);
       return;
     }
 
@@ -109,7 +122,7 @@ export default function CreateContactPage() {
         setErrorMessage("Failed to create the contact.");
       }
     } finally {
-      setIsLoading(false);
+      setIsCreating(false);
     }
   }
 
@@ -127,11 +140,29 @@ export default function CreateContactPage() {
     setCanSubmit(hasPhoneNumber || hasEmail);
   }
 
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canCreateContact,
+    pageTitle: "Contacts",
+    reason: "Your current access level does not allow contact creation.",
+  });
+
+  if (pageState) {
+    return pageState;
+  }
+
   return (
-    <section aria-labelledby="create-contact-heading">
+    <section
+      aria-labelledby="create-contact-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       <header className="flex items-center gap-3">
         <Link
           href={`/businesses/${businessId}/locations/${locationId}/dashboard/contacts`}
+          aria-label="Return to contacts"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={50} />
         </Link>
@@ -143,7 +174,7 @@ export default function CreateContactPage() {
         <CreateContactForm
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}
-          isLoading={isLoading}
+          isCreating={isCreating}
           canSubmit={canSubmit}
           isSynced={isSynced}
           setIsSynced={setIsSynced}

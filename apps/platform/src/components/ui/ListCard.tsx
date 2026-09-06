@@ -2,6 +2,7 @@ import EditIcon from "@/components/icons/edit.svg";
 import Divider from "@/components/layout/Divider";
 import Image, { StaticImageData } from "next/image";
 import Link from "next/link";
+import { Dispatch, SetStateAction } from "react";
 
 type ListCardProps = {
   variant: string;
@@ -14,6 +15,7 @@ type ListCardProps = {
   status?: {
     isActive: boolean;
   };
+  setIsLoading: Dispatch<SetStateAction<boolean>>;
 };
 
 export default function ListCard({
@@ -25,6 +27,7 @@ export default function ListCard({
   subtitle,
   isLast,
   status,
+  setIsLoading,
 }: ListCardProps) {
   const mobileContent = (
     <>
@@ -74,6 +77,7 @@ export default function ListCard({
               href={path}
               aria-label="Edit"
               className="min-w-0 flex items-center gap-3"
+              onClick={() => setIsLoading(true)}
             >
               {mobileContent}
             </Link>
@@ -128,7 +132,11 @@ export default function ListCard({
           {path && (
             <td>
               <div className="flex justify-center items-center">
-                <Link href={path} aria-label="Edit">
+                <Link
+                  href={path}
+                  aria-label="Edit"
+                  onClick={() => setIsLoading(true)}
+                >
                   <Image
                     src={EditIcon}
                     alt=""
