@@ -205,7 +205,7 @@ export default function MobileNavBar({
 
         {variant === "workspace" && (
           <div className="p-3">
-            <div className="min-w-0 w-full flex items-center py-2">
+            <div className="min-w-0 w-fit flex items-center py-2">
               <AccountDropdown theme="dark" currentAccount={currentAccount} />
             </div>
           </div>

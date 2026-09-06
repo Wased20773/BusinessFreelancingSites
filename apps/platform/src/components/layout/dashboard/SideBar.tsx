@@ -96,7 +96,7 @@ export default function SideBar({
       </nav>
 
       {/* Extras */}
-      <div className="min-w-0 flex flex-col gap-3 p-2">
+      <div className="min-w-0 w-fit flex flex-col gap-3 p-2">
         {/* <Link
           className={["sidebar-nav-links", settingsSelected && "selected"]
             .filter(Boolean)

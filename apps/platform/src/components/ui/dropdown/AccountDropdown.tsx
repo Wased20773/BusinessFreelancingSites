@@ -11,8 +11,8 @@ import {
 import Image from "next/image";
 import { DashboardNavAccount } from "@/types/types";
 import PlaceHolderAccountWhite from "@/components/icons/placeholder-account-white.svg";
-import { signOut, useSession } from "next-auth/react";
-import { redirect, usePathname, useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
 
 type AccountDropdownProps = {
   currentAccount: DashboardNavAccount;
@@ -29,7 +29,6 @@ export default function AccountDropdown({
 }: AccountDropdownProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { update } = useSession();
 
   async function handleAccountManagementSelect(path: string) {
     const href = path;
