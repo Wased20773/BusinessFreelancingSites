@@ -20,7 +20,7 @@ export default function ContactsList({
   canManage,
 }: ContactsListParams) {
   return (
-    <section aria-labelledby="contacts-list-heading">
+    <section>
       <div className="dashboard-card">
         {isLoading ? (
           <p>Loading contacts...</p>

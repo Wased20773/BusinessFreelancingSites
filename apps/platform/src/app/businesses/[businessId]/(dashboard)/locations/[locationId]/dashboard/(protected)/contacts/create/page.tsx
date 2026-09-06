@@ -22,9 +22,9 @@ export default function CreateContactPage() {
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isCreating, setIsCreating] = useState<boolean>(false);
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
-
   const [isSynced, setIsSynced] = useState<boolean>(true);
 
   const router = useRouter();

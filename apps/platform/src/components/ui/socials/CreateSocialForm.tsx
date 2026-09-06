@@ -5,7 +5,7 @@ import RequiredField from "../RequiredField";
 type CreateSocialFormParams = {
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
   handleFormInput(event: InputEvent<HTMLFormElement>): void;
-  isLoading: boolean;
+  isCreating: boolean;
   canSubmit: boolean;
   errorMessage: string | null;
   isSynced: boolean;
@@ -15,7 +15,7 @@ type CreateSocialFormParams = {
 export default function CreateSocialForm({
   handleSubmit,
   handleFormInput,
-  isLoading,
+  isCreating,
   canSubmit,
   errorMessage,
   isSynced,
@@ -41,7 +41,7 @@ export default function CreateSocialForm({
             id="social-platform"
             name="platform"
             defaultValue=""
-            disabled={isLoading}
+            disabled={isCreating}
             required
           >
             <option value="" disabled>
@@ -72,7 +72,7 @@ export default function CreateSocialForm({
             id="social-profile-name"
             name="profileName"
             type="text"
-            disabled={isLoading}
+            disabled={isCreating}
             required
           />
         </div>
@@ -84,7 +84,7 @@ export default function CreateSocialForm({
         inputName="sync-social"
         isSynced={isSynced}
         setIsSynced={setIsSynced}
-        isSaving={isLoading}
+        isSaving={isCreating}
         description="Add this social to all locations"
       />
 
@@ -101,9 +101,9 @@ export default function CreateSocialForm({
               transition-opacity disabled:cursor-not-allowed disabled:opacity-50
               md:w-fit px-2 py-1"
         type="submit"
-        disabled={isLoading || !canSubmit}
+        disabled={isCreating || !canSubmit}
       >
-        {isLoading ? "Creating..." : "Create"}
+        {isCreating ? "Creating..." : "Create"}
       </button>
     </form>
   );

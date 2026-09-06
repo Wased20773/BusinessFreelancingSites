@@ -11,6 +11,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../page.css";
+import PageState from "@/components/ui/PageState";
 
 export default function SocialsPage() {
   const params = useParams<{
@@ -28,11 +29,8 @@ export default function SocialsPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const accessLevel = session?.user?.accessLevel;
-
   const canManageSocials = accessLevel === "owner" || accessLevel === "admin";
-
   const canViewSocials = canManageSocials || accessLevel === "staff";
-
   const isDeveloper = accessLevel === "developer";
 
   useEffect(() => {
@@ -95,35 +93,25 @@ export default function SocialsPage() {
     }
   }, [businessId, locationId, status, canViewSocials]);
 
-  if (status === "loading") {
-    return <p>Loading session...</p>;
-  }
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canViewSocials,
+    pageTitle: "Socials",
+    reason:
+      "Your current access level does not include dashboard social access.",
+  });
 
-  if (status === "unauthenticated") {
-    return <p>You must be signed in to view this page.</p>;
-  }
-
-  if (isDeveloper || !canViewSocials) {
-    return (
-      <section aria-labelledby="socials-heading">
-        <h1 id="socials-heading">Socials</h1>
-
-        <div className="mt-[1.5rem]">
-          <div className="dashboard-card">
-            <h2 className="text-xl font-semibold">Socials unavailable</h2>
-
-            <p className="text-gray-500 mt-1">
-              Your current access level does not include dashboard social
-              access.
-            </p>
-          </div>
-        </div>
-      </section>
-    );
+  if (pageState) {
+    return pageState;
   }
 
   return (
-    <section aria-labelledby="socials-heading">
+    <section
+      aria-labelledby="socials-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       <h1 id="socials-heading">Socials</h1>
 
       <div className="mt-[1.5rem]">
@@ -134,6 +122,7 @@ export default function SocialsPage() {
                 href="socials/create"
                 icon={CreateButtonIcon}
                 label="Create Social"
+                setIsLoading={setIsLoading}
               />
             </nav>
 
@@ -146,6 +135,7 @@ export default function SocialsPage() {
           isLoading={isLoading}
           errorMessage={errorMessage}
           canManage={canManageSocials}
+          setIsLoading={setIsLoading}
         />
       </div>
     </section>

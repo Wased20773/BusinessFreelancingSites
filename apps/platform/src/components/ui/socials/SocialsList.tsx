@@ -1,11 +1,13 @@
 import type { SocialJson } from "@/types/types";
 import ListCard from "../ListCard";
+import { Dispatch, SetStateAction } from "react";
 
 type SocialListParams = {
   socialsData: SocialJson[];
   isLoading: boolean;
   errorMessage: string | null;
   canManage: boolean;
+  setIsLoading: Dispatch<SetStateAction<boolean>>;
 };
 
 export default function SocialsList({
@@ -13,14 +15,11 @@ export default function SocialsList({
   isLoading,
   errorMessage,
   canManage,
+  setIsLoading,
 }: SocialListParams) {
   return (
-    <section aria-labelledby="socials-list-heading">
+    <section>
       <div className="dashboard-card">
-        <h2 id="socials-list-heading" className="px-3 py-2">
-          Socials
-        </h2>
-
         {isLoading ? (
           <p>Loading socials...</p>
         ) : errorMessage ? (
@@ -49,6 +48,7 @@ export default function SocialsList({
                   title={social.profileName}
                   subtitle={social.domain}
                   isLast={socialsData.length !== idx + 1}
+                  setIsLoading={setIsLoading}
                 />
               ))}
             </ul>
@@ -84,6 +84,7 @@ export default function SocialsList({
                       icon={social.icon}
                       title={social.profileName}
                       subtitle={social.domain}
+                      setIsLoading={setIsLoading}
                     />
                   ))}
                 </tbody>

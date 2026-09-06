@@ -1,7 +1,9 @@
 "use client";
 
 import ArrowIcon from "@/components/icons/arrow";
-import { SocialJson } from "@/types/types";
+import { ACCESS_LEVEL, type SocialJson } from "@/types/types";
+import { useSession } from "next-auth/react";
+import PageState from "@/components/ui/PageState";
 import axios from "axios";
 import Link from "next/link";
 import { SubmitEvent, useState } from "react";
@@ -23,16 +25,28 @@ export default function CreateSocialPage() {
   const locationId = params.locationId;
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isCreating, setIsCreating] = useState<boolean>(false);
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
   const [isSynced, setIsSynced] = useState<boolean>(false);
 
   const router = useRouter();
 
+  const { data: session, status } = useSession();
+
+  const currentAccessLevel = session?.user?.accessLevel;
+
+  const canCreateSocial =
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin;
+
+  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
+
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    setIsLoading(true);
+    setIsCreating(true);
     setErrorMessage(null);
 
     const form = event.currentTarget;
@@ -48,7 +62,7 @@ export default function CreateSocialPage() {
       !profileName.trim()
     ) {
       setErrorMessage("A social platform and profile name are required");
-      setIsLoading(false);
+      setIsCreating(false);
       return;
     }
 
@@ -109,7 +123,7 @@ export default function CreateSocialPage() {
         setErrorMessage("Failed to create the social.");
       }
     } finally {
-      setIsLoading(false);
+      setIsCreating(false);
     }
   }
 
@@ -128,11 +142,29 @@ export default function CreateSocialPage() {
     setCanSubmit(hasPlatform && hasProfileName);
   }
 
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canCreateSocial,
+    pageTitle: "Socials",
+    reason: "Your current access level does not allow social creation.",
+  });
+
+  if (pageState) {
+    return pageState;
+  }
+
   return (
-    <section aria-labelledby="create-social-heading">
+    <section
+      aria-labelledby="create-social-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       <header className="flex items-center gap-3">
         <Link
           href={`/businesses/${businessId}/locations/${locationId}/dashboard/socials`}
+          aria-label="Return to socials"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={50} />
         </Link>
@@ -144,7 +176,7 @@ export default function CreateSocialPage() {
         <CreateSocialForm
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}
-          isLoading={isLoading}
+          isCreating={isCreating}
           canSubmit={canSubmit}
           errorMessage={errorMessage}
           isSynced={isSynced}

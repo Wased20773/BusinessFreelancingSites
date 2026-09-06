@@ -28,10 +28,10 @@ export default function PageState({
   if (isDeveloper || !canView) {
     return (
       <section
-        aria-labelledby="menu-heading"
+        aria-labelledby="restricted-heading"
         className="max-w-[1000px] mx-auto p-5"
       >
-        <h1 id="menu-heading">{pageTitle}</h1>
+        <h1 id="restricted-heading">{pageTitle}</h1>
 
         <div className="mt-[1.5rem]">
           <div className="dashboard-card">
