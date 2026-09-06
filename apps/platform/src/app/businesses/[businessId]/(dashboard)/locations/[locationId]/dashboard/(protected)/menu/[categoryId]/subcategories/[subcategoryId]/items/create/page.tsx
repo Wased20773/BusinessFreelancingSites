@@ -7,8 +7,10 @@ import { useParams, useRouter } from "next/navigation";
 import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../../../../../page.css";
-import type { CategoryJson, ItemJson } from "@/types/types";
+import { ACCESS_LEVEL, type CategoryJson, type ItemJson } from "@/types/types";
 import CreateItemForm from "@/components/ui/items/CreateItemForm";
+import { useSession } from "next-auth/react";
+import PageState from "@/components/ui/PageState";
 
 export default function CreateItemPage() {
   const params = useParams<{
@@ -23,7 +25,8 @@ export default function CreateItemPage() {
   const categoryId = params.categoryId;
   const subcategoryId = params.subcategoryId;
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isCreating, setIsCreating] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
   const [latestOrder, setLatestOrder] = useState<number>(1);
@@ -32,8 +35,18 @@ export default function CreateItemPage() {
 
   const router = useRouter();
 
+  const { data: session, status } = useSession();
+
+  const currentAccessLevel = session?.user?.accessLevel;
+  const canCreateItem =
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin;
+  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
+
   useEffect(() => {
     async function getLatestOrder() {
+      setIsLoading(true);
+
       try {
         const response = await axios.get<{
           categories: {
@@ -81,11 +94,22 @@ export default function CreateItemPage() {
         setLatestOrder(highestOrder + 1);
       } catch (error) {
         console.error("Failed to get latest item order:", error);
+      } finally {
+        setIsLoading(false);
       }
     }
 
-    void getLatestOrder();
-  }, [businessId, locationId, categoryId, subcategoryId]);
+    if (status === "authenticated" && canCreateItem) {
+      void getLatestOrder();
+    }
+  }, [
+    businessId,
+    locationId,
+    categoryId,
+    subcategoryId,
+    status,
+    canCreateItem,
+  ]);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -128,13 +152,13 @@ export default function CreateItemPage() {
 
     if (!requestBody.name) {
       setErrorMessage("An item name is required.");
-      setIsLoading(false);
+      setIsCreating(false);
       return;
     }
 
     if (requestBody.price === null || Number.isNaN(requestBody.price)) {
       setErrorMessage("An item price is required.");
-      setIsLoading(false);
+      setIsCreating(false);
       return;
     }
 
@@ -208,7 +232,7 @@ export default function CreateItemPage() {
         setErrorMessage("Failed to create the item.");
       }
     } finally {
-      setIsLoading(false);
+      setIsCreating(false);
     }
   }
 
@@ -224,12 +248,29 @@ export default function CreateItemPage() {
     setCanSubmit(hasName && hasPrice);
   }
 
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canCreateItem,
+    pageTitle: "Menu",
+    reason: "Your current access level does not allow item creation.",
+  });
+
+  if (pageState) {
+    return pageState;
+  }
+
   return (
-    <section aria-labelledby="create-item-heading">
+    <section
+      aria-labelledby="create-item-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       <header className="flex items-center gap-3">
         <Link
           href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`}
           aria-label="Return to subcategory"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={50} />
         </Link>
@@ -242,6 +283,7 @@ export default function CreateItemPage() {
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}
           isLoading={isLoading}
+          isCreating={isCreating}
           errorMessage={errorMessage}
           canSubmit={canSubmit}
           latestOrder={latestOrder}

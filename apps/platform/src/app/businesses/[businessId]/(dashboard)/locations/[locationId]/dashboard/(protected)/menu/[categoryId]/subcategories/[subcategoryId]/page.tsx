@@ -10,9 +10,11 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../../../page.css";
-import type { CategoryJson } from "@/types/types";
+import { ACCESS_LEVEL, type CategoryJson } from "@/types/types";
 import ItemsList from "@/components/ui/items/ItemsList";
 import CategoryInfo from "@/components/ui/categories/CategoryInfo";
+import { useSession } from "next-auth/react";
+import PageState from "@/components/ui/PageState";
 
 export default function CategoryPage() {
   const params = useParams<{
@@ -33,6 +35,16 @@ export default function CategoryPage() {
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const { data: session, status } = useSession();
+
+  const currentAccessLevel = session?.user?.accessLevel;
+  const canManageMenu =
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin;
+  const canViewMenu =
+    canManageMenu || currentAccessLevel === ACCESS_LEVEL.staff;
+  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
     async function getCategoryData() {
@@ -109,28 +121,47 @@ export default function CategoryPage() {
       }
     }
 
-    void getCategoryData();
-  }, [businessId, locationId, categoryId, subcategoryId]);
+    if (status === "authenticated" && canViewMenu) {
+      void getCategoryData();
+    }
+  }, [businessId, locationId, categoryId, subcategoryId, status, canViewMenu]);
 
-  if (isLoading) {
-    return <p>Loading category...</p>;
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canViewMenu,
+    pageTitle: "Menu",
+    reason: "Your current access level does not include dashboard menu access.",
+  });
+
+  if (pageState) {
+    return pageState;
   }
 
   if (errorMessage && !subcategoryData) {
-    return <p role="alert">{errorMessage}</p>;
+    return (
+      <p role="alert" className="p-5">
+        {errorMessage}
+      </p>
+    );
   }
 
   if (!subcategoryData) {
-    return <p>This category could not be found.</p>;
+    return <p className="p-5">This subcategory could not be found.</p>;
   }
 
   return (
-    <section aria-labelledby="category-heading">
+    <section
+      aria-labelledby="category-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       {/* HEADER */}
       <header className="flex items-center gap-3">
         <Link
           href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}`}
           aria-label="Return to parent category"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={50} />
         </Link>
@@ -145,6 +176,7 @@ export default function CategoryPage() {
             href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}/items/create`}
             icon={CreateButtonIcon}
             label="Create Item"
+            setIsLoading={setIsLoading}
           />
         </nav>
 
@@ -164,6 +196,8 @@ export default function CategoryPage() {
           categoryData={subcategoryData}
           setErrorMessage={setErrorMessage}
           setCategoryData={setSubcategoryData}
+          setIsLoading={setIsLoading}
+          canManage={canManageMenu}
         />
       </div>
     </section>

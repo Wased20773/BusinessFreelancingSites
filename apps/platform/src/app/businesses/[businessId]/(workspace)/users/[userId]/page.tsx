@@ -359,7 +359,7 @@ export default function UserDetailsPage() {
     if (status === "authenticated" && canViewMemberDetails) {
       void getUserData();
     }
-  }, []);
+  }, [businessId, userId, status, canViewMemberDetails]);
 
   if (status === "loading" || isLoading) {
     return <LoadingBar />;
@@ -385,7 +385,7 @@ export default function UserDetailsPage() {
     return <p className="p-5">{errorMessage}</p>;
   }
 
-  if (!userData?.user?.email) {
+  if (!userData?.user?.email || isLoading) {
     return <p className="p-5">User not found.</p>;
   }
 

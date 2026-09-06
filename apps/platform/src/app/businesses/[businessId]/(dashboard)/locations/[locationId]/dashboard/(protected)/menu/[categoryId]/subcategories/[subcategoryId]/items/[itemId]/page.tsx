@@ -1,7 +1,7 @@
 "use client";
 
 import ArrowIcon from "@/components/icons/arrow";
-import type { ItemJson } from "@/types/types";
+import { ACCESS_LEVEL, type ItemJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -30,6 +30,8 @@ import {
 } from "@/lib/api/item-options";
 import ItemOptionsForm from "@/components/ui/items/ItemOptionsForm";
 import EditItemForm from "@/components/ui/items/EditItemForm";
+import { useSession } from "next-auth/react";
+import PageState from "@/components/ui/PageState";
 
 export default function EditItemPage() {
   const params = useParams<{
@@ -64,6 +66,19 @@ export default function EditItemPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSynced, setIsSynced] = useState<boolean>(false);
   const [hasSyncGroup, setHasSyncGroup] = useState<boolean>(false);
+
+  const { data: session, status } = useSession();
+
+  const currentAccessLevel = session?.user?.accessLevel;
+
+  const canManageItem =
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin;
+
+  const canViewItem =
+    canManageItem || currentAccessLevel === ACCESS_LEVEL.staff;
+
+  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   async function refreshItemData() {
     const refreshedItem = await getItem(businessId, locationId, itemId);
@@ -119,8 +134,10 @@ export default function EditItemPage() {
       }
     }
 
-    void getItemData();
-  }, [businessId, locationId, itemId]);
+    if (status === "authenticated" && canViewItem) {
+      void getItemData();
+    }
+  }, [businessId, locationId, itemId, status, canViewItem]);
 
   function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
@@ -634,16 +651,29 @@ export default function EditItemPage() {
     }
   }
 
-  if (isLoading) {
-    return <p>Loading item...</p>;
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canViewItem,
+    pageTitle: "Menu",
+    reason: "Your current access level does not include item access.",
+  });
+
+  if (pageState) {
+    return pageState;
   }
 
   if (errorMessage && !itemData) {
-    return <p role="alert">{errorMessage}</p>;
+    return (
+      <p role="alert" className="p-5">
+        {errorMessage}
+      </p>
+    );
   }
 
   if (!itemData) {
-    return <p>This item could not be found.</p>;
+    return <p className="p-5">This item could not be found.</p>;
   }
 
   const isProcessing = isSaving || isDeleting || isUpdatingImage;
@@ -651,11 +681,15 @@ export default function EditItemPage() {
   const options = itemData.options ?? [];
 
   return (
-    <section aria-labelledby="edit-item-heading">
+    <section
+      aria-labelledby="edit-item-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       <header className="flex items-center gap-3">
         <Link
           href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`}
           aria-label="Return to subcategory"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={50} />
         </Link>
@@ -666,6 +700,7 @@ export default function EditItemPage() {
       <div className="mt-[1.5rem]">
         {/* ITEM FORM */}
         <EditItemForm
+          canManage={canManageItem}
           itemData={itemData}
           imagePreview={imagePreview}
           canSubmit={canSubmit}
@@ -684,6 +719,7 @@ export default function EditItemPage() {
 
         {/* ITEM OPTION FORM */}
         <ItemOptionsForm
+          canManage={canManageItem}
           options={options}
           processingOptionId={processingOptionId}
           isCreatingOption={isCreatingOption}

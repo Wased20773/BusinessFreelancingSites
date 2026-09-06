@@ -1,7 +1,6 @@
 "use client";
 
 import axios from "axios";
-import Link from "next/link";
 import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import ExitIcon from "@/components/icons/exit-black.svg";

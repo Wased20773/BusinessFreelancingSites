@@ -1,8 +1,6 @@
 import Divider from "@/components/layout/Divider";
 import { CategoryJson } from "@/types/types";
-import Image from "next/image";
 import Link from "next/link";
-import EditIcon from "@/components/icons/edit.svg";
 import ReorderControls from "../controls/ReorderControls";
 import { getCategories } from "@/lib/api/categories";
 import { toast } from "sonner";
@@ -10,13 +8,15 @@ import { moveOrder, ReorderDirection } from "@/lib/api/reorder";
 import axios from "axios";
 import ChevronIcon from "@/components/icons/chevron";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
+import ArrowIcon from "@/components/icons/arrow";
 
 type CategoryListParams = {
   isLoading: boolean;
+  setIsLoading: Dispatch<SetStateAction<boolean>>;
   categoryData: CategoryJson[];
-  errorMessage: string | null;
   setCategoryData: (categories: CategoryJson[]) => void;
+  errorMessage: string | null;
   type?: "category" | "subcategory";
   parentCategoryId?: string;
   canManage: boolean;
@@ -24,6 +24,7 @@ type CategoryListParams = {
 
 export default function CategoryList({
   isLoading,
+  setIsLoading,
   categoryData,
   errorMessage,
   setCategoryData,
@@ -135,7 +136,6 @@ export default function CategoryList({
   }
 
   const label = isSubcategory ? "Subcategory" : "Category";
-  const labelLowercase = isSubcategory ? "subcategory" : "category";
 
   return (
     <section
@@ -192,6 +192,7 @@ export default function CategoryList({
                         href={getCategoryHref(category.id)}
                         className="flex-1 min-w-0 flex items-center"
                         aria-label={`Edit ${category.name}`}
+                        onClick={() => setIsLoading(true)}
                       >
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold truncate">
@@ -289,13 +290,7 @@ export default function CategoryList({
                               aria-label={`Edit ${category.name}`}
                               className="flex justify-center w-fit"
                             >
-                              <Image
-                                src={EditIcon}
-                                alt=""
-                                width={30}
-                                height={30}
-                                aria-hidden="true"
-                              />
+                              <ArrowIcon size={30} />
                             </Link>
                           </td>
                         </>

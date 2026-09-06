@@ -2,7 +2,6 @@ import { auth } from "@/auth";
 import AuthSessionProvider from "@/components/providers/AuthSessionProvider";
 import SettingsLayoutClient from "@/components/layout/settings/SettingsLayoutClient";
 import ResponsiveToaster from "@/components/ui/ResponsiveToast";
-import { settingsLinks } from "@/data/settingsLinks";
 import { redirect } from "next/navigation";
 import { ReactNode } from "react";
 
@@ -38,8 +37,6 @@ export default async function SettingsLayout({
     name: session.user.businessName ?? "",
   };
 
-  const navLinks = settingsLinks();
-
   return (
     <AuthSessionProvider>
       <ResponsiveToaster />
@@ -48,7 +45,6 @@ export default async function SettingsLayout({
         currentBusiness={currentBusiness}
         currentAccount={currentAccount}
         businessId={session.user.businessId}
-        navLinks={navLinks}
       >
         {children}
       </SettingsLayoutClient>

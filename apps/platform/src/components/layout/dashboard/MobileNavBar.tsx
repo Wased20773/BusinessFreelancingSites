@@ -22,6 +22,7 @@ export default function MobileNavBar({
   businesses,
   businessId,
   locations,
+  onNavigate,
 }: DashboardNavProps) {
   const [isOpen, setIsOpen] = useState(false);
 

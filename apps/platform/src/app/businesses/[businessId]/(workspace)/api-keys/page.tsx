@@ -98,7 +98,7 @@ export default function ApiKeysPage() {
     }
   }, []);
 
-  if (status === "loading") {
+  if (status === "loading" || isLoading) {
     return <LoadingBar />;
   }
 
@@ -121,10 +121,6 @@ export default function ApiKeysPage() {
         </div>
       </section>
     );
-  }
-
-  if (isLoading) {
-    return <LoadingBar />;
   }
 
   return (

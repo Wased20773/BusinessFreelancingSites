@@ -13,6 +13,7 @@ import RequiredField from "../RequiredField";
 import IsSyncedCheckbox from "../IsSyncedCheckbox";
 
 type EditItemFormParams = {
+  canManage: boolean;
   itemData: ItemJson;
   imagePreview: string | null;
   canSubmit: boolean;
@@ -20,8 +21,8 @@ type EditItemFormParams = {
   isSaving: boolean;
   isDeleting: boolean;
   isSynced: boolean;
-  setIsSynced: Dispatch<SetStateAction<boolean>>;
   hasSyncGroup: boolean;
+  setIsSynced: Dispatch<SetStateAction<boolean>>;
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
   handleFormInput(event: InputEvent<HTMLFormElement>): void;
   handleImageChange(event: ChangeEvent<HTMLInputElement>): void;
@@ -30,6 +31,7 @@ type EditItemFormParams = {
 };
 
 export default function EditItemForm({
+  canManage,
   handleSubmit,
   handleFormInput,
   isProcessing,
@@ -45,6 +47,82 @@ export default function EditItemForm({
   handleDelete,
   isDeleting,
 }: EditItemFormParams) {
+  if (!canManage) {
+    return (
+      <section className="dashboard-card flex flex-col gap-5 p-4">
+        <fieldset>
+          <legend>Item info</legend>
+
+          <div>
+            <p className="text-sm text-gray-500">Name</p>
+            <p className="font-medium mt-1">{itemData.name}</p>
+          </div>
+
+          <div>
+            <p className="text-sm text-gray-500">Description</p>
+
+            <p className="mt-1">
+              {itemData.description ?? "No description provided."}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm text-gray-500">Contains</p>
+
+            <p className="mt-1">
+              {itemData.containsList.length > 0
+                ? itemData.containsList.join(", ")
+                : "No ingredients listed."}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm text-gray-500">Calories</p>
+
+            <p className="mt-1">
+              {itemData.calories !== null
+                ? `${itemData.calories} kcal`
+                : "Not provided"}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm text-gray-500">Price</p>
+
+            <p className="font-medium mt-1">
+              ${Number(itemData.price).toFixed(2)}
+            </p>
+          </div>
+        </fieldset>
+
+        <fieldset className="flex items-start">
+          <legend>Image</legend>
+
+          {imagePreview ? (
+            <Image
+              src={imagePreview}
+              alt={`${itemData.name} image`}
+              width={300}
+              height={300}
+              className="max-h-[300px] w-auto rounded-md object-contain"
+            />
+          ) : (
+            <p className="text-gray-500">No image provided.</p>
+          )}
+        </fieldset>
+
+        <fieldset>
+          <legend>Availability</legend>
+
+          <p>{itemData.isAvailable ? "Available" : "Unavailable"}</p>
+        </fieldset>
+
+        <p className="w-fit border-[0.1rem] border-b-[0.2rem] rounded-lg border-gray-400 bg-gray-100 px-3 py-2">
+          Display Order: {itemData.order}
+        </p>
+      </section>
+    );
+  }
   return (
     <form
       className="dashboard-card flex flex-col gap-5 p-4"

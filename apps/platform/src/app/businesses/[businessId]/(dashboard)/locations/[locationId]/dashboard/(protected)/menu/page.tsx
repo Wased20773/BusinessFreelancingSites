@@ -11,6 +11,8 @@ import ActionItem from "@/components/ui/ActionItem";
 import CreateButtonIcon from "@/components/icons/create-button.svg";
 import CategoryList from "@/components/ui/categories/CategoriesList";
 import { useSession } from "next-auth/react";
+import LoadingBar from "@/components/ui/LoadingBar";
+import PageState from "@/components/ui/PageState";
 
 export default function CategoriesPage() {
   const params = useParams<{
@@ -28,11 +30,8 @@ export default function CategoriesPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const accessLevel = session?.user?.accessLevel;
-
   const canManageMenu = accessLevel === "owner" || accessLevel === "admin";
-
   const canViewMenu = canManageMenu || accessLevel === "staff";
-
   const isDeveloper = accessLevel === "developer";
 
   useEffect(() => {
@@ -99,34 +98,24 @@ export default function CategoriesPage() {
     }
   }, [businessId, locationId, status, canViewMenu]);
 
-  if (status === "loading") {
-    return <p>Loading session...</p>;
-  }
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canViewMenu,
+    pageTitle: "Menu",
+    reason: "Your current access level does not include dashboard menu access.",
+  });
 
-  if (status === "unauthenticated") {
-    return <p>You must be signed in to view this page.</p>;
-  }
-
-  if (isDeveloper || !canViewMenu) {
-    return (
-      <section aria-labelledby="menu-heading">
-        <h1 id="menu-heading">Menu</h1>
-
-        <div className="mt-[1.5rem]">
-          <div className="dashboard-card">
-            <h2 className="text-xl font-semibold">Menu unavailable</h2>
-
-            <p className="text-gray-500 mt-1">
-              Your current access level does not include dashboard menu access.
-            </p>
-          </div>
-        </div>
-      </section>
-    );
+  if (pageState) {
+    return pageState;
   }
 
   return (
-    <section aria-labelledby="categories-heading">
+    <section
+      aria-labelledby="categories-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       <h1 id="categories-heading">Menu</h1>
 
       <div className="mt-[1.5rem]">
@@ -138,6 +127,7 @@ export default function CategoriesPage() {
                 href="menu/create"
                 icon={CreateButtonIcon}
                 label="Create Category"
+                setIsLoading={setIsLoading}
               />
             </nav>
 
@@ -147,9 +137,10 @@ export default function CategoriesPage() {
 
         <CategoryList
           isLoading={isLoading}
+          setIsLoading={setIsLoading}
           categoryData={categoryData}
-          errorMessage={errorMessage}
           setCategoryData={setCategoryData}
+          errorMessage={errorMessage}
           canManage={canManageMenu}
         />
       </div>

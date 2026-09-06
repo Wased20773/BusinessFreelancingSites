@@ -10,21 +10,24 @@ import axios from "axios";
 import { getCategories } from "@/lib/api/categories";
 import ReorderControls from "../controls/ReorderControls";
 import { useParams } from "next/navigation";
+import ArrowIcon from "@/components/icons/arrow";
 
 type ItemsListParams = {
   categoryId: string;
   categoryData: CategoryJson;
   setErrorMessage: Dispatch<SetStateAction<string | null>>;
   setCategoryData: Dispatch<SetStateAction<CategoryJson | null>>;
+  setIsLoading: Dispatch<SetStateAction<boolean>>;
+  canManage: boolean;
 };
-
-// TODO: Make items disabled when something is processing
 
 export default function ItemsList({
   categoryData,
   categoryId,
   setErrorMessage,
   setCategoryData,
+  setIsLoading,
+  canManage,
 }: ItemsListParams) {
   const params = useParams<{
     businessId: string;
@@ -123,35 +126,47 @@ export default function ItemsList({
               return (
                 <li key={item.id} className="grid grid-cols-[1fr_auto]">
                   <div className="min-w-0 px-3 flex items-center gap-5">
-                    <ReorderControls
-                      id={item.id}
-                      isProcessing={isProcessingItem}
-                      isFirst={isFirst}
-                      isLast={isLast}
-                      handleMove={handleMoveItem}
-                    />
+                    {canManage && (
+                      <ReorderControls
+                        id={item.id}
+                        isProcessing={isProcessingItem}
+                        isFirst={isFirst}
+                        isLast={isLast}
+                        handleMove={handleMoveItem}
+                      />
+                    )}
                     <Link
                       href={`${categoryId}/items/${item.id}`}
                       className="flex-1 min-w-0 flex items-center"
-                      aria-label={`Edit ${item.name}`}
+                      aria-label={
+                        canManage ? `Edit ${item.name}` : `View ${item.name}`
+                      }
+                      onClick={() => setIsLoading(true)}
                     >
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold truncate">
                           ${Number(item.price).toFixed(2)}
                         </p>
+
                         <p className="font-semibold truncate">{item.name}</p>
+
                         <p className="text-gray-500 truncate">
                           Order: {item.order}
                         </p>
                       </div>
-                      <Image
-                        className="h-fit"
-                        src={EditIcon}
-                        alt=""
-                        width={50}
-                        height={50}
-                        aria-hidden="true"
-                      />
+
+                      {canManage ? (
+                        <Image
+                          className="h-fit"
+                          src={EditIcon}
+                          alt=""
+                          width={50}
+                          height={50}
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <ArrowIcon direction="right" size={50} />
+                      )}
                     </Link>
                   </div>
 
@@ -215,28 +230,39 @@ export default function ItemsList({
                       <td className="px-3 py-2">{item.order}</td>
 
                       <td className="px-3 py-2">
-                        <ReorderControls
-                          id={item.id}
-                          isProcessing={isProcessingItem}
-                          isFirst={isFirst}
-                          isLast={isLast}
-                          handleMove={handleMoveItem}
-                        />
+                        {canManage && (
+                          <ReorderControls
+                            id={item.id}
+                            isProcessing={isProcessingItem}
+                            isFirst={isFirst}
+                            isLast={isLast}
+                            handleMove={handleMoveItem}
+                          />
+                        )}
                       </td>
 
                       <td>
                         <Link
                           href={`${categoryId}/items/${item.id}`}
-                          aria-label={`Open ${item.name}`}
+                          aria-label={
+                            canManage
+                              ? `Edit ${item.name}`
+                              : `View ${item.name}`
+                          }
                           className="flex justify-center w-fit"
+                          onClick={() => setIsLoading(true)}
                         >
-                          <Image
-                            src={EditIcon}
-                            alt=""
-                            width={30}
-                            height={30}
-                            aria-hidden="true"
-                          />
+                          {canManage ? (
+                            <Image
+                              src={EditIcon}
+                              alt=""
+                              width={30}
+                              height={30}
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <ArrowIcon direction="right" size={30} />
+                          )}
                         </Link>
                       </td>
                     </tr>

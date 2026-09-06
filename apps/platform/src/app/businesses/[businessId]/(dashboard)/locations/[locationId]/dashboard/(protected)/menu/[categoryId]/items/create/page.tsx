@@ -9,6 +9,9 @@ import { toast } from "sonner";
 import "../../../../page.css";
 import type { ItemJson } from "@/types/types";
 import CreateItemForm from "@/components/ui/items/CreateItemForm";
+import { ACCESS_LEVEL } from "@/types/types";
+import { useSession } from "next-auth/react";
+import PageState from "@/components/ui/PageState";
 
 export default function CreateItemPage() {
   const params = useParams<{
@@ -21,7 +24,8 @@ export default function CreateItemPage() {
   const locationId = params.locationId;
   const categoryId = params.categoryId;
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isCreating, setIsCreating] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
   const [latestOrder, setLatestOrder] = useState<number>(1);
@@ -30,8 +34,18 @@ export default function CreateItemPage() {
 
   const router = useRouter();
 
+  const { data: session, status } = useSession();
+
+  const currentAccessLevel = session?.user?.accessLevel;
+  const canCreateItem =
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin;
+  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
+
   useEffect(() => {
     async function getLatestOrder() {
+      setIsLoading(true);
+
       try {
         const response = await axios.get<{
           categories: {
@@ -72,16 +86,20 @@ export default function CreateItemPage() {
         setLatestOrder(highestOrder + 1);
       } catch (error) {
         console.error("Failed to get latest item order:", error);
+      } finally {
+        setIsLoading(false);
       }
     }
 
-    void getLatestOrder();
-  }, [businessId, locationId, categoryId]);
+    if (status === "authenticated" && canCreateItem) {
+      void getLatestOrder();
+    }
+  }, [businessId, locationId, categoryId, status, canCreateItem]);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    setIsLoading(true);
+    setIsCreating(true);
     setErrorMessage(null);
 
     const form = event.currentTarget;
@@ -215,7 +233,7 @@ export default function CreateItemPage() {
         setErrorMessage("Failed to create the item.");
       }
     } finally {
-      setIsLoading(false);
+      setIsCreating(false);
     }
   }
 
@@ -231,12 +249,29 @@ export default function CreateItemPage() {
     setCanSubmit(hasName && hasPrice);
   }
 
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canCreateItem,
+    pageTitle: "Menu",
+    reason: "Your current access level does not allow item creation.",
+  });
+
+  if (pageState) {
+    return pageState;
+  }
+
   return (
-    <section aria-labelledby="create-item-heading">
+    <section
+      aria-labelledby="create-item-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       <header className="flex items-center gap-3">
         <Link
           href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}`}
           aria-label="Return to parent category"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={50} />
         </Link>
@@ -250,6 +285,7 @@ export default function CreateItemPage() {
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}
           isLoading={isLoading}
+          isCreating={isCreating}
           errorMessage={errorMessage}
           canSubmit={canSubmit}
           latestOrder={latestOrder}

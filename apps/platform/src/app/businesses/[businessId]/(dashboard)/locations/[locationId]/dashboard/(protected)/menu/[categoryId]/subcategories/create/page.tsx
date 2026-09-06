@@ -9,16 +9,11 @@ import { toast } from "sonner";
 import "../../../../page.css";
 import { useParams, useRouter } from "next/navigation";
 import CreateCategoryForm from "@/components/ui/categories/CreateCategoryForm";
+import { ACCESS_LEVEL } from "@/types/types";
+import { useSession } from "next-auth/react";
+import PageState from "@/components/ui/PageState";
 
 export default function CreateCategoryPage() {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isCreating, setIsCreating] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [canSubmit, setCanSubmit] = useState<boolean>(false);
-  const [latestOrder, setLatestOrder] = useState<number>(0);
-  const [isSynced, setIsSynced] = useState<boolean>(false);
-  const [hasSyncGroup, setHasSyncGroup] = useState<boolean>(false);
-
   const params = useParams<{
     businessId: string;
     locationId: string;
@@ -29,10 +24,28 @@ export default function CreateCategoryPage() {
   const locationId = params.locationId;
   const categoryId = params.categoryId;
 
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isCreating, setIsCreating] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [canSubmit, setCanSubmit] = useState<boolean>(false);
+  const [latestOrder, setLatestOrder] = useState<number>(0);
+  const [isSynced, setIsSynced] = useState<boolean>(false);
+  const [hasSyncGroup, setHasSyncGroup] = useState<boolean>(false);
+
+  const { data: session, status } = useSession();
+
+  const currentAccessLevel = session?.user?.accessLevel;
+  const canCreateSubcategory =
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin;
+  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
+
   const router = useRouter();
 
   useEffect(() => {
     async function getLatestOrder() {
+      setIsLoading(true);
+
       try {
         const response = await axios.get<{
           categories: CategoryJson[];
@@ -48,7 +61,7 @@ export default function CreateCategoryPage() {
         );
 
         if (!category) {
-          setErrorMessage("The selected subcategory could not be found.");
+          setErrorMessage("The selected category could not be found.");
           return;
         }
 
@@ -66,16 +79,19 @@ export default function CreateCategoryPage() {
         setLatestOrder(highestOrder + 1);
       } catch (error) {
         console.error("Failed to get latest subcategory order:", error);
+      } finally {
+        setIsLoading(false);
       }
     }
 
-    void getLatestOrder();
-  }, [businessId, locationId, categoryId]);
+    if (status === "authenticated" && canCreateSubcategory) {
+      void getLatestOrder();
+    }
+  }, [businessId, locationId, categoryId, status, canCreateSubcategory]);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    setIsLoading(true);
     setIsCreating(true);
     setErrorMessage(null);
 
@@ -96,7 +112,7 @@ export default function CreateCategoryPage() {
 
     if (!requestBody.name) {
       setErrorMessage("A category name is required.");
-      setIsLoading(false);
+      setIsCreating(false);
       return;
     }
 
@@ -147,7 +163,7 @@ export default function CreateCategoryPage() {
         setErrorMessage("Failed to create the subcategory.");
       }
     } finally {
-      setIsLoading(false);
+      setIsCreating(false);
     }
   }
 
@@ -160,12 +176,29 @@ export default function CreateCategoryPage() {
     setCanSubmit(hasName);
   }
 
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canCreateSubcategory,
+    pageTitle: "Menu",
+    reason: "Your current access level does not allow subcategory creation.",
+  });
+
+  if (pageState) {
+    return pageState;
+  }
+
   return (
-    <section aria-labelledby="create-category-heading">
+    <section
+      aria-labelledby="create-category-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       <header className="flex items-center gap-3">
         <Link
           href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}`}
           aria-label="Return to menu"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={50} />
         </Link>

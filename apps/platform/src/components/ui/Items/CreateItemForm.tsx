@@ -7,6 +7,7 @@ type CreateItemFormProps = {
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
   handleFormInput(event: InputEvent<HTMLFormElement>): void;
   isLoading: boolean;
+  isCreating: boolean;
   errorMessage: string | null;
   canSubmit: boolean;
   latestOrder: number;
@@ -19,6 +20,7 @@ export default function CreateItemForm({
   handleSubmit,
   handleFormInput,
   isLoading,
+  isCreating,
   errorMessage,
   canSubmit,
   latestOrder,
@@ -155,9 +157,9 @@ export default function CreateItemForm({
       <button
         className="md:w-fit bg-emerald-300 border-[0.1rem] border-emerald-500 rounded-md text-emerald-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
         type="submit"
-        disabled={isLoading || !canSubmit}
+        disabled={isCreating || isLoading || !canSubmit}
       >
-        {isLoading ? "Creating..." : "Create"}
+        {isCreating ? "Creating..." : "Create"}
       </button>
     </form>
   );

@@ -1,14 +1,16 @@
 "use client";
 
 import ArrowIcon from "@/components/icons/arrow";
-import type { CategoryJson } from "@/types/types";
+import { ACCESS_LEVEL, type CategoryJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
-import { SubmitEvent, useEffect, useState } from "react";
+import { InputEvent, SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../page.css";
 import CreateCategoryForm from "@/components/ui/categories/CreateCategoryForm";
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import PageState from "@/components/ui/PageState";
 
 export default function CreateCategoryPage() {
   const params = useParams<{
@@ -19,7 +21,7 @@ export default function CreateCategoryPage() {
   const businessId = params.businessId;
   const locationId = params.locationId;
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
   const [latestOrder, setLatestOrder] = useState<number>(0);
@@ -27,8 +29,17 @@ export default function CreateCategoryPage() {
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const router = useRouter();
 
+  const { data: session, status } = useSession();
+
+  const accessLevel = session?.user?.accessLevel;
+  const canCreateCategory =
+    accessLevel === ACCESS_LEVEL.owner || accessLevel === ACCESS_LEVEL.admin;
+  const isDeveloper = accessLevel === ACCESS_LEVEL.developer;
+
   useEffect(() => {
     async function getLatestOrder() {
+      setIsLoading(true);
+
       try {
         const response = await axios.get<{
           categories: CategoryJson[];
@@ -53,10 +64,14 @@ export default function CreateCategoryPage() {
         setLatestOrder(highestOrder + 1);
       } catch (error) {
         console.error("Failed to get latest category order:", error);
+      } finally {
+        setIsLoading(false);
       }
     }
 
-    void getLatestOrder();
+    if (status === "authenticated" && canCreateCategory) {
+      void getLatestOrder();
+    }
   }, [businessId, locationId]);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
@@ -138,7 +153,7 @@ export default function CreateCategoryPage() {
     }
   }
 
-  function handleFormInput(event: React.FormEvent<HTMLFormElement>) {
+  function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
     const name = formData.get("name");
 
@@ -147,12 +162,29 @@ export default function CreateCategoryPage() {
     setCanSubmit(hasName);
   }
 
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canCreateCategory,
+    pageTitle: "Menu",
+    reason: "Your current access level does not allow category creation.",
+  });
+
+  if (pageState) {
+    return pageState;
+  }
+
   return (
-    <section aria-labelledby="create-category-heading">
+    <section
+      aria-labelledby="create-category-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       <header className="flex items-center gap-3">
         <Link
           href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu`}
           aria-label="Return to menu"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={50} />
         </Link>

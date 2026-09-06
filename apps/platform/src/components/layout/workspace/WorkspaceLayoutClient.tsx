@@ -30,12 +30,11 @@ export default function WorkspaceLayoutClient({
   const [businesses, setBusinesses] = useState<BusinessOwnerShip[]>([]);
   const [locations, setLocations] = useState<LocationJson[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [navigationTarget, setNavigationTarget] = useState<string | null>(null);
+  const [navigationFrom, setNavigationFrom] = useState<string | null>(null);
 
   const pathname = usePathname();
 
-  const isNavigating =
-    navigationTarget !== null && pathname !== navigationTarget;
+  const isNavigating = navigationFrom !== null && pathname === navigationFrom;
 
   const { data: session, update } = useSession();
 
@@ -68,7 +67,7 @@ export default function WorkspaceLayoutClient({
     void update({
       businessId,
     });
-  }, [businessId, pathname]);
+  }, [businessId]);
 
   const selectedBusiness = businesses.find(
     (businessUser) => businessUser.business?.id === businessId,
@@ -103,7 +102,7 @@ export default function WorkspaceLayoutClient({
           currentAccount={activeAccount}
           navLinks={navLinks}
           businesses={businesses}
-          onNavigate={(href) => setNavigationTarget(href)}
+          onNavigate={() => setNavigationFrom(pathname)}
         />
 
         <MobileNavBar
@@ -114,7 +113,7 @@ export default function WorkspaceLayoutClient({
           businesses={businesses}
           businessId={selectedBusiness.business.id}
           locations={locations}
-          onNavigate={(href) => setNavigationTarget(href)}
+          onNavigate={() => setNavigationFrom(pathname)}
         />
       </div>
 

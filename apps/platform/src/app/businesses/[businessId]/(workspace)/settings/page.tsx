@@ -312,7 +312,7 @@ export default function SettingsPage() {
     setIsEditingDomain(false);
   }
 
-  if (status === "loading") {
+  if (status === "loading" || isLoading) {
     return <LoadingBar />;
   }
 
@@ -338,9 +338,6 @@ export default function SettingsPage() {
     );
   }
 
-  if (isLoading) {
-    return <LoadingBar />;
-  }
   if (errorMessage) {
     return <p className="p-5">{errorMessage}</p>;
   }

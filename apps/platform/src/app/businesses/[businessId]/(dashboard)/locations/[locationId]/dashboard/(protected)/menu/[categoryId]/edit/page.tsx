@@ -2,12 +2,14 @@
 
 import ArrowIcon from "@/components/icons/arrow";
 import EditCategoryForm from "@/components/ui/categories/EditCategoryForm";
-import type { CategoryJson } from "@/types/types";
+import { ACCESS_LEVEL, type CategoryJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { InputEvent, SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
+import PageState from "@/components/ui/PageState";
 
 export default function EditCategoryPage() {
   const params = useParams<{
@@ -31,6 +33,16 @@ export default function EditCategoryPage() {
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
+
+  const { data: session, status } = useSession();
+
+  const currentAccessLevel = session?.user?.accessLevel;
+
+  const canManageCategory =
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin;
+
+  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
     async function getCategoryData() {
@@ -97,8 +109,10 @@ export default function EditCategoryPage() {
       }
     }
 
-    void getCategoryData();
-  }, [businessId, locationId, categoryId]);
+    if (status === "authenticated" && canManageCategory) {
+      void getCategoryData();
+    }
+  }, [businessId, locationId, categoryId, status, canManageCategory]);
 
   function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
@@ -241,8 +255,17 @@ export default function EditCategoryPage() {
     }
   }
 
-  if (isLoading) {
-    return <p>Loading category</p>;
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canManageCategory,
+    pageTitle: "Menu",
+    reason: "Your current access level does not allow category management.",
+  });
+
+  if (pageState) {
+    return pageState;
   }
 
   if (errorMessage && !categoryData) {
@@ -256,11 +279,15 @@ export default function EditCategoryPage() {
   const isProcessing = isSaving || isDeleting;
 
   return (
-    <section aria-labelledby="edit-category-heading">
+    <section
+      aria-labelledby="edit-category-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       <header className="flex items-center gap-3">
         <Link
           href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryData.id}`}
           aria-label="Return to menu"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={50} />
         </Link>

@@ -14,6 +14,9 @@ import type { CategoryJson } from "@/types/types";
 import CategoryInfo from "@/components/ui/categories/CategoryInfo";
 import ItemsList from "@/components/ui/items/ItemsList";
 import CategoryList from "@/components/ui/categories/CategoriesList";
+import { useSession } from "next-auth/react";
+import LoadingBar from "@/components/ui/LoadingBar";
+import PageState from "@/components/ui/PageState";
 
 export default function CategoryPage() {
   const params = useParams<{
@@ -29,6 +32,14 @@ export default function CategoryPage() {
   const [categoryData, setCategoryData] = useState<CategoryJson | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const { data: session, status } = useSession();
+
+  const currentAccessLevel = session?.user?.accessLevel;
+  const canManageMenu =
+    currentAccessLevel === "owner" || currentAccessLevel === "admin";
+  const canViewMenu = canManageMenu || currentAccessLevel === "staff";
+  const isDeveloper = currentAccessLevel === "developer";
 
   useEffect(() => {
     async function getCategoryData() {
@@ -93,28 +104,47 @@ export default function CategoryPage() {
       }
     }
 
-    void getCategoryData();
+    if (status === "authenticated" && canViewMenu) {
+      void getCategoryData();
+    }
   }, [businessId, locationId, categoryId]);
 
-  if (isLoading) {
-    return <p>Loading category...</p>;
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canViewMenu,
+    pageTitle: "Menu",
+    reason: "Your current access level does not include dashboard menu access.",
+  });
+
+  if (pageState) {
+    return pageState;
   }
 
   if (errorMessage && !categoryData) {
-    return <p role="alert">{errorMessage}</p>;
+    return (
+      <p role="alert" className="p-5">
+        {errorMessage}
+      </p>
+    );
   }
 
   if (!categoryData) {
-    return <p>This category could not be found.</p>;
+    return <p className="p-5">This category could not be found.</p>;
   }
 
   return (
-    <section aria-labelledby="category-heading">
+    <section
+      aria-labelledby="category-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       {/* HEADER */}
       <header className="flex items-center gap-3">
         <Link
           href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu`}
           aria-label="Return to menu"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={50} />
         </Link>
@@ -131,6 +161,7 @@ export default function CategoryPage() {
             href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/items/create`}
             icon={CreateButtonIcon}
             label="Create Item"
+            setIsLoading={setIsLoading}
           />
 
           <Divider />
@@ -139,6 +170,7 @@ export default function CategoryPage() {
             href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/create`}
             icon={CreateButtonIcon}
             label="Create Subcategory"
+            setIsLoading={setIsLoading}
           />
         </nav>
 
@@ -155,6 +187,8 @@ export default function CategoryPage() {
           categoryData={categoryData}
           setErrorMessage={setErrorMessage}
           setCategoryData={setCategoryData}
+          setIsLoading={setIsLoading}
+          canManage={canManageMenu}
         />
 
         <Divider />
@@ -164,8 +198,8 @@ export default function CategoryPage() {
           type="subcategory"
           parentCategoryId={categoryData.id}
           isLoading={isLoading}
+          setIsLoading={setIsLoading}
           categoryData={categoryData.subcategories ?? []}
-          errorMessage={errorMessage}
           setCategoryData={(subcategories) => {
             setCategoryData((currentCategory) => {
               if (!currentCategory) return currentCategory;
@@ -176,6 +210,8 @@ export default function CategoryPage() {
               };
             });
           }}
+          errorMessage={errorMessage}
+          canManage={canManageMenu}
         />
       </div>
     </section>

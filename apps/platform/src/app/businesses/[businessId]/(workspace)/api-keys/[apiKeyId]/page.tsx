@@ -254,16 +254,12 @@ export default function ApiKeyDetailsPage() {
     }
   }
 
-  if (status === "loading") {
+  if (status === "loading" || isLoading) {
     return <LoadingBar />;
   }
 
   if (status === "unauthenticated") {
     return <p className="p-5">You must be signed in to view this page.</p>;
-  }
-
-  if (isLoading) {
-    return <LoadingBar />;
   }
 
   if (!apiKeyData) {

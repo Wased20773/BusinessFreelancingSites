@@ -2,13 +2,15 @@
 
 import ArrowIcon from "@/components/icons/arrow";
 import EditCategoryForm from "@/components/ui/categories/EditCategoryForm";
-import type { CategoryJson } from "@/types/types";
+import { ACCESS_LEVEL, type CategoryJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { InputEvent, SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../../../../page.css";
+import { useSession } from "next-auth/react";
+import PageState from "@/components/ui/PageState";
 
 export default function EditSubcategoryPage() {
   const params = useParams<{
@@ -36,6 +38,16 @@ export default function EditSubcategoryPage() {
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
+
+  const { data: session, status } = useSession();
+
+  const currentAccessLevel = session?.user?.accessLevel;
+
+  const canManageSubcategory =
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin;
+
+  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
     async function getSubcategoryData() {
@@ -115,8 +127,17 @@ export default function EditSubcategoryPage() {
       }
     }
 
-    void getSubcategoryData();
-  }, [businessId, locationId, categoryId, subcategoryId]);
+    if (status === "authenticated" && canManageSubcategory) {
+      void getSubcategoryData();
+    }
+  }, [
+    businessId,
+    locationId,
+    categoryId,
+    subcategoryId,
+    status,
+    canManageSubcategory,
+  ]);
 
   function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
@@ -265,26 +286,43 @@ export default function EditSubcategoryPage() {
     }
   }
 
-  if (isLoading) {
-    return <p>Loading subcategory...</p>;
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canManageSubcategory,
+    pageTitle: "Menu",
+    reason: "Your current access level does not allow subcategory management.",
+  });
+
+  if (pageState) {
+    return pageState;
   }
 
   if (errorMessage && !subcategoryData) {
-    return <p role="alert">{errorMessage}</p>;
+    return (
+      <p role="alert" className="p-5">
+        {errorMessage}
+      </p>
+    );
   }
 
   if (!subcategoryData) {
-    return <p>This subcategory could not be found.</p>;
+    return <p className="p-5">This subcategory could not be found.</p>;
   }
 
   const isProcessing = isSaving || isDeleting;
 
   return (
-    <section aria-labelledby="edit-subcategory-heading">
+    <section
+      aria-labelledby="edit-subcategory-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       <header className="flex items-center gap-3">
         <Link
           href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`}
           aria-label="Return to subcategory"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={50} />
         </Link>

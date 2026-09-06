@@ -1,9 +1,6 @@
 import { auth } from "@/auth";
-import MobileNavBar from "@/components/layout/dashboard/MobileNavBar";
-import SideBar from "@/components/layout/dashboard/SideBar";
-import AuthSessionProvider from "@/components/providers/AuthSessionProvider";
+import DashboardLayoutClient from "@/components/layout/dashboard/DashboardLayoutClient";
 import ResponsiveToaster from "@/components/ui/ResponsiveToast";
-import { dashboardLinks } from "@/data/dashboardLinks";
 import { redirect } from "next/navigation";
 import { ReactNode } from "react";
 
@@ -21,7 +18,9 @@ export default async function DashboardLayout({
 }: DashboardLayoutProps) {
   const session = await auth();
 
-  if (!session?.user) redirect("/dashboard/login");
+  if (!session?.user) {
+    redirect("/dashboard/login");
+  }
 
   if (
     !session.user.businessId ||
@@ -32,13 +31,7 @@ export default async function DashboardLayout({
     redirect("/onboarding");
   }
 
-  // ##############################################
-  // ##### Load persistent data for all pages #####
-  // ##############################################
-
   const currentBusiness = {
-    id: session.user.businessId,
-    slug: session.user.businessSlug,
     name: session.user.businessName,
   };
 
@@ -50,29 +43,18 @@ export default async function DashboardLayout({
 
   const { businessId, locationId } = await params;
 
-  const navLinks = dashboardLinks(businessId, locationId);
-
   return (
     <>
       <ResponsiveToaster />
-      <div className="h-screen grid grid-rows-[auto_1fr] md:grid-cols-[auto_1fr] md:grid-rows-1">
-        <SideBar
-          currentBusiness={currentBusiness}
-          currentAccount={currentAccount}
-          variant="dashboard"
-          navLinks={navLinks}
-          businessId={businessId}
-        />
-        <MobileNavBar
-          currentBusiness={currentBusiness}
-          currentAccount={currentAccount}
-          variant="dashboard"
-          navLinks={navLinks}
-          businessId={businessId}
-        />
 
-        <main className="min-h-0 overflow-y-scroll p-5">{children}</main>
-      </div>
+      <DashboardLayoutClient
+        currentBusiness={currentBusiness}
+        currentAccount={currentAccount}
+        businessId={businessId}
+        locationId={locationId}
+      >
+        {children}
+      </DashboardLayoutClient>
     </>
   );
 }

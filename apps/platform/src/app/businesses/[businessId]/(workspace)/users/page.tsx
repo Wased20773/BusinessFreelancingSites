@@ -32,7 +32,7 @@ export default function UsersPage() {
     [],
   );
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [visibleUsers, setVisibleUsers] = useState<number>(USERS_PER_PAGE);
 

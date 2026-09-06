@@ -5,7 +5,6 @@ import Divider from "@/components/layout/Divider";
 import CreateOptionForm from "@/components/ui/item-options/CreateOptionForm";
 import ExistingOptionsForm from "@/components/ui/item-options/ExistingOptionsForm";
 import EditItemForm from "@/components/ui/items/EditItemForm";
-
 import {
   createItemImage,
   deleteItem,
@@ -14,21 +13,16 @@ import {
   updateItem,
   updateItemImage,
 } from "@/lib/api/items";
-
 import {
   createItemOption,
   deleteItemOption,
   updateItemOption,
 } from "@/lib/api/item-options";
-
 import { moveOrder, type ReorderDirection } from "@/lib/api/reorder";
-
-import type { ItemJson } from "@/types/types";
-
+import { ACCESS_LEVEL, type ItemJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-
 import {
   ChangeEvent,
   InputEvent,
@@ -38,8 +32,9 @@ import {
 } from "react";
 
 import { toast } from "sonner";
-
 import "../../../../page.css";
+import { useSession } from "next-auth/react";
+import PageState from "@/components/ui/PageState";
 
 export default function EditItemPage() {
   const params = useParams<{
@@ -73,6 +68,19 @@ export default function EditItemPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSynced, setIsSynced] = useState<boolean>(false);
   const [hasSyncGroup, setHasSyncGroup] = useState<boolean>(false);
+
+  const { data: session, status } = useSession();
+
+  const currentAccessLevel = session?.user?.accessLevel;
+
+  const canManageItem =
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin;
+
+  const canViewItem =
+    canManageItem || currentAccessLevel === ACCESS_LEVEL.staff;
+
+  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   async function refreshItemData() {
     const refreshedItem = await getItem(businessId, locationId, itemId);
@@ -128,8 +136,10 @@ export default function EditItemPage() {
       }
     }
 
-    void getItemData();
-  }, [businessId, locationId, itemId]);
+    if (status === "authenticated" && canViewItem) {
+      void getItemData();
+    }
+  }, [businessId, locationId, itemId, status, canViewItem]);
 
   function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
@@ -661,16 +671,29 @@ export default function EditItemPage() {
     }
   }
 
-  if (isLoading) {
-    return <p>Loading item...</p>;
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canViewItem,
+    pageTitle: "Menu",
+    reason: "Your current access level does not include item access.",
+  });
+
+  if (pageState) {
+    return pageState;
   }
 
   if (errorMessage && !itemData) {
-    return <p role="alert">{errorMessage}</p>;
+    return (
+      <p role="alert" className="p-5">
+        {errorMessage}
+      </p>
+    );
   }
 
   if (!itemData) {
-    return <p>This item could not be found.</p>;
+    return <p className="p-5">This item could not be found.</p>;
   }
 
   const options = itemData.options ?? [];
@@ -678,11 +701,15 @@ export default function EditItemPage() {
   const isProcessing = isSaving || isDeleting || isUpdatingImage;
 
   return (
-    <section aria-labelledby="edit-item-heading">
+    <section
+      aria-labelledby="edit-item-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       <header className="flex items-center gap-3">
         <Link
           href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}`}
           aria-label="Return to category"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={50} />
         </Link>

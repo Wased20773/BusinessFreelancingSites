@@ -6,6 +6,7 @@ import CreateOptionForm from "../item-options/CreateOptionForm";
 import ExistingOptionsForm from "../item-options/ExistingOptionsForm";
 
 type ItemOptionsFormProps = {
+  canManage: boolean;
   options: ItemOptionsJson[];
   processingOptionId: string | null;
   isCreatingOption: boolean;
@@ -29,6 +30,7 @@ type ItemOptionsFormProps = {
 };
 
 export default function ItemOptionsForm({
+  canManage,
   handleCreateOption,
   isCreatingOption,
   options,
@@ -41,6 +43,44 @@ export default function ItemOptionsForm({
   handleDeleteOption,
   isDeletingOption,
 }: ItemOptionsFormProps) {
+  if (!canManage) {
+    return (
+      <section
+        className="dashboard-card mt-[1.5rem] p-4"
+        aria-labelledby="item-options-heading"
+      >
+        <h2 id="item-options-heading">Item Options</h2>
+
+        {options.length === 0 ? (
+          <p className="pt-4">This item has no options</p>
+        ) : (
+          <div className="divide-y divide-gray-300">
+            {options.map((option) => (
+              <div key={option.id} className="py-4">
+                <div className="flex justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{option.name}</p>
+
+                    <p className="text-sm text-gray-500 mt-1">
+                      Order: {option.order}
+                    </p>
+                  </div>
+
+                  <p className="font-medium whitespace-nowrap">
+                    ${Number(option.price).toFixed(2)}
+                  </p>
+                </div>
+
+                <p className="text-sm text-gray-500 mt-2">
+                  {option.isAvailable ? "Available" : "Unavailable"}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  }
   return (
     <section
       className="dashboard-card mt-[1.5rem] p-4"
