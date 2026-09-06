@@ -1,12 +1,10 @@
 "use client";
 
 import ArrowIcon from "@/components/icons/arrow";
+import LoadingBar from "@/components/ui/LoadingBar";
 import RequiredField from "@/components/ui/RequiredField";
 import { createBusinessApiKey } from "@/lib/api/apiKeys";
-import type {
-  BusinessApiKeyJson,
-  CreateBusinessApiKeyResponse,
-} from "@/types/types";
+import type { CreateBusinessApiKeyResponse } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -21,6 +19,7 @@ export default function CreateApiKeyPage() {
   const businessId = params.businessId;
   const router = useRouter();
 
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -96,10 +95,14 @@ export default function CreateApiKeyPage() {
     toast.success("API key copied.");
   }
 
+  if (isLoading) {
+    return <LoadingBar />;
+  }
+
   if (createdApiKey) {
     return (
       <section
-        className="max-w-[800px] mx-auto"
+        className="max-w-[800px] mx-auto p-5"
         aria-labelledby="api-key-created-heading"
       >
         <div className="mb-6">
@@ -177,7 +180,10 @@ export default function CreateApiKeyPage() {
           <div className="flex justify-end mt-5">
             <button
               type="button"
-              onClick={() => router.push(`/businesses/${businessId}/api-keys`)}
+              onClick={() => {
+                router.push(`/businesses/${businessId}/api-keys`);
+                setIsLoading(true);
+              }}
               className="
                 rounded-lg
                 border border-gray-300
@@ -196,7 +202,7 @@ export default function CreateApiKeyPage() {
 
   return (
     <section
-      className="max-w-[800px] mx-auto"
+      className="max-w-[800px] mx-auto p-5"
       aria-labelledby="create-api-key-heading"
     >
       {/* Heading */}
@@ -205,6 +211,7 @@ export default function CreateApiKeyPage() {
           href={`/businesses/${businessId}/api-keys`}
           aria-label="Return to API keys"
           className="shrink-0"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={42} />
         </Link>

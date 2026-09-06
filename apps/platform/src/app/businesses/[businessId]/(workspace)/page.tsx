@@ -12,6 +12,7 @@ import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import LoadingBar from "@/components/ui/LoadingBar";
 
 export default function WorkspacePage() {
   const params = useParams<{
@@ -159,30 +160,30 @@ export default function WorkspacePage() {
     if (status === "authenticated") {
       void getOverviewData();
     }
-  }, [businessId, status, canViewLocations, canViewMembers, canViewApiKeys]);
+  }, []);
 
   if (status === "loading") {
-    return <p>Loading session...</p>;
+    return <LoadingBar />;
   }
 
   if (status === "unauthenticated") {
-    return <p>You must be signed in to view this page.</p>;
+    return <p className="p-5">You must be signed in to view this page.</p>;
   }
 
   if (isLoading) {
-    return <p>Loading business...</p>;
+    return <LoadingBar />;
   }
 
   if (errorMessage) {
-    return <p>{errorMessage}</p>;
+    return <p className="p-5">{errorMessage}</p>;
   }
 
   if (!businessData) {
-    return <p>Business could not be found.</p>;
+    return <p className="p-5">Business could not be found.</p>;
   }
 
   return (
-    <section className="max-w-[1000px] mx-auto">
+    <section className="max-w-[1000px] mx-auto p-5">
       {/* Heading */}
       <div className="mb-6">
         <h1 className="text-3xl font-semibold">Overview</h1>

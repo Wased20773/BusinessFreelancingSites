@@ -17,6 +17,7 @@ import ActionItem from "@/components/ui/ActionItem";
 import { getBusinessUsers } from "@/lib/api/users";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
+import LoadingBar from "@/components/ui/LoadingBar";
 
 const USERS_PER_PAGE = 5;
 
@@ -27,8 +28,6 @@ export default function UsersPage() {
 
   const businessId = params.businessId;
 
-  const { data: session, status } = useSession();
-
   const [businessUserData, setBusinessUserData] = useState<BusinessUserJson[]>(
     [],
   );
@@ -37,11 +36,10 @@ export default function UsersPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [visibleUsers, setVisibleUsers] = useState<number>(USERS_PER_PAGE);
 
+  const { data: session, status } = useSession();
+
   const accessLevel = session?.user?.accessLevel;
-
   const canManageMembers = accessLevel === "owner" || accessLevel === "admin";
-
-  const isStaff = accessLevel === "staff";
   const isDeveloper = accessLevel === "developer";
 
   useEffect(() => {
@@ -92,26 +90,22 @@ export default function UsersPage() {
       }
     }
 
-    /*
-     * Don't fetch this page's data if the selected
-     * business role is developer-only.
-     */
     if (status === "authenticated" && !isDeveloper) {
       void getBusinessUserData();
     }
-  }, [businessId, status, isDeveloper]);
+  }, []);
 
-  if (status === "loading") {
-    return <p>Loading session...</p>;
+  if (status === "loading" || isLoading) {
+    return <LoadingBar />;
   }
 
   if (status === "unauthenticated") {
-    return <p>You must be signed in to view this page.</p>;
+    return <p className="p-5">You must be signed in to view this page.</p>;
   }
 
   if (isDeveloper) {
     return (
-      <section className="max-w-[1000px] mx-auto">
+      <section className="max-w-[1000px] mx-auto p-5">
         <div className="border border-gray-300 rounded-xl p-5">
           <h1 className="text-2xl font-semibold">Members unavailable</h1>
 
@@ -123,16 +117,15 @@ export default function UsersPage() {
     );
   }
 
-  if (isLoading) {
-    return <p>Loading members...</p>;
-  }
-
   if (errorMessage) {
-    return <p>{errorMessage}</p>;
+    return <p className="p-5">{errorMessage}</p>;
   }
 
   return (
-    <section className="max-w-[1000px] mx-auto" aria-labelledby="users-heading">
+    <section
+      className="max-w-[1000px] mx-auto p-5"
+      aria-labelledby="users-heading"
+    >
       {/* Heading */}
       <div className="mb-6">
         <h1 id="users-heading" className="text-3xl font-semibold">
@@ -153,6 +146,7 @@ export default function UsersPage() {
             href={`/businesses/${businessId}/users/access-level`}
             icon={KeyIcon}
             label="Access Levels"
+            setIsLoading={setIsLoading}
           />
 
           <Divider />
@@ -161,6 +155,7 @@ export default function UsersPage() {
             href={`/businesses/${businessId}/users/search`}
             icon={SearchIcon}
             label="Add Member"
+            setIsLoading={setIsLoading}
           />
         </section>
       )}
@@ -258,6 +253,7 @@ export default function UsersPage() {
                         hover:border-gray-300
                         transition-colors
                       "
+                    onClick={() => setIsLoading(true)}
                   >
                     {memberContent}
                   </Link>

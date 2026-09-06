@@ -11,20 +11,38 @@ import {
 import Image from "next/image";
 import { DashboardNavAccount } from "@/types/types";
 import PlaceHolderAccountWhite from "@/components/icons/placeholder-account-white.svg";
-import { signOut } from "next-auth/react";
-import { redirect } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
+import { redirect, usePathname, useRouter } from "next/navigation";
 
 type AccountDropdownProps = {
   currentAccount: DashboardNavAccount;
   theme: "dark" | "light";
   layout?: "default" | "compact-mobile";
+  onNavigate?: (href: string) => void;
 };
 
 export default function AccountDropdown({
   currentAccount,
   theme,
   layout = "default",
+  onNavigate,
 }: AccountDropdownProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { update } = useSession();
+
+  async function handleAccountManagementSelect(path: string) {
+    const href = path;
+
+    if (pathname === path || pathname.startsWith(path)) {
+      return;
+    }
+
+    onNavigate?.(href);
+
+    router.push(href);
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -81,12 +99,20 @@ export default function AccountDropdown({
 
       <DropdownMenuContent align="start">
         <DropdownMenuGroup>
-          <DropdownMenuItem onSelect={() => redirect("/settings/account")}>
+          <DropdownMenuItem
+            onSelect={() =>
+              void handleAccountManagementSelect("/settings/account")
+            }
+          >
             <BadgeCheckIcon />
             Account
           </DropdownMenuItem>
 
-          <DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() =>
+              void handleAccountManagementSelect("/settings/account/billing")
+            }
+          >
             <CreditCardIcon />
             Billing
           </DropdownMenuItem>

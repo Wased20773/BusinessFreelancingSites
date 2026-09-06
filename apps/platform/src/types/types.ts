@@ -183,4 +183,5 @@ export type DashboardNavProps = {
   businesses?: BusinessOwnerShip[];
   businessId?: string;
   locations?: LocationJson[];
+  onNavigate?: (href: string) => void;
 };

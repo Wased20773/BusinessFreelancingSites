@@ -17,6 +17,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
+import LoadingBar from "@/components/ui/LoadingBar";
+import { useSession } from "next-auth/react";
 
 export default function ApiKeyDetailsPage() {
   const params = useParams<{
@@ -44,6 +46,8 @@ export default function ApiKeyDetailsPage() {
   const [clickedDelete, setClickedDelete] = useState<boolean>(false);
   const [loadingDelete, setLoadingDelete] = useState<boolean>(false);
   const [deleteVerification, setDeleteVerification] = useState<string>("");
+
+  const { status } = useSession();
 
   useEffect(() => {
     async function getApiKeyData() {
@@ -103,7 +107,7 @@ export default function ApiKeyDetailsPage() {
     }
 
     void getApiKeyData();
-  }, [businessId, apiKeyId]);
+  }, []);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -250,17 +254,27 @@ export default function ApiKeyDetailsPage() {
     }
   }
 
+  if (status === "loading") {
+    return <LoadingBar />;
+  }
+
+  if (status === "unauthenticated") {
+    return <p className="p-5">You must be signed in to view this page.</p>;
+  }
+
   if (isLoading) {
-    return <p>Loading API key...</p>;
+    return <LoadingBar />;
   }
 
   if (!apiKeyData) {
-    return <p>{errorMessage ?? "API key could not be found."}</p>;
+    return (
+      <p className="p-5">{errorMessage ?? "API key could not be found."}</p>
+    );
   }
 
   return (
     <section
-      className="max-w-[1000px] mx-auto"
+      className="max-w-[1000px] mx-auto p-5"
       aria-labelledby="api-key-heading"
     >
       {/* Heading */}
@@ -268,6 +282,7 @@ export default function ApiKeyDetailsPage() {
         <Link
           href={`/businesses/${businessId}/api-keys`}
           aria-label="Return to API keys"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={42} />
         </Link>
@@ -292,7 +307,6 @@ export default function ApiKeyDetailsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
             <div>
               <p className="text-sm text-gray-500">Name</p>
-
               <p className="font-medium mt-1">{apiKeyData.name}</p>
             </div>
 
@@ -318,7 +332,6 @@ export default function ApiKeyDetailsPage() {
 
             <div>
               <p className="text-sm text-gray-500">Key Identifier</p>
-
               <p className="font-mono text-sm mt-1 break-all">
                 {apiKeyData.keyPrefix}••••••••
               </p>
@@ -333,7 +346,6 @@ export default function ApiKeyDetailsPage() {
           <div className="flex justify-between items-start gap-4">
             <div>
               <h2 className="text-xl font-semibold">Settings</h2>
-
               <p className="text-sm text-gray-500 mt-1">
                 Change the name or availability of this API key.
               </p>
@@ -442,13 +454,11 @@ export default function ApiKeyDetailsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
               <div>
                 <p className="text-sm text-gray-500">Key Name</p>
-
                 <p className="font-medium mt-1">{apiKeyData.name}</p>
               </div>
 
               <div>
                 <p className="text-sm text-gray-500">Availability</p>
-
                 <p className="font-medium mt-1">
                   {apiKeyData.isActive ? "Enabled" : "Disabled"}
                 </p>
@@ -466,7 +476,6 @@ export default function ApiKeyDetailsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
             <div>
               <p className="text-sm text-gray-500">Created</p>
-
               <p className="mt-1">
                 {formatDateTime(apiKeyData.createdAt, "date")}
               </p>
@@ -474,7 +483,6 @@ export default function ApiKeyDetailsPage() {
 
             <div>
               <p className="text-sm text-gray-500">Last Updated</p>
-
               <p className="mt-1">
                 {formatDateTime(apiKeyData.updatedAt, "date")}
               </p>
@@ -523,7 +531,6 @@ export default function ApiKeyDetailsPage() {
             <div className="flex justify-between items-start gap-5">
               <div>
                 <h2 className="text-xl font-semibold">Delete API Key?</h2>
-
                 <p className="text-gray-500 mt-1">
                   This action cannot be undone.
                 </p>

@@ -1,20 +1,23 @@
 "use client";
 
+import AddIcon from "@/components/icons/add.svg";
 import ArrowIcon from "@/components/icons/arrow";
+import GoogleLogoIcon from "@/components/icons/google-logo.svg";
+import PlaceholderAccountIcon from "@/components/icons/placeholder-account-black.svg";
 import SearchIcon from "@/components/icons/search.svg";
+import LoadingBar from "@/components/ui/LoadingBar";
+import { addUserToBusiness, searchForUser } from "@/lib/api/users";
+import type { BusinessUserJson, UserJson } from "@/types/types";
+
+import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
-import PlaceholderAccountIcon from "@/components/icons/placeholder-account-black.svg";
-import "../../page.css";
-import AddIcon from "@/components/icons/add.svg";
-import GoogleLogoIcon from "@/components/icons/google-logo.svg";
-import type { BusinessUserJson, UserJson } from "@/types/types";
-import { useState } from "react";
-import type { SubmitEvent } from "react";
-import axios from "axios";
-import { toast } from "sonner";
 import { useParams } from "next/navigation";
-import { addUserToBusiness, searchForUser } from "@/lib/api/users";
+import { useSession } from "next-auth/react";
+import { type SubmitEvent, useState } from "react";
+import { toast } from "sonner";
+
+import "../../page.css";
 
 export default function SearchPage() {
   const params = useParams<{
@@ -23,16 +26,25 @@ export default function SearchPage() {
 
   const businessId = params.businessId;
 
+  const { data: session, status } = useSession();
+
   const [searchData, setSearchData] = useState<UserJson | null>(null);
+
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const [hasSearched, setHasSearched] = useState<boolean>(false);
   const [addingUserEmail, setAddingUserEmail] = useState<string | null>(null);
+
+  const accessLevel = session?.user?.accessLevel;
+
+  const canAccessMembers = accessLevel === "owner" || accessLevel === "admin";
 
   async function searchUser(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
+
     const email = formData.get("email");
 
     if (typeof email !== "string" || !email.trim()) {
@@ -48,12 +60,18 @@ export default function SearchPage() {
 
     try {
       const searchToast = toast.promise<UserJson>(
-        searchForUser(businessId, { email: normalizedEmail }),
+        searchForUser(businessId, {
+          email: normalizedEmail,
+        }),
         {
           loading: "Searching for user...",
           success: "User found.",
           error: (error) => {
-            if (axios.isAxiosError<{ error?: string }>(error)) {
+            if (
+              axios.isAxiosError<{
+                error?: string;
+              }>(error)
+            ) {
               if (error.response?.status === 404) {
                 return {
                   message: "No user found.",
@@ -61,7 +79,6 @@ export default function SearchPage() {
                     "Check the email address and try again. The user may already belong to a business.",
                 };
               }
-
               return {
                 message: "Failed to search for a user.",
                 description:
@@ -69,7 +86,6 @@ export default function SearchPage() {
                   `Status code: ${error.response?.status ?? "No response"}`,
               };
             }
-
             return {
               message: "Unexpected error.",
               description: "Something went wrong while searching for a user.",
@@ -78,7 +94,7 @@ export default function SearchPage() {
         },
       );
 
-      const data: UserJson = await searchToast.unwrap();
+      const data = await searchToast.unwrap();
 
       setSearchData(data);
       setHasSearched(true);
@@ -88,7 +104,11 @@ export default function SearchPage() {
       setSearchData(null);
       setHasSearched(true);
 
-      if (axios.isAxiosError<{ error?: string }>(error)) {
+      if (
+        axios.isAxiosError<{
+          error?: string;
+        }>(error)
+      ) {
         if (error.response?.status === 404) {
           setErrorMessage("No user found.");
         } else {
@@ -118,12 +138,16 @@ export default function SearchPage() {
           loading: "Adding user to business...",
           success: (data) => ({
             message: "User added.",
-            description: `${data.user?.name ?? data.user?.email ?? "The user"} has the default ${
-              data.role?.accessLevel ?? "staff"
-            } access.`,
+            description: `${
+              data.user?.name ?? data.user?.email ?? "The user"
+            } has the default ${data.role?.accessLevel ?? "staff"} access.`,
           }),
           error: (error) => {
-            if (axios.isAxiosError<{ error?: string }>(error)) {
+            if (
+              axios.isAxiosError<{
+                error?: string;
+              }>(error)
+            ) {
               return {
                 message: "Failed to add user.",
                 description:
@@ -131,7 +155,6 @@ export default function SearchPage() {
                   `Status code: ${error.response?.status ?? "No response"}`,
               };
             }
-
             return {
               message: "Unexpected error.",
               description:
@@ -143,8 +166,11 @@ export default function SearchPage() {
 
       await addToast.unwrap();
 
-      // Remove the result after the user has been successfully added so they
-      // cannot be submitted again from this page.
+      /*
+       * Remove the result after the user
+       * has been successfully added so
+       * they cannot be submitted again.
+       */
       setSearchData(null);
       setErrorMessage(null);
       setHasSearched(false);
@@ -155,9 +181,39 @@ export default function SearchPage() {
     }
   }
 
+  /*
+   * Auth.js is still resolving the
+   * current session.
+   */
+  if (status === "loading" || isLoading) {
+    return <LoadingBar />;
+  }
+
+  if (status === "unauthenticated") {
+    return <p className="p-5">You must be signed in to view this page.</p>;
+  }
+
+  /*
+   * Only Owner/Admin can access
+   * member search and creation.
+   */
+  if (!canAccessMembers) {
+    return (
+      <section className="max-w-[1000px] mx-auto p-5">
+        <div className="border border-gray-300 rounded-xl p-5">
+          <h1 className="text-2xl font-semibold">Add Member unavailable</h1>
+
+          <p className="text-gray-500 mt-1">
+            Your current access level does not include member management.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
-      className="max-w-[1000px] mx-auto"
+      className="max-w-[1000px] mx-auto p-5"
       aria-labelledby="search-heading"
     >
       {/* Heading */}
@@ -166,6 +222,7 @@ export default function SearchPage() {
           href={`/businesses/${businessId}/users`}
           aria-label="Return to members"
           className="shrink-0"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={42} />
         </Link>
@@ -200,13 +257,15 @@ export default function SearchPage() {
             id="user-email"
             name="email"
             className="
-            min-w-0 flex-1
-            rounded-lg
-            border-[0.1rem] border-b-[0.2rem] border-blue-400
-            bg-gray-50
-            px-3 py-2
-            disabled:opacity-50
-          "
+              min-w-0 flex-1
+              rounded-lg
+              border-[0.1rem]
+              border-b-[0.2rem]
+              border-blue-400
+              bg-gray-50
+              px-3 py-2
+              disabled:opacity-50
+            "
             type="email"
             placeholder="user@email.com"
             autoComplete="email"
@@ -220,15 +279,18 @@ export default function SearchPage() {
             aria-label="Search for user"
             disabled={isLoading}
             className="
-            flex items-center justify-center
-            rounded-lg
-            border border-gray-300
-            px-4
-            hover:bg-gray-100
-            transition-colors
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-          "
+              flex
+              items-center
+              justify-center
+              rounded-lg
+              border
+              border-gray-300
+              px-4
+              hover:bg-gray-100
+              transition-colors
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+            "
           >
             <Image src={SearchIcon} alt="" width={20} height={20} />
           </button>
@@ -237,12 +299,7 @@ export default function SearchPage() {
         {/* Result */}
         <div className="border-t border-gray-200 mt-5 pt-5">
           {isLoading ? (
-            <div className="py-8 text-center">
-              <p className="font-medium">Searching...</p>
-              <p className="text-sm text-gray-500 mt-1">
-                Looking for an account with that email address.
-              </p>
-            </div>
+            <LoadingBar />
           ) : searchData ? (
             <div>
               <p className="text-sm font-medium text-gray-500 mb-2">
@@ -251,12 +308,15 @@ export default function SearchPage() {
 
               <div
                 className="
-                grid grid-cols-[auto_minmax(0,1fr)_auto]
-                items-center gap-3
-                border border-gray-200
-                rounded-lg
-                p-3
-              "
+                  grid
+                  grid-cols-[auto_minmax(0,1fr)_auto]
+                  items-center
+                  gap-3
+                  border
+                  border-gray-200
+                  rounded-lg
+                  p-3
+                "
               >
                 {/* Profile */}
                 <Image
@@ -291,18 +351,21 @@ export default function SearchPage() {
                 <button
                   type="button"
                   className="
-                  flex items-center justify-center
-                  rounded-lg
-                  border border-gray-300
-                  p-2
-                  hover:bg-gray-100
-                  transition-colors
-                  disabled:cursor-not-allowed
-                  disabled:opacity-50
-                "
+                    flex
+                    items-center
+                    justify-center
+                    rounded-lg
+                    border
+                    border-gray-300
+                    p-2
+                    hover:bg-gray-100
+                    transition-colors
+                    disabled:cursor-not-allowed
+                    disabled:opacity-50
+                  "
                   aria-label={`Add ${searchData.email}`}
                   disabled={addingUserEmail !== null}
-                  onClick={() => addUser(searchData.email)}
+                  onClick={() => void addUser(searchData.email)}
                 >
                   <Image src={AddIcon} alt="" width={18} height={18} />
                 </button>

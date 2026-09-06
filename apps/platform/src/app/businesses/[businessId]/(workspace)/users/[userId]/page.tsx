@@ -24,6 +24,7 @@ import {
 } from "@/lib/api/users";
 import { formatDateTime } from "@/lib/dateTime/formatDateTime";
 import { useSession } from "next-auth/react";
+import LoadingBar from "@/components/ui/LoadingBar";
 
 export default function UserDetailsPage() {
   const params = useParams<{
@@ -358,19 +359,19 @@ export default function UserDetailsPage() {
     if (status === "authenticated" && canViewMemberDetails) {
       void getUserData();
     }
-  }, [businessId, userId, status, canViewMemberDetails]);
+  }, []);
 
-  if (status === "loading") {
-    return <p>Loading session...</p>;
+  if (status === "loading" || isLoading) {
+    return <LoadingBar />;
   }
 
   if (status === "unauthenticated") {
-    return <p>You must be signed in to view this page.</p>;
+    return <p className="p-5">You must be signed in to view this page.</p>;
   }
 
   if (!canViewMemberDetails) {
     return (
-      <section className="max-w-[1000px] mx-auto">
+      <section className="max-w-[1000px] mx-auto p-5">
         <h1 className="text-3xl font-semibold">Member unavailable</h1>
 
         <p className="text-gray-500 mt-1">
@@ -380,21 +381,17 @@ export default function UserDetailsPage() {
     );
   }
 
-  if (isLoading) {
-    return <p>Loading user...</p>;
-  }
-
   if (errorMessage && !userData) {
-    return <p>{errorMessage}</p>;
+    return <p className="p-5">{errorMessage}</p>;
   }
 
   if (!userData?.user?.email) {
-    return <p>User not found.</p>;
+    return <p className="p-5">User not found.</p>;
   }
 
   return (
     <section
-      className="max-w-[1000px] mx-auto"
+      className="max-w-[1000px] mx-auto p-5"
       aria-labelledby="user-details-heading"
     >
       {/* Heading */}
@@ -403,6 +400,7 @@ export default function UserDetailsPage() {
           href={`/businesses/${businessId}/users`}
           aria-label="Return to members"
           className="shrink-0"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={42} />
         </Link>

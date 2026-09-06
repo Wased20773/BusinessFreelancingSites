@@ -17,15 +17,16 @@ export default function SideBar({
   navLinks,
   businesses,
   businessId,
+  onNavigate,
 }: DashboardNavProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden h-screen w-[250px] grid-rows-[auto_minmax(0,1fr)_auto] md:grid bg-gray-50 border-r border-gray-300">
+    <aside className="hidden h-screen w-[250px] grid-rows-[auto_minmax(0,1fr)_auto] md:grid bg-gray-50 border-r-[0.1rem] border-gray-300">
       {variant === "workspace" && businesses && (
         <>
           {/* Business Select */}
-          <BusinessesDropdown businesses={businesses} />
+          <BusinessesDropdown businesses={businesses} onNavigate={onNavigate} />
         </>
       )}
       {variant === "dashboard" && (
@@ -65,7 +66,7 @@ export default function SideBar({
 
       {/* Navigation Links */}
       <nav
-        className="border-b border-gray-300 overflow-y-auto min-h-0 border-t p-2"
+        className="border-t-[0.1rem] border-b-[0.1rem] border-gray-300 overflow-y-auto min-h-0 p-2"
         aria-label="Dashboard Navigation"
       >
         <ul className="flex flex-col gap-1">
@@ -77,6 +78,11 @@ export default function SideBar({
                 <Link
                   href={link.href}
                   aria-current={isSelected ? "page" : undefined}
+                  onClick={() => {
+                    if (!isSelected) {
+                      onNavigate?.(link.href);
+                    }
+                  }}
                   className={["sidebar-nav-links", isSelected && "selected"]
                     .filter(Boolean)
                     .join(" ")}
@@ -125,12 +131,17 @@ export default function SideBar({
             </div>
             </div> */}
         {variant === "workspace" && (
-          <AccountDropdown theme={"light"} currentAccount={currentAccount} />
+          <AccountDropdown
+            theme={"light"}
+            currentAccount={currentAccount}
+            onNavigate={onNavigate}
+          />
         )}
         {variant === "dashboard" && (
           <Link
             href={`/businesses/${businessId}`}
             className="flex items-center gap-2 px-2"
+            onClick={() => onNavigate?.(`/businesses/${businessId}`)}
           >
             <ArrowIcon direction="left" size={20} />
             <span>Go Back to Workspace</span>
@@ -140,6 +151,7 @@ export default function SideBar({
           <Link
             href={`/businesses/${businessId}`}
             className="flex items-center gap-2 px-2"
+            onClick={() => onNavigate?.(`/businesses/${businessId}`)}
           >
             <ArrowIcon direction="left" size={20} />
             <span>Go Back to Workspace</span>

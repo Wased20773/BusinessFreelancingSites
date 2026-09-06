@@ -9,14 +9,13 @@ import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { UserJson } from "@/types/types";
+import LoadingBar from "@/components/ui/LoadingBar";
 
 export default function AccountPage() {
   const { update } = useSession();
 
   const [accountData, setAccountData] = useState<UserJson | null>(null);
-
   const [isLoading, setIsLoading] = useState<boolean>(true);
-
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Name
@@ -245,20 +244,20 @@ export default function AccountPage() {
   }
 
   if (isLoading) {
-    return <p>Loading account...</p>;
+    return <LoadingBar />;
   }
 
   if (errorMessage) {
-    return <p>{errorMessage}</p>;
+    return <p className="p-5">{errorMessage}</p>;
   }
 
   if (!accountData) {
-    return <p>Account could not be found.</p>;
+    return <p className="p-5">Account could not be found.</p>;
   }
 
   return (
     <section
-      className="max-w-[1000px] mx-auto"
+      className="max-w-[1000px] mx-auto p-5"
       aria-labelledby="account-heading"
     >
       {/* Heading */}

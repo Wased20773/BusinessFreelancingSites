@@ -44,11 +44,13 @@ type BusinessesDropdownProps = {
     | "destructive"
     | null
     | undefined;
+  onNavigate?: (href: string) => void;
 };
 
 export default function BusinessesDropdown({
   businesses,
-  variant,
+  variant = "outline",
+  onNavigate,
 }: BusinessesDropdownProps) {
   const [isCreatingBusiness, setIsCreatingBusiness] = useState<boolean>(false);
   const [createErrorMessage, setCreateErrorMessage] = useState<string | null>(
@@ -61,6 +63,8 @@ export default function BusinessesDropdown({
   const { update } = useSession();
 
   async function handleBusinessSelect(businessId: string) {
+    const href = `/businesses/${businessId}`;
+
     if (
       pathname === `/businesses/${businessId}` ||
       pathname.startsWith(`/businesses/${businessId}/`)
@@ -68,11 +72,13 @@ export default function BusinessesDropdown({
       return;
     }
 
+    onNavigate?.(href);
+
     await update({
       businessId,
     });
 
-    router.push(`/businesses/${businessId}`);
+    router.push(href);
   }
 
   async function handleCreateBusiness(event: SubmitEvent<HTMLFormElement>) {
@@ -152,7 +158,6 @@ export default function BusinessesDropdown({
       setIsSubmitting(false);
     }
   }
-  if (!variant || variant === undefined) variant = "outline";
 
   return (
     <>

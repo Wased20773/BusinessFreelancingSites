@@ -1,6 +1,5 @@
 import { auth } from "@/auth";
 import WorkspaceLayoutClient from "@/components/layout/workspace/WorkspaceLayoutClient";
-import AuthSessionProvider from "@/components/providers/AuthSessionProvider";
 import ResponsiveToaster from "@/components/ui/ResponsiveToast";
 import { redirect } from "next/navigation";
 import { ReactNode } from "react";
@@ -19,7 +18,8 @@ export default async function WorkspaceLayout({
   const session = await auth();
 
   if (!session?.user) redirect("/dashboard/login");
-  // if (!session.user.accessLevel) return <div>something wrong happened</div>;
+  if (!session.user.accessLevel)
+    return <div>We were unable to get your access level, please try again</div>;
 
   const currentAccount = {
     name: session.user.name,

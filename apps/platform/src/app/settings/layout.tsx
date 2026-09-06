@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
-import MobileNavBar from "@/components/layout/dashboard/MobileNavBar";
-import SideBar from "@/components/layout/dashboard/SideBar";
 import AuthSessionProvider from "@/components/providers/AuthSessionProvider";
+import SettingsLayoutClient from "@/components/layout/settings/SettingsLayoutClient";
 import ResponsiveToaster from "@/components/ui/ResponsiveToast";
 import { settingsLinks } from "@/data/settingsLinks";
 import { redirect } from "next/navigation";
@@ -29,14 +28,13 @@ export default async function SettingsLayout({
     image: session.user.image,
     accessLevel: session.user.accessLevel,
   };
+
   /*
-   * We can still keep the last selected business
-   * available so "Go Back" returns to the workspace
+   * Keep the last selected business available
+   * so "Go Back" returns to the workspace
    * of the selected business.
    */
   const currentBusiness = {
-    id: session.user.businessId ?? "",
-    slug: session.user.businessSlug ?? "",
     name: session.user.businessName ?? "",
   };
 
@@ -46,25 +44,14 @@ export default async function SettingsLayout({
     <AuthSessionProvider>
       <ResponsiveToaster />
 
-      <div className="h-screen grid grid-rows-[auto_1fr] md:grid-cols-[auto_1fr] md:grid-rows-1">
-        <SideBar
-          currentBusiness={currentBusiness}
-          currentAccount={currentAccount}
-          variant="settings"
-          navLinks={navLinks}
-          businessId={session.user.businessId}
-        />
-
-        <MobileNavBar
-          currentBusiness={currentBusiness}
-          currentAccount={currentAccount}
-          variant="settings"
-          navLinks={navLinks}
-          businessId={session.user.businessId}
-        />
-
-        <main className="min-h-0 overflow-y-scroll p-5">{children}</main>
-      </div>
+      <SettingsLayoutClient
+        currentBusiness={currentBusiness}
+        currentAccount={currentAccount}
+        businessId={session.user.businessId}
+        navLinks={navLinks}
+      >
+        {children}
+      </SettingsLayoutClient>
     </AuthSessionProvider>
   );
 }

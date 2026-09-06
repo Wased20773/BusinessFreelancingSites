@@ -14,6 +14,7 @@ import { getApiKeys } from "@/lib/api/apiKeys";
 import "../page.css";
 import { formatDateTime } from "@/lib/dateTime/formatDateTime";
 import { useSession } from "next-auth/react";
+import LoadingBar from "@/components/ui/LoadingBar";
 
 export default function ApiKeysPage() {
   const params = useParams<{
@@ -95,14 +96,14 @@ export default function ApiKeysPage() {
     if (status === "authenticated" && canViewApiKeys) {
       void getApiKeyData();
     }
-  }, [businessId, status, canViewApiKeys]);
+  }, []);
 
   if (status === "loading") {
-    return <p>Loading session...</p>;
+    return <LoadingBar />;
   }
 
   if (status === "unauthenticated") {
-    return <p>You must be signed in to view this page.</p>;
+    return <p className="p-5">You must be signed in to view this page.</p>;
   }
 
   /*
@@ -110,7 +111,7 @@ export default function ApiKeysPage() {
    */
   if (isStaff || !canViewApiKeys) {
     return (
-      <section className="max-w-[1000px] mx-auto">
+      <section className="max-w-[1000px] mx-auto p-5">
         <div className="border border-gray-300 rounded-xl p-5">
           <h1 className="text-2xl font-semibold">API Keys unavailable</h1>
 
@@ -123,12 +124,12 @@ export default function ApiKeysPage() {
   }
 
   if (isLoading) {
-    return <p>Loading API keys...</p>;
+    return <LoadingBar />;
   }
 
   return (
     <section
-      className="max-w-[1000px] mx-auto"
+      className="max-w-[1000px] mx-auto p-5"
       aria-labelledby="api-keys-heading"
     >
       {/* Heading */}
@@ -151,6 +152,7 @@ export default function ApiKeysPage() {
             href={`/businesses/${businessId}/api-keys/create`}
             icon={AddIcon}
             label="Create API Key"
+            setIsLoading={setIsLoading}
           />
         </section>
       )}
@@ -261,6 +263,7 @@ export default function ApiKeysPage() {
                       hover:border-gray-300
                       transition-colors
                     "
+                    onClick={() => setIsLoading(true)}
                   >
                     {keyContent}
                   </Link>

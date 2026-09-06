@@ -1,6 +1,5 @@
 "use client";
 
-import ExternalLinkIcon from "@/components/icons/external-link.svg";
 import EditIcon from "@/components/icons/edit.svg";
 import RequiredField from "@/components/ui/RequiredField";
 import type { BusinessJson } from "@/types/types";
@@ -13,6 +12,7 @@ import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../page.css";
 import { ExternalLink } from "lucide-react";
+import LoadingBar from "@/components/ui/LoadingBar";
 
 const DOMAIN_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z0-9-]+)*\.[a-z]{2,}$/;
 
@@ -107,7 +107,7 @@ export default function SettingsPage() {
     if (status === "authenticated" && canViewSettings) {
       void getBusinessData();
     }
-  }, [businessId, status, canViewSettings]);
+  }, []);
 
   async function handleNameSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -313,11 +313,11 @@ export default function SettingsPage() {
   }
 
   if (status === "loading") {
-    return <p>Loading session...</p>;
+    return <LoadingBar />;
   }
 
   if (status === "unauthenticated") {
-    return <p>You must be signed in to view this page.</p>;
+    return <p className="p-5">You must be signed in to view this page.</p>;
   }
 
   /*
@@ -326,7 +326,7 @@ export default function SettingsPage() {
    */
   if (isDeveloper || !canViewSettings) {
     return (
-      <section className="max-w-[1000px] mx-auto">
+      <section className="max-w-[1000px] mx-auto p-5">
         <div className="border border-gray-300 rounded-xl p-5">
           <h1 className="text-2xl font-semibold">Settings unavailable</h1>
 
@@ -339,20 +339,19 @@ export default function SettingsPage() {
   }
 
   if (isLoading) {
-    return <p>Loading business settings...</p>;
+    return <LoadingBar />;
   }
-
   if (errorMessage) {
-    return <p>{errorMessage}</p>;
+    return <p className="p-5">{errorMessage}</p>;
   }
 
   if (!businessData) {
-    return <p>No business data was found.</p>;
+    return <p className="p-5">No business data was found.</p>;
   }
 
   return (
     <section
-      className="max-w-[1000px] mx-auto"
+      className="max-w-[1000px] mx-auto p-5"
       aria-labelledby="settings-heading"
     >
       {/* Heading */}

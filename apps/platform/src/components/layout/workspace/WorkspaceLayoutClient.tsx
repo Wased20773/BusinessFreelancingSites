@@ -14,6 +14,7 @@ import type {
 import { ReactNode, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
+import LoadingBar from "@/components/ui/LoadingBar";
 
 type WorkspaceLayoutClientProps = {
   children: ReactNode;
@@ -29,8 +30,12 @@ export default function WorkspaceLayoutClient({
   const [businesses, setBusinesses] = useState<BusinessOwnerShip[]>([]);
   const [locations, setLocations] = useState<LocationJson[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [navigationTarget, setNavigationTarget] = useState<string | null>(null);
 
   const pathname = usePathname();
+
+  const isNavigating =
+    navigationTarget !== null && pathname !== navigationTarget;
 
   const { data: session, update } = useSession();
 
@@ -74,7 +79,7 @@ export default function WorkspaceLayoutClient({
   }
 
   if (!selectedBusiness) {
-    return <div>something wrong happened</div>;
+    return <p>something wrong happened</p>;
   }
 
   const currentBusiness = {
@@ -98,6 +103,7 @@ export default function WorkspaceLayoutClient({
           currentAccount={activeAccount}
           navLinks={navLinks}
           businesses={businesses}
+          onNavigate={(href) => setNavigationTarget(href)}
         />
 
         <MobileNavBar
@@ -108,15 +114,18 @@ export default function WorkspaceLayoutClient({
           businesses={businesses}
           businessId={selectedBusiness.business.id}
           locations={locations}
+          onNavigate={(href) => setNavigationTarget(href)}
         />
       </div>
 
-      <div className="hidden md:block border-b border-gray-300">
+      <div className="hidden md:block border-b-[0.1rem] border-gray-300">
         {/* Location / Enter Dashboard control */}
         <EnterDashboardDropdown businessId={businessId} locations={locations} />
       </div>
 
-      <main className="min-h-0 overflow-y-auto p-5">{children}</main>
+      <main className="min-h-0 overflow-y-auto">
+        {isNavigating ? <LoadingBar /> : children}
+      </main>
     </div>
   );
 }
