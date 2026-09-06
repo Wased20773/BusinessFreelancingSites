@@ -2,17 +2,18 @@ import Image from "next/image";
 import Link from "next/link";
 import EditIcon from "@/components/icons/edit.svg";
 import { LocationJson } from "@/types/types";
+import type { Dispatch, SetStateAction } from "react";
 
 type LocationInfoParams = {
-  locationId: string;
   locationData: LocationJson;
   canManage: boolean;
+  setIsLoading: Dispatch<SetStateAction<boolean>>;
 };
 
 export default function LocationInfo({
-  locationId,
   locationData,
   canManage,
+  setIsLoading,
 }: LocationInfoParams) {
   return (
     <section
@@ -23,7 +24,11 @@ export default function LocationInfo({
         <h2 id="location-info-heading">Location Information</h2>
 
         {canManage && (
-          <Link href="location/edit" className="shrink-0">
+          <Link
+            href="location/edit"
+            className="shrink-0"
+            onClick={() => setIsLoading(true)}
+          >
             <Image
               src={EditIcon}
               alt=""

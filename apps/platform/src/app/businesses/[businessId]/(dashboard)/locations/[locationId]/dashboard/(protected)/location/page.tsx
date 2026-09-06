@@ -12,6 +12,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
+import PageState from "@/components/ui/PageState";
 
 const MONDAY_SUNDAY = [
   "Monday",
@@ -47,11 +48,8 @@ export default function LocationPage() {
   const { data: session, status } = useSession();
 
   const accessLevel = session?.user?.accessLevel;
-
   const canManageLocation = accessLevel === "owner" || accessLevel === "admin";
-
   const canViewLocation = canManageLocation || accessLevel === "staff";
-
   const isDeveloper = accessLevel === "developer";
 
   useEffect(() => {
@@ -263,47 +261,37 @@ export default function LocationPage() {
     }
   }
 
-  if (status === "loading") {
-    return <p>Loading session...</p>;
-  }
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canViewLocation,
+    pageTitle: "Location",
+    reason:
+      "Your current access level does not include location dashboard access.",
+  });
 
-  if (status === "unauthenticated") {
-    return <p>You must be signed in to view this page.</p>;
-  }
-
-  if (isDeveloper || !canViewLocation) {
-    return (
-      <section aria-labelledby="location-heading">
-        <h1 id="location-heading">Location</h1>
-
-        <div className="mt-[1.5rem]">
-          <div className="dashboard-card">
-            <h2 className="text-xl font-semibold">Location unavailable</h2>
-
-            <p className="text-gray-500 mt-1">
-              Your current access level does not include location dashboard
-              access.
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (isLoading) {
-    return <p>Loading location...</p>;
+  if (pageState) {
+    return pageState;
   }
 
   if (errorMessage && !locationData) {
-    return <p role="alert">{errorMessage}</p>;
+    return (
+      <p role="alert" className="p-5">
+        {errorMessage}
+      </p>
+    );
   }
 
   if (!locationData) {
-    return <p>This location could not be found.</p>;
+    return <p className="p-5">This location could not be found.</p>;
   }
 
   return (
-    <section aria-labelledby="location-heading">
+    <section
+      aria-labelledby="location-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       {/* HEADER */}
       <header className="flex items-center gap-3">
         <h1 className="truncate" id="location-heading">
@@ -314,9 +302,9 @@ export default function LocationPage() {
       <div className="mt-[1.5rem]">
         {/* LOCATION INFORMATION */}
         <LocationInfo
-          locationId={locationId}
           locationData={locationData}
           canManage={canManageLocation}
+          setIsLoading={setIsLoading}
         />
 
         <Divider />
@@ -330,10 +318,11 @@ export default function LocationPage() {
           activateBusinessDays={activateBusinessDays}
           handleRemoveBusinessDays={handleRemoveBusinessDays}
           canManage={canManageLocation}
+          setIsLoading={setIsLoading}
         />
 
         {errorMessage && (
-          <p role="alert" className="text-red-500 mt-3">
+          <p role="alert" className="p-5">
             {errorMessage}
           </p>
         )}

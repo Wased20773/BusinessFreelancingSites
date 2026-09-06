@@ -1,13 +1,17 @@
 "use client";
 
 import ArrowIcon from "@/components/icons/arrow";
-import type { LocationJson } from "@/types/types";
+import { ACCESS_LEVEL, type LocationJson } from "@/types/types";
 import axios from "axios";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { type SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../../page.css";
+import { useSession } from "next-auth/react";
+import PageState from "@/components/ui/PageState";
+import Divider from "@/components/layout/Divider";
+import BusinessDaysForm from "@/components/ui/days/BusinessDaysForm";
 
 const MONDAY_SUNDAY = [
   "Monday",
@@ -65,6 +69,19 @@ export default function EditBusinessDaysPage() {
   // When enabled, changed days and hours will also be updated
   // across their currently synchronized copies.
   const [applyToSynced, setApplyToSynced] = useState<boolean>(true);
+
+  const { data: session, status } = useSession();
+
+  const currentAccessLevel = session?.user?.accessLevel;
+
+  const canManageBusinessDays =
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin;
+
+  const canViewBusinessDays =
+    canManageBusinessDays || currentAccessLevel === ACCESS_LEVEL.staff;
+
+  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
     async function getLocationData() {
@@ -176,8 +193,10 @@ export default function EditBusinessDaysPage() {
       }
     }
 
-    void getLocationData();
-  }, [businessId, locationId]);
+    if (status === "authenticated" && canViewBusinessDays) {
+      void getLocationData();
+    }
+  }, [businessId, locationId, status, canViewBusinessDays]);
 
   /*
    * Checks whether two time ranges overlap.
@@ -754,353 +773,68 @@ export default function EditBusinessDaysPage() {
     }
   }
 
-  if (isLoading) {
-    return <p>Loading business days...</p>;
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canViewBusinessDays,
+    pageTitle: "Location",
+    reason:
+      "Your current access level does not allow business schedule management.",
+  });
+
+  if (pageState) {
+    return pageState;
   }
 
   if (errorMessage && (!locationData || !days)) {
-    return <p role="alert">{errorMessage}</p>;
+    return (
+      <p role="alert" className="p-5">
+        {errorMessage}
+      </p>
+    );
   }
 
   if (!locationData || !days) {
-    return <p>Business days could not be found.</p>;
+    return <p className="p-5">Business days could not be found.</p>;
   }
 
   return (
-    <section aria-labelledby="business-days-heading">
+    <section
+      aria-labelledby="business-days-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       {/* HEADER */}
       <header className="flex items-center gap-3">
         <Link
           href={`/businesses/${businessId}/locations/${locationId}/dashboard/location`}
           aria-label="Return to location"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={50} />
         </Link>
 
         <h1 className="truncate" id="business-days-heading">
-          Edit Business Days
+          {canManageBusinessDays ? "Edit Business Days" : "Business Days"}
         </h1>
       </header>
-
       <div className="mt-[1.5rem]">
-        <form
-          className="dashboard-card flex flex-col gap-5"
-          onSubmit={handleSubmit}
-        >
-          <fieldset>
-            <legend>Business Schedule</legend>
-
-            <p>
-              Set the regular opening and closing time for each day. Special
-              hours can be added separately when this location operates outside
-              of its normal schedule.
-            </p>
-
-            <div className="flex flex-col gap-5 mt-5">
-              {locationData.days.map((locationDay) => {
-                const day = locationDay.dayOfWeek as DayOfWeek;
-                const currentDay = days[day];
-
-                return (
-                  <div
-                    key={currentDay.id}
-                    className="dashboard-card !bg-neutral-100 flex flex-col"
-                  >
-                    {/* DAY HEADER */}
-                    <div className="flex justify-between items-center mb-5">
-                      <span className="font-semibold">{day}</span>
-
-                      <label
-                        htmlFor={`${day}-isClosed`}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <input
-                          id={`${day}-isClosed`}
-                          name={`${day}-isClosed`}
-                          type="checkbox"
-                          checked={currentDay.isClosed}
-                          onChange={(event) => {
-                            setDays((currentDays) => {
-                              if (!currentDays) {
-                                return currentDays;
-                              }
-
-                              return {
-                                ...currentDays,
-
-                                [day]: {
-                                  ...currentDays[day],
-
-                                  isClosed: event.target.checked,
-                                },
-                              };
-                            });
-                          }}
-                        />
-                        Closed
-                      </label>
-                    </div>
-
-                    {!currentDay.isClosed && (
-                      <>
-                        {/* ######################## */}
-                        {/* ##### REGULAR HOURS #### */}
-                        {/* ######################## */}
-
-                        <div>
-                          <p className="font-semibold">Regular Hours</p>
-
-                          <p className="text-sm text-gray-500 mb-3">
-                            Set the normal opening and closing time for this
-                            day.
-                          </p>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                              <label
-                                htmlFor={`${day}-openTime`}
-                                className="font-semibold"
-                              >
-                                Open
-                              </label>
-
-                              <input
-                                id={`${day}-openTime`}
-                                type="time"
-                                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
-                                value={currentDay.hour?.openTime ?? ""}
-                                onChange={(event) =>
-                                  updateRegularHour(
-                                    day,
-                                    "openTime",
-                                    event.target.value,
-                                  )
-                                }
-                              />
-                            </div>
-
-                            <div>
-                              <label
-                                htmlFor={`${day}-closeTime`}
-                                className="font-semibold"
-                              >
-                                Close
-                              </label>
-
-                              <input
-                                id={`${day}-closeTime`}
-                                type="time"
-                                className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
-                                value={currentDay.hour?.closeTime ?? ""}
-                                onChange={(event) =>
-                                  updateRegularHour(
-                                    day,
-                                    "closeTime",
-                                    event.target.value,
-                                  )
-                                }
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* ######################## */}
-                        {/* ##### SPECIAL HOURS #### */}
-                        {/* ######################## */}
-
-                        <div className="border-t border-gray-300 mt-5 pt-5">
-                          <div className="flex justify-between items-start gap-3">
-                            <div>
-                              <p className="font-semibold">Special Hours</p>
-
-                              <p className="text-sm text-gray-500">
-                                Add temporary or alternate operating hours for
-                                this day.
-                              </p>
-                            </div>
-
-                            <button
-                              type="button"
-                              className="border-[0.1rem] border-blue-400 rounded-lg px-3 py-1"
-                              onClick={() => addSpecialHour(day)}
-                            >
-                              Add Another
-                            </button>
-                          </div>
-
-                          {currentDay.specialHours.length > 0 && (
-                            <div className="flex flex-col gap-4 mt-4">
-                              {currentDay.specialHours.map(
-                                (specialHour, hourIdx) => (
-                                  <div
-                                    key={specialHour.id ?? hourIdx}
-                                    className="border-[0.1rem] border-gray-300 rounded-lg p-3"
-                                  >
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                      <div>
-                                        <label
-                                          htmlFor={`${day}-${hourIdx}-special-openTime`}
-                                          className="font-semibold"
-                                        >
-                                          Open
-                                        </label>
-
-                                        <input
-                                          id={`${day}-${hourIdx}-special-openTime`}
-                                          type="time"
-                                          className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
-                                          value={specialHour.openTime}
-                                          onChange={(event) =>
-                                            updateSpecialHour(
-                                              day,
-                                              hourIdx,
-                                              "openTime",
-                                              event.target.value,
-                                            )
-                                          }
-                                        />
-                                      </div>
-
-                                      <div>
-                                        <label
-                                          htmlFor={`${day}-${hourIdx}-special-closeTime`}
-                                          className="font-semibold"
-                                        >
-                                          Close
-                                        </label>
-
-                                        <input
-                                          id={`${day}-${hourIdx}-special-closeTime`}
-                                          type="time"
-                                          className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
-                                          value={specialHour.closeTime}
-                                          onChange={(event) =>
-                                            updateSpecialHour(
-                                              day,
-                                              hourIdx,
-                                              "closeTime",
-                                              event.target.value,
-                                            )
-                                          }
-                                        />
-                                      </div>
-                                    </div>
-
-                                    <div className="mt-3">
-                                      <label
-                                        htmlFor={`${day}-${hourIdx}-special-title`}
-                                        className="font-semibold"
-                                      >
-                                        Title
-                                      </label>
-
-                                      <input
-                                        id={`${day}-${hourIdx}-special-title`}
-                                        type="text"
-                                        className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
-                                        value={specialHour.title}
-                                        onChange={(event) =>
-                                          updateSpecialHour(
-                                            day,
-                                            hourIdx,
-                                            "title",
-                                            event.target.value,
-                                          )
-                                        }
-                                      />
-                                    </div>
-
-                                    <div className="mt-3">
-                                      <label
-                                        htmlFor={`${day}-${hourIdx}-special-note`}
-                                        className="font-semibold"
-                                      >
-                                        Note
-                                      </label>
-
-                                      <textarea
-                                        id={`${day}-${hourIdx}-special-note`}
-                                        className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
-                                        value={specialHour.note}
-                                        onChange={(event) =>
-                                          updateSpecialHour(
-                                            day,
-                                            hourIdx,
-                                            "note",
-                                            event.target.value,
-                                          )
-                                        }
-                                      />
-                                    </div>
-
-                                    <button
-                                      type="button"
-                                      className="mt-3 text-red-500"
-                                      onClick={() =>
-                                        void removeSpecialHour(day, hourIdx)
-                                      }
-                                    >
-                                      Remove
-                                    </button>
-                                  </div>
-                                ),
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </fieldset>
-
-          <div className="border-t border-gray-300 pt-5">
-            <label
-              htmlFor="apply-to-synced"
-              className="flex items-start gap-2 cursor-pointer"
-            >
-              <input
-                id="apply-to-synced"
-                name="apply-to-synced"
-                type="checkbox"
-                className="mt-1"
-                checked={applyToSynced}
-                onChange={(event) => setApplyToSynced(event.target.checked)}
-                disabled={isSaving}
-              />
-
-              <span>
-                <span className="font-semibold block">
-                  Apply to synchronized locations
-                </span>
-
-                <span className="text-sm text-gray-500">
-                  Keep synchronized days, regular hours, and special hours
-                  updated across their other synchronized locations. Turn this
-                  off to change only this location. When saving changes after
-                  applying synchronization, all other locations sync with the
-                  current saved changes.
-                </span>
-              </span>
-            </label>
-          </div>
-
-          {errorMessage && (
-            <p role="alert" className="text-red-500">
-              {errorMessage}
-            </p>
-          )}
-
-          <button
-            className="w-full md:w-fit bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            type="submit"
-            disabled={!canSubmit}
-          >
-            {isSaving ? "Saving..." : "Save Changes"}
-          </button>
-        </form>
+        <BusinessDaysForm
+          locationData={locationData}
+          days={days}
+          canManage={canManageBusinessDays}
+          isSaving={isSaving}
+          canSubmit={canSubmit}
+          errorMessage={errorMessage}
+          applyToSynced={applyToSynced}
+          setApplyToSynced={setApplyToSynced}
+          setDays={setDays}
+          handleSubmit={handleSubmit}
+          updateRegularHour={updateRegularHour}
+          addSpecialHour={addSpecialHour}
+          updateSpecialHour={updateSpecialHour}
+          removeSpecialHour={removeSpecialHour}
+        />
       </div>
     </section>
   );

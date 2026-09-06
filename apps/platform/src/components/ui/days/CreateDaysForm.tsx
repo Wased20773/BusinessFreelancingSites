@@ -1,11 +1,13 @@
 "use client";
 
+import ArrowIcon from "@/components/icons/arrow";
 import CalendarIcon from "@/components/icons/calendar.svg";
 import EditIcon from "@/components/icons/edit.svg";
 import type { LocationJson } from "@/types/types";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 
 type CreateDaysFormProps = {
   locationData: LocationJson;
@@ -13,6 +15,7 @@ type CreateDaysFormProps = {
   isActivatingDays: boolean;
   isDeleting: boolean;
   canManage: boolean;
+  setIsLoading: Dispatch<SetStateAction<boolean>>;
   activateBusinessDays: (isSynced: boolean) => Promise<void>;
   handleRemoveBusinessDays: () => Promise<void>;
 };
@@ -23,6 +26,7 @@ export default function CreateDaysForm({
   isActivatingDays,
   isDeleting,
   canManage,
+  setIsLoading,
   activateBusinessDays,
   handleRemoveBusinessDays,
 }: CreateDaysFormProps) {
@@ -48,18 +52,23 @@ export default function CreateDaysForm({
           <h2 id="business-days-heading">Business Days</h2>
         </div>
 
-        {hasBusinessDays && canManage && (
+        {hasBusinessDays && (
           <Link
-            href={"location/days/edit"}
+            href="location/days/edit"
             className="shrink-0"
-            aria-label="Edit business days"
+            aria-label={canManage ? "Edit business days" : "View business days"}
+            onClick={() => setIsLoading(true)}
           >
-            <Image
-              src={EditIcon}
-              alt=""
-              aria-hidden="true"
-              className="md:min-w-[30px] min-w-[50px] h-fit"
-            />
+            {canManage ? (
+              <Image
+                src={EditIcon}
+                alt=""
+                aria-hidden="true"
+                className="md:min-w-[30px] min-w-[50px] h-fit"
+              />
+            ) : (
+              <ArrowIcon direction="right" size={30} />
+            )}
           </Link>
         )}
       </div>
@@ -69,7 +78,7 @@ export default function CreateDaysForm({
           <p>
             Business days have not been activated for this location.{" "}
             {canManage &&
-              " Activating business days will allow you to manage which days this location is open or closed."}
+              "Activating business days will allow you to manage which days this location is open or closed."}
           </p>
           {canManage && (
             <>
@@ -102,21 +111,25 @@ export default function CreateDaysForm({
                   </span>
                 </label>
               )}
+
+              <button
+                className="w-full sm:w-[50%] sm:mx-auto md:w-fit md:ml-auto md:mr-0 block bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1 mt-5 disabled:opacity-50 disabled:cursor-not-allowed"
+                type="button"
+                disabled={isActivatingDays}
+                onClick={() => void activateBusinessDays(syncBusinessDays)}
+              >
+                {isActivatingDays ? "Activating..." : "Activate Business Days"}
+              </button>
             </>
           )}
-
-          <button
-            className="w-full sm:w-[50%] sm:mx-auto md:w-fit md:ml-auto md:mr-0 block bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1 mt-5 disabled:opacity-50 disabled:cursor-not-allowed"
-            type="button"
-            disabled={isActivatingDays}
-            onClick={() => void activateBusinessDays(syncBusinessDays)}
-          >
-            {isActivatingDays ? "Activating..." : "Activate Business Days"}
-          </button>
         </div>
       ) : (
         <div className="flex flex-col gap-3 mt-3">
-          <p>Manage which days this location is open or closed.</p>
+          {canManage ? (
+            <p>Manage days and their hours.</p>
+          ) : (
+            <p>View days and their hours.</p>
+          )}
 
           <div className="flex flex-col">
             {locationData.days.map((day) => (

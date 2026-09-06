@@ -15,7 +15,6 @@ import CategoryInfo from "@/components/ui/categories/CategoryInfo";
 import ItemsList from "@/components/ui/items/ItemsList";
 import CategoryList from "@/components/ui/categories/CategoriesList";
 import { useSession } from "next-auth/react";
-import LoadingBar from "@/components/ui/LoadingBar";
 import PageState from "@/components/ui/PageState";
 
 export default function CategoryPage() {
@@ -155,29 +154,37 @@ export default function CategoryPage() {
       </header>
 
       <div className="mt-[1.5rem]">
-        {/* ACTIONS */}
-        <nav className="dashboard-card">
-          <ActionItem
-            href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/items/create`}
-            icon={CreateButtonIcon}
-            label="Create Item"
-            setIsLoading={setIsLoading}
-          />
+        {/* Management Actions */}
+        {canManageMenu && (
+          <>
+            <nav className="dashboard-card">
+              <ActionItem
+                href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/items/create`}
+                icon={CreateButtonIcon}
+                label="Create Item"
+                setIsLoading={setIsLoading}
+              />
 
-          <Divider />
+              <Divider />
 
-          <ActionItem
-            href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/create`}
-            icon={CreateButtonIcon}
-            label="Create Subcategory"
-            setIsLoading={setIsLoading}
-          />
-        </nav>
+              <ActionItem
+                href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/create`}
+                icon={CreateButtonIcon}
+                label="Create Subcategory"
+                setIsLoading={setIsLoading}
+              />
+            </nav>
 
-        <Divider />
+            <Divider />
+          </>
+        )}
 
         {/* CATEGORY INFORMATION */}
-        <CategoryInfo categoryId={categoryId} categoryData={categoryData} />
+        <CategoryInfo
+          categoryId={categoryId}
+          categoryData={categoryData}
+          canManage={canManageMenu}
+        />
 
         <Divider />
 

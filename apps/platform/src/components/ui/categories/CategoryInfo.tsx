@@ -6,11 +6,13 @@ import EditIcon from "@/components/icons/edit.svg";
 type CategoryInfoParams = {
   categoryId: string;
   categoryData: CategoryJson;
+  canManage: boolean;
 };
 
 export default function CategoryInfo({
   categoryId,
   categoryData,
+  canManage,
 }: CategoryInfoParams) {
   return (
     <section
@@ -19,14 +21,16 @@ export default function CategoryInfo({
     >
       <div className="flex justify-between items-center">
         <h2 id="category-info-heading">Category Information</h2>
-        <Link href={`${categoryId}/edit`} className="shrink-0">
-          <Image
-            src={EditIcon}
-            alt=""
-            aria-hidden="true"
-            className="md:min-w-[30px] min-w-[50px] h-fit"
-          />
-        </Link>
+        {canManage && (
+          <Link href={`${categoryId}/edit`} className="shrink-0">
+            <Image
+              src={EditIcon}
+              alt=""
+              aria-hidden="true"
+              className="md:min-w-[30px] min-w-[50px] h-fit"
+            />
+          </Link>
+        )}
       </div>
 
       <div className="mt-3">

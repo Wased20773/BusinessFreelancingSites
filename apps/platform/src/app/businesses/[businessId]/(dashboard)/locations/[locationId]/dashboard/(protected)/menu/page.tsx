@@ -11,7 +11,6 @@ import ActionItem from "@/components/ui/ActionItem";
 import CreateButtonIcon from "@/components/icons/create-button.svg";
 import CategoryList from "@/components/ui/categories/CategoriesList";
 import { useSession } from "next-auth/react";
-import LoadingBar from "@/components/ui/LoadingBar";
 import PageState from "@/components/ui/PageState";
 
 export default function CategoriesPage() {
@@ -120,7 +119,7 @@ export default function CategoriesPage() {
 
       <div className="mt-[1.5rem]">
         {/* Management Actions */}
-        {canManageMenu && (
+        {!canManageMenu && (
           <>
             <nav className="dashboard-card" aria-label="Category actions">
               <ActionItem

@@ -3,13 +3,15 @@
 import ArrowIcon from "@/components/icons/arrow";
 import EditLocationForm from "@/components/ui/locations/EditLocationForm";
 import DeleteModal from "@/components/ui/modal/DeleteModal";
-import type { LocationJson } from "@/types/types";
+import { ACCESS_LEVEL, type LocationJson } from "@/types/types";
 
 import axios from "axios";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { type InputEvent, type SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
+import PageState from "@/components/ui/PageState";
 
 export default function EditLocationPage() {
   const params = useParams<{
@@ -29,6 +31,16 @@ export default function EditLocationPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+
+  const { data: session, status } = useSession();
+
+  const currentAccessLevel = session?.user?.accessLevel;
+
+  const canManageLocation =
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin;
+
+  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
     async function getLocationData() {
@@ -103,8 +115,10 @@ export default function EditLocationPage() {
       }
     }
 
-    void getLocationData();
-  }, [businessId, locationId]);
+    if (status === "authenticated" && canManageLocation) {
+      void getLocationData();
+    }
+  }, [businessId, locationId, status, canManageLocation]);
 
   function handleFormInput(event: InputEvent<HTMLFormElement>) {
     if (!locationData) {
@@ -302,27 +316,44 @@ export default function EditLocationPage() {
     }
   }
 
-  if (isLoading) {
-    return <p>Loading location...</p>;
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canManageLocation,
+    pageTitle: "Location",
+    reason: "Your current access level does not allow location management.",
+  });
+
+  if (pageState) {
+    return pageState;
   }
 
   if (errorMessage && !locationData) {
-    return <p role="alert">{errorMessage}</p>;
+    return (
+      <p role="alert" className="p-5">
+        {errorMessage}
+      </p>
+    );
   }
 
   if (!locationData) {
-    return <p>This location could not be found.</p>;
+    return <p className="p-5">This location could not be found.</p>;
   }
 
   const isProcessing = isSaving || isDeleting;
 
   return (
-    <section aria-labelledby="edit-location-heading">
+    <section
+      aria-labelledby="edit-location-heading"
+      className="max-w-[1000px] mx-auto p-5"
+    >
       {/* HEADER */}
       <header className="flex items-center gap-3">
         <Link
           href={`/businesses/${businessId}/locations/${locationId}/dashboard/location`}
           aria-label="Return to location"
+          onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={50} />
         </Link>

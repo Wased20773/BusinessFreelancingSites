@@ -171,21 +171,26 @@ export default function CategoryPage() {
 
       <div className="mt-[1.5rem]">
         {/* ACTIONS */}
-        <nav className="dashboard-card">
-          <ActionItem
-            href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}/items/create`}
-            icon={CreateButtonIcon}
-            label="Create Item"
-            setIsLoading={setIsLoading}
-          />
-        </nav>
+        {canManageMenu && (
+          <>
+            <nav className="dashboard-card">
+              <ActionItem
+                href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}/items/create`}
+                icon={CreateButtonIcon}
+                label="Create Item"
+                setIsLoading={setIsLoading}
+              />
+            </nav>
 
-        <Divider />
+            <Divider />
+          </>
+        )}
 
         {/* CATEGORY INFORMATION */}
         <CategoryInfo
           categoryId={subcategoryId}
           categoryData={subcategoryData}
+          canManage={canManageMenu}
         />
 
         <Divider />

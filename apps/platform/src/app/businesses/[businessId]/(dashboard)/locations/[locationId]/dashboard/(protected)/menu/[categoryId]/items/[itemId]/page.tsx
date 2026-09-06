@@ -1,9 +1,6 @@
 "use client";
 
 import ArrowIcon from "@/components/icons/arrow";
-import Divider from "@/components/layout/Divider";
-import CreateOptionForm from "@/components/ui/item-options/CreateOptionForm";
-import ExistingOptionsForm from "@/components/ui/item-options/ExistingOptionsForm";
 import EditItemForm from "@/components/ui/items/EditItemForm";
 import {
   createItemImage,
