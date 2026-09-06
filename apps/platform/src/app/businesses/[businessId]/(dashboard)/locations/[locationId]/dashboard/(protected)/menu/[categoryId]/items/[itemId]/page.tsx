@@ -35,6 +35,7 @@ import { toast } from "sonner";
 import "../../../../page.css";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import ItemOptionsForm from "@/components/ui/items/ItemOptionsForm";
 
 export default function EditItemPage() {
   const params = useParams<{
@@ -720,54 +721,38 @@ export default function EditItemPage() {
       <div className="mt-[1.5rem]">
         {/* ITEM FORM */}
         <EditItemForm
-          handleSubmit={handleSubmit}
-          handleFormInput={handleFormInput}
-          isProcessing={isProcessing}
+          canManage={canManageItem}
           itemData={itemData}
           imagePreview={imagePreview}
-          handleImageChange={handleImageChange}
-          handleDeleteImage={handleDeleteImage}
           canSubmit={canSubmit}
+          isProcessing={isProcessing}
           isSaving={isSaving}
-          handleDelete={handleDelete}
           isDeleting={isDeleting}
           isSynced={isSynced}
           setIsSynced={setIsSynced}
           hasSyncGroup={hasSyncGroup}
+          handleSubmit={handleSubmit}
+          handleFormInput={handleFormInput}
+          handleImageChange={handleImageChange}
+          handleDeleteImage={handleDeleteImage}
+          handleDelete={handleDelete}
         />
 
-        <Divider />
-
-        {/* ITEM OPTIONS */}
-        <section
-          className="dashboard-card p-4"
-          aria-labelledby="item-options-heading"
-        >
-          <h2 id="item-options-heading">Item Options</h2>
-
-          <h3 className="mt-3">Create an option below</h3>
-
-          {/* CREATE OPTION */}
-          <CreateOptionForm
-            handleCreateOption={handleCreateOption}
-            isCreatingOption={isCreatingOption}
-            hasSyncGroup={Boolean(itemData.syncGroupId)}
-            isSynced={isSynced}
-            setIsSynced={setIsSynced}
-          />
-
-          <h3 className="mt-3">Update any existing options below</h3>
-
-          {/* EXISTING OPTIONS */}
-          <ExistingOptionsForm
-            options={options}
-            processingOptionId={processingOptionId}
-            handleUpdateOption={handleUpdateOption}
-            handleMoveOption={handleMoveOption}
-            handleDeleteOption={handleDeleteOption}
-            isDeletingOption={isDeletingOption}
-          />
-        </section>
+        {/* ITEM OPTION FORM */}
+        <ItemOptionsForm
+          canManage={canManageItem}
+          options={options}
+          processingOptionId={processingOptionId}
+          isCreatingOption={isCreatingOption}
+          createOptionIsSynced={Boolean(itemData.syncGroupId)}
+          hasSyncGroup={hasSyncGroup}
+          isDeletingOption={isDeletingOption}
+          handleCreateOption={handleCreateOption}
+          handleUpdateOption={handleUpdateOption}
+          setCreateOptionIsSynced={setIsCreatingOption}
+          handleMoveOption={handleMoveOption}
+          handleDeleteOption={handleDeleteOption}
+        />
       </div>
     </section>
   );
