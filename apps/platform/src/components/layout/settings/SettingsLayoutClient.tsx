@@ -47,6 +47,7 @@ export default function SettingsLayoutClient({
         variant="settings"
         navLinks={navLinks}
         businessId={businessId}
+        onNavigate={(href) => setNavigationTarget(href)}
       />
 
       <main className="min-h-0 overflow-y-scroll">
