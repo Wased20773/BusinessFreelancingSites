@@ -102,7 +102,10 @@ export default function MobileNavBar({
           {variant === "workspace" && businesses && (
             <div className="flex-1">
               {/* Business Select */}
-              <BusinessesDropdown businesses={businesses} />
+              <BusinessesDropdown
+                businesses={businesses}
+                onNavigate={onNavigate}
+              />
             </div>
           )}
           {variant === "dashboard" && (
@@ -162,7 +165,12 @@ export default function MobileNavBar({
                   <Link
                     href={link.href}
                     aria-current={isSelected ? "page" : undefined}
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => {
+                      setIsOpen(false);
+                      if (!isSelected) {
+                        onNavigate?.(link.href);
+                      }
+                    }}
                     className={["mobile-nav-link", isSelected && "selected"]
                       .filter(Boolean)
                       .join(" ")}
@@ -176,17 +184,16 @@ export default function MobileNavBar({
         </nav>
 
         {/* Extras */}
-        {variant === "dashboard" && (
+        {variant === "workspace" && (
           <div className="p-3">
-            <Link
-              href={`/businesses/${businessId}`}
-              className="flex items-center justify-center gap-2 px-2 py-2"
-              onClick={() => setIsOpen(false)}
-            >
-              <ArrowIcon direction="left" size={20} theme="dark" />
-
-              <span className="text-gray-300">Go Back to Workspace</span>
-            </Link>
+            <div className="min-w-0 w-fit flex items-center py-2">
+              <AccountDropdown
+                theme="dark"
+                currentAccount={currentAccount}
+                setIsOpen={setIsOpen}
+                onNavigate={onNavigate}
+              />
+            </div>
           </div>
         )}
         {variant === "settings" && (
@@ -194,20 +201,29 @@ export default function MobileNavBar({
             <Link
               href={`/businesses/${businessId}`}
               className="flex items-center justify-center gap-2 px-2 py-2"
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                setIsOpen(false);
+                onNavigate?.(`/businesses/${businessId}`);
+              }}
             >
               <ArrowIcon direction="left" size={20} theme="dark" />
-
               <span className="text-gray-300">Go Back to Workspace</span>
             </Link>
           </div>
         )}
-
-        {variant === "workspace" && (
+        {variant === "dashboard" && (
           <div className="p-3">
-            <div className="min-w-0 w-fit flex items-center py-2">
-              <AccountDropdown theme="dark" currentAccount={currentAccount} />
-            </div>
+            <Link
+              href={`/businesses/${businessId}`}
+              className="flex items-center justify-center gap-2 px-2 py-2"
+              onClick={() => {
+                setIsOpen(false);
+                onNavigate?.(`/businesses/${businessId}`);
+              }}
+            >
+              <ArrowIcon direction="left" size={20} theme="dark" />
+              <span className="text-gray-300">Go Back to Workspace</span>
+            </Link>
           </div>
         )}
       </div>

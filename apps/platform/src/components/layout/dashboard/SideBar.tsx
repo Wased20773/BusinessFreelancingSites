@@ -137,7 +137,7 @@ export default function SideBar({
             onNavigate={onNavigate}
           />
         )}
-        {variant === "dashboard" && (
+        {variant === "settings" && (
           <Link
             href={`/businesses/${businessId}`}
             className="flex items-center gap-2 px-2"
@@ -147,7 +147,7 @@ export default function SideBar({
             <span>Go Back to Workspace</span>
           </Link>
         )}
-        {variant === "settings" && (
+        {variant === "dashboard" && (
           <Link
             href={`/businesses/${businessId}`}
             className="flex items-center gap-2 px-2"

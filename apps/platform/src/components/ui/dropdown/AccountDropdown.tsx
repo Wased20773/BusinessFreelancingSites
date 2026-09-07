@@ -13,11 +13,13 @@ import { DashboardNavAccount } from "@/types/types";
 import PlaceHolderAccountWhite from "@/components/icons/placeholder-account-white.svg";
 import { signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
+import { Dispatch, SetStateAction } from "react";
 
 type AccountDropdownProps = {
   currentAccount: DashboardNavAccount;
   theme: "dark" | "light";
   layout?: "default" | "compact-mobile";
+  setIsOpen?: Dispatch<SetStateAction<boolean>>;
   onNavigate?: (href: string) => void;
 };
 
@@ -25,23 +27,20 @@ export default function AccountDropdown({
   currentAccount,
   theme,
   layout = "default",
+  setIsOpen,
   onNavigate,
 }: AccountDropdownProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  async function handleAccountManagementSelect(path: string) {
-    const href = path;
-
-    if (pathname === path || pathname.startsWith(path)) {
+  function handleAccountManagementSelect(path: string) {
+    if (pathname === path) {
       return;
     }
 
-    onNavigate?.(href);
-
-    router.push(href);
+    onNavigate?.(path);
+    router.push(path);
   }
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -99,18 +98,24 @@ export default function AccountDropdown({
       <DropdownMenuContent align="start">
         <DropdownMenuGroup>
           <DropdownMenuItem
-            onSelect={() =>
-              void handleAccountManagementSelect("/settings/account")
-            }
+            onSelect={() => {
+              void handleAccountManagementSelect("/settings/account");
+              if (setIsOpen) {
+                setIsOpen(false);
+              }
+            }}
           >
             <BadgeCheckIcon />
             Account
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            onSelect={() =>
-              void handleAccountManagementSelect("/settings/account/billing")
-            }
+            onSelect={() => {
+              void handleAccountManagementSelect("/settings/account/billing");
+              if (setIsOpen) {
+                setIsOpen(false);
+              }
+            }}
           >
             <CreditCardIcon />
             Billing
