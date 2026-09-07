@@ -25,7 +25,7 @@ export default function SocialsPage() {
   const { data: session, status } = useSession();
 
   const [socialsData, setSocialsData] = useState<SocialJson[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const accessLevel = session?.user?.accessLevel;

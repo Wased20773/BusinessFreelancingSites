@@ -36,7 +36,7 @@ export default function UserDetailsPage() {
   const userId = params.userId;
 
   const [userData, setUserData] = useState<BusinessUserJson | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [isEdit, setIsEdit] = useState<boolean>(false);
