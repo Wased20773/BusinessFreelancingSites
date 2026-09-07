@@ -51,6 +51,16 @@ export default function ItemOptionsForm({
       >
         <h2 id="item-options-heading">Item Options</h2>
 
+        <p>
+          Options can be add-ons or variations of an item, each with its own
+          price. For example, added toppings or different sizes.
+        </p>
+
+        <p>
+          If the item has a price, option prices are added to it. If the item is
+          $0.00, the option price is used instead.
+        </p>
+
         {options.length === 0 ? (
           <p className="pt-4">This item has no options</p>
         ) : (
@@ -87,6 +97,16 @@ export default function ItemOptionsForm({
       aria-labelledby="item-options-heading"
     >
       <h2 id="item-options-heading">Item Options</h2>
+
+      <p>
+        Options can be add-ons or variations of an item, each with its own
+        price. For example, added toppings or different sizes.
+      </p>
+
+      <p>
+        If the item has a price, option prices are added to it. If the item is
+        $0.00, the option price is used instead.
+      </p>
 
       {/* CREATE OPTION */}
       <CreateOptionForm

@@ -119,7 +119,7 @@ export default function CategoriesPage() {
 
       <div className="mt-[1.5rem]">
         {/* Management Actions */}
-        {!canManageMenu && (
+        {canManageMenu && (
           <>
             <nav className="dashboard-card" aria-label="Category actions">
               <ActionItem

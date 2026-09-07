@@ -10,7 +10,7 @@ import axios from "axios";
 import { getCategories } from "@/lib/api/categories";
 import ReorderControls from "../controls/ReorderControls";
 import { useParams } from "next/navigation";
-import ArrowIcon from "@/components/icons/arrow";
+import ChevronIcon from "@/components/icons/chevron";
 
 type ItemsListParams = {
   categoryId: string;
@@ -165,7 +165,7 @@ export default function ItemsList({
                           aria-hidden="true"
                         />
                       ) : (
-                        <ArrowIcon direction="right" size={50} />
+                        <ChevronIcon direction="right" size={30} />
                       )}
                     </Link>
                   </div>
@@ -200,13 +200,13 @@ export default function ItemsList({
                     Order
                   </th>
 
-                  <th scope="col" className="px-3 py-2 font-semibold">
-                    Reorder
-                  </th>
+                  {canManage && (
+                    <th scope="col" className="px-3 py-2 font-semibold">
+                      Reorder
+                    </th>
+                  )}
 
-                  <th scope="col" className="w-12 px-3 py-2">
-                    <span className="sr-only">Open item</span>
-                  </th>
+                  <th scope="col" className="w-12 px-3 py-2"></th>
                 </tr>
               </thead>
 
@@ -261,7 +261,7 @@ export default function ItemsList({
                               aria-hidden="true"
                             />
                           ) : (
-                            <ArrowIcon direction="right" size={30} />
+                            <ChevronIcon direction="right" size={30} />
                           )}
                         </Link>
                       </td>

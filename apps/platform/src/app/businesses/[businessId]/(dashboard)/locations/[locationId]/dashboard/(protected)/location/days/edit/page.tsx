@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import "../../../page.css";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
-import Divider from "@/components/layout/Divider";
 import BusinessDaysForm from "@/components/ui/days/BusinessDaysForm";
 
 const MONDAY_SUNDAY = [

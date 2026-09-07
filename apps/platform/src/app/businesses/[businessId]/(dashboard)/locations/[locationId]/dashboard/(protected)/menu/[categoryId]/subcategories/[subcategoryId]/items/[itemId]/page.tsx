@@ -694,7 +694,7 @@ export default function EditItemPage() {
           <ArrowIcon direction="left" size={50} />
         </Link>
 
-        <h1 id="edit-item-heading">Edit Item</h1>
+        <h1 id="edit-item-heading">{canManageItem ? "Edit Item" : "Item"}</h1>
       </header>
 
       <div className="mt-[1.5rem]">
