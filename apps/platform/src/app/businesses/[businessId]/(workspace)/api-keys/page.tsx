@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import type { BusinessApiKeyJson } from "@/types/types";
 import { getApiKeys } from "@/lib/api/apiKeys";
 import "../page.css";
-import { formatDateTime } from "@/lib/dateTime/formatDateTime";
+import { formatDateTime } from "@/lib/time/formatDateTime";
 import { useSession } from "next-auth/react";
 import LoadingBar from "@/components/ui/LoadingBar";
 

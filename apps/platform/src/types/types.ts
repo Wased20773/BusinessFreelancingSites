@@ -185,3 +185,24 @@ export type DashboardNavProps = {
   locations?: LocationJson[];
   onNavigate?: (href: string) => void;
 };
+
+// Overview Page
+export type DashboardOverviewJson = {
+  id: string;
+  businessId: string;
+  address: string;
+  zip: string | null;
+  country: string | null;
+  state: string | null;
+  city: string | null;
+  parking: boolean;
+  isActive: boolean;
+  enableHours: boolean;
+  createdAt: string;
+  updatedAt: string;
+  days: LocationDayJson[];
+  categories: CategoryJson[];
+  items: ItemJson[];
+  contacts: ContactJson[];
+  socials: SocialJson[];
+};

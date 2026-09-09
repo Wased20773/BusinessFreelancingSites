@@ -6,7 +6,7 @@ import LoadingBar from "@/components/ui/LoadingBar";
 import { dashboardLinks } from "@/data/dashboardLinks";
 import type { DashboardNavAccount, DashboardNavBusiness } from "@/types/types";
 import { usePathname } from "next/navigation";
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 type DashboardLayoutClientProps = {
   children: ReactNode;
@@ -28,6 +28,16 @@ export default function DashboardLayoutClient({
   const [navigationFrom, setNavigationFrom] = useState<string | null>(null);
 
   const isNavigating = navigationFrom !== null && pathname === navigationFrom;
+
+  useEffect(() => {
+    if (navigationFrom !== null && pathname !== navigationFrom) {
+      const timeout = setTimeout(() => {
+        setNavigationFrom(null);
+      }, 0);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [pathname, navigationFrom]);
 
   const navLinks = dashboardLinks(businessId, locationId);
 

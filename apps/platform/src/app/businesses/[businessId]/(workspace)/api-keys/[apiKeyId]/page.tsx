@@ -4,7 +4,7 @@ import ArrowIcon from "@/components/icons/arrow";
 import EditIcon from "@/components/icons/edit.svg";
 import ExitIconBlack from "@/components/icons/exit-black.svg";
 import RequiredField from "@/components/ui/RequiredField";
-import { formatDateTime } from "@/lib/dateTime/formatDateTime";
+import { formatDateTime } from "@/lib/time/formatDateTime";
 import {
   deleteBusinessApiKey,
   getApiKeys,

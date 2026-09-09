@@ -97,6 +97,27 @@ export async function GET(
           },
         },
 
+        items: {
+          select: {
+            id: true,
+            locationId: true,
+            categoryId: true,
+            name: true,
+            description: true,
+            containsList: true,
+            calories: true,
+            price: true,
+            order: true,
+            isAvailable: true,
+            slug: true,
+            imageKey: true,
+            syncGroupId: true,
+            isSynced: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+
         contacts: {
           orderBy: [{ isPersonal: "asc" }, { createdAt: "desc" }],
           select: {
@@ -107,6 +128,21 @@ export async function GET(
             isPersonal: true,
             syncGroupId: true,
             isSynced: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+
+        socials: {
+          select: {
+            id: true,
+            locationId: true,
+            domain: true,
+            profileName: true,
+            url: true,
+            icon: true,
+            isSynced: true,
+            syncGroupId: true,
             createdAt: true,
             updatedAt: true,
           },

@@ -2,7 +2,7 @@
 
 import EditIcon from "@/components/icons/edit.svg";
 import RequiredField from "@/components/ui/RequiredField";
-import { formatDateTime } from "@/lib/dateTime/formatDateTime";
+import { formatDateTime } from "@/lib/time/formatDateTime";
 import axios from "axios";
 import Image from "next/image";
 import { SubmitEvent, useEffect, useState } from "react";

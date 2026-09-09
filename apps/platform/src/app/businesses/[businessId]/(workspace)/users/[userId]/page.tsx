@@ -22,7 +22,7 @@ import {
   getBusinessUsers,
   updateUsersAccessLevel,
 } from "@/lib/api/users";
-import { formatDateTime } from "@/lib/dateTime/formatDateTime";
+import { formatDateTime } from "@/lib/time/formatDateTime";
 import { useSession } from "next-auth/react";
 import LoadingBar from "@/components/ui/LoadingBar";
 

@@ -4,7 +4,7 @@ import { getApiKeys } from "@/lib/api/apiKeys";
 import { getBusiness } from "@/lib/api/business";
 import { getLocations } from "@/lib/api/locations";
 import { getBusinessUsers } from "@/lib/api/users";
-import { formatDateTime } from "@/lib/dateTime/formatDateTime";
+import { formatDateTime } from "@/lib/time/formatDateTime";
 import type { BusinessJson } from "@/types/types";
 import axios from "axios";
 import { ExternalLink } from "lucide-react";
