@@ -61,3 +61,15 @@ export function generateBusinessImageKey({
 }): string {
   return `businesses/${businessId}/image.${extension}`;
 }
+/**
+ * Builds the stablee S3 location for business logo.
+ */
+export function generateBusinessOriginalImageKey({
+  businessId,
+  extension,
+}: {
+  businessId: string;
+  extension: ImageExtension;
+}): string {
+  return `businesses/${businessId}/original.${extension}`;
+}

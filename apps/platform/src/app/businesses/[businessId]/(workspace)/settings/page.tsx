@@ -14,6 +14,7 @@ import "../page.css";
 import { ExternalLink } from "lucide-react";
 import PageState from "@/components/ui/PageState";
 import Divider from "@/components/layout/Divider";
+import Cropper, { type Area } from "react-easy-crop";
 
 const DOMAIN_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z0-9-]+)*\.[a-z]{2,}$/;
 
@@ -37,6 +38,14 @@ export default function SettingsPage() {
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // For Cropping
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState<number>(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
   // Business Name
   const [name, setName] = useState<string>("");
@@ -97,6 +106,7 @@ export default function SettingsPage() {
 
         setBusinessData(data);
         setImagePreview(data.imageKey ?? null);
+        setOriginalImageSrc(data.originalImageKey ?? data.imageKey ?? null);
         setName(data.name);
         setDomain(data.domain ?? "");
       } catch (error) {
@@ -120,19 +130,146 @@ export default function SettingsPage() {
   }, [businessId, status, canViewSettings]);
 
   function handleImageChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const selectedImage = event.target.files?.[0];
+    const selectedFile = event.target.files?.[0];
 
-    if (!selectedImage) {
+    if (!selectedFile) {
       return;
     }
 
-    if (imagePreview?.startsWith("blob:")) {
-      URL.revokeObjectURL(imagePreview);
+    if (cropImageSrc?.startsWith("blob:")) {
+      URL.revokeObjectURL(cropImageSrc);
     }
 
-    setImage(selectedImage);
-    setImagePreview(URL.createObjectURL(selectedImage));
+    if (
+      originalImageSrc?.startsWith("blob:") &&
+      originalImageSrc !== cropImageSrc
+    ) {
+      URL.revokeObjectURL(originalImageSrc);
+    }
+
+    const imageUrl = URL.createObjectURL(selectedFile);
+
+    setSelectedImage(selectedFile);
+    setOriginalImageSrc(imageUrl);
+    setCropImageSrc(imageUrl);
+
+    setCrop({
+      x: 0,
+      y: 0,
+    });
+
+    setZoom(1);
+    setCroppedAreaPixels(null);
     setErrorMessageImage(null);
+  }
+
+  function handleCropComplete(_croppedArea: Area, croppedAreaPixels: Area) {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }
+
+  async function createCroppedImage(
+    imageSrc: string,
+    cropArea: Area,
+    originalFile: File | null,
+  ): Promise<File> {
+    const sourceImage = document.createElement("img");
+
+    sourceImage.crossOrigin = "anonymous";
+    sourceImage.src = imageSrc;
+
+    await new Promise<void>((resolve, reject) => {
+      sourceImage.onload = () => resolve();
+      sourceImage.onerror = () => reject(new Error("Failed to load image."));
+    });
+
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      throw new Error("Could not create image canvas.");
+    }
+
+    /*
+     * We use the crop's actual pixel dimensions.
+     *
+     * This means we're NOT forcing everything into something
+     * like 200x200 or 500x500.
+     */
+    canvas.width = cropArea.width;
+    canvas.height = cropArea.height;
+
+    context.drawImage(
+      sourceImage,
+
+      cropArea.x,
+      cropArea.y,
+      cropArea.width,
+      cropArea.height,
+
+      0,
+      0,
+      cropArea.width,
+      cropArea.height,
+    );
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (result) => {
+          if (result) {
+            resolve(result);
+          } else {
+            reject(new Error("Failed to crop image."));
+          }
+        },
+
+        originalFile?.type ?? "image/webp",
+
+        0.95,
+      );
+    });
+
+    const imageType = originalFile?.type ?? "image/webp";
+
+    return new File([blob], originalFile?.name ?? "business-image.webp", {
+      type: imageType,
+    });
+  }
+
+  async function handleUseCrop() {
+    if (!cropImageSrc || !croppedAreaPixels) {
+      return;
+    }
+
+    try {
+      const croppedImage = await createCroppedImage(
+        cropImageSrc,
+        croppedAreaPixels,
+        selectedImage,
+      );
+
+      if (imagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+
+      setImage(croppedImage);
+      setImagePreview(URL.createObjectURL(croppedImage));
+
+      setCropImageSrc(null);
+    } catch (error) {
+      console.error("Error cropping business image:", error);
+
+      setErrorMessageImage(
+        "Something went wrong while cropping the business image.",
+      );
+    }
+  }
+
+  function handleEditCrop() {
+    if (!originalImageSrc) {
+      return;
+    }
+
+    setCropImageSrc(originalImageSrc);
   }
 
   async function handleImageSubmit(event: SubmitEvent<HTMLFormElement>) {
@@ -147,6 +284,10 @@ export default function SettingsPage() {
 
     const formData = new FormData();
     formData.append("image", image);
+
+    if (selectedImage) {
+      formData.append("originalImage", selectedImage);
+    }
 
     try {
       const imageRequest = businessData.imageKey
@@ -202,6 +343,7 @@ export default function SettingsPage() {
           ? {
               ...current,
               imageKey: updatedImageKey,
+              originalImageKey: originalImageSrc,
             }
           : current,
       );
@@ -211,6 +353,8 @@ export default function SettingsPage() {
       }
 
       setImage(null);
+      setSelectedImage(null);
+      setCropImageSrc(null);
       setImagePreview(updatedImageKey);
       setIsEditingImage(false);
     } catch (error) {
@@ -281,11 +425,19 @@ export default function SettingsPage() {
           ? {
               ...current,
               imageKey: null,
+              originalImageKey: null,
             }
           : current,
       );
 
+      if (originalImageSrc?.startsWith("blob:")) {
+        URL.revokeObjectURL(originalImageSrc);
+      }
+
       setImage(null);
+      setSelectedImage(null);
+      setCropImageSrc(null);
+      setOriginalImageSrc(null);
       setImagePreview(null);
       setIsEditingImage(false);
     } catch (error) {
@@ -308,8 +460,34 @@ export default function SettingsPage() {
       URL.revokeObjectURL(imagePreview);
     }
 
+    if (cropImageSrc?.startsWith("blob:")) {
+      URL.revokeObjectURL(cropImageSrc);
+    }
+
+    if (
+      originalImageSrc?.startsWith("blob:") &&
+      originalImageSrc !== cropImageSrc
+    ) {
+      URL.revokeObjectURL(originalImageSrc);
+    }
+
     setImage(null);
+    setSelectedImage(null);
+    setCropImageSrc(null);
+
+    setOriginalImageSrc(
+      businessData?.originalImageKey ?? businessData?.imageKey ?? null,
+    );
     setImagePreview(businessData?.imageKey ?? null);
+
+    setCrop({
+      x: 0,
+      y: 0,
+    });
+
+    setZoom(1);
+    setCroppedAreaPixels(null);
+
     setErrorMessageImage(null);
     setIsEditingImage(false);
   }
@@ -565,8 +743,9 @@ export default function SettingsPage() {
               <h2 className="text-xl font-semibold">Business Image</h2>
 
               <p className="text-sm text-gray-800 mt-1 max-w-[700px]">
-                Your business image is used throughout the platform and may be
-                displayed on your business website.
+                {canManageSettings
+                  ? "Your business image is used throughout the platform and may be displayed on your business website."
+                  : "A business image is used throughout the platform and may be displayed on your business website"}
               </p>
             </div>
 
@@ -606,16 +785,135 @@ export default function SettingsPage() {
         "
               />
 
-              {imagePreview && (
+              {cropImageSrc && (
                 <div className="mt-4">
-                  <Image
-                    src={imagePreview}
-                    alt="Business image preview"
-                    width={120}
-                    height={120}
-                    className="rounded-lg object-contain"
-                  />
+                  <p className="font-semibold">Crop Image</p>
+
+                  <p className="text-sm text-gray-500 mt-1">
+                    Move and zoom the image to select the area you want to use.
+                  </p>
+
+                  <div className="relative w-full h-[400px] mt-3 rounded-lg overflow-hidden bg-black">
+                    <Cropper
+                      image={cropImageSrc}
+                      crop={crop}
+                      zoom={zoom}
+                      aspect={1}
+                      onCropChange={setCrop}
+                      onZoomChange={setZoom}
+                      onCropComplete={handleCropComplete}
+                    />
+                  </div>
+
+                  <div className="flex justify-end mt-4">
+                    <button
+                      type="button"
+                      onClick={() => void handleUseCrop()}
+                      disabled={!croppedAreaPixels}
+                      className="
+          rounded-lg
+          border border-blue-500
+          bg-blue-100
+          px-4 py-2
+          text-blue-900
+          disabled:cursor-not-allowed
+          disabled:opacity-50
+        "
+                    >
+                      Done
+                    </button>
+                  </div>
                 </div>
+              )}
+
+              {!cropImageSrc && imagePreview && (
+                <>
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={handleEditCrop}
+                      className="block rounded-lg disabled:cursor-default"
+                      aria-label="Edit image crop"
+                    >
+                      <Image
+                        src={imagePreview}
+                        alt="Business image preview"
+                        width={120}
+                        height={120}
+                        className="
+          rounded-lg
+          object-contain
+          transition-opacity
+          hover:opacity-80
+        "
+                      />
+                    </button>
+
+                    <p className="text-sm text-gray-500 mt-2">
+                      Click the image to adjust the crop.
+                    </p>
+                  </div>
+                  <div className="flex justify-between gap-2 mt-4">
+                    <div>
+                      {businessData.imageKey && (
+                        <button
+                          type="button"
+                          disabled={isSavingImage}
+                          onClick={() => void handleDeleteImage()}
+                          className="
+                    rounded-lg
+                    border border-red-400
+                    px-4 py-2
+                    text-red-700
+                    hover:bg-red-50
+                    transition-colors
+                    disabled:opacity-50
+                  "
+                        >
+                          Delete Image
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        disabled={isSavingImage}
+                        onClick={cancelImageEdit}
+                        className="
+                  rounded-lg
+                  border border-gray-300
+                  px-4 py-2
+                  hover:bg-gray-100
+                  transition-colors
+                  disabled:opacity-50
+                "
+                      >
+                        Cancel
+                      </button>
+
+                      <button
+                        type="submit"
+                        disabled={isSavingImage || !image}
+                        className="
+                  rounded-lg
+                  border border-green-500
+                  bg-emerald-300
+                  px-4 py-2
+                  text-green-900
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
+                      >
+                        {isSavingImage
+                          ? "Saving..."
+                          : businessData.imageKey
+                            ? "Replace Image"
+                            : "Upload Image"}
+                      </button>
+                    </div>
+                  </div>
+                </>
               )}
 
               {errorMessageImage && (
@@ -623,67 +921,6 @@ export default function SettingsPage() {
                   {errorMessageImage}
                 </p>
               )}
-
-              <div className="flex justify-between gap-2 mt-4">
-                <div>
-                  {businessData.imageKey && (
-                    <button
-                      type="button"
-                      disabled={isSavingImage}
-                      onClick={() => void handleDeleteImage()}
-                      className="
-                rounded-lg
-                border border-red-400
-                px-4 py-2
-                text-red-700
-                hover:bg-red-50
-                transition-colors
-                disabled:opacity-50
-              "
-                    >
-                      Delete Image
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    disabled={isSavingImage}
-                    onClick={cancelImageEdit}
-                    className="
-              rounded-lg
-              border border-gray-300
-              px-4 py-2
-              hover:bg-gray-100
-              transition-colors
-              disabled:opacity-50
-            "
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={isSavingImage || !image}
-                    className="
-              rounded-lg
-              border border-green-500
-              bg-emerald-300
-              px-4 py-2
-              text-green-900
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
-                  >
-                    {isSavingImage
-                      ? "Saving..."
-                      : businessData.imageKey
-                        ? "Replace Image"
-                        : "Upload Image"}
-                  </button>
-                </div>
-              </div>
             </form>
           ) : (
             <div className="mt-4">

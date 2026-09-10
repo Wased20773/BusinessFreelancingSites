@@ -54,11 +54,12 @@ model BusinessApiKey {
 }
 
 model Business {
-  id        String   @id @default(uuid())
-  name      String
-  slug      String   @unique
-  domain    String?  @unique
-  imageKey  String?
+  id                 String   @id @default(uuid())
+  name               String
+  slug               String   @unique
+  domain             String?  @unique
+  imageKey           String?
+  originalImageKey   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -55,6 +55,7 @@ export async function GET(
             slug: true,
             domain: true,
             imageKey: true,
+            originalImageKey: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -79,10 +80,15 @@ export async function GET(
       ? await getObjectUrl(businessUser.business.imageKey)
       : null;
 
+    const originalImageUrl = businessUser.business.originalImageKey
+      ? await getObjectUrl(businessUser.business.originalImageKey)
+      : null;
+
     return NextResponse.json(
       {
         ...businessUser.business,
         imageKey: imageUrl,
+        originalImageKey: originalImageUrl,
         role: businessUser.role,
       },
       { status: 200 },
