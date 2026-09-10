@@ -539,7 +539,10 @@ export function checkTimeOverlap(
 /*
  *   Validates an images existence, size, and type.
  **/
-export async function imageRequestValidation(request: Request): Promise<
+export async function imageRequestValidation(
+  request: Request,
+  requireSyncSetting: boolean = true,
+): Promise<
   | NextResponse
   | {
       image: File;
@@ -562,7 +565,7 @@ export async function imageRequestValidation(request: Request): Promise<
       );
     }
 
-    if (isSynced !== "true" && isSynced !== "false") {
+    if (requireSyncSetting && isSynced !== "true" && isSynced !== "false") {
       return NextResponse.json(
         { error: "Synchronization setting was not found" },
         { status: 400 },
@@ -578,7 +581,7 @@ export async function imageRequestValidation(request: Request): Promise<
 
     if (image.size > MAX_IMAGE_SIZE) {
       return NextResponse.json(
-        { error: "The image cannot be larger than 2 MB" },
+        { error: "The image cannot be larger than 10 MB" },
         { status: 413 },
       );
     }

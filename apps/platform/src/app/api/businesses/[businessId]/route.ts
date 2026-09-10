@@ -1,6 +1,7 @@
 import { createDomainSlug } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
+import { getObjectUrl } from "@/lib/s3/get-url";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
@@ -53,6 +54,7 @@ export async function GET(
             name: true,
             slug: true,
             domain: true,
+            imageKey: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -73,9 +75,14 @@ export async function GET(
       );
     }
 
+    const imageUrl = businessUser.business.imageKey
+      ? await getObjectUrl(businessUser.business.imageKey)
+      : null;
+
     return NextResponse.json(
       {
         ...businessUser.business,
+        imageUrl,
         role: businessUser.role,
       },
       { status: 200 },

@@ -681,7 +681,7 @@ export default function EditItemPage() {
     return pageState;
   }
 
-  if (errorMessage && !itemData) {
+  if (errorMessage) {
     return (
       <p role="alert" className="p-5">
         {errorMessage}

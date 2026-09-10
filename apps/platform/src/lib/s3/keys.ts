@@ -4,7 +4,7 @@ const IMAGE_EXTENSION_BY_CONTENT_TYPE = {
   "image/webp": "webp",
 } as const;
 
-type ImageExtension = "jpg" | "png" | "webp";
+export type ImageExtension = "jpg" | "png" | "webp";
 
 export type SupportedImageContentType =
   keyof typeof IMAGE_EXTENSION_BY_CONTENT_TYPE;
@@ -47,4 +47,17 @@ export function generateSyncedItemImageKey({
   extension: string;
 }): string {
   return `businesses/${businessId}/items/synced/${syncGroupId}/image.${extension}`;
+}
+
+/**
+ * Builds the stablee S3 location for business logo.
+ */
+export function generateBusinessImageKey({
+  businessId,
+  extension,
+}: {
+  businessId: string;
+  extension: ImageExtension;
+}): string {
+  return `business/${businessId}/image.${extension}`;
 }
