@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
+import { getObjectUrl } from "@/lib/s3/get-url";
 
 type BusinessToken = {
   userId?: string;
@@ -14,6 +15,7 @@ type BusinessToken = {
   businessId?: string;
   businessSlug?: string;
   businessName?: string;
+  businessImageKey?: string | null;
   accessLevel?: "developer" | "owner" | "admin" | "staff";
 };
 
@@ -132,6 +134,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               select: {
                 name: true,
                 slug: true,
+                imageKey: true,
               },
             },
 
@@ -147,6 +150,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           businessToken.businessId = businessUser.businessId;
           businessToken.businessSlug = businessUser.business.slug;
           businessToken.businessName = businessUser.business.name;
+
+          /*
+           * The database stores the actual S3 image key.
+           *
+           * The session stores the presigned URL so the
+           * frontend can use it directly as an Image src.
+           */
+          businessToken.businessImageKey = businessUser.business.imageKey
+            ? await getObjectUrl(businessUser.business.imageKey)
+            : null;
+
           businessToken.accessLevel = businessUser.role.accessLevel;
         } else {
           /*
@@ -159,6 +173,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           delete businessToken.businessId;
           delete businessToken.businessSlug;
           delete businessToken.businessName;
+          delete businessToken.businessImageKey;
           delete businessToken.accessLevel;
         }
       }
@@ -196,6 +211,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       if (businessToken.businessName) {
         session.user.businessName = businessToken.businessName;
+      }
+
+      if (businessToken.businessImageKey !== undefined) {
+        session.user.businessImageKey = businessToken.businessImageKey;
       }
 
       if (businessToken.accessLevel) {

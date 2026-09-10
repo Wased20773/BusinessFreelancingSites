@@ -33,6 +33,7 @@ export default async function DashboardLayout({
 
   const currentBusiness = {
     name: session.user.businessName,
+    imageKey: session.user.businessImageKey || null,
   };
 
   const currentAccount = {

@@ -82,7 +82,7 @@ export async function GET(
     return NextResponse.json(
       {
         ...businessUser.business,
-        imageUrl,
+        imageKey: imageUrl,
         role: businessUser.role,
       },
       { status: 200 },

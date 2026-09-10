@@ -157,6 +157,7 @@ export type HourJson = Omit<Hour, "createdAt" | "updatedAt"> & {
  */
 export type DashboardNavBusiness = {
   name: string;
+  imageKey: string | null;
 };
 
 /*

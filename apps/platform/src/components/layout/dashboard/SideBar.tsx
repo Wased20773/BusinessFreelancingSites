@@ -33,13 +33,17 @@ export default function SideBar({
         <>
           {/* Client Logo + Name */}
           <div className=" border-gray-300 p-2 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-1">
-            <Image
-              src={Logo}
-              alt="Client logo"
-              width={35}
-              height={35}
-              loading="eager"
-            />
+            {currentBusiness.imageKey && (
+              <Image
+                src={currentBusiness.imageKey}
+                alt=""
+                aria-hidden="true"
+                width={35}
+                height={35}
+                loading="eager"
+              />
+            )}
+
             <span className="min-w-0 text-gray-900 font-semibold px-2 truncate">
               {currentBusiness.name}
             </span>
@@ -48,11 +52,12 @@ export default function SideBar({
       )}
       {variant === "settings" && (
         <>
-          {/* Client Logo + Name */}
+          {/* BP Logo + Name */}
           <div className=" border-gray-300 p-2 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-1">
             <Image
               src={Logo}
-              alt="Client logo"
+              alt=""
+              aria-hidden="true"
               width={35}
               height={35}
               loading="eager"
@@ -97,39 +102,6 @@ export default function SideBar({
 
       {/* Extras */}
       <div className="min-w-0 w-fit flex flex-col gap-3 p-2">
-        {/* <Link
-          className={["sidebar-nav-links", settingsSelected && "selected"]
-            .filter(Boolean)
-            .join(" ")}
-          href={"/dashboard/settings"}
-        >
-          <Image
-            src={SettingsIconBlack}
-            alt="Settings icon"
-            width={35}
-            height={35}
-            loading="eager"
-          />
-          <span>Settings</span>
-        </Link>
-        <div className="min-w-0 grid grid-cols-[auto_minmax(0,1fr)] items-center px-3 py-1">
-          <Image
-            className="border-[2px] border-gray-900 rounded-[50%] overflow-hidden"
-            src={currentAccount.image || PlaceHolderAccountBlack}
-            alt="Account profile"
-            height={35}
-            width={35}
-            loading="eager"
-          />
-          <div className="min-w-0 flex flex-col px-2">
-            <span className="text-gray-900 truncate">
-              {currentAccount.name}
-            </span>
-            <span className="text-gray-500 truncate">
-              {currentAccount.accessLevel}
-            </span>
-            </div>
-            </div> */}
         {variant === "workspace" && (
           <AccountDropdown
             theme={"light"}

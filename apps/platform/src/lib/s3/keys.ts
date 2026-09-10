@@ -59,5 +59,5 @@ export function generateBusinessImageKey({
   businessId: string;
   extension: ImageExtension;
 }): string {
-  return `business/${businessId}/image.${extension}`;
+  return `businesses/${businessId}/image.${extension}`;
 }
