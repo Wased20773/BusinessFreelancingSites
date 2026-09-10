@@ -1,11 +1,12 @@
 "use client";
 
-import ArrowIcon from "@/components/icons/arrow";
+import PageHeading from "@/components/ui/PageHeader";
+import PageState from "@/components/ui/PageState";
 import EditSocialForm from "@/components/ui/socials/EditSocialForm";
 import { SOCIAL_PLATFORMS } from "@/data/socials";
-import type { SocialJson } from "@/types/types";
+import { ACCESS_LEVEL, type SocialJson } from "@/types/types";
 import axios from "axios";
-import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import { InputEvent, SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -50,6 +51,13 @@ export default function EditSocialPage() {
   const [previewUrl, setPreviewUrl] = useState<string>("https://");
 
   const [profileName, setProfileName] = useState<string>("");
+
+  const { data: session, status } = useSession();
+  const currentAccessLevel = session?.user?.accessLevel;
+  const canManageSocials =
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin;
+  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
     async function getSocialData() {
@@ -128,8 +136,10 @@ export default function EditSocialPage() {
       }
     }
 
-    void getSocialData();
-  }, [businessId, locationId, socialId]);
+    if (status === "authenticated" && canManageSocials) {
+      void getSocialData();
+    }
+  }, [businessId, locationId, socialId, status, canManageSocials]);
 
   function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
@@ -293,34 +303,46 @@ export default function EditSocialPage() {
     }
   }
 
-  if (isLoading) {
-    return <p>Loading social</p>;
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canManageSocials,
+    pageTitle: "Socials",
+    reason: "Your current access level does not include social management.",
+  });
+
+  if (pageState) {
+    return pageState;
   }
 
   if (errorMessage && !socialData) {
-    return <p>{errorMessage}</p>;
+    return <p className="p-5">{errorMessage}</p>;
   }
 
   if (!socialData) {
-    return <p>This social could not be found.</p>;
+    return <p className="p-5">This social could not be found.</p>;
   }
 
   const isProcessing = isSaving || isDeleting;
 
   return (
-    <section aria-labelledby="edit-social-heading">
-      <header className="flex items-center gap-3">
-        <Link
-          href={`/businesses/${businessId}/locations/${locationId}/dashboard/socials`}
-          aria-label="Return to socials"
-        >
-          <ArrowIcon direction="left" size={50} />
-        </Link>
+    <section
+      aria-labelledby="edit-social-heading"
+      className="max-w-[1000px] mx-auto p-5 pt-0"
+    >
+      {/* HEADER */}
+      <PageHeading
+        businessId={businessId}
+        locationId={locationId}
+        path="socials"
+        ariaLabel="Return to socials"
+        setIsLoading={setIsLoading}
+        headingId="edit-social-heading"
+        heading="Edit Social"
+      />
 
-        <h1 id="edit-social-heading">Edit Social</h1>
-      </header>
-
-      <div className="mt-[1.5rem]">
+      <div className="mt-[0.5rem]">
         <EditSocialForm
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}

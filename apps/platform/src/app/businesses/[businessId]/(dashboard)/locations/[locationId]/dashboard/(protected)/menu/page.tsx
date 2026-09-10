@@ -112,10 +112,10 @@ export default function CategoriesPage() {
 
   return (
     <section
-      aria-labelledby="categories-heading"
+      aria-labelledby="menu-heading"
       className="max-w-[1000px] mx-auto p-5"
     >
-      <h1 id="categories-heading">Menu</h1>
+      <h1 id="menu-heading">Menu</h1>
 
       <div className="mt-[1.5rem]">
         {/* Management Actions */}

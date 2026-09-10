@@ -1,17 +1,16 @@
 "use client";
 
-import ArrowIcon from "@/components/icons/arrow";
 import { ACCESS_LEVEL, type SocialJson } from "@/types/types";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
 import axios from "axios";
-import Link from "next/link";
 import { SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 import "../../page.css";
 import { SOCIAL_PLATFORMS } from "@/data/socials";
 import CreateSocialForm from "@/components/ui/socials/CreateSocialForm";
 import { useParams, useRouter } from "next/navigation";
+import PageHeading from "@/components/ui/PageHeader";
 
 type SocialPlatform = keyof typeof SOCIAL_PLATFORMS;
 
@@ -34,13 +33,10 @@ export default function CreateSocialPage() {
   const router = useRouter();
 
   const { data: session, status } = useSession();
-
   const currentAccessLevel = session?.user?.accessLevel;
-
   const canCreateSocial =
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin;
-
   const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
@@ -158,21 +154,20 @@ export default function CreateSocialPage() {
   return (
     <section
       aria-labelledby="create-social-heading"
-      className="max-w-[1000px] mx-auto p-5"
+      className="max-w-[1000px] mx-auto p-5 pt-0"
     >
-      <header className="flex items-center gap-3">
-        <Link
-          href={`/businesses/${businessId}/locations/${locationId}/dashboard/socials`}
-          aria-label="Return to socials"
-          onClick={() => setIsLoading(true)}
-        >
-          <ArrowIcon direction="left" size={50} />
-        </Link>
+      {/* HEADER */}
+      <PageHeading
+        businessId={businessId}
+        locationId={locationId}
+        path="socials"
+        ariaLabel="Return to socials"
+        setIsLoading={setIsLoading}
+        headingId="create-social-heading"
+        heading="Create Social"
+      />
 
-        <h1 id="create-social-heading">Create Social</h1>
-      </header>
-
-      <div className="mt-[1.5rem]">
+      <div className="mt-[0.5rem]">
         <CreateSocialForm
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}

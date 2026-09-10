@@ -1,11 +1,9 @@
 "use client";
 
-import ArrowIcon from "@/components/icons/arrow";
 import CreateButtonIcon from "@/components/icons/create-button.svg";
 import ActionItem from "@/components/ui/ActionItem";
 import Divider from "@/components/layout/Divider";
 import axios from "axios";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -15,6 +13,7 @@ import ItemsList from "@/components/ui/items/ItemsList";
 import CategoryInfo from "@/components/ui/categories/CategoryInfo";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import PageHeading from "@/components/ui/PageHeader";
 
 export default function CategoryPage() {
   const params = useParams<{
@@ -153,23 +152,21 @@ export default function CategoryPage() {
 
   return (
     <section
-      aria-labelledby="category-heading"
-      className="max-w-[1000px] mx-auto p-5"
+      aria-labelledby="subcategory-heading"
+      className="max-w-[1000px] mx-auto p-5 pt-0"
     >
       {/* HEADER */}
-      <header className="flex items-center gap-3">
-        <Link
-          href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}`}
-          aria-label="Return to parent category"
-          onClick={() => setIsLoading(true)}
-        >
-          <ArrowIcon direction="left" size={50} />
-        </Link>
+      <PageHeading
+        businessId={businessId}
+        locationId={locationId}
+        path={`menu/${categoryId}`}
+        ariaLabel="Return to parent category"
+        setIsLoading={setIsLoading}
+        headingId="subcategory-heading"
+        heading={subcategoryData.name}
+      />
 
-        <h1 id="category-heading">{subcategoryData.name}</h1>
-      </header>
-
-      <div className="mt-[1.5rem]">
+      <div className="mt-[0.5rem]">
         {/* ACTIONS */}
         {canManageMenu && (
           <>

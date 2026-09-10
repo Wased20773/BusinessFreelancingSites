@@ -268,7 +268,7 @@ export default function LocationPage() {
     canView: canViewLocation,
     pageTitle: "Location",
     reason:
-      "Your current access level does not include location dashboard access.",
+      "Your current access level does not include dashboard location access.",
   });
 
   if (pageState) {

@@ -1,16 +1,15 @@
 "use client";
 
-import ArrowIcon from "@/components/icons/arrow";
 import EditCategoryForm from "@/components/ui/categories/EditCategoryForm";
 import { ACCESS_LEVEL, type CategoryJson } from "@/types/types";
 import axios from "axios";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { InputEvent, SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../../../../../page.css";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import PageHeading from "@/components/ui/PageHeader";
 
 export default function EditSubcategoryPage() {
   const params = useParams<{
@@ -316,21 +315,20 @@ export default function EditSubcategoryPage() {
   return (
     <section
       aria-labelledby="edit-subcategory-heading"
-      className="max-w-[1000px] mx-auto p-5"
+      className="max-w-[1000px] mx-auto p-5 pt-0"
     >
-      <header className="flex items-center gap-3">
-        <Link
-          href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`}
-          aria-label="Return to subcategory"
-          onClick={() => setIsLoading(true)}
-        >
-          <ArrowIcon direction="left" size={50} />
-        </Link>
+      {/* HEADER */}
+      <PageHeading
+        businessId={businessId}
+        locationId={locationId}
+        path={`menu/${categoryId}/subcategories/${subcategoryId}`}
+        ariaLabel="Return to subcategory"
+        setIsLoading={setIsLoading}
+        headingId="edit-subcategory-heading"
+        heading="Edit Subcategory"
+      />
 
-        <h1 id="edit-subcategory-heading">Edit Subcategory</h1>
-      </header>
-
-      <div className="mt-[1.5rem]">
+      <div className="mt-[0.5rem]">
         <EditCategoryForm
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}

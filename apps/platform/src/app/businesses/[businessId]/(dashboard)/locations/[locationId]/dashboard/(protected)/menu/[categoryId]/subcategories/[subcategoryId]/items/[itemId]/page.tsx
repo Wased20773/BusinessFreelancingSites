@@ -1,9 +1,7 @@
 "use client";
 
-import ArrowIcon from "@/components/icons/arrow";
 import { ACCESS_LEVEL, type ItemJson } from "@/types/types";
 import axios from "axios";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
   ChangeEvent,
@@ -32,6 +30,7 @@ import ItemOptionsForm from "@/components/ui/items/ItemOptionsForm";
 import EditItemForm from "@/components/ui/items/EditItemForm";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import PageHeading from "@/components/ui/PageHeader";
 
 export default function EditItemPage() {
   const params = useParams<{
@@ -683,21 +682,20 @@ export default function EditItemPage() {
   return (
     <section
       aria-labelledby="edit-item-heading"
-      className="max-w-[1000px] mx-auto p-5"
+      className="max-w-[1000px] mx-auto p-5 pt-0"
     >
-      <header className="flex items-center gap-3">
-        <Link
-          href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`}
-          aria-label="Return to subcategory"
-          onClick={() => setIsLoading(true)}
-        >
-          <ArrowIcon direction="left" size={50} />
-        </Link>
+      {/* HEADER */}
+      <PageHeading
+        businessId={businessId}
+        locationId={locationId}
+        path={`menu/${categoryId}/subcategories/${subcategoryId}`}
+        ariaLabel="Return to subcategory"
+        setIsLoading={setIsLoading}
+        headingId="edit-item-heading"
+        heading={canManageItem ? "Edit Item" : "Item"}
+      />
 
-        <h1 id="edit-item-heading">{canManageItem ? "Edit Item" : "Item"}</h1>
-      </header>
-
-      <div className="mt-[1.5rem]">
+      <div className="mt-[0.5rem]">
         {/* ITEM FORM */}
         <EditItemForm
           canManage={canManageItem}

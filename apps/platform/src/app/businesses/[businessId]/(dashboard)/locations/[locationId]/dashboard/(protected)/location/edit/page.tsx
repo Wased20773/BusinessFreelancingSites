@@ -1,17 +1,16 @@
 "use client";
 
-import ArrowIcon from "@/components/icons/arrow";
 import EditLocationForm from "@/components/ui/locations/EditLocationForm";
 import DeleteModal from "@/components/ui/modal/DeleteModal";
 import { ACCESS_LEVEL, type LocationJson } from "@/types/types";
 
 import axios from "axios";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { type InputEvent, type SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import PageHeading from "@/components/ui/PageHeader";
 
 export default function EditLocationPage() {
   const params = useParams<{
@@ -346,22 +345,20 @@ export default function EditLocationPage() {
   return (
     <section
       aria-labelledby="edit-location-heading"
-      className="max-w-[1000px] mx-auto p-5"
+      className="max-w-[1000px] mx-auto p-5 pt-0"
     >
       {/* HEADER */}
-      <header className="flex items-center gap-3">
-        <Link
-          href={`/businesses/${businessId}/locations/${locationId}/dashboard/location`}
-          aria-label="Return to location"
-          onClick={() => setIsLoading(true)}
-        >
-          <ArrowIcon direction="left" size={50} />
-        </Link>
+      <PageHeading
+        businessId={businessId}
+        locationId={locationId}
+        path="location"
+        ariaLabel="Return to location"
+        setIsLoading={setIsLoading}
+        headingId="edit-location-heading"
+        heading="Edit Location"
+      />
 
-        <h1 id="edit-location-heading">Edit Location</h1>
-      </header>
-
-      <div className="mt-[1.5rem]">
+      <div className="mt-[0.5rem]">
         <EditLocationForm
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}

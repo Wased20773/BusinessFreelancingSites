@@ -1,15 +1,14 @@
 "use client";
 
-import ArrowIcon from "@/components/icons/arrow";
 import CreateContactForm from "@/components/ui/contacts/CreateContactForm";
 import { ACCESS_LEVEL, type ContactJson } from "@/types/types";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
 import axios from "axios";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { InputEvent, SubmitEvent, useState } from "react";
 import { toast } from "sonner";
+import PageHeading from "@/components/ui/PageHeader";
 
 export default function CreateContactPage() {
   const params = useParams<{
@@ -156,21 +155,20 @@ export default function CreateContactPage() {
   return (
     <section
       aria-labelledby="create-contact-heading"
-      className="max-w-[1000px] mx-auto p-5"
+      className="max-w-[1000px] mx-auto p-5 pt-0"
     >
-      <header className="flex items-center gap-3">
-        <Link
-          href={`/businesses/${businessId}/locations/${locationId}/dashboard/contacts`}
-          aria-label="Return to contacts"
-          onClick={() => setIsLoading(true)}
-        >
-          <ArrowIcon direction="left" size={50} />
-        </Link>
+      {/* HEADER */}
+      <PageHeading
+        businessId={businessId}
+        locationId={locationId}
+        path="contacts"
+        ariaLabel="Return to contacts"
+        setIsLoading={setIsLoading}
+        headingId="create-contact-heading"
+        heading="Create Contact"
+      />
 
-        <h1 id="create-contact-heading">Create Contact</h1>
-      </header>
-
-      <div className="mt-[1.5rem]">
+      <div className="mt-[0.5rem]">
         <CreateContactForm
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}

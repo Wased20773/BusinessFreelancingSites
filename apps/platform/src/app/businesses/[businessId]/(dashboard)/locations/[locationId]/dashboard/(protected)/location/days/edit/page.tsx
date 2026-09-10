@@ -1,9 +1,7 @@
 "use client";
 
-import ArrowIcon from "@/components/icons/arrow";
 import { ACCESS_LEVEL, type LocationJson } from "@/types/types";
 import axios from "axios";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { type SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -11,6 +9,7 @@ import "../../../page.css";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
 import BusinessDaysForm from "@/components/ui/days/BusinessDaysForm";
+import PageHeading from "@/components/ui/PageHeader";
 
 const MONDAY_SUNDAY = [
   "Monday",
@@ -801,23 +800,20 @@ export default function EditBusinessDaysPage() {
   return (
     <section
       aria-labelledby="business-days-heading"
-      className="max-w-[1000px] mx-auto p-5"
+      className="max-w-[1000px] mx-auto p-5 pt-0"
     >
       {/* HEADER */}
-      <header className="flex items-center gap-3">
-        <Link
-          href={`/businesses/${businessId}/locations/${locationId}/dashboard/location`}
-          aria-label="Return to location"
-          onClick={() => setIsLoading(true)}
-        >
-          <ArrowIcon direction="left" size={50} />
-        </Link>
+      <PageHeading
+        businessId={businessId}
+        locationId={locationId}
+        path="location"
+        ariaLabel="Return to location"
+        setIsLoading={setIsLoading}
+        headingId="business-days-heading"
+        heading={canManageBusinessDays ? "Edit Business Days" : "Business Days"}
+      />
 
-        <h1 className="truncate" id="business-days-heading">
-          {canManageBusinessDays ? "Edit Business Days" : "Business Days"}
-        </h1>
-      </header>
-      <div className="mt-[1.5rem]">
+      <div className="mt-[0.5rem]">
         <BusinessDaysForm
           locationData={locationData}
           days={days}
