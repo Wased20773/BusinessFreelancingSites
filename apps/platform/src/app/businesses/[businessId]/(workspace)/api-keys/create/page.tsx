@@ -1,11 +1,12 @@
 "use client";
 
 import ArrowIcon from "@/components/icons/arrow";
-import LoadingBar from "@/components/ui/LoadingBar";
+import PageState from "@/components/ui/PageState";
 import RequiredField from "@/components/ui/RequiredField";
 import { createBusinessApiKey } from "@/lib/api/apiKeys";
-import type { CreateBusinessApiKeyResponse } from "@/types/types";
+import { ACCESS_LEVEL, type CreateBusinessApiKeyResponse } from "@/types/types";
 import axios from "axios";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { SubmitEvent, useState } from "react";
@@ -25,6 +26,11 @@ export default function CreateApiKeyPage() {
 
   const [createdApiKey, setCreatedApiKey] =
     useState<CreateBusinessApiKeyResponse | null>(null);
+
+  const { data: session, status, update } = useSession();
+
+  const currentAccessLevel = session?.user?.accessLevel;
+  const canManageApiKeys = currentAccessLevel === ACCESS_LEVEL.developer;
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -95,8 +101,17 @@ export default function CreateApiKeyPage() {
     toast.success("API key copied.");
   }
 
-  if (isLoading) {
-    return <LoadingBar />;
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper: false,
+    canView: canManageApiKeys,
+    pageTitle: "Creating Api Keys",
+    reason: "Your current access level denies access to creating api keys.",
+  });
+
+  if (pageState) {
+    return pageState;
   }
 
   if (createdApiKey) {

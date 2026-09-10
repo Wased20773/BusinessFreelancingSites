@@ -10,7 +10,7 @@ import {
   getApiKeys,
   updateBusinessApiKey,
 } from "@/lib/api/apiKeys";
-import type { BusinessApiKeyJson } from "@/types/types";
+import { ACCESS_LEVEL, type BusinessApiKeyJson } from "@/types/types";
 import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
@@ -19,6 +19,7 @@ import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import LoadingBar from "@/components/ui/LoadingBar";
 import { useSession } from "next-auth/react";
+import PageState from "@/components/ui/PageState";
 
 export default function ApiKeyDetailsPage() {
   const params = useParams<{
@@ -47,7 +48,9 @@ export default function ApiKeyDetailsPage() {
   const [loadingDelete, setLoadingDelete] = useState<boolean>(false);
   const [deleteVerification, setDeleteVerification] = useState<string>("");
 
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const currentAccessLevel = session?.user?.accessLevel;
+  const canManageApiKeys = currentAccessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
     async function getApiKeyData() {
@@ -106,8 +109,17 @@ export default function ApiKeyDetailsPage() {
       }
     }
 
+    if (status !== "authenticated") {
+      return;
+    }
+
+    if (!canManageApiKeys) {
+      setIsLoading(false);
+      return;
+    }
+
     void getApiKeyData();
-  }, []);
+  }, [businessId, status, canManageApiKeys]);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -254,12 +266,17 @@ export default function ApiKeyDetailsPage() {
     }
   }
 
-  if (status === "loading" || isLoading) {
-    return <LoadingBar />;
-  }
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper: false,
+    canView: canManageApiKeys,
+    pageTitle: "Api Key Management",
+    reason: "Your current access level does not include api key management.",
+  });
 
-  if (status === "unauthenticated") {
-    return <p className="p-5">You must be signed in to view this page.</p>;
+  if (pageState) {
+    return pageState;
   }
 
   if (!apiKeyData) {

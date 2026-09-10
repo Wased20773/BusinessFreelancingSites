@@ -1,13 +1,13 @@
 "use client";
 
-import ArrowIcon from "@/components/icons/arrow";
-import Link from "next/link";
 import "../../page.css";
 import Divider from "@/components/layout/Divider";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import LoadingBar from "@/components/ui/LoadingBar";
 import { useState } from "react";
+import PageHeading from "@/components/ui/PageHeader";
+import PageState from "@/components/ui/PageState";
+import { ACCESS_LEVEL } from "@/types/types";
 
 export default function AccessLevelsPage() {
   const params = useParams<{
@@ -18,38 +18,46 @@ export default function AccessLevelsPage() {
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const currentAccessLevel = session?.user?.accessLevel;
+  const canViewAccessLevel =
+    currentAccessLevel === ACCESS_LEVEL.developer ||
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin ||
+    currentAccessLevel === ACCESS_LEVEL.staff;
 
-  if (status === "loading" || isLoading) {
-    return <LoadingBar />;
-  }
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper: false,
+    canView: canViewAccessLevel,
+    pageTitle: "Access Level",
+    reason: "Your current access level does not include access level viewing.",
+  });
 
-  if (status === "unauthenticated") {
-    return <p className="p-5">You must be signed in to view this page.</p>;
+  if (pageState) {
+    return pageState;
   }
 
   return (
-    <section className="max-w-[1000px] mx-auto p-5">
-      <div className="flex items-center gap-3 mb-6">
-        <Link
-          href={`/businesses/${businessId}/users`}
-          aria-label="Return to members"
-          className="shrink-0"
-          onClick={() => setIsLoading(true)}
-        >
-          <ArrowIcon direction="left" size={42} />
-        </Link>
+    <section
+      aria-labelledby="access-level-heading"
+      className="max-w-[1000px] mx-auto p-5 pt-0"
+    >
+      {/* Heading */}
+      <PageHeading
+        path={`/businesses/${businessId}/users`}
+        ariaLabel="Return to members"
+        setIsLoading={setIsLoading}
+        headingId="access-level-heading"
+        heading="Access Level"
+      />
 
-        <div>
-          <h1 className="text-3xl font-semibold">Access Levels</h1>
+      <p className="text-gray-500 mt-2">
+        Understand what each business role is allowed to manage.
+      </p>
 
-          <p className="text-gray-500 mt-1">
-            Understand what each business role is allowed to manage.
-          </p>
-        </div>
-      </div>
-
-      <section className="border border-gray-300 rounded-xl p-5">
+      <section className="border border-gray-300 rounded-xl mt-5 p-5">
         <p className="text-gray-600 mb-6 max-w-[750px]">
           Access levels determine what a member can view or manage within a
           business. Review each role carefully before assigning permissions.

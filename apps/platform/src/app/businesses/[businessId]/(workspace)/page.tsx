@@ -5,7 +5,7 @@ import { getBusiness } from "@/lib/api/business";
 import { getLocations } from "@/lib/api/locations";
 import { getBusinessUsers } from "@/lib/api/users";
 import { formatDateTime } from "@/lib/time/formatDateTime";
-import type { BusinessJson } from "@/types/types";
+import { ACCESS_LEVEL, type BusinessJson } from "@/types/types";
 import axios from "axios";
 import { ExternalLink } from "lucide-react";
 import { useParams } from "next/navigation";
@@ -13,6 +13,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import LoadingBar from "@/components/ui/LoadingBar";
+import PageState from "@/components/ui/PageState";
 
 export default function WorkspacePage() {
   const params = useParams<{
@@ -21,7 +22,6 @@ export default function WorkspacePage() {
 
   const businessId = params.businessId;
 
-  const { data: session, status } = useSession();
   const [businessData, setBusinessData] = useState<BusinessJson | null>(null);
   const [locationCount, setLocationCount] = useState<number>(0);
   const [memberCount, setMemberCount] = useState<number>(0);
@@ -29,42 +29,29 @@ export default function WorkspacePage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const accessLevel = session?.user?.accessLevel;
+  const { data: session, status } = useSession();
+  const currentAccessLevel = session?.user?.accessLevel;
 
-  /*
-   * Location information is part of the normal
-   * business workspace.
-   *
-   * Developers are limited to developer resources.
-   */
+  const canViewOverview =
+    currentAccessLevel === "owner" ||
+    currentAccessLevel === "admin" ||
+    currentAccessLevel === "staff" ||
+    currentAccessLevel === "developer";
+
   const canViewLocations =
-    accessLevel === "owner" ||
-    accessLevel === "admin" ||
-    accessLevel === "staff";
+    currentAccessLevel === "owner" ||
+    currentAccessLevel === "admin" ||
+    currentAccessLevel === "staff";
 
-  /*
-   * Member information is visible to:
-   *
-   * Owner/Admin -> manageable
-   * Staff       -> read-only
-   * Developer   -> unavailable
-   */
   const canViewMembers =
-    accessLevel === "owner" ||
-    accessLevel === "admin" ||
-    accessLevel === "staff";
+    currentAccessLevel === "owner" ||
+    currentAccessLevel === "admin" ||
+    currentAccessLevel === "staff";
 
-  /*
-   * API key information is visible to:
-   *
-   * Developer   -> manageable
-   * Owner/Admin -> read-only
-   * Staff       -> unavailable
-   */
   const canViewApiKeys =
-    accessLevel === "developer" ||
-    accessLevel === "owner" ||
-    accessLevel === "admin";
+    currentAccessLevel === "owner" ||
+    currentAccessLevel === "admin" ||
+    currentAccessLevel === "developer";
 
   useEffect(() => {
     async function getOverviewData() {
@@ -152,22 +139,29 @@ export default function WorkspacePage() {
       }
     }
 
-    /*
-     * Wait until Auth knows which business role
-     * is currently selected before deciding which
-     * overview requests should run.
-     */
-    if (status === "authenticated") {
-      void getOverviewData();
+    if (status !== "authenticated") {
+      return;
     }
-  }, []);
 
-  if (status === "loading" || isLoading) {
-    return <LoadingBar />;
-  }
+    if (!canViewOverview) {
+      setIsLoading(false);
+      return;
+    }
 
-  if (status === "unauthenticated") {
-    return <p className="p-5">You must be signed in to view this page.</p>;
+    void getOverviewData();
+  }, [businessId, status, canViewOverview]);
+
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper: false,
+    canView: canViewOverview,
+    pageTitle: "Overview",
+    reason: "Your current access level does not include overview information.",
+  });
+
+  if (pageState) {
+    return pageState;
   }
 
   if (errorMessage) {

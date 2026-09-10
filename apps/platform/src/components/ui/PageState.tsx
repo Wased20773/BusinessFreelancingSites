@@ -9,6 +9,9 @@ type PageStateProps = {
   reason?: string;
 };
 
+// TODO: Make classname 'dashboard-card' component defined; `${variant}-card`
+// TODO: The title and heading for the (isDeveloper || !canView) condition should
+//       be different. Maybe only include one after verifying...
 export default function PageState({
   status,
   isLoading,

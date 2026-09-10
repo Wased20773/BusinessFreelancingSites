@@ -25,6 +25,8 @@ import {
 import { formatDateTime } from "@/lib/time/formatDateTime";
 import { useSession } from "next-auth/react";
 import LoadingBar from "@/components/ui/LoadingBar";
+import PageHeading from "@/components/ui/PageHeader";
+import PageState from "@/components/ui/PageState";
 
 export default function UserDetailsPage() {
   const params = useParams<{
@@ -63,6 +65,8 @@ export default function UserDetailsPage() {
   const canViewMemberDetails =
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin;
+
+  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   /*
    * Nobody can modify themselves.
@@ -356,29 +360,29 @@ export default function UserDetailsPage() {
       }
     }
 
-    if (status === "authenticated" && canViewMemberDetails) {
-      void getUserData();
+    if (status !== "authenticated") {
+      return;
     }
+
+    if (!canViewMemberDetails) {
+      setIsLoading(false);
+      return;
+    }
+
+    void getUserData();
   }, [businessId, userId, status, canViewMemberDetails]);
 
-  if (status === "loading" || isLoading) {
-    return <LoadingBar />;
-  }
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canManageMembers,
+    pageTitle: "Member Management",
+    reason: "Your current access level does not include member management.",
+  });
 
-  if (status === "unauthenticated") {
-    return <p className="p-5">You must be signed in to view this page.</p>;
-  }
-
-  if (!canViewMemberDetails) {
-    return (
-      <section className="max-w-[1000px] mx-auto p-5">
-        <h1 className="text-3xl font-semibold">Member unavailable</h1>
-
-        <p className="text-gray-500 mt-1">
-          Your current access level does not include access to member details.
-        </p>
-      </section>
-    );
+  if (pageState) {
+    return pageState;
   }
 
   if (errorMessage && !userData) {
@@ -391,36 +395,24 @@ export default function UserDetailsPage() {
 
   return (
     <section
-      className="max-w-[1000px] mx-auto p-5"
+      className="max-w-[1000px] mx-auto p-5 pt-0"
       aria-labelledby="user-details-heading"
     >
       {/* Heading */}
-      <div className="flex items-center gap-3 mb-6">
-        <Link
-          href={`/businesses/${businessId}/users`}
-          aria-label="Return to members"
-          className="shrink-0"
-          onClick={() => setIsLoading(true)}
-        >
-          <ArrowIcon direction="left" size={42} />
-        </Link>
+      <PageHeading
+        path={`/businesses/${businessId}/users`}
+        ariaLabel="Return to members"
+        setIsLoading={setIsLoading}
+        headingId="user-details-heading"
+        heading={userData.user?.name ?? "Member Details"}
+      />
 
-        <div className="min-w-0">
-          <h1
-            id="user-details-heading"
-            className="text-3xl font-semibold truncate"
-          >
-            {userData.user?.name ?? "Member Details"}
-          </h1>
-
-          <p className="text-gray-500 mt-1">
-            View account information and manage this member&apos;s access.
-          </p>
-        </div>
-      </div>
+      <p className="text-gray-500 mt-2">
+        View account information and manage this member&apos;s access.
+      </p>
 
       {/* Member Information */}
-      <section className="border border-gray-300 rounded-xl p-5">
+      <section className="border border-gray-300 rounded-xl mt-5 p-5">
         {/* General */}
         <div>
           <h2 className="text-xl font-semibold">Member Information</h2>
@@ -568,7 +560,7 @@ export default function UserDetailsPage() {
               )}
 
               {currentAccessLevel === ACCESS_LEVEL.admin && targetIsOwner && (
-                <p className="text-sm text-gray-500 mt-3">
+                <p className="text-sm text-amber-400 font-semibold mt-3">
                   Only the business owner can manage ownership.
                 </p>
               )}

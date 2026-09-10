@@ -12,7 +12,7 @@ import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../page.css";
 import { ExternalLink } from "lucide-react";
-import LoadingBar from "@/components/ui/LoadingBar";
+import PageState from "@/components/ui/PageState";
 
 const DOMAIN_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z0-9-]+)*\.[a-z]{2,}$/;
 
@@ -44,13 +44,14 @@ export default function SettingsPage() {
     null,
   );
 
-  const accessLevel = session?.user?.accessLevel;
+  const currentAccessLevel = session?.user?.accessLevel;
 
-  const canManageSettings = accessLevel === "owner" || accessLevel === "admin";
-
-  const canViewSettings = canManageSettings || accessLevel === "staff";
-
-  const isDeveloper = accessLevel === "developer";
+  const canManageSettings =
+    currentAccessLevel === "owner" || currentAccessLevel === "admin";
+  const canViewSettings =
+    canManageSettings ||
+    currentAccessLevel === "staff" ||
+    currentAccessLevel === "developer";
 
   useEffect(() => {
     async function getBusinessData() {
@@ -104,10 +105,17 @@ export default function SettingsPage() {
       }
     }
 
-    if (status === "authenticated" && canViewSettings) {
-      void getBusinessData();
+    if (status !== "authenticated") {
+      return;
     }
-  }, []);
+
+    if (!canViewSettings) {
+      setIsLoading(false);
+      return;
+    }
+
+    void getBusinessData();
+  }, [businessId, status, canViewSettings]);
 
   async function handleNameSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -312,30 +320,17 @@ export default function SettingsPage() {
     setIsEditingDomain(false);
   }
 
-  if (status === "loading" || isLoading) {
-    return <LoadingBar />;
-  }
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper: false,
+    canView: canViewSettings,
+    pageTitle: "Business Settings",
+    reason: "Your current access level does not include business settings.",
+  });
 
-  if (status === "unauthenticated") {
-    return <p className="p-5">You must be signed in to view this page.</p>;
-  }
-
-  /*
-   * Developer role is limited to developer
-   * resources such as API keys.
-   */
-  if (isDeveloper || !canViewSettings) {
-    return (
-      <section className="max-w-[1000px] mx-auto p-5">
-        <div className="border border-gray-300 rounded-xl p-5">
-          <h1 className="text-2xl font-semibold">Settings unavailable</h1>
-
-          <p className="text-gray-500 mt-1">
-            Your current access level does not include business settings.
-          </p>
-        </div>
-      </section>
-    );
+  if (pageState) {
+    return pageState;
   }
 
   if (errorMessage) {
@@ -352,7 +347,7 @@ export default function SettingsPage() {
       aria-labelledby="settings-heading"
     >
       {/* Heading */}
-      <div className="mb-6">
+      <div>
         <h1 id="settings-heading" className="text-3xl font-semibold">
           Settings
         </h1>
@@ -365,14 +360,14 @@ export default function SettingsPage() {
       </div>
 
       {/* Settings */}
-      <section className="border border-gray-300 rounded-xl p-5">
+      <section className="border border-gray-300 rounded-xl mt-5 p-5">
         {/* Business Name */}
         <div>
           <div className="flex justify-between items-start gap-4">
             <div>
               <h2 className="text-xl font-semibold">Business Name</h2>
 
-              <p className="text-sm text-gray-500 mt-1 max-w-[700px]">
+              <p className="text-sm text-gray-800 mt-1 max-w-[700px]">
                 Your business name is used throughout the platform and may be
                 displayed on your business website.
               </p>
@@ -476,7 +471,7 @@ export default function SettingsPage() {
             <div>
               <h2 className="text-xl font-semibold">Domain</h2>
 
-              <p className="text-sm text-gray-500 mt-1 max-w-[700px]">
+              <p className="text-sm text-gray-700 mt-1 max-w-[700px]">
                 The domain identifies the website associated with this business.
                 Only change it when the website&apos;s domain changes or the
                 current value is incorrect.

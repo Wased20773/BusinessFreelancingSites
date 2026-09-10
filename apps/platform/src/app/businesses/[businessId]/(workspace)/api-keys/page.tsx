@@ -14,7 +14,7 @@ import { getApiKeys } from "@/lib/api/apiKeys";
 import "../page.css";
 import { formatDateTime } from "@/lib/time/formatDateTime";
 import { useSession } from "next-auth/react";
-import LoadingBar from "@/components/ui/LoadingBar";
+import PageState from "@/components/ui/PageState";
 
 export default function ApiKeysPage() {
   const params = useParams<{
@@ -29,16 +29,13 @@ export default function ApiKeysPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const accessLevel = session?.user?.accessLevel;
-
-  const canManageApiKeys = accessLevel === "developer";
-
+  const currentAccessLevel = session?.user?.accessLevel;
+  const canManageApiKeys = currentAccessLevel === "developer";
   const canViewApiKeys =
-    accessLevel === "developer" ||
-    accessLevel === "owner" ||
-    accessLevel === "admin";
-
-  const isStaff = accessLevel === "staff";
+    currentAccessLevel === "developer" ||
+    currentAccessLevel === "owner" ||
+    currentAccessLevel === "admin";
+  const isStaff = currentAccessLevel === "staff";
 
   useEffect(() => {
     async function getApiKeyData() {
@@ -87,40 +84,28 @@ export default function ApiKeysPage() {
       }
     }
 
-    /*
-     * Only Developer, Owner, and Admin should
-     * retrieve API key information.
-     *
-     * Staff should not even make this request.
-     */
-    if (status === "authenticated" && canViewApiKeys) {
-      void getApiKeyData();
+    if (status !== "authenticated") {
+      return;
     }
-  }, []);
 
-  if (status === "loading" || isLoading) {
-    return <LoadingBar />;
-  }
+    if (!canViewApiKeys) {
+      setIsLoading(false);
+      return;
+    }
+    void getApiKeyData();
+  }, [businessId, status, canViewApiKeys]);
 
-  if (status === "unauthenticated") {
-    return <p className="p-5">You must be signed in to view this page.</p>;
-  }
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper: isStaff,
+    canView: canViewApiKeys,
+    pageTitle: "API Keys",
+    reason: "Your current access level does not include API key information.",
+  });
 
-  /*
-   * Staff cannot view API-key information.
-   */
-  if (isStaff || !canViewApiKeys) {
-    return (
-      <section className="max-w-[1000px] mx-auto p-5">
-        <div className="border border-gray-300 rounded-xl p-5">
-          <h1 className="text-2xl font-semibold">API Keys unavailable</h1>
-
-          <p className="text-gray-500 mt-1">
-            Your current access level does not include API key information.
-          </p>
-        </div>
-      </section>
-    );
+  if (pageState) {
+    return pageState;
   }
 
   return (

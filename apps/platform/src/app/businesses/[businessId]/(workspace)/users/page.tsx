@@ -10,14 +10,14 @@ import Divider from "@/components/layout/Divider";
 import KeyIcon from "@/components/icons/key.svg";
 import SearchIcon from "@/components/icons/search.svg";
 import { useEffect, useState } from "react";
-import type { BusinessUserJson } from "@/types/types";
+import { type BusinessUserJson } from "@/types/types";
 import axios from "axios";
 import { toast } from "sonner";
 import ActionItem from "@/components/ui/ActionItem";
 import { getBusinessUsers } from "@/lib/api/users";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import LoadingBar from "@/components/ui/LoadingBar";
+import PageState from "@/components/ui/PageState";
 
 const USERS_PER_PAGE = 5;
 
@@ -37,10 +37,11 @@ export default function UsersPage() {
   const [visibleUsers, setVisibleUsers] = useState<number>(USERS_PER_PAGE);
 
   const { data: session, status } = useSession();
-
-  const accessLevel = session?.user?.accessLevel;
-  const canManageMembers = accessLevel === "owner" || accessLevel === "admin";
-  const isDeveloper = accessLevel === "developer";
+  const currentAccessLevel = session?.user?.accessLevel;
+  const canManageMembers =
+    currentAccessLevel === "owner" || currentAccessLevel === "admin";
+  const canViewMembers = canManageMembers || currentAccessLevel === "staff";
+  const isDeveloper = currentAccessLevel === "developer";
 
   useEffect(() => {
     async function getBusinessUserData() {
@@ -90,31 +91,29 @@ export default function UsersPage() {
       }
     }
 
-    if (status === "authenticated" && !isDeveloper) {
-      void getBusinessUserData();
+    if (status !== "authenticated") {
+      return;
     }
-  }, []);
 
-  if (status === "loading" || isLoading) {
-    return <LoadingBar />;
-  }
+    if (!canViewMembers) {
+      setIsLoading(false);
+      return;
+    }
 
-  if (status === "unauthenticated") {
-    return <p className="p-5">You must be signed in to view this page.</p>;
-  }
+    void getBusinessUserData();
+  }, [businessId, status, canViewMembers]);
 
-  if (isDeveloper) {
-    return (
-      <section className="max-w-[1000px] mx-auto p-5">
-        <div className="border border-gray-300 rounded-xl p-5">
-          <h1 className="text-2xl font-semibold">Members unavailable</h1>
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canViewMembers,
+    pageTitle: "Members",
+    reason: "Your current access level does not include members access.",
+  });
 
-          <p className="text-gray-500 mt-1">
-            Developer access does not include member management.
-          </p>
-        </div>
-      </section>
-    );
+  if (pageState) {
+    return pageState;
   }
 
   if (errorMessage) {

@@ -1,23 +1,26 @@
 "use client";
 
 import AddIcon from "@/components/icons/add.svg";
-import ArrowIcon from "@/components/icons/arrow";
 import GoogleLogoIcon from "@/components/icons/google-logo.svg";
 import PlaceholderAccountIcon from "@/components/icons/placeholder-account-black.svg";
 import SearchIcon from "@/components/icons/search.svg";
-import LoadingBar from "@/components/ui/LoadingBar";
 import { addUserToBusiness, searchForUser } from "@/lib/api/users";
-import type { BusinessUserJson, UserJson } from "@/types/types";
+import {
+  ACCESS_LEVEL,
+  type BusinessUserJson,
+  type UserJson,
+} from "@/types/types";
 
 import axios from "axios";
 import Image from "next/image";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { type SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 
 import "../../page.css";
+import PageState from "@/components/ui/PageState";
+import PageHeading from "@/components/ui/PageHeader";
 
 export default function SearchPage() {
   const params = useParams<{
@@ -36,9 +39,10 @@ export default function SearchPage() {
   const [hasSearched, setHasSearched] = useState<boolean>(false);
   const [addingUserEmail, setAddingUserEmail] = useState<string | null>(null);
 
-  const accessLevel = session?.user?.accessLevel;
-
-  const canAccessMembers = accessLevel === "owner" || accessLevel === "admin";
+  const currentAccessLevel = session?.user?.accessLevel;
+  const canAccessSearch =
+    currentAccessLevel === "owner" || currentAccessLevel === "admin";
+  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   async function searchUser(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -181,67 +185,42 @@ export default function SearchPage() {
     }
   }
 
-  /*
-   * Auth.js is still resolving the
-   * current session.
-   */
-  if (status === "loading" || isLoading) {
-    return <LoadingBar />;
-  }
+  const pageState = PageState({
+    status,
+    isLoading,
+    isDeveloper,
+    canView: canAccessSearch,
+    pageTitle: "Adding People",
+    reason:
+      "Your current access level denies access to adding people to the business.",
+  });
 
-  if (status === "unauthenticated") {
-    return <p className="p-5">You must be signed in to view this page.</p>;
-  }
-
-  /*
-   * Only Owner/Admin can access
-   * member search and creation.
-   */
-  if (!canAccessMembers) {
-    return (
-      <section className="max-w-[1000px] mx-auto p-5">
-        <div className="border border-gray-300 rounded-xl p-5">
-          <h1 className="text-2xl font-semibold">Add Member unavailable</h1>
-
-          <p className="text-gray-500 mt-1">
-            Your current access level does not include member management.
-          </p>
-        </div>
-      </section>
-    );
+  if (pageState) {
+    return pageState;
   }
 
   return (
     <section
-      className="max-w-[1000px] mx-auto p-5"
+      className="max-w-[1000px] mx-auto p-5 pt-0"
       aria-labelledby="search-heading"
     >
       {/* Heading */}
-      <div className="flex items-center gap-3 mb-6">
-        <Link
-          href={`/businesses/${businessId}/users`}
-          aria-label="Return to members"
-          className="shrink-0"
-          onClick={() => setIsLoading(true)}
-        >
-          <ArrowIcon direction="left" size={42} />
-        </Link>
+      <PageHeading
+        path={`/businesses/${businessId}/users`}
+        ariaLabel="Return to members"
+        setIsLoading={setIsLoading}
+        headingId="search-heading"
+        heading="Add Member"
+      />
 
-        <div>
-          <h1 id="search-heading" className="text-3xl font-semibold">
-            Add Member
-          </h1>
-
-          <p className="text-gray-500 mt-1">
-            Search for an existing account and add them to this business.
-          </p>
-        </div>
-      </div>
+      <p className="text-gray-500 mt-2">
+        Search for an existing account and add them to this business.
+      </p>
 
       {/* Search */}
-      <section className="border border-gray-300 rounded-xl p-5">
+      <section className="border border-gray-300 rounded-xl mt-5 p-5">
         <div className="mb-5">
-          <h2 className="text-xl font-semibold">Find a Member</h2>
+          <h2 className="text-xl font-semibold">Find By Email</h2>
 
           <p className="text-sm text-gray-500 mt-1">
             Accounts are uniquely identified by their email address.
@@ -298,9 +277,7 @@ export default function SearchPage() {
 
         {/* Result */}
         <div className="border-t border-gray-200 mt-5 pt-5">
-          {isLoading ? (
-            <LoadingBar />
-          ) : searchData ? (
+          {searchData ? (
             <div>
               <p className="text-sm font-medium text-gray-500 mb-2">
                 Search Result
