@@ -704,9 +704,7 @@ export default function EditItemPage() {
     >
       {/* HEADER */}
       <PageHeading
-        businessId={businessId}
-        locationId={locationId}
-        path={`menu/${categoryId}`}
+        path={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}`}
         ariaLabel="Return to category"
         setIsLoading={setIsLoading}
         headingId="edit-item-heading"

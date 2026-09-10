@@ -195,9 +195,7 @@ export default function CreateCategoryPage() {
     >
       {/* HEADER */}
       <PageHeading
-        businessId={businessId}
-        locationId={locationId}
-        path={`menu/${categoryId}`}
+        path={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}`}
         ariaLabel="Return to category"
         setIsLoading={setIsLoading}
         headingId="create-category-heading"

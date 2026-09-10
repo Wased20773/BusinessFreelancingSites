@@ -158,9 +158,7 @@ export default function CreateSocialPage() {
     >
       {/* HEADER */}
       <PageHeading
-        businessId={businessId}
-        locationId={locationId}
-        path="socials"
+        path={`/businesses/${businessId}/locations/${locationId}/dashboard/socials`}
         ariaLabel="Return to socials"
         setIsLoading={setIsLoading}
         headingId="create-social-heading"

@@ -157,9 +157,7 @@ export default function CategoryPage() {
     >
       {/* HEADER */}
       <PageHeading
-        businessId={businessId}
-        locationId={locationId}
-        path={`menu/${categoryId}`}
+        path={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}`}
         ariaLabel="Return to parent category"
         setIsLoading={setIsLoading}
         headingId="subcategory-heading"

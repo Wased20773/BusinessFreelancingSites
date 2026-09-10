@@ -333,9 +333,7 @@ export default function EditSocialPage() {
     >
       {/* HEADER */}
       <PageHeading
-        businessId={businessId}
-        locationId={locationId}
-        path="socials"
+        path={`/businesses/${businessId}/locations/${locationId}/dashboard/socials`}
         ariaLabel="Return to socials"
         setIsLoading={setIsLoading}
         headingId="edit-social-heading"

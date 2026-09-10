@@ -268,9 +268,7 @@ export default function CreateItemPage() {
     >
       {/* HEADER */}
       <PageHeading
-        businessId={businessId}
-        locationId={locationId}
-        path={`menu/${categoryId}`}
+        path={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}`}
         ariaLabel="Return to category"
         setIsLoading={setIsLoading}
         headingId="create-item-heading"

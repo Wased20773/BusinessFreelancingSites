@@ -349,9 +349,7 @@ export default function EditLocationPage() {
     >
       {/* HEADER */}
       <PageHeading
-        businessId={businessId}
-        locationId={locationId}
-        path="location"
+        path={`/businesses/${businessId}/locations/${locationId}/dashboard/location`}
         ariaLabel="Return to location"
         setIsLoading={setIsLoading}
         headingId="edit-location-heading"

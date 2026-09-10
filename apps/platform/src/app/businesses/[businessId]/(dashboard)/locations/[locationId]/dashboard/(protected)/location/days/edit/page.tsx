@@ -804,9 +804,7 @@ export default function EditBusinessDaysPage() {
     >
       {/* HEADER */}
       <PageHeading
-        businessId={businessId}
-        locationId={locationId}
-        path="location"
+        path={`/businesses/${businessId}/locations/${locationId}/dashboard/location`}
         ariaLabel="Return to location"
         setIsLoading={setIsLoading}
         headingId="business-days-heading"

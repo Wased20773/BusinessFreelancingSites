@@ -319,9 +319,7 @@ export default function EditSubcategoryPage() {
     >
       {/* HEADER */}
       <PageHeading
-        businessId={businessId}
-        locationId={locationId}
-        path={`menu/${categoryId}/subcategories/${subcategoryId}`}
+        path={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`}
         ariaLabel="Return to subcategory"
         setIsLoading={setIsLoading}
         headingId="edit-subcategory-heading"

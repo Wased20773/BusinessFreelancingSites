@@ -159,9 +159,7 @@ export default function CreateContactPage() {
     >
       {/* HEADER */}
       <PageHeading
-        businessId={businessId}
-        locationId={locationId}
-        path="contacts"
+        path={`/businesses/${businessId}/locations/${locationId}/dashboard/contacts`}
         ariaLabel="Return to contacts"
         setIsLoading={setIsLoading}
         headingId="create-contact-heading"

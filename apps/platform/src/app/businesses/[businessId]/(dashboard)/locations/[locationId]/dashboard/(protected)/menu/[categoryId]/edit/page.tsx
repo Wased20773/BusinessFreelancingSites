@@ -284,10 +284,8 @@ export default function EditCategoryPage() {
     >
       {/* HEADER */}
       <PageHeading
-        businessId={businessId}
-        locationId={locationId}
-        path={`menu/${categoryId}`}
-        ariaLabel="Return to menu"
+        path={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}`}
+        ariaLabel="Return to category"
         setIsLoading={setIsLoading}
         headingId="edit-category-heading"
         heading="Edit Category"

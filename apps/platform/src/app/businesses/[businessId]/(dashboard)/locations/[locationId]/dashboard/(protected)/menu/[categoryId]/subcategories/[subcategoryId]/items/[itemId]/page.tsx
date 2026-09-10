@@ -686,9 +686,7 @@ export default function EditItemPage() {
     >
       {/* HEADER */}
       <PageHeading
-        businessId={businessId}
-        locationId={locationId}
-        path={`menu/${categoryId}/subcategories/${subcategoryId}`}
+        path={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`}
         ariaLabel="Return to subcategory"
         setIsLoading={setIsLoading}
         headingId="edit-item-heading"
