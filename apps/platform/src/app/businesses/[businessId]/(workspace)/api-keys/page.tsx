@@ -84,15 +84,9 @@ export default function ApiKeysPage() {
       }
     }
 
-    if (status !== "authenticated") {
-      return;
+    if (status === "authenticated" && canViewApiKeys) {
+      void getApiKeyData();
     }
-
-    if (!canViewApiKeys) {
-      setIsLoading(false);
-      return;
-    }
-    void getApiKeyData();
   }, [businessId, status, canViewApiKeys]);
 
   const pageState = PageState({

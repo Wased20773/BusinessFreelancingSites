@@ -12,7 +12,6 @@ import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import LoadingBar from "@/components/ui/LoadingBar";
 import PageState from "@/components/ui/PageState";
 
 export default function WorkspacePage() {
@@ -33,25 +32,25 @@ export default function WorkspacePage() {
   const currentAccessLevel = session?.user?.accessLevel;
 
   const canViewOverview =
-    currentAccessLevel === "owner" ||
-    currentAccessLevel === "admin" ||
-    currentAccessLevel === "staff" ||
-    currentAccessLevel === "developer";
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin ||
+    currentAccessLevel === ACCESS_LEVEL.staff ||
+    currentAccessLevel === ACCESS_LEVEL.developer;
 
   const canViewLocations =
-    currentAccessLevel === "owner" ||
-    currentAccessLevel === "admin" ||
-    currentAccessLevel === "staff";
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin ||
+    currentAccessLevel === ACCESS_LEVEL.staff;
 
   const canViewMembers =
-    currentAccessLevel === "owner" ||
-    currentAccessLevel === "admin" ||
-    currentAccessLevel === "staff";
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin ||
+    currentAccessLevel === ACCESS_LEVEL.staff;
 
   const canViewApiKeys =
-    currentAccessLevel === "owner" ||
-    currentAccessLevel === "admin" ||
-    currentAccessLevel === "developer";
+    currentAccessLevel === ACCESS_LEVEL.owner ||
+    currentAccessLevel === ACCESS_LEVEL.admin ||
+    currentAccessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
     async function getOverviewData() {
@@ -139,17 +138,17 @@ export default function WorkspacePage() {
       }
     }
 
-    if (status !== "authenticated") {
-      return;
+    if (status === "authenticated" && canViewOverview) {
+      void getOverviewData();
     }
-
-    if (!canViewOverview) {
-      setIsLoading(false);
-      return;
-    }
-
-    void getOverviewData();
-  }, [businessId, status, canViewOverview]);
+  }, [
+    businessId,
+    status,
+    canViewLocations,
+    canViewMembers,
+    canViewApiKeys,
+    canViewOverview,
+  ]);
 
   const pageState = PageState({
     status,
@@ -175,10 +174,10 @@ export default function WorkspacePage() {
   return (
     <section className="max-w-[1000px] mx-auto p-5">
       {/* Heading */}
-      <div className="mb-6">
+      <div className="mb-5">
         <h1 className="text-3xl font-semibold">Overview</h1>
 
-        <p className="text-gray-500 mt-1">
+        <p className="text-gray-500 mt-2">
           View your business details and workspace activity.
         </p>
       </div>

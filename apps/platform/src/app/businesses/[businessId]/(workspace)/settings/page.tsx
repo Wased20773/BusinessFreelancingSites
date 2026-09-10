@@ -105,16 +105,9 @@ export default function SettingsPage() {
       }
     }
 
-    if (status !== "authenticated") {
-      return;
+    if (status === "authenticated" && canViewSettings) {
+      void getBusinessData();
     }
-
-    if (!canViewSettings) {
-      setIsLoading(false);
-      return;
-    }
-
-    void getBusinessData();
   }, [businessId, status, canViewSettings]);
 
   async function handleNameSubmit(event: SubmitEvent<HTMLFormElement>) {

@@ -91,16 +91,9 @@ export default function UsersPage() {
       }
     }
 
-    if (status !== "authenticated") {
-      return;
+    if (status === "authenticated" && canViewMembers) {
+      void getBusinessUserData();
     }
-
-    if (!canViewMembers) {
-      setIsLoading(false);
-      return;
-    }
-
-    void getBusinessUserData();
   }, [businessId, status, canViewMembers]);
 
   const pageState = PageState({

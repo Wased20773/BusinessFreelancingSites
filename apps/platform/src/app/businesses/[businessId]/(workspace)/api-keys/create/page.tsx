@@ -1,6 +1,7 @@
 "use client";
 
 import ArrowIcon from "@/components/icons/arrow";
+import PageHeading from "@/components/ui/PageHeader";
 import PageState from "@/components/ui/PageState";
 import RequiredField from "@/components/ui/RequiredField";
 import { createBusinessApiKey } from "@/lib/api/apiKeys";
@@ -27,7 +28,7 @@ export default function CreateApiKeyPage() {
   const [createdApiKey, setCreatedApiKey] =
     useState<CreateBusinessApiKeyResponse | null>(null);
 
-  const { data: session, status, update } = useSession();
+  const { data: session, status } = useSession();
 
   const currentAccessLevel = session?.user?.accessLevel;
   const canManageApiKeys = currentAccessLevel === ACCESS_LEVEL.developer;
@@ -217,34 +218,25 @@ export default function CreateApiKeyPage() {
 
   return (
     <section
-      className="max-w-[800px] mx-auto p-5"
+      className="max-w-[800px] mx-auto p-5 pt-0"
       aria-labelledby="create-api-key-heading"
     >
       {/* Heading */}
-      <div className="flex items-center gap-3 mb-6">
-        <Link
-          href={`/businesses/${businessId}/api-keys`}
-          aria-label="Return to API keys"
-          className="shrink-0"
-          onClick={() => setIsLoading(true)}
-        >
-          <ArrowIcon direction="left" size={42} />
-        </Link>
+      <PageHeading
+        path={`/businesses/${businessId}/api-keys`}
+        ariaLabel="Return to api keys"
+        setIsLoading={setIsLoading}
+        headingId="create-api-key-heading"
+        heading="Create API Key"
+      />
 
-        <div>
-          <h1 id="create-api-key-heading" className="text-3xl font-semibold">
-            Create API Key
-          </h1>
-
-          <p className="text-gray-500 mt-1">
-            Generate a new key for accessing this business through the Business
-            Platform API.
-          </p>
-        </div>
-      </div>
+      <p className="text-gray-500 mt-2">
+        Generate a new key for accessing this business through the Business
+        Platform API.
+      </p>
 
       {/* Form */}
-      <section className="border border-gray-300 rounded-xl p-5">
+      <section className="border border-gray-300 rounded-xl mt-5 p-5">
         <form onSubmit={handleSubmit}>
           <div>
             <label className="font-semibold" htmlFor="api-key-name">

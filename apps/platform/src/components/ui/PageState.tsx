@@ -20,14 +20,6 @@ export default function PageState({
   pageTitle,
   reason,
 }: PageStateProps) {
-  if (status === "loading" || isLoading) {
-    return <LoadingBar />;
-  }
-
-  if (status === "unauthenticated") {
-    return <p className="p-5">You must be signed in to view this page.</p>;
-  }
-
   if (isDeveloper || !canView) {
     return (
       <section
@@ -45,6 +37,14 @@ export default function PageState({
         </div>
       </section>
     );
+  }
+
+  if (status === "loading" || isLoading) {
+    return <LoadingBar />;
+  }
+
+  if (status === "unauthenticated") {
+    return <p className="p-5">You must be signed in to view this page.</p>;
   }
 
   return null;

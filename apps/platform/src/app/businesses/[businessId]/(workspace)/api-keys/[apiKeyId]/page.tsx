@@ -17,9 +17,9 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
-import LoadingBar from "@/components/ui/LoadingBar";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import PageHeading from "@/components/ui/PageHeader";
 
 export default function ApiKeyDetailsPage() {
   const params = useParams<{
@@ -109,17 +109,10 @@ export default function ApiKeyDetailsPage() {
       }
     }
 
-    if (status !== "authenticated") {
-      return;
+    if (status === "authenticated" && canManageApiKeys) {
+      void getApiKeyData();
     }
-
-    if (!canManageApiKeys) {
-      setIsLoading(false);
-      return;
-    }
-
-    void getApiKeyData();
-  }, [businessId, status, canManageApiKeys]);
+  }, [businessId, apiKeyId, status, canManageApiKeys]);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -280,39 +273,29 @@ export default function ApiKeyDetailsPage() {
   }
 
   if (!apiKeyData) {
-    return (
-      <p className="p-5">{errorMessage ?? "API key could not be found."}</p>
-    );
+    return <p className="p-5">{errorMessage}</p>;
   }
 
   return (
     <section
-      className="max-w-[1000px] mx-auto p-5"
+      className="max-w-[1000px] mx-auto p-5 pt-0"
       aria-labelledby="api-key-heading"
     >
       {/* Heading */}
-      <div className="flex items-center gap-3 mb-6">
-        <Link
-          href={`/businesses/${businessId}/api-keys`}
-          aria-label="Return to API keys"
-          onClick={() => setIsLoading(true)}
-        >
-          <ArrowIcon direction="left" size={42} />
-        </Link>
+      <PageHeading
+        path={`/businesses/${businessId}/api-keys`}
+        ariaLabel="Return to API keys"
+        setIsLoading={setIsLoading}
+        headingId="api-key-heading"
+        heading={apiKeyData.name}
+      />
 
-        <div className="min-w-0">
-          <h1 id="api-key-heading" className="text-3xl font-semibold truncate">
-            {apiKeyData.name}
-          </h1>
-
-          <p className="text-gray-500 mt-1">
-            View and manage this Business Platform API key.
-          </p>
-        </div>
-      </div>
+      <p className="text-gray-500 mt-2">
+        View and manage this Business Platform API key.
+      </p>
 
       {/* Main Information */}
-      <section className="border border-gray-300 rounded-xl p-5">
+      <section className="border border-gray-300 rounded-xl mt-5 p-5">
         {/* Key Information */}
         <div>
           <h2 className="text-xl font-semibold">API Key Information</h2>

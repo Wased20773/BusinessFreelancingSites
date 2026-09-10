@@ -1,7 +1,5 @@
 "use client";
 
-import ArrowIcon from "@/components/icons/arrow";
-import Link from "next/link";
 import "../../page.css";
 import Image from "next/image";
 import EditIcon from "@/components/icons/edit.svg";
@@ -24,7 +22,6 @@ import {
 } from "@/lib/api/users";
 import { formatDateTime } from "@/lib/time/formatDateTime";
 import { useSession } from "next-auth/react";
-import LoadingBar from "@/components/ui/LoadingBar";
 import PageHeading from "@/components/ui/PageHeader";
 import PageState from "@/components/ui/PageState";
 
@@ -59,10 +56,6 @@ export default function UserDetailsPage() {
   const targetIsOwner = userData?.role?.accessLevel === ACCESS_LEVEL.owner;
 
   const canManageMembers =
-    currentAccessLevel === ACCESS_LEVEL.owner ||
-    currentAccessLevel === ACCESS_LEVEL.admin;
-
-  const canViewMemberDetails =
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin;
 
@@ -360,17 +353,10 @@ export default function UserDetailsPage() {
       }
     }
 
-    if (status !== "authenticated") {
-      return;
+    if (status === "authenticated" && canManageMembers) {
+      void getUserData();
     }
-
-    if (!canViewMemberDetails) {
-      setIsLoading(false);
-      return;
-    }
-
-    void getUserData();
-  }, [businessId, userId, status, canViewMemberDetails]);
+  }, [businessId, userId, status, canManageMembers]);
 
   const pageState = PageState({
     status,
@@ -389,7 +375,7 @@ export default function UserDetailsPage() {
     return <p className="p-5">{errorMessage}</p>;
   }
 
-  if (!userData?.user?.email || isLoading) {
+  if (!userData?.user?.email) {
     return <p className="p-5">User not found.</p>;
   }
 
