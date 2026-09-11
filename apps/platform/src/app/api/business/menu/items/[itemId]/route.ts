@@ -50,6 +50,7 @@ export async function GET(
         isAvailable: true,
         slug: true,
         imageKey: true,
+        originalImageKey: true,
 
         ...(authentication.authenticationType === "session"
           ? { syncGroupId: true, isSynced: true }
@@ -87,10 +88,30 @@ export async function GET(
       );
     }
 
+    const imageUrl = item.imageKey ? await getObjectUrl(item.imageKey) : null;
+
+    /*
+     * The original image is only needed by the dashboard
+     * so the user can reopen and adjust the crop.
+     *
+     * Public API-key requests do not need access to it.
+     */
+    const originalImageUrl =
+      authentication.authenticationType === "session" && item.originalImageKey
+        ? await getObjectUrl(item.originalImageKey)
+        : null;
+
     const itemWithImageUrl = {
       ...item,
+      imageKey: imageUrl,
 
-      imageKey: item.imageKey ? await getObjectUrl(item.imageKey) : null,
+      ...(authentication.authenticationType === "session"
+        ? {
+            originalImageKey: originalImageUrl,
+          }
+        : {
+            originalImageKey: undefined,
+          }),
     };
 
     return NextResponse.json(itemWithImageUrl, {

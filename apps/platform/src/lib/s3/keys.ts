@@ -31,7 +31,19 @@ export function generateItemImageKey({
   itemId: string;
   extension: ImageExtension;
 }): string {
-  return `businesses/${businessId}/items/${itemId}.${extension}`;
+  return `businesses/${businessId}/items/image-${itemId}.${extension}`;
+}
+
+export function generateItemOriginalImageKey({
+  businessId,
+  itemId,
+  extension,
+}: {
+  businessId: string;
+  itemId: string;
+  extension: ImageExtension;
+}): string {
+  return `businesses/${businessId}/items/original-${itemId}.${extension}`;
 }
 
 /**
@@ -49,6 +61,18 @@ export function generateSyncedItemImageKey({
   return `businesses/${businessId}/items/synced/${syncGroupId}/image.${extension}`;
 }
 
+export function generateSyncedItemOriginalImageKey({
+  businessId,
+  syncGroupId,
+  extension,
+}: {
+  businessId: string;
+  syncGroupId: string;
+  extension: string;
+}): string {
+  return `businesses/${businessId}/items/synced/${syncGroupId}/original.${extension}`;
+}
+
 /**
  * Builds the stablee S3 location for business logo.
  */
@@ -61,9 +85,7 @@ export function generateBusinessImageKey({
 }): string {
   return `businesses/${businessId}/image.${extension}`;
 }
-/**
- * Builds the stablee S3 location for business logo.
- */
+
 export function generateBusinessOriginalImageKey({
   businessId,
   extension,

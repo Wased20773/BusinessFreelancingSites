@@ -908,7 +908,7 @@ export default function SettingsPage() {
                         {isSavingImage
                           ? "Saving..."
                           : businessData.imageKey
-                            ? "Replace Image"
+                            ? "Save"
                             : "Upload Image"}
                       </button>
                     </div>

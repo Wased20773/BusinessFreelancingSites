@@ -11,11 +11,17 @@ import {
 } from "react";
 import RequiredField from "../RequiredField";
 import IsSyncedCheckbox from "../IsSyncedCheckbox";
+import Cropper, { type Area, type Point } from "react-easy-crop";
 
 type EditItemFormParams = {
   canManage: boolean;
   itemData: ItemJson;
   imagePreview: string | null;
+  cropImageSrc: string | null;
+  crop: Point;
+  zoom: number;
+  croppedAreaPixels: Area | null;
+  errorMessageImage: string | null;
   canSubmit: boolean;
   isProcessing: boolean;
   isSaving: boolean;
@@ -23,9 +29,14 @@ type EditItemFormParams = {
   isSynced: boolean;
   hasSyncGroup: boolean;
   setIsSynced: Dispatch<SetStateAction<boolean>>;
+  setCrop: Dispatch<SetStateAction<Point>>;
+  setZoom: Dispatch<SetStateAction<number>>;
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
   handleFormInput(event: InputEvent<HTMLFormElement>): void;
   handleImageChange(event: ChangeEvent<HTMLInputElement>): void;
+  handleCropComplete(croppedArea: Area, croppedAreaPixels: Area): void;
+  handleUseCrop(): Promise<void>;
+  handleEditCrop(): void;
   handleDeleteImage(): Promise<void>;
   handleDelete(): Promise<void>;
 };
@@ -37,7 +48,17 @@ export default function EditItemForm({
   isProcessing,
   itemData,
   imagePreview,
+  cropImageSrc,
+  crop,
+  zoom,
+  croppedAreaPixels,
+  errorMessageImage,
   handleImageChange,
+  setCrop,
+  setZoom,
+  handleCropComplete,
+  handleUseCrop,
+  handleEditCrop,
   handleDeleteImage,
   canSubmit,
   isSaving,
@@ -211,18 +232,6 @@ export default function EditItemForm({
       <fieldset disabled={isProcessing}>
         <legend>Image</legend>
 
-        {imagePreview && (
-          <div className="mb-3">
-            <Image
-              src={imagePreview}
-              alt={`${itemData.name} image preview`}
-              width={300}
-              height={300}
-              className="max-h-[300px] w-auto rounded-md object-contain"
-            />
-          </div>
-        )}
-
         <div>
           <label htmlFor="item-image">
             {itemData.imageKey ? "Replace image" : "Add image"}
@@ -237,6 +246,70 @@ export default function EditItemForm({
             onChange={handleImageChange}
           />
         </div>
+
+        {cropImageSrc && (
+          <div className="mt-4">
+            <p className="font-semibold">Crop Image</p>
+
+            <p className="text-sm text-gray-500 mt-1">
+              Move and zoom the image to select the area you want to use.
+            </p>
+
+            <div className="relative w-full h-[400px] mt-3 rounded-lg overflow-hidden bg-black">
+              <Cropper
+                image={cropImageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={handleCropComplete}
+              />
+            </div>
+
+            <div className="flex justify-end mt-4">
+              <button
+                type="button"
+                onClick={() => void handleUseCrop()}
+                disabled={!croppedAreaPixels}
+                className="rounded-lg border border-blue-500 bg-blue-100 px-4 py-2 text-blue-900 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!cropImageSrc && imagePreview && (
+          <>
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={handleEditCrop}
+                className="block rounded-lg disabled:cursor-default"
+                aria-label="Edit image crop"
+              >
+                <Image
+                  src={imagePreview}
+                  alt={`${itemData.name} image preview`}
+                  width={300}
+                  height={300}
+                  className="max-h-[300px] w-auto rounded-md object-contain transition-opacity hover:opacity-80"
+                />
+              </button>
+
+              <p className="text-sm text-gray-500 mt-2">
+                Click the image to adjust the crop.
+              </p>
+            </div>
+          </>
+        )}
+
+        {errorMessageImage && (
+          <p role="alert" className="mt-3 text-red-600">
+            {errorMessageImage}
+          </p>
+        )}
 
         {itemData.imageKey && (
           <button

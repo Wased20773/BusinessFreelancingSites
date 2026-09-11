@@ -9,7 +9,9 @@ import { copyObject } from "@/lib/s3/copy";
 import { deleteObject } from "@/lib/s3/delete";
 import {
   generateItemImageKey,
+  generateItemOriginalImageKey,
   generateSyncedItemImageKey,
+  generateSyncedItemOriginalImageKey,
 } from "@/lib/s3/keys";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
@@ -82,6 +84,7 @@ export async function PATCH(
         syncGroupId: true,
         isSynced: true,
         imageKey: true,
+        originalImageKey: true,
       },
     });
 
@@ -109,6 +112,7 @@ export async function PATCH(
               id: true,
               locationId: true,
               imageKey: true,
+              originalImageKey: true,
               isSynced: true,
             },
           })
@@ -117,6 +121,7 @@ export async function PATCH(
               id: item.id,
               locationId: item.locationId,
               imageKey: item.imageKey,
+              originalImageKey: item.originalImageKey,
               isSynced: item.isSynced,
             },
           ];
@@ -153,46 +158,114 @@ export async function PATCH(
     }
 
     let nextImageKey = item.imageKey;
+    let nextOriginalImageKey = item.originalImageKey;
 
     /*
-     * If we create a new S3 object before Prisma succeeds,
-     * remember it so it can be cleaned up on failure.
+     * If we create new S3 objects before Prisma succeeds,
+     * remember them so they can be cleaned up on failure.
      */
     let copiedImageKey: string | null = null;
+    let copiedOriginalImageKey: string | null = null;
 
     /*
      * When an independent Item rejoins a group, its old
-     * private object can be removed after Prisma succeeds.
+     * private objects can be removed after Prisma succeeds.
      */
     let oldPrivateImageKey: string | null = null;
+    let oldPrivateOriginalImageKey: string | null = null;
 
     // ################################
     // ##### SYNCED -> UNSYNCED #######
     // ################################
 
-    if (item.isSynced === true && body.isSynced === false && item.imageKey) {
-      const extension = getImageExtensionFromKey(item.imageKey);
+    if (item.isSynced === true && body.isSynced === false) {
+      /*
+       * Give the Item its own private cropped image.
+       */
+      if (item.imageKey) {
+        const extension = getImageExtensionFromKey(item.imageKey);
 
-      if (!extension) {
-        return NextResponse.json(
-          { error: "Unable to determine item image type" },
-          { status: 500 },
+        if (!extension) {
+          return NextResponse.json(
+            { error: "Unable to determine item image type" },
+            { status: 500 },
+          );
+        }
+
+        const privateImageKey = generateItemImageKey({
+          businessId,
+          itemId: item.id,
+          extension,
+        });
+
+        if (privateImageKey !== item.imageKey) {
+          await copyObject(item.imageKey, privateImageKey);
+
+          copiedImageKey = privateImageKey;
+        }
+
+        nextImageKey = privateImageKey;
+      }
+
+      /*
+       * Give the Item its own private original image too.
+       */
+      if (item.originalImageKey) {
+        const originalExtension = getImageExtensionFromKey(
+          item.originalImageKey,
         );
+
+        if (!originalExtension) {
+          if (copiedImageKey) {
+            try {
+              await deleteObject(copiedImageKey);
+            } catch (cleanupError) {
+              console.error(
+                "Failed to clean up copied item image:",
+                cleanupError,
+              );
+            }
+          }
+
+          return NextResponse.json(
+            { error: "Unable to determine original item image type" },
+            { status: 500 },
+          );
+        }
+
+        const privateOriginalImageKey = generateItemOriginalImageKey({
+          businessId,
+          itemId: item.id,
+          extension: originalExtension,
+        });
+
+        if (privateOriginalImageKey !== item.originalImageKey) {
+          try {
+            await copyObject(item.originalImageKey, privateOriginalImageKey);
+
+            copiedOriginalImageKey = privateOriginalImageKey;
+          } catch (error) {
+            /*
+             * The cropped image may already have been copied.
+             * Clean it up if copying the original fails.
+             */
+            if (copiedImageKey) {
+              try {
+                await deleteObject(copiedImageKey);
+              } catch (cleanupError) {
+                console.error(
+                  "Failed to clean up copied item image after original copy failure:",
+                  cleanupError,
+                );
+              }
+            }
+
+            throw error;
+          }
+        }
+
+        nextOriginalImageKey = privateOriginalImageKey;
       }
-
-      const privateImageKey = generateItemImageKey({
-        businessId,
-        itemId: item.id,
-        extension,
-      });
-
-      if (privateImageKey !== item.imageKey) {
-        await copyObject(item.imageKey, privateImageKey);
-
-        copiedImageKey = privateImageKey;
-      }
-
-      nextImageKey = privateImageKey;
     }
 
     // ################################
@@ -204,23 +277,31 @@ export async function PATCH(
        * Find an image being used by the currently-synced
        * members of this group.
        */
-      const groupImageKey =
+      const groupItem =
         affectedItems.find(
           (affectedItem) =>
             affectedItem.id !== item.id &&
             affectedItem.isSynced === true &&
             affectedItem.imageKey,
-        )?.imageKey ?? null;
+        ) ?? null;
 
       /*
        * Existing group image wins.
        */
-      if (groupImageKey) {
-        if (item.imageKey && item.imageKey !== groupImageKey) {
+      if (groupItem?.imageKey) {
+        if (item.imageKey && item.imageKey !== groupItem.imageKey) {
           oldPrivateImageKey = item.imageKey;
         }
 
-        nextImageKey = groupImageKey;
+        if (
+          item.originalImageKey &&
+          item.originalImageKey !== groupItem.originalImageKey
+        ) {
+          oldPrivateOriginalImageKey = item.originalImageKey;
+        }
+
+        nextImageKey = groupItem.imageKey;
+        nextOriginalImageKey = groupItem.originalImageKey;
       } else if (item.imageKey) {
         /*
          * No group image exists, but the rejoining Item
@@ -251,24 +332,87 @@ export async function PATCH(
         }
 
         nextImageKey = sharedImageKey;
+
+        /*
+         * Promote the private original to the shared sync path too.
+         */
+        if (item.originalImageKey) {
+          const originalExtension = getImageExtensionFromKey(
+            item.originalImageKey,
+          );
+
+          if (!originalExtension) {
+            if (copiedImageKey) {
+              try {
+                await deleteObject(copiedImageKey);
+              } catch (cleanupError) {
+                console.error(
+                  "Failed to clean up copied item image:",
+                  cleanupError,
+                );
+              }
+            }
+
+            return NextResponse.json(
+              { error: "Unable to determine original item image type" },
+              { status: 500 },
+            );
+          }
+
+          const sharedOriginalImageKey = generateSyncedItemOriginalImageKey({
+            businessId,
+            syncGroupId: item.syncGroupId,
+            extension: originalExtension,
+          });
+
+          if (sharedOriginalImageKey !== item.originalImageKey) {
+            try {
+              await copyObject(item.originalImageKey, sharedOriginalImageKey);
+
+              copiedOriginalImageKey = sharedOriginalImageKey;
+              oldPrivateOriginalImageKey = item.originalImageKey;
+            } catch (error) {
+              if (copiedImageKey) {
+                try {
+                  await deleteObject(copiedImageKey);
+                } catch (cleanupError) {
+                  console.error(
+                    "Failed to clean up copied item image after original copy failure:",
+                    cleanupError,
+                  );
+                }
+              }
+
+              throw error;
+            }
+          }
+
+          nextOriginalImageKey = sharedOriginalImageKey;
+        } else {
+          nextOriginalImageKey = null;
+        }
       } else {
         /*
          * Neither the group nor this Item has an image.
          */
         nextImageKey = null;
+        nextOriginalImageKey = null;
       }
     }
 
     /*
      * If the Item was already synced and stays synced,
-     * use the current group's shared image.
+     * use the current group's shared images.
      */
     if (item.isSynced === true && body.isSynced === true) {
-      nextImageKey =
+      const syncedItem =
         affectedItems.find(
           (affectedItem) =>
             affectedItem.isSynced === true && affectedItem.imageKey,
-        )?.imageKey ?? null;
+        ) ?? null;
+
+      nextImageKey = syncedItem?.imageKey ?? null;
+      nextOriginalImageKey = syncedItem?.originalImageKey ?? null;
     }
 
     const response = await updateSyncedResource({
@@ -286,6 +430,7 @@ export async function PATCH(
         isAvailable: body.isAvailable,
         slug,
         imageKey: nextImageKey,
+        originalImageKey: nextOriginalImageKey,
       },
       select: {
         id: true,
@@ -300,6 +445,7 @@ export async function PATCH(
         isAvailable: true,
         slug: true,
         imageKey: true,
+        originalImageKey: true,
         syncGroupId: true,
         isSynced: true,
         updatedAt: true,
@@ -307,7 +453,7 @@ export async function PATCH(
     });
 
     /*
-     * Prisma failed after we copied an object.
+     * Prisma failed after we copied one or both objects.
      */
     if (!response.ok) {
       if (copiedImageKey) {
@@ -321,12 +467,23 @@ export async function PATCH(
         }
       }
 
+      if (copiedOriginalImageKey) {
+        try {
+          await deleteObject(copiedOriginalImageKey);
+        } catch (cleanupError) {
+          console.error(
+            "Failed to clean up copied original item image after database failure:",
+            cleanupError,
+          );
+        }
+      }
+
       return response;
     }
 
     /*
      * Re-sync succeeded.
-     * The Item's old private S3 object is no longer needed.
+     * The Item's old private S3 objects are no longer needed.
      */
     if (oldPrivateImageKey && oldPrivateImageKey !== nextImageKey) {
       try {
@@ -334,6 +491,20 @@ export async function PATCH(
       } catch (cleanupError) {
         console.error(
           "Failed to clean up old private item image:",
+          cleanupError,
+        );
+      }
+    }
+
+    if (
+      oldPrivateOriginalImageKey &&
+      oldPrivateOriginalImageKey !== nextOriginalImageKey
+    ) {
+      try {
+        await deleteObject(oldPrivateOriginalImageKey);
+      } catch (cleanupError) {
+        console.error(
+          "Failed to clean up old private original item image:",
           cleanupError,
         );
       }
@@ -412,6 +583,7 @@ export async function DELETE(
         categoryId: true,
         syncGroupId: true,
         imageKey: true,
+        originalImageKey: true,
       },
     });
 
@@ -431,8 +603,8 @@ export async function DELETE(
        * Find every currently-synced Item in the group,
        * plus the selected Item itself.
        *
-       * imageKey is included so we know which S3 objects
-       * may need cleanup after deletion.
+       * Both image keys are included so we know which S3
+       * objects may need cleanup after deletion.
        */
       const itemsToDelete = await prisma.item.findMany({
         where: {
@@ -445,6 +617,7 @@ export async function DELETE(
           locationId: true,
           categoryId: true,
           imageKey: true,
+          originalImageKey: true,
         },
       });
 
@@ -469,11 +642,16 @@ export async function DELETE(
       /*
        * Grab every unique S3 key referenced by the Items
        * we're about to delete.
+       *
+       * This includes both cropped and original images.
        */
       const imageKeys = [
         ...new Set(
           itemsToDelete
-            .map((selectedItem) => selectedItem.imageKey)
+            .flatMap((selectedItem) => [
+              selectedItem.imageKey,
+              selectedItem.originalImageKey,
+            ])
             .filter((imageKey): imageKey is string => imageKey !== null),
         ),
       ];
@@ -483,7 +661,8 @@ export async function DELETE(
        * check whether any Item OUTSIDE this deletion still
        * references one of those keys.
        *
-       * This protects shared synced images.
+       * We check both imageKey and originalImageKey because
+       * either type of image may still be shared.
        */
       const remainingImageReferences =
         imageKeys.length > 0
@@ -493,19 +672,32 @@ export async function DELETE(
                   notIn: itemIds,
                 },
 
-                imageKey: {
-                  in: imageKeys,
-                },
+                OR: [
+                  {
+                    imageKey: {
+                      in: imageKeys,
+                    },
+                  },
+                  {
+                    originalImageKey: {
+                      in: imageKeys,
+                    },
+                  },
+                ],
               },
               select: {
                 imageKey: true,
+                originalImageKey: true,
               },
             })
           : [];
 
       const stillReferencedImageKeys = new Set(
         remainingImageReferences
-          .map((remainingItem) => remainingItem.imageKey)
+          .flatMap((remainingItem) => [
+            remainingItem.imageKey,
+            remainingItem.originalImageKey,
+          ])
           .filter((imageKey): imageKey is string => imageKey !== null),
       );
 
@@ -589,29 +781,63 @@ export async function DELETE(
     // ################################
 
     /*
-     * If this Item has an image, check whether another Item
-     * still references that exact S3 object.
+     * Collect both images belonging to the selected Item.
      *
-     * This is especially important if the selected Item
-     * currently points at a shared sync-group image.
+     * Either one may still be referenced by another Item,
+     * especially if this Item recently left a sync group.
      */
-    let deleteImageFromS3 = false;
+    const imageKeys = [
+      ...new Set(
+        [item.imageKey, item.originalImageKey].filter(
+          (imageKey): imageKey is string => imageKey !== null,
+        ),
+      ),
+    ];
 
-    if (item.imageKey) {
-      const otherImageReference = await prisma.item.findFirst({
-        where: {
-          id: {
-            not: item.id,
-          },
-          imageKey: item.imageKey,
-        },
-        select: {
-          id: true,
-        },
-      });
+    /*
+     * Check whether another Item still references either
+     * S3 object.
+     */
+    const remainingImageReferences =
+      imageKeys.length > 0
+        ? await prisma.item.findMany({
+            where: {
+              id: {
+                not: item.id,
+              },
 
-      deleteImageFromS3 = !otherImageReference;
-    }
+              OR: [
+                {
+                  imageKey: {
+                    in: imageKeys,
+                  },
+                },
+                {
+                  originalImageKey: {
+                    in: imageKeys,
+                  },
+                },
+              ],
+            },
+            select: {
+              imageKey: true,
+              originalImageKey: true,
+            },
+          })
+        : [];
+
+    const stillReferencedImageKeys = new Set(
+      remainingImageReferences
+        .flatMap((remainingItem) => [
+          remainingItem.imageKey,
+          remainingItem.originalImageKey,
+        ])
+        .filter((imageKey): imageKey is string => imageKey !== null),
+    );
+
+    const imageKeysToDelete = imageKeys.filter(
+      (imageKey) => !stillReferencedImageKeys.has(imageKey),
+    );
 
     /*
      * Delete only the selected Item.
@@ -653,15 +879,15 @@ export async function DELETE(
     );
 
     /*
-     * Delete the S3 object only if the selected Item was the
-     * final Item referencing it.
+     * Delete each S3 object only if the selected Item was
+     * the final Item referencing it.
      */
-    if (item.imageKey && deleteImageFromS3) {
+    for (const imageKey of imageKeysToDelete) {
       try {
-        await deleteObject(item.imageKey);
+        await deleteObject(imageKey);
       } catch (cleanupError) {
         console.error(
-          `Failed to clean up deleted Item image "${item.imageKey}":`,
+          `Failed to clean up deleted Item image "${imageKey}":`,
           cleanupError,
         );
       }

@@ -74,11 +74,16 @@ export async function createItemImage(
   itemId: string,
   image: File,
   isSynced: boolean,
+  originalImage?: File | null,
 ) {
   const formData = new FormData();
 
   formData.append("image", image);
   formData.append("isSynced", String(isSynced));
+
+  if (originalImage) {
+    formData.append("originalImage", originalImage);
+  }
 
   return axios
     .post(
@@ -95,11 +100,16 @@ export async function updateItemImage(
   itemId: string,
   image: File,
   isSynced: boolean,
+  originalImage?: File | null,
 ) {
   const formData = new FormData();
 
   formData.append("image", image);
   formData.append("isSynced", String(isSynced));
+
+  if (originalImage) {
+    formData.append("originalImage", originalImage);
+  }
 
   return axios
     .patch(
@@ -121,7 +131,7 @@ export async function deleteItemImage(
       `/api/businesses/${businessId}/locations/${locationId}/items/${itemId}/image`,
       {
         data: {
-          deleleteAllSynced: deleteAllSynced,
+          deleteAllSynced: deleteAllSynced,
         },
       },
     )

@@ -8,11 +8,17 @@ import { prisma } from "@/lib/prisma";
 import { deleteObject } from "@/lib/s3/delete";
 import {
   generateItemImageKey,
+  generateItemOriginalImageKey,
   generateSyncedItemImageKey,
+  generateSyncedItemOriginalImageKey,
 } from "@/lib/s3/keys";
 import { uploadImage } from "@/lib/s3/upload";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
+
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
 // POST /api/businesses/[businessId]/locations/[locationId]/items/[itemId]/image
 export async function POST(
@@ -54,6 +60,7 @@ export async function POST(
       select: {
         id: true,
         imageKey: true,
+        originalImageKey: true,
         syncGroupId: true,
       },
     });
@@ -62,6 +69,14 @@ export async function POST(
       return NextResponse.json({ error: "Item not found" }, { status: 400 });
     }
 
+    /*
+     * imageRequestValidation consumes the request body,
+     * so clone it before validating the cropped image.
+     *
+     * The clone is used to retrieve the uncropped original.
+     */
+    const originalImageRequest = request.clone();
+
     const imageResult = await imageRequestValidation(request);
 
     if (imageResult instanceof NextResponse) {
@@ -69,6 +84,22 @@ export async function POST(
     }
 
     const { image, isSynced } = imageResult;
+
+    const originalImageResult = await getOriginalImage(
+      originalImageRequest,
+      true,
+    );
+
+    if (originalImageResult instanceof NextResponse) {
+      return originalImageResult;
+    }
+
+    if (!originalImageResult) {
+      return NextResponse.json(
+        { error: "Original image was not found" },
+        { status: 400 },
+      );
+    }
 
     /*
      * If this operation is being synchronized, check
@@ -113,7 +144,10 @@ export async function POST(
       );
     }
 
-    const processedImage = await processImage(image);
+    const [processedImage, processedOriginalImage] = await Promise.all([
+      processImage(image),
+      processImage(originalImageResult),
+    ]);
 
     const imageKey =
       isSynced && item.syncGroupId
@@ -128,11 +162,43 @@ export async function POST(
             extension: processedImage.extension,
           });
 
+    const originalImageKey =
+      isSynced && item.syncGroupId
+        ? generateSyncedItemOriginalImageKey({
+            businessId,
+            syncGroupId: item.syncGroupId,
+            extension: processedOriginalImage.extension,
+          })
+        : generateItemOriginalImageKey({
+            businessId,
+            itemId: item.id,
+            extension: processedOriginalImage.extension,
+          });
+
     await uploadImage({
       key: imageKey,
       body: processedImage.buffer,
       contentType: processedImage.contentType,
     });
+
+    try {
+      await uploadImage({
+        key: originalImageKey,
+        body: processedOriginalImage.buffer,
+        contentType: processedOriginalImage.contentType,
+      });
+    } catch (error) {
+      try {
+        await deleteObject(imageKey);
+      } catch (cleanupError) {
+        console.error(
+          "Failed to clean up cropped image after original image upload failure:",
+          cleanupError,
+        );
+      }
+
+      throw error;
+    }
 
     try {
       /*
@@ -147,6 +213,7 @@ export async function POST(
           },
           data: {
             imageKey,
+            originalImageKey,
           },
         });
 
@@ -155,6 +222,7 @@ export async function POST(
             message: "Synchronized item image uploaded successfully",
             count: updatedItems.count,
             imageKey,
+            originalImageKey,
           },
           { status: 201 },
         );
@@ -170,11 +238,13 @@ export async function POST(
         },
         data: {
           imageKey,
+          originalImageKey,
         },
         select: {
           id: true,
           locationId: true,
           imageKey: true,
+          originalImageKey: true,
           updatedAt: true,
         },
       });
@@ -192,6 +262,15 @@ export async function POST(
       } catch (cleanupError) {
         console.error(
           "Failed to clean up uploaded image after database failure:",
+          cleanupError,
+        );
+      }
+
+      try {
+        await deleteObject(originalImageKey);
+      } catch (cleanupError) {
+        console.error(
+          "Failed to clean up uploaded original image after database failure:",
           cleanupError,
         );
       }
@@ -250,6 +329,7 @@ export async function PATCH(
       select: {
         id: true,
         imageKey: true,
+        originalImageKey: true,
         syncGroupId: true,
       },
     });
@@ -257,6 +337,16 @@ export async function PATCH(
     if (!item) {
       return NextResponse.json({ error: "Item not found" }, { status: 400 });
     }
+
+    /*
+     * Clone before imageRequestValidation consumes the body.
+     *
+     * PATCH only includes originalImage when the user selected
+     * an entirely new source image.
+     *
+     * Re-cropping an existing source only sends image.
+     */
+    const originalImageRequest = request.clone();
 
     const imageResult = await imageRequestValidation(request);
 
@@ -266,7 +356,20 @@ export async function PATCH(
 
     const { image, isSynced } = imageResult;
 
+    const originalImageResult = await getOriginalImage(
+      originalImageRequest,
+      false,
+    );
+
+    if (originalImageResult instanceof NextResponse) {
+      return originalImageResult;
+    }
+
     const processedImage = await processImage(image);
+
+    const processedOriginalImage = originalImageResult
+      ? await processImage(originalImageResult)
+      : null;
 
     /*
      * #############################
@@ -284,6 +387,7 @@ export async function PATCH(
         },
         select: {
           imageKey: true,
+          originalImageKey: true,
         },
       });
 
@@ -298,14 +402,38 @@ export async function PATCH(
       }
 
       /*
-       * The shared group's existing key is the one
-       * that gets overwritten.
+       * The shared group's existing cropped key is overwritten.
+       *
+       * This means changing only the crop does NOT touch the
+       * stored original image.
        */
       await uploadImage({
         key: syncedItemWithImage.imageKey,
         body: processedImage.buffer,
         contentType: processedImage.contentType,
       });
+
+      let syncedOriginalImageKey: string | null = null;
+
+      /*
+       * originalImage is only present when a completely new
+       * source image was selected.
+       */
+      if (processedOriginalImage) {
+        syncedOriginalImageKey =
+          syncedItemWithImage.originalImageKey ??
+          generateSyncedItemOriginalImageKey({
+            businessId,
+            syncGroupId: item.syncGroupId,
+            extension: processedOriginalImage.extension,
+          });
+
+        await uploadImage({
+          key: syncedOriginalImageKey,
+          body: processedOriginalImage.buffer,
+          contentType: processedOriginalImage.contentType,
+        });
+      }
 
       const updatedAt = new Date();
 
@@ -315,10 +443,16 @@ export async function PATCH(
 
           OR: [{ isSynced: true }, { id: item.id }],
         },
-        data: {
-          imageKey: syncedItemWithImage.imageKey,
-          updatedAt,
-        },
+        data: syncedOriginalImageKey
+          ? {
+              imageKey: syncedItemWithImage.imageKey,
+              originalImageKey: syncedOriginalImageKey,
+              updatedAt,
+            }
+          : {
+              imageKey: syncedItemWithImage.imageKey,
+              updatedAt,
+            },
       });
 
       return NextResponse.json(
@@ -353,7 +487,7 @@ export async function PATCH(
      * request explicitly says isSynced=false, we must NOT
      * overwrite the shared object.
      *
-     * Instead create/overwrite this Item's private key.
+     * Instead create/overwrite this Item's private cropped key.
      */
     const extension = getImageExtensionFromKey(item.imageKey);
 
@@ -376,21 +510,81 @@ export async function PATCH(
       contentType: processedImage.contentType,
     });
 
+    let privateOriginalImageKey: string | null = null;
+
+    /*
+     * If no new original was sent, keep the Item's existing
+     * originalImageKey exactly as-is.
+     *
+     * That original may still be a synchronized/shared object.
+     * This allows one Item to have a private crop while still
+     * using the group's original source for future cropping.
+     */
+    if (processedOriginalImage) {
+      privateOriginalImageKey = generateItemOriginalImageKey({
+        businessId,
+        itemId: item.id,
+        extension: processedOriginalImage.extension,
+      });
+
+      await uploadImage({
+        key: privateOriginalImageKey,
+        body: processedOriginalImage.buffer,
+        contentType: processedOriginalImage.contentType,
+      });
+    }
+
+    const oldOriginalImageKey = item.originalImageKey;
+
     const updatedItem = await prisma.item.update({
       where: {
         id: item.id,
         locationId,
       },
-      data: {
-        imageKey: privateImageKey,
-      },
+      data: privateOriginalImageKey
+        ? {
+            imageKey: privateImageKey,
+            originalImageKey: privateOriginalImageKey,
+          }
+        : {
+            imageKey: privateImageKey,
+          },
       select: {
         id: true,
         locationId: true,
         imageKey: true,
+        originalImageKey: true,
         updatedAt: true,
       },
     });
+
+    /*
+     * If a completely new private original replaced an older
+     * private original with a different key, remove the old one.
+     *
+     * Never remove a shared synchronized original here because
+     * other Items may still reference it.
+     */
+    if (
+      privateOriginalImageKey &&
+      oldOriginalImageKey &&
+      oldOriginalImageKey !== privateOriginalImageKey
+    ) {
+      const oldOriginalWasShared =
+        item.syncGroupId &&
+        oldOriginalImageKey.includes(`/synced/${item.syncGroupId}/`);
+
+      if (!oldOriginalWasShared) {
+        try {
+          await deleteObject(oldOriginalImageKey);
+        } catch (cleanupError) {
+          console.error(
+            "Failed to remove previous private original image:",
+            cleanupError,
+          );
+        }
+      }
+    }
 
     return NextResponse.json(
       {
@@ -463,6 +657,7 @@ export async function DELETE(
       select: {
         id: true,
         imageKey: true,
+        originalImageKey: true,
         syncGroupId: true,
       },
     });
@@ -488,7 +683,6 @@ export async function DELETE(
      * ##### SYNCED DELETE #########
      * #############################
      */
-
     if (body.deleteAllSynced && item.syncGroupId) {
       const syncedItemWithImage = await prisma.item.findFirst({
         where: {
@@ -500,6 +694,7 @@ export async function DELETE(
         },
         select: {
           imageKey: true,
+          originalImageKey: true,
         },
       });
 
@@ -513,6 +708,7 @@ export async function DELETE(
       }
 
       const oldImageKey = syncedItemWithImage.imageKey;
+      const oldOriginalImageKey = syncedItemWithImage.originalImageKey;
 
       await prisma.item.updateMany({
         where: {
@@ -522,11 +718,16 @@ export async function DELETE(
         },
         data: {
           imageKey: null,
+          originalImageKey: null,
         },
       });
 
       try {
         await deleteObject(oldImageKey);
+
+        if (oldOriginalImageKey && oldOriginalImageKey !== oldImageKey) {
+          await deleteObject(oldOriginalImageKey);
+        }
       } catch (error) {
         try {
           await prisma.item.updateMany({
@@ -537,11 +738,12 @@ export async function DELETE(
             },
             data: {
               imageKey: oldImageKey,
+              originalImageKey: oldOriginalImageKey,
             },
           });
         } catch (rollbackError) {
           console.error(
-            "Failed to restore synchronized imageKey after S3 deletion failure:",
+            "Failed to restore synchronized image keys after S3 deletion failure:",
             rollbackError,
           );
         }
@@ -560,15 +762,21 @@ export async function DELETE(
      * ##### SINGLE DELETE #########
      * #############################
      *
-     * If the selected Item points at a shared image, DO NOT
-     * delete the S3 object. Other synced Items still need it.
+     * A cropped image and original image are checked separately.
+     *
+     * Either one may still point at the synchronized group's
+     * shared S3 object.
      */
 
-    const sharedImage =
-      item.syncGroupId &&
-      item.imageKey.includes(`/synced/${item.syncGroupId}/`);
-
     const oldImageKey = item.imageKey;
+    const oldOriginalImageKey = item.originalImageKey;
+
+    const sharedImage =
+      item.syncGroupId && oldImageKey.includes(`/synced/${item.syncGroupId}/`);
+
+    const sharedOriginalImage =
+      item.syncGroupId &&
+      oldOriginalImageKey?.includes(`/synced/${item.syncGroupId}/`);
 
     const updatedItem = await prisma.item.update({
       where: {
@@ -577,42 +785,53 @@ export async function DELETE(
       },
       data: {
         imageKey: null,
+        originalImageKey: null,
       },
       select: {
         id: true,
         locationId: true,
         imageKey: true,
+        originalImageKey: true,
         updatedAt: true,
       },
     });
 
-    /*
-     * Only physically delete the S3 object if it belongs
-     * exclusively to this Item.
-     */
-    if (!sharedImage) {
-      try {
+    try {
+      /*
+       * Only physically delete objects that belong exclusively
+       * to this Item.
+       */
+      if (!sharedImage) {
         await deleteObject(oldImageKey);
-      } catch (error) {
-        try {
-          await prisma.item.update({
-            where: {
-              id: item.id,
-              locationId,
-            },
-            data: {
-              imageKey: oldImageKey,
-            },
-          });
-        } catch (rollbackError) {
-          console.error(
-            "Failed to restore imageKey after S3 deletion failure:",
-            rollbackError,
-          );
-        }
-
-        throw error;
       }
+
+      if (
+        oldOriginalImageKey &&
+        !sharedOriginalImage &&
+        oldOriginalImageKey !== oldImageKey
+      ) {
+        await deleteObject(oldOriginalImageKey);
+      }
+    } catch (error) {
+      try {
+        await prisma.item.update({
+          where: {
+            id: item.id,
+            locationId,
+          },
+          data: {
+            imageKey: oldImageKey,
+            originalImageKey: oldOriginalImageKey,
+          },
+        });
+      } catch (rollbackError) {
+        console.error(
+          "Failed to restore image keys after S3 deletion failure:",
+          rollbackError,
+        );
+      }
+
+      throw error;
     }
 
     return NextResponse.json(
@@ -630,6 +849,56 @@ export async function DELETE(
       { status: 500 },
     );
   }
+}
+
+async function getOriginalImage(
+  request: Request,
+  required: boolean,
+): Promise<File | null | NextResponse> {
+  const formData = await request.formData();
+  const originalImage = formData.get("originalImage");
+
+  if (!originalImage) {
+    if (required) {
+      return NextResponse.json(
+        { error: "An original image was not found" },
+        { status: 400 },
+      );
+    }
+
+    return null;
+  }
+
+  if (!(originalImage instanceof File)) {
+    return NextResponse.json(
+      { error: "The original image must be a file" },
+      { status: 400 },
+    );
+  }
+
+  if (
+    !ALLOWED_IMAGE_TYPES.includes(
+      originalImage.type as (typeof ALLOWED_IMAGE_TYPES)[number],
+    )
+  ) {
+    return NextResponse.json(
+      {
+        error: "The original image must be a JPEG, PNG, or WebP image",
+      },
+      { status: 400 },
+    );
+  }
+
+  if (originalImage.size > MAX_IMAGE_SIZE) {
+    return NextResponse.json(
+      {
+        error: "The original image cannot be larger than 10MB",
+      },
+      { status: 400 },
+    );
+  }
+
+  return originalImage;
 }
 
 function getImageExtensionFromKey(
