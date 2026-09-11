@@ -1,19 +1,50 @@
+"use client";
+
 import ChevronIcon from "@/components/icons/chevron";
-import { Dispatch, InputEvent, SetStateAction, SubmitEvent } from "react";
+import {
+  ChangeEvent,
+  Dispatch,
+  InputEvent,
+  SetStateAction,
+  SubmitEvent,
+} from "react";
 import RequiredField from "../RequiredField";
 import IsSyncedCheckbox from "../IsSyncedCheckbox";
+import Cropper, { type Area, type Point } from "react-easy-crop";
+import Image from "next/image";
 
 type CreateItemFormProps = {
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
   handleFormInput(event: InputEvent<HTMLFormElement>): void;
+
   isLoading: boolean;
   isCreating: boolean;
+
   errorMessage: string | null;
+  errorMessageImage: string | null;
+
   canSubmit: boolean;
   latestOrder: number;
+
   hasSyncGroup: boolean;
   isSynced: boolean;
   setIsSynced: Dispatch<SetStateAction<boolean>>;
+
+  imagePreview: string | null;
+
+  cropImageSrc: string | null;
+  crop: Point;
+  zoom: number;
+  croppedAreaPixels: Area | null;
+
+  handleImageChange(event: ChangeEvent<HTMLInputElement>): void;
+
+  setCrop: Dispatch<SetStateAction<Point>>;
+  setZoom: Dispatch<SetStateAction<number>>;
+
+  handleCropComplete(croppedArea: Area, croppedAreaPixels: Area): void;
+  handleUseCrop(): Promise<void>;
+  handleEditCrop(): void;
 };
 
 export default function CreateItemForm({
@@ -22,11 +53,23 @@ export default function CreateItemForm({
   isLoading,
   isCreating,
   errorMessage,
+  errorMessageImage,
   canSubmit,
   latestOrder,
   hasSyncGroup,
   isSynced,
   setIsSynced,
+  imagePreview,
+  cropImageSrc,
+  crop,
+  zoom,
+  croppedAreaPixels,
+  handleImageChange,
+  setCrop,
+  setZoom,
+  handleCropComplete,
+  handleUseCrop,
+  handleEditCrop,
 }: CreateItemFormProps) {
   return (
     <form
@@ -34,7 +77,7 @@ export default function CreateItemForm({
       onSubmit={handleSubmit}
       onInput={handleFormInput}
     >
-      <fieldset disabled={isLoading}>
+      <fieldset disabled={isLoading || isCreating}>
         <legend>Item info</legend>
 
         <div>
@@ -67,6 +110,7 @@ export default function CreateItemForm({
           <label htmlFor="item-contains">
             What does the item contain? Please separate with a comma.
           </label>
+
           <input
             className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
             id="item-contains"
@@ -98,7 +142,76 @@ export default function CreateItemForm({
             name="image"
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            onChange={handleImageChange}
           />
+
+          {cropImageSrc && (
+            <div className="mt-4">
+              <p className="text-sm text-gray-500">
+                Adjust the image crop below.
+              </p>
+
+              <div className="relative w-full h-[400px] mt-3 rounded-lg overflow-hidden bg-black">
+                <Cropper
+                  image={cropImageSrc}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={1}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropComplete={handleCropComplete}
+                />
+              </div>
+
+              <div className="flex justify-end mt-4">
+                <button
+                  type="button"
+                  onClick={() => void handleUseCrop()}
+                  disabled={!croppedAreaPixels}
+                  className="
+                    rounded-lg
+                    border border-blue-500
+                    bg-blue-100
+                    px-4 py-2
+                    text-blue-900
+                    disabled:cursor-not-allowed
+                    disabled:opacity-50
+                  "
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!cropImageSrc && imagePreview && (
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={handleEditCrop}
+                className="block"
+                aria-label="Adjust item image crop"
+              >
+                <Image
+                  src={imagePreview}
+                  alt="Item image preview"
+                  width={300}
+                  height={300}
+                  className="max-h-[300px] w-auto rounded-md object-contain"
+                />
+              </button>
+
+              <p className="mt-2 text-sm text-gray-500">
+                Select the image to adjust the crop.
+              </p>
+            </div>
+          )}
+
+          {errorMessageImage && (
+            <p role="alert" className="mt-2">
+              {errorMessageImage}
+            </p>
+          )}
         </div>
 
         <div>
@@ -146,7 +259,7 @@ export default function CreateItemForm({
         inputName={"sync-items"}
         isSynced={isSynced}
         setIsSynced={setIsSynced}
-        isSaving={isLoading}
+        isSaving={isLoading || isCreating}
         description={
           "Creates this item for all locations in the same synced category."
         }

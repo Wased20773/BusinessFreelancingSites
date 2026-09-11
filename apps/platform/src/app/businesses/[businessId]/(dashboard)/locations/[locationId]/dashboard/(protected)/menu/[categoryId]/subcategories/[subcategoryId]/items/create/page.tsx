@@ -2,7 +2,13 @@
 
 import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
-import { SubmitEvent, useEffect, useState } from "react";
+import {
+  ChangeEvent,
+  InputEvent,
+  SubmitEvent,
+  useEffect,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import "../../../../../../page.css";
 import { ACCESS_LEVEL, type ItemJson } from "@/types/types";
@@ -10,6 +16,7 @@ import CreateItemForm from "@/components/ui/items/CreateItemForm";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
 import PageHeading from "@/components/ui/PageHeader";
+import type { Area, Point } from "react-easy-crop";
 
 export default function CreateItemPage() {
   const params = useParams<{
@@ -27,10 +34,24 @@ export default function CreateItemPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessageImage, setErrorMessageImage] = useState<string | null>(
+    null,
+  );
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
   const [latestOrder, setLatestOrder] = useState<number>(1);
   const [isSynced, setIsSynced] = useState<boolean>(false);
   const [hasSyncGroup, setHasSyncGroup] = useState<boolean>(false);
+
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  // For Cropping
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState<number>(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
   const router = useRouter();
 
@@ -110,10 +131,158 @@ export default function CreateItemPage() {
     canCreateItem,
   ]);
 
+  function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
+    const selectedFile = event.target.files?.[0];
+
+    if (!selectedFile) {
+      return;
+    }
+
+    if (imagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    if (cropImageSrc?.startsWith("blob:")) {
+      URL.revokeObjectURL(cropImageSrc);
+    }
+
+    if (
+      originalImageSrc?.startsWith("blob:") &&
+      originalImageSrc !== cropImageSrc
+    ) {
+      URL.revokeObjectURL(originalImageSrc);
+    }
+
+    const imageUrl = URL.createObjectURL(selectedFile);
+
+    setImage(null);
+    setImagePreview(null);
+
+    setSelectedImage(selectedFile);
+    setOriginalImageSrc(imageUrl);
+    setCropImageSrc(imageUrl);
+
+    setCrop({
+      x: 0,
+      y: 0,
+    });
+
+    setZoom(1);
+    setCroppedAreaPixels(null);
+    setErrorMessageImage(null);
+  }
+
+  function handleCropComplete(_croppedArea: Area, croppedAreaPixels: Area) {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }
+
+  async function createCroppedImage(
+    imageSrc: string,
+    cropArea: Area,
+    originalFile: File | null,
+  ): Promise<File> {
+    const sourceImage = document.createElement("img");
+
+    sourceImage.crossOrigin = "anonymous";
+    sourceImage.src = imageSrc;
+
+    await new Promise<void>((resolve, reject) => {
+      sourceImage.onload = () => resolve();
+      sourceImage.onerror = () => reject(new Error("Failed to load image."));
+    });
+
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      throw new Error("Could not create image canvas.");
+    }
+
+    /*
+     * Use the crop's actual pixel dimensions.
+     * We are not forcing the Item image into a fixed size.
+     */
+    canvas.width = cropArea.width;
+    canvas.height = cropArea.height;
+
+    context.drawImage(
+      sourceImage,
+
+      cropArea.x,
+      cropArea.y,
+      cropArea.width,
+      cropArea.height,
+
+      0,
+      0,
+      cropArea.width,
+      cropArea.height,
+    );
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (result) => {
+          if (result) {
+            resolve(result);
+          } else {
+            reject(new Error("Failed to crop image."));
+          }
+        },
+
+        originalFile?.type ?? "image/webp",
+
+        0.95,
+      );
+    });
+
+    const imageType = originalFile?.type ?? "image/webp";
+
+    return new File([blob], originalFile?.name ?? "item-image.webp", {
+      type: imageType,
+    });
+  }
+
+  async function handleUseCrop() {
+    if (!cropImageSrc || !croppedAreaPixels) {
+      return;
+    }
+
+    try {
+      const croppedImage = await createCroppedImage(
+        cropImageSrc,
+        croppedAreaPixels,
+        selectedImage,
+      );
+
+      if (imagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+
+      setImage(croppedImage);
+      setImagePreview(URL.createObjectURL(croppedImage));
+      setCropImageSrc(null);
+      setErrorMessageImage(null);
+    } catch (error) {
+      console.error("Error cropping item image:", error);
+
+      setErrorMessageImage(
+        "Something went wrong while cropping the item image.",
+      );
+    }
+  }
+
+  function handleEditCrop() {
+    if (!originalImageSrc) {
+      return;
+    }
+
+    setCropImageSrc(originalImageSrc);
+  }
+
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    setIsLoading(true);
+    setIsCreating(true);
     setErrorMessage(null);
 
     const form = event.currentTarget;
@@ -124,7 +293,6 @@ export default function CreateItemPage() {
     const containsList = formData.get("containsList");
     const calories = formData.get("calories");
     const price = formData.get("price");
-    const image = formData.get("image");
 
     const requestBody = {
       name: typeof name === "string" ? name.trim() : "",
@@ -172,10 +340,20 @@ export default function CreateItemPage() {
         const item = itemResponse.data;
 
         // Item now exists.
-        if (image instanceof File && image.size > 0) {
+        if (
+          image instanceof File &&
+          image.size > 0 &&
+          selectedImage instanceof File &&
+          selectedImage.size > 0
+        ) {
           const imageFormData = new FormData();
 
+          /*
+           * image = cropped/display image
+           * originalImage = uncropped source image
+           */
           imageFormData.append("image", image);
+          imageFormData.append("originalImage", selectedImage);
           imageFormData.append("isSynced", String(isSynced));
 
           try {
@@ -184,9 +362,21 @@ export default function CreateItemPage() {
               imageFormData,
             );
           } catch (error) {
-            console.error("Item created, but image upload failed:", error);
+            if (axios.isAxiosError<{ error?: string }>(error)) {
+              console.error(
+                "Item created, but image upload failed:",
+                error.response?.data,
+              );
 
-            toast.error("Item created, but image upload failed.");
+              toast.error(
+                error.response?.data?.error ??
+                  "Item created, but image upload failed.",
+              );
+            } else {
+              console.error("Item created, but image upload failed:", error);
+
+              toast.error("Item created, but image upload failed.");
+            }
           }
         }
 
@@ -216,7 +406,32 @@ export default function CreateItemPage() {
       await itemToast.unwrap();
 
       form.reset();
+
+      if (imagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+
+      if (cropImageSrc?.startsWith("blob:")) {
+        URL.revokeObjectURL(cropImageSrc);
+      }
+
+      if (
+        originalImageSrc?.startsWith("blob:") &&
+        originalImageSrc !== cropImageSrc
+      ) {
+        URL.revokeObjectURL(originalImageSrc);
+      }
+
+      setImage(null);
+      setImagePreview(null);
+      setSelectedImage(null);
+      setOriginalImageSrc(null);
+      setCropImageSrc(null);
+      setCroppedAreaPixels(null);
+
       setCanSubmit(false);
+      setIsSynced(false);
+
       router.push(
         `/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}`,
       );
@@ -235,7 +450,7 @@ export default function CreateItemPage() {
     }
   }
 
-  function handleFormInput(event: React.FormEvent<HTMLFormElement>) {
+  function handleFormInput(event: InputEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget);
 
     const name = formData.get("name");
@@ -281,11 +496,23 @@ export default function CreateItemPage() {
           isLoading={isLoading}
           isCreating={isCreating}
           errorMessage={errorMessage}
+          errorMessageImage={errorMessageImage}
           canSubmit={canSubmit}
           latestOrder={latestOrder}
           isSynced={isSynced}
           setIsSynced={setIsSynced}
           hasSyncGroup={hasSyncGroup}
+          imagePreview={imagePreview}
+          cropImageSrc={cropImageSrc}
+          crop={crop}
+          zoom={zoom}
+          croppedAreaPixels={croppedAreaPixels}
+          handleImageChange={handleImageChange}
+          setCrop={setCrop}
+          setZoom={setZoom}
+          handleCropComplete={handleCropComplete}
+          handleUseCrop={handleUseCrop}
+          handleEditCrop={handleEditCrop}
         />
       </div>
     </section>

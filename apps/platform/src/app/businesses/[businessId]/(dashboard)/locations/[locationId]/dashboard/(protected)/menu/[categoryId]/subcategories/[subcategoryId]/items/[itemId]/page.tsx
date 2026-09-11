@@ -12,7 +12,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import "../../../../../../page.css";
-import { moveOrder, ReorderDirection } from "@/lib/api/reorder";
+import { moveOrder, type ReorderDirection } from "@/lib/api/reorder";
 import {
   createItemImage,
   deleteItem,
@@ -31,6 +31,7 @@ import EditItemForm from "@/components/ui/items/EditItemForm";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
 import PageHeading from "@/components/ui/PageHeader";
+import type { Area, Point } from "react-easy-crop";
 
 export default function EditItemPage() {
   const params = useParams<{
@@ -50,6 +51,7 @@ export default function EditItemPage() {
   const itemId = params.itemId;
 
   const [itemData, setItemData] = useState<ItemJson | null>(null);
+
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
@@ -61,10 +63,22 @@ export default function EditItemPage() {
   );
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessageImage, setErrorMessageImage] = useState<string | null>(
+    null,
+  );
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
+  const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSynced, setIsSynced] = useState<boolean>(false);
   const [hasSyncGroup, setHasSyncGroup] = useState<boolean>(false);
+
+  // For Cropping
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState<number>(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
   const { data: session, status } = useSession();
 
@@ -79,11 +93,25 @@ export default function EditItemPage() {
 
   const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
-  async function refreshItemData() {
+  async function refreshItemData(preserveOriginalImage = false) {
     const refreshedItem = await getItem(businessId, locationId, itemId);
+
+    if (imagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
 
     setItemData(refreshedItem);
     setImagePreview(refreshedItem.imageKey ?? null);
+
+    if (!preserveOriginalImage) {
+      if (originalImageSrc?.startsWith("blob:")) {
+        URL.revokeObjectURL(originalImageSrc);
+      }
+
+      setOriginalImageSrc(
+        refreshedItem.originalImageKey ?? refreshedItem.imageKey ?? null,
+      );
+    }
   }
 
   useEffect(() => {
@@ -122,11 +150,15 @@ export default function EditItemPage() {
         setIsSynced(selectedItem.isSynced);
         setHasSyncGroup(Boolean(selectedItem.syncGroupId));
         setImagePreview(selectedItem.imageKey ?? null);
+        setOriginalImageSrc(
+          selectedItem.originalImageKey ?? selectedItem.imageKey ?? null,
+        );
         setCanSubmit(
           Boolean(selectedItem.name.trim() && selectedItem.price !== null),
         );
       } catch (error) {
         console.error("Error in Edit Item page:", error);
+
         setErrorMessage("Failed to load item data.");
       } finally {
         setIsLoading(false);
@@ -151,16 +183,150 @@ export default function EditItemPage() {
   }
 
   function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const selectedFile = event.target.files?.[0];
 
-    if (!file) {
-      setImagePreview(itemData?.imageKey ?? null);
+    if (!selectedFile) {
       return;
     }
 
-    const previewUrl = URL.createObjectURL(file);
+    if (imagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
 
-    setImagePreview(previewUrl);
+    if (cropImageSrc?.startsWith("blob:")) {
+      URL.revokeObjectURL(cropImageSrc);
+    }
+
+    if (
+      originalImageSrc?.startsWith("blob:") &&
+      originalImageSrc !== cropImageSrc
+    ) {
+      URL.revokeObjectURL(originalImageSrc);
+    }
+
+    const imageUrl = URL.createObjectURL(selectedFile);
+
+    setImage(null);
+    setImagePreview(itemData?.imageKey ?? null);
+    setSelectedImage(selectedFile);
+    setOriginalImageSrc(imageUrl);
+    setCropImageSrc(imageUrl);
+
+    setCrop({
+      x: 0,
+      y: 0,
+    });
+
+    setZoom(1);
+    setCroppedAreaPixels(null);
+    setErrorMessageImage(null);
+  }
+
+  function handleCropComplete(_croppedArea: Area, croppedAreaPixels: Area) {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }
+
+  async function createCroppedImage(
+    imageSrc: string,
+    cropArea: Area,
+    originalFile: File | null,
+  ): Promise<File> {
+    const sourceImage = document.createElement("img");
+
+    sourceImage.crossOrigin = "anonymous";
+    sourceImage.src = imageSrc;
+
+    await new Promise<void>((resolve, reject) => {
+      sourceImage.onload = () => resolve();
+      sourceImage.onerror = () => reject(new Error("Failed to load image."));
+    });
+
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      throw new Error("Could not create image canvas.");
+    }
+
+    /*
+     * Use the crop's actual pixel dimensions.
+     * We are not forcing the Item image into a fixed size.
+     */
+    canvas.width = cropArea.width;
+    canvas.height = cropArea.height;
+
+    context.drawImage(
+      sourceImage,
+
+      cropArea.x,
+      cropArea.y,
+      cropArea.width,
+      cropArea.height,
+
+      0,
+      0,
+      cropArea.width,
+      cropArea.height,
+    );
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (result) => {
+          if (result) {
+            resolve(result);
+          } else {
+            reject(new Error("Failed to crop image."));
+          }
+        },
+
+        originalFile?.type ?? "image/webp",
+
+        0.95,
+      );
+    });
+
+    const imageType = originalFile?.type ?? "image/webp";
+
+    return new File([blob], originalFile?.name ?? "item-image.webp", {
+      type: imageType,
+    });
+  }
+
+  async function handleUseCrop() {
+    if (!cropImageSrc || !croppedAreaPixels) {
+      return;
+    }
+
+    try {
+      const croppedImage = await createCroppedImage(
+        cropImageSrc,
+        croppedAreaPixels,
+        selectedImage,
+      );
+
+      if (imagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+
+      setImage(croppedImage);
+      setImagePreview(URL.createObjectURL(croppedImage));
+      setCropImageSrc(null);
+      setErrorMessageImage(null);
+    } catch (error) {
+      console.error("Error cropping item image:", error);
+
+      setErrorMessageImage(
+        "Something went wrong while cropping the item image.",
+      );
+    }
+  }
+
+  function handleEditCrop() {
+    if (!originalImageSrc) {
+      return;
+    }
+
+    setCropImageSrc(originalImageSrc);
   }
 
   // ----------------------------
@@ -179,7 +345,6 @@ export default function EditItemPage() {
     const calories = formData.get("calories");
     const price = formData.get("price");
     const isAvailable = formData.get("isAvailable");
-    const image = formData.get("image");
 
     const requestBody = {
       name: typeof name === "string" ? name.trim() : "",
@@ -226,15 +391,16 @@ export default function EditItemPage() {
           requestBody,
         );
 
-        // Images use their own route
+        /*
+         * Images use their own route.
+         */
         if (image instanceof File && image.size > 0) {
-          const imageFormData = new FormData();
-          imageFormData.append("image", image);
-
           setIsUpdatingImage(true);
 
           try {
-            // Existing image -> replace it
+            /*
+             * Existing image -> replace it.
+             */
             if (itemData?.imageKey) {
               await updateItemImage(
                 businessId,
@@ -242,15 +408,19 @@ export default function EditItemPage() {
                 itemId,
                 image,
                 isSynced,
+                selectedImage,
               );
             } else {
-              // No image -> create the first image
+              /*
+               * No image -> create the first image.
+               */
               await createItemImage(
                 businessId,
                 locationId,
                 itemId,
                 image,
                 isSynced,
+                selectedImage,
               );
             }
           } finally {
@@ -284,8 +454,29 @@ export default function EditItemPage() {
 
       await updateToast.unwrap();
 
-      // Refetch so imageKey contains a new presigned URL
-      await refreshItemData();
+      /*
+       * Refetch so imageKey contains a
+       * new presigned URL.
+       */
+      const refreshedItem = await getItem(businessId, locationId, itemId);
+
+      if (imagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+
+      setItemData(refreshedItem);
+
+      setImage(null);
+      setSelectedImage(null);
+      setCropImageSrc(null);
+
+      setImagePreview(refreshedItem.imageKey ?? null);
+
+      setOriginalImageSrc(
+        selectedImage
+          ? originalImageSrc
+          : (refreshedItem.originalImageKey ?? refreshedItem.imageKey ?? null),
+      );
     } catch (error) {
       console.error("Error updating item:", error);
 
@@ -311,6 +502,7 @@ export default function EditItemPage() {
         {
           loading: "Deleting image...",
           success: "Image deleted.",
+
           error: (error) => {
             if (axios.isAxiosError(error)) {
               return {
@@ -336,13 +528,36 @@ export default function EditItemPage() {
           ? {
               ...currentItem,
               imageKey: null,
+              originalImageKey: null,
             }
           : null,
       );
 
+      if (imagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+
+      if (cropImageSrc?.startsWith("blob:")) {
+        URL.revokeObjectURL(cropImageSrc);
+      }
+
+      if (
+        originalImageSrc?.startsWith("blob:") &&
+        originalImageSrc !== cropImageSrc
+      ) {
+        URL.revokeObjectURL(originalImageSrc);
+      }
+
+      setImage(null);
+      setSelectedImage(null);
+      setCropImageSrc(null);
+      setOriginalImageSrc(null);
       setImagePreview(null);
+      setCroppedAreaPixels(null);
+      setErrorMessageImage(null);
     } catch (error) {
       console.error("Error deleting item image:", error);
+
       setErrorMessage("Failed to delete the item image.");
     } finally {
       setIsUpdatingImage(false);
@@ -363,6 +578,7 @@ export default function EditItemPage() {
         {
           loading: "Deleting item...",
           success: "Item deleted.",
+
           error: (error) => {
             if (axios.isAxiosError(error)) {
               return {
@@ -403,6 +619,7 @@ export default function EditItemPage() {
     event.preventDefault();
 
     const form = event.currentTarget;
+
     const formData = new FormData(form);
 
     const name = formData.get("name");
@@ -434,6 +651,7 @@ export default function EditItemPage() {
         {
           loading: "Creating option...",
           success: "Option created.",
+
           error: (error) => {
             if (axios.isAxiosError(error)) {
               return {
@@ -459,6 +677,7 @@ export default function EditItemPage() {
       await refreshItemData();
     } catch (error) {
       console.error("Error creating option:", error);
+
       setErrorMessage("Failed to create the option.");
     } finally {
       setIsCreatingOption(false);
@@ -479,6 +698,7 @@ export default function EditItemPage() {
 
     const name = formData.get("name");
     const price = formData.get("price");
+
     const isAvailable = formData.get("isAvailable");
     const optionIsSynced = Boolean(formData.get("sync-item-option"));
 
@@ -508,6 +728,7 @@ export default function EditItemPage() {
         {
           loading: "Updating option...",
           success: "Option updated.",
+
           error: (error) => {
             if (axios.isAxiosError(error)) {
               return {
@@ -527,9 +748,11 @@ export default function EditItemPage() {
       );
 
       await optionToast.unwrap();
+
       await refreshItemData();
     } catch (error) {
       console.error("Error updating option:", error);
+
       setErrorMessage("Failed to update the option.");
     } finally {
       setProcessingOptionId(null);
@@ -551,6 +774,8 @@ export default function EditItemPage() {
     const form = event.currentTarget.form;
 
     if (!form) {
+      setProcessingOptionId(null);
+      setIsDeletingOption(false);
       setErrorMessage("A form could not be found when attempting to delete.");
       return;
     }
@@ -571,6 +796,7 @@ export default function EditItemPage() {
         {
           loading: "Deleting option...",
           success: "Option deleted.",
+
           error: (error) => {
             if (axios.isAxiosError(error)) {
               return {
@@ -590,9 +816,11 @@ export default function EditItemPage() {
       );
 
       await optionToast.unwrap();
+
       await refreshItemData();
     } catch (error) {
       console.error("Error deleting option:", error);
+
       setErrorMessage("Failed to delete the option.");
     } finally {
       setProcessingOptionId(null);
@@ -603,6 +831,7 @@ export default function EditItemPage() {
   // ----------------------------
   // MOVE ITEM OPTION
   // ----------------------------
+
   async function handleMoveOption(
     optionId: string,
     direction: ReorderDirection,
@@ -623,6 +852,7 @@ export default function EditItemPage() {
           loading:
             direction === "up" ? "Moving option up" : "Moving option down",
           success: "Option order updated.",
+
           error: (error) => {
             if (axios.isAxiosError(error)) {
               return {
@@ -642,6 +872,7 @@ export default function EditItemPage() {
       );
 
       await moveToast.unwrap();
+
       await refreshItemData();
     } catch (error) {
       console.error("Error moving option:", error);
@@ -699,6 +930,11 @@ export default function EditItemPage() {
           canManage={canManageItem}
           itemData={itemData}
           imagePreview={imagePreview}
+          cropImageSrc={cropImageSrc}
+          crop={crop}
+          zoom={zoom}
+          croppedAreaPixels={croppedAreaPixels}
+          errorMessageImage={errorMessageImage}
           canSubmit={canSubmit}
           isProcessing={isProcessing}
           isSaving={isSaving}
@@ -709,6 +945,11 @@ export default function EditItemPage() {
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}
           handleImageChange={handleImageChange}
+          setCrop={setCrop}
+          setZoom={setZoom}
+          handleCropComplete={handleCropComplete}
+          handleUseCrop={handleUseCrop}
+          handleEditCrop={handleEditCrop}
           handleDeleteImage={handleDeleteImage}
           handleDelete={handleDelete}
         />

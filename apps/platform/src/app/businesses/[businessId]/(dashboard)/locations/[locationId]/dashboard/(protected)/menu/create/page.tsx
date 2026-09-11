@@ -136,7 +136,9 @@ export default function CreateCategoryPage() {
       setCanSubmit(false);
       setIsSynced(false);
 
-      router.push("/dashboard/menu");
+      router.push(
+        `/businesses/${businessId}/locations/${locationId}/dashboard/menu`,
+      );
     } catch (error) {
       console.error("Error in Create Category page:", error);
 
