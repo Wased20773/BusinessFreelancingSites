@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Logo from "../../public/logo.svg";
-import Card from "@/components/Card"
+import Card from "@/components/Card";
 import Link from "next/link";
-import Header from "@/components/layout/Header"
+import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 
 export default function HomePage() {
@@ -18,14 +18,21 @@ export default function HomePage() {
           <div className="max-w-[1000px] grid grid-cols-2 mx-auto">
             <div className="flex flex-col justify-center gap-5">
               <h1>Your business deserves realtime data</h1>
-              <p>Build a professional online presence in minutes. <strong>No code</strong>, just you and managing your business your way. Perfect for resturants, cafés, bakeries, and food trucks.</p>
+              <p>
+                Build a professional online presence in minutes.{" "}
+                <strong>No code</strong>, just you and managing your business
+                your way. Perfect for resturants, cafés, bakeries, and food
+                trucks.
+              </p>
               <Link
                 href="/dashboard/login"
                 className="w-fit rounded-lg px-6 py-3 bg-blue-500 text-white"
-              >Get Started</Link>
+              >
+                Get Started
+              </Link>
             </div>
             <div>
-              <Image 
+              <Image
                 src={Logo}
                 alt="Business platform example image"
                 loading="eager"
@@ -40,7 +47,7 @@ export default function HomePage() {
             <h2 className="mb-5 text-center mb-10">How it works</h2>
             <div className="grid grid-cols-3 gap-10">
               <Card
-                styleVarient="workflow-card" 
+                styleVarient="workflow-card"
                 order={1}
                 image={Logo}
                 title="Sign in"
@@ -51,7 +58,8 @@ export default function HomePage() {
                 order={2}
                 image={Logo}
                 title="Build it"
-                context="Add your categories, menu items, business hours, locations, contact information, social media, and more. Once everything is ready, your website is ready to share with your customers."/>
+                context="Add your categories, menu items, business hours, locations, contact information, social media, and more. Once everything is ready, your website is ready to share with your customers."
+              />
               <Card
                 styleVarient="workflow-card"
                 order={3}
@@ -62,7 +70,7 @@ export default function HomePage() {
             </div>
             <div className="grid grid-cols-6 gap-10 mt-15">
               <div className="col-span-3 h-full">
-                <Card 
+                <Card
                   styleVarient="workflow-card"
                   order={4}
                   image={Logo}
@@ -76,7 +84,8 @@ export default function HomePage() {
                   order={5}
                   image={Logo}
                   title="Secured account access"
-                  context="Only authorized users can access and manage your business dashboard. Your business information stays private and under your control."/>
+                  context="Only authorized users can access and manage your business dashboard. Your business information stays private and under your control."
+                />
               </div>
             </div>
           </div>
@@ -113,9 +122,7 @@ export default function HomePage() {
         </section>
 
         {/* Contact Section */}
-        <section id="contact">
-
-        </section>
+        <section id="contact"></section>
       </main>
 
       {/* Footer */}

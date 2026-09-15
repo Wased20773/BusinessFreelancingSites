@@ -20,29 +20,14 @@ export default function BusinessList({
       {/* ######################## */}
       {/* ##### Empty State ##### */}
       {/* ######################## */}
-      {businesses.length === 0 ? (
-        <section className="border-[0.1rem] border-gray-300 rounded-lg px-5 py-8 text-center">
-          <h2 className="text-lg font-semibold">No businesses yet</h2>
+      {businesses.length > 0 ? (
+        <section className="border-[0.2rem] border-dashed border-gray-300 rounded-lg px-8 py-5 text-center">
+          <h2 className="text-lg font-semibold">None Found</h2>
 
-          <p className="text-gray-500 mt-2">
-            You are not currently connected to any businesses.
+          <p className="text-gray-500">
+            You are not currently connected to any business. Create your own or
+            wait to be added to an existing business.
           </p>
-
-          <p className="text-gray-500 mt-1">
-            Create your own business or wait to be added to an existing
-            business.
-          </p>
-
-          <button
-            className="bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-2 mt-5"
-            type="button"
-            onClick={() => {
-              setCreateErrorMessage(null);
-              setIsCreatingBusiness(true);
-            }}
-          >
-            Create Business
-          </button>
         </section>
       ) : (
         /* ########################### */
@@ -64,12 +49,12 @@ export default function BusinessList({
                       {businessUser.business.name}
                     </h2>
 
-                    <p className="text-sm text-gray-500 capitalize mt-1">
+                    <p className="text-sm text-gray-500 capitalize">
                       {businessUser.role.accessLevel}
                     </p>
 
                     {businessUser.business.domain && (
-                      <p className="text-sm text-gray-500 break-all mt-3">
+                      <p className="text-sm text-gray-500">
                         {businessUser.business.domain}
                       </p>
                     )}

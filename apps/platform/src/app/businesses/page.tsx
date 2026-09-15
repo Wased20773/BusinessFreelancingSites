@@ -194,37 +194,32 @@ export default function BusinessesPage() {
       {/* ######################### */}
       {/* ##### Page Heading ###### */}
       {/* ######################### */}
-
-      <div className="grid grid-rows-[1fr_auto] mb-5">
-        <div>
-          <h1 className="text-2xl font-semibold">Your Businesses</h1>
-
-          <p className="text-gray-500 mt-1">
-            Select a business to get started.
-          </p>
+      <h1 className="text-2xl font-semibold">Your Businesses</h1>
+      <p className="text-gray-500 mt-1">Select a business to get started.</p>
+      <div className="border-[0.1rem] border-gray-300 shadow-lg rounded-lg mt-5">
+        <div className="w-full">
+          <div className="justify-self-end p-2">
+            <button
+              className="shrink-0 border-[0.1rem] rounded-lg px-3 py-2"
+              type="button"
+              onClick={() => {
+                setCreateErrorMessage(null);
+                setIsCreatingBusiness(true);
+              }}
+            >
+              Create Business
+            </button>
+          </div>
         </div>
-
-        <div className="justify-self-end">
-          <button
-            className="shrink-0 bg-sky-300 border-[0.1rem] border-sky-500 rounded-lg text-sky-900 px-3 py-2"
-            type="button"
-            onClick={() => {
-              setCreateErrorMessage(null);
-              setIsCreatingBusiness(true);
-            }}
-          >
-            Create Business
-          </button>
+        <div className="px-3 py-2">
+          <BusinessList
+            businesses={businesses}
+            setCreateErrorMessage={setCreateErrorMessage}
+            setIsCreatingBusiness={setIsCreatingBusiness}
+            handleBusinessSelect={handleBusinessSelect}
+          />
         </div>
       </div>
-
-      <BusinessList
-        businesses={businesses}
-        setCreateErrorMessage={setCreateErrorMessage}
-        setIsCreatingBusiness={setIsCreatingBusiness}
-        handleBusinessSelect={handleBusinessSelect}
-      />
-
       {isCreatingBusiness && (
         <CreateBusinessModal
           isSubmitting={isSubmitting}
