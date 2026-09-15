@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
 import { AccessLevel } from "@business-freelancer/database";
 import { prisma } from "@/lib/prisma";
+import { rateLimiterRead } from "../../route_helper";
 
 // GET /api/business/locations
 export async function GET(request: Request): Promise<NextResponse> {
@@ -18,6 +19,10 @@ export async function GET(request: Request): Promise<NextResponse> {
     );
 
     if (authentication instanceof NextResponse) return authentication;
+
+    const rateLimit = await rateLimiterRead(authentication);
+
+    if (rateLimit instanceof NextResponse) return rateLimit;
 
     const locations = await prisma.location.findMany({
       where: {

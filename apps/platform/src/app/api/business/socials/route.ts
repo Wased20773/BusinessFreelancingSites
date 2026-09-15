@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getLocationResponse } from "../../route_helper";
+import { getLocationResponse, rateLimiterRead } from "../../route_helper";
 import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
 import { AccessLevel } from "@business-freelancer/database";
 import { getObjectUrl } from "@/lib/s3/get-url";
@@ -24,6 +24,10 @@ export async function GET(request: Request): Promise<NextResponse> {
   ]);
 
   if (authentication instanceof NextResponse) return authentication;
+
+  const rateLimit = await rateLimiterRead(authentication);
+
+  if (rateLimit instanceof NextResponse) return rateLimit;
 
   const response = await getLocationResponse(
     authentication.businessId,

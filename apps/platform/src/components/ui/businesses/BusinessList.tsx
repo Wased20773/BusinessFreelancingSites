@@ -20,7 +20,7 @@ export default function BusinessList({
       {/* ######################## */}
       {/* ##### Empty State ##### */}
       {/* ######################## */}
-      {businesses.length > 0 ? (
+      {businesses.length === 0 ? (
         <section className="border-[0.2rem] border-dashed border-gray-300 rounded-lg px-8 py-5 text-center">
           <h2 className="text-lg font-semibold">None Found</h2>
 

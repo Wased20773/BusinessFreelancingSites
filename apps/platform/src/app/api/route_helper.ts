@@ -3,6 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { DayOfWeek, Prisma } from "@business-freelancer/database";
 import { isSupportedImageContentType } from "@/lib/s3/keys";
 import { generateBusinessApiKey } from "@/lib/api-keys/generateBusinessApiKey";
+import { consumeToken } from "@/lib/redis/tokenBucket";
+import {
+  BusinessReadAuthentication,
+  LocationReadAuthentication,
+} from "@/lib/auth/authenticateBusinessReadAccess";
 
 type OrderModel = {
   findFirst: (args: {
@@ -638,4 +643,32 @@ export function normalizeTime(time: string): string {
   const [hours, minutes] = time.split(":");
 
   return `${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
+}
+
+/**
+ * Using Redis, consume a token using the Token Bucket strategy and limit a users
+ * read operation by the indicated amount.
+ *
+ * Limit are placed based on authentication type.
+ */
+export async function rateLimiterRead(
+  authentication: LocationReadAuthentication | BusinessReadAuthentication,
+) {
+  if (authentication.authenticationType === "apiKey") {
+    const rateLimit = await consumeToken({
+      key: `rate:user:${authentication.userId}:read`,
+      capacity: 30,
+      tokensPerMinute: 30,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: "Too many requests.",
+          retryAfterMs: rateLimit.retryAfterMs,
+        },
+        { status: 429 },
+      );
+    }
+  }
 }

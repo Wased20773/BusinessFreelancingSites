@@ -3,20 +3,20 @@ import { AccessLevel } from "@business-freelancer/database";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { authenticateBusinessApiKey } from "@/lib/api-keys/authenticateBusinessApiKey";
 
-type LocationReadAuthentication = {
+export type LocationReadAuthentication = {
   businessId: string;
   locationId: string;
   authenticationType: "session" | "apiKey";
   userId?: string;
 };
 
-type BusinessReadAuthentication = {
+export type BusinessReadAuthentication = {
   businessId: string;
   authenticationType: "session" | "apiKey";
   userId?: string;
 };
 
-type BusinessReadAccessOptions = {
+export type BusinessReadAccessOptions = {
   requireLocation: false;
 };
 

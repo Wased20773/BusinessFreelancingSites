@@ -3,6 +3,7 @@ import { getObjectUrl } from "@/lib/s3/get-url";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
+import { rateLimiterRead } from "@/app/api/route_helper";
 
 // GET /api/business/menu/items/[itemId]
 export async function GET(
@@ -30,6 +31,10 @@ export async function GET(
     ]);
 
     if (authentication instanceof NextResponse) return authentication;
+
+    const rateLimit = await rateLimiterRead(authentication);
+
+    if (rateLimit instanceof NextResponse) return rateLimit;
 
     const item = await prisma.item.findFirst({
       where: {

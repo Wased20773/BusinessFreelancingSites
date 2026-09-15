@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { AccessLevel } from "@business-freelancer/database";
 import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
 import { prisma } from "@/lib/prisma";
+import { rateLimiterRead } from "@/app/api/route_helper";
 
 const DAY_ORDER = [
   "Monday",
@@ -38,6 +39,10 @@ export async function GET(
     if (authentication instanceof NextResponse) {
       return authentication;
     }
+
+    const rateLimit = await rateLimiterRead(authentication);
+
+    if (rateLimit instanceof NextResponse) return rateLimit;
 
     const location = await prisma.location.findFirst({
       where: {
