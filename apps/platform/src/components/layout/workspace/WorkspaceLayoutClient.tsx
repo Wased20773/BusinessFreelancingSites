@@ -83,6 +83,7 @@ export default function WorkspaceLayoutClient({
 
   const currentBusiness = {
     name: selectedBusiness.business.name,
+    imageKey: selectedBusiness.business.imageKey,
   };
 
   const activeAccount: DashboardNavAccount = {

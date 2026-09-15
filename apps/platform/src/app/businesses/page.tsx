@@ -3,26 +3,12 @@
 import axios from "axios";
 import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
-import ExitIcon from "@/components/icons/exit-black.svg";
-import Image from "next/image";
 import ArrowIcon from "@/components/icons/arrow";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-
-type BusinessUserJson = {
-  id: string;
-
-  role: {
-    accessLevel: "developer" | "owner" | "admin" | "staff";
-  };
-
-  business: {
-    id: string;
-    name: string;
-    slug: string;
-    domain: string | null;
-  };
-};
+import CreateBusinessModal from "@/components/ui/modal/CreateBusinessModal";
+import { BusinessOwnerShip } from "@/types/types";
+import BusinessList from "@/components/ui/businesses/BusinessList";
 
 type CreateBusinessResponse = {
   message: string;
@@ -41,7 +27,7 @@ type CreateBusinessResponse = {
 };
 
 export default function BusinessesPage() {
-  const [businesses, setBusinesses] = useState<BusinessUserJson[]>([]);
+  const [businesses, setBusinesses] = useState<BusinessOwnerShip[]>([]);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isCreatingBusiness, setIsCreatingBusiness] = useState<boolean>(false);
@@ -65,7 +51,7 @@ export default function BusinessesPage() {
 
   async function getBusinesses() {
     try {
-      const response = await axios.get<BusinessUserJson[]>("/api/businesses");
+      const response = await axios.get<BusinessOwnerShip[]>("/api/businesses");
 
       setBusinesses(response.data);
     } catch (error) {
@@ -85,7 +71,7 @@ export default function BusinessesPage() {
 
   useEffect(() => {
     axios
-      .get<BusinessUserJson[]>("/api/businesses")
+      .get<BusinessOwnerShip[]>("/api/businesses")
       .then((response) => {
         setBusinesses(response.data);
       })
@@ -104,6 +90,7 @@ export default function BusinessesPage() {
         setIsLoading(false);
       });
   }, []);
+
   async function handleCreateBusiness(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -208,7 +195,7 @@ export default function BusinessesPage() {
       {/* ##### Page Heading ###### */}
       {/* ######################### */}
 
-      <div className="flex justify-between items-center gap-5 mb-6">
+      <div className="grid grid-rows-[1fr_auto] mb-5">
         <div>
           <h1 className="text-2xl font-semibold">Your Businesses</h1>
 
@@ -217,37 +204,9 @@ export default function BusinessesPage() {
           </p>
         </div>
 
-        <button
-          className="shrink-0 bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-2"
-          type="button"
-          onClick={() => {
-            setCreateErrorMessage(null);
-            setIsCreatingBusiness(true);
-          }}
-        >
-          Create Business
-        </button>
-      </div>
-
-      {/* ######################## */}
-      {/* ##### Empty State ##### */}
-      {/* ######################## */}
-
-      {businesses.length === 0 ? (
-        <section className="border-[0.1rem] border-gray-300 rounded-lg px-5 py-8 text-center">
-          <h2 className="text-lg font-semibold">No businesses yet</h2>
-
-          <p className="text-gray-500 mt-2">
-            You are not currently connected to any businesses.
-          </p>
-
-          <p className="text-gray-500 mt-1">
-            Create your own business or wait to be added to an existing
-            business.
-          </p>
-
+        <div className="justify-self-end">
           <button
-            className="bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-2 mt-5"
+            className="shrink-0 bg-sky-300 border-[0.1rem] border-sky-500 rounded-lg text-sky-900 px-3 py-2"
             type="button"
             onClick={() => {
               setCreateErrorMessage(null);
@@ -256,163 +215,23 @@ export default function BusinessesPage() {
           >
             Create Business
           </button>
-        </section>
-      ) : (
-        /* ########################### */
-        /* ##### Business List ####### */
-        /* ########################### */
+        </div>
+      </div>
 
-        <section>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {businesses.map((businessUser) => (
-              <li key={businessUser.id}>
-                <button
-                  type="button"
-                  onClick={() =>
-                    void handleBusinessSelect(businessUser.business.id)
-                  }
-                  className="block w-full h-full text-left border-[0.1rem] border-gray-300 rounded-lg px-4 py-4 hover:border-blue-400 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex flex-col h-full">
-                    <h2 className="font-semibold text-lg">
-                      {businessUser.business.name}
-                    </h2>
-
-                    <p className="text-sm text-gray-500 capitalize mt-1">
-                      {businessUser.role.accessLevel}
-                    </p>
-
-                    {businessUser.business.domain && (
-                      <p className="text-sm text-gray-500 break-all mt-3">
-                        {businessUser.business.domain}
-                      </p>
-                    )}
-
-                    <p className="flex items-center gap-2 text-blue-500 mt-auto pt-5">
-                      <span>View locations</span>
-                      <ArrowIcon size={15} />
-                    </p>
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* ############################# */}
-      {/* ##### Create Business Modal # */}
-      {/* ############################# */}
+      <BusinessList
+        businesses={businesses}
+        setCreateErrorMessage={setCreateErrorMessage}
+        setIsCreatingBusiness={setIsCreatingBusiness}
+        handleBusinessSelect={handleBusinessSelect}
+      />
 
       {isCreatingBusiness && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5"
-          onMouseDown={() => {
-            if (!isSubmitting) {
-              setIsCreatingBusiness(false);
-            }
-          }}
-        >
-          <div
-            className="w-full max-w-[600px] bg-white border-[0.1rem] border-gray-300 rounded-lg px-5 py-5"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            {/* Modal Heading */}
-            <div className="flex justify-between items-start gap-5">
-              <div>
-                <h2 className="text-xl font-semibold">Create Business</h2>
-
-                <p className="text-gray-500 mt-1">
-                  Create a business and its first location.
-                </p>
-              </div>
-
-              <button
-                className="text-2xl leading-none disabled:opacity-50"
-                type="button"
-                aria-label="Close create business form"
-                disabled={isSubmitting}
-                onClick={() => setIsCreatingBusiness(false)}
-              >
-                <Image src={ExitIcon} alt="" width={20} height={20} />
-              </button>
-            </div>
-
-            {/* Form */}
-            <form
-              className="flex flex-col gap-4 mt-5"
-              onSubmit={handleCreateBusiness}
-            >
-              {/* Business Name */}
-              <div>
-                <label className="font-semibold" htmlFor="create-business-name">
-                  Business Name
-                </label>
-
-                <input
-                  className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1 disabled:opacity-50"
-                  id="create-business-name"
-                  name="name"
-                  type="text"
-                  placeholder="Enter your business name"
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
-
-              {/* First Location */}
-              <div>
-                <label
-                  className="font-semibold"
-                  htmlFor="create-business-address"
-                >
-                  First Location
-                </label>
-
-                <p className="text-sm text-gray-500 mt-1 mb-1">
-                  Enter the address for your first business location.
-                </p>
-
-                <input
-                  className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 disabled:opacity-50"
-                  id="create-business-address"
-                  name="address"
-                  type="text"
-                  placeholder="123 Main St"
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
-
-              {/* Error */}
-              {createErrorMessage && (
-                <p className="text-red-500 bg-red-100 border-[0.1rem] border-red-500 rounded-lg px-2 py-1">
-                  {createErrorMessage}
-                </p>
-              )}
-
-              {/* Actions */}
-              <div className="flex justify-end gap-3 mt-3">
-                <button
-                  className="border-[0.1rem] border-gray-400 rounded-lg px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={() => setIsCreatingBusiness(false)}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  className="bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                  type="submit"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Creating..." : "Create Business"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CreateBusinessModal
+          isSubmitting={isSubmitting}
+          setIsCreatingBusiness={setIsCreatingBusiness}
+          handleCreateBusiness={handleCreateBusiness}
+          createErrorMessage={createErrorMessage}
+        />
       )}
     </main>
   );
