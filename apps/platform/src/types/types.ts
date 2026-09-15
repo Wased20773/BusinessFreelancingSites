@@ -14,6 +14,7 @@ import {
   Item,
   ItemOption,
 } from "@business-freelancer/database/generated/prisma/client";
+import { Dispatch, SetStateAction } from "react";
 
 // --------------------
 // ENUMS
@@ -168,12 +169,16 @@ export type DashboardNavAccount = {
   name?: string | null;
   accessLevel: "developer" | "owner" | "admin" | "staff";
   image?: string | null;
+  workspaceTourVersion?: number;
+  dashboardTourVersion?: number;
 };
 
 /*
  * Shared by both the desktop sidebar and mobile navigation.
  */
 export type DashboardNavProps = {
+  isOpen?: boolean;
+  setIsOpen?: Dispatch<SetStateAction<boolean>>;
   currentBusiness: DashboardNavBusiness;
   currentAccount: DashboardNavAccount;
   variant: "workspace" | "dashboard" | "settings";

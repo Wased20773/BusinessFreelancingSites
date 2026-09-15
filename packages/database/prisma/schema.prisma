@@ -69,16 +69,18 @@ model Business {
 }
 
 model User {
-  id                  String            @id @default(uuid())
-  name                String?
-  username            String?
-  email               String            @unique
-  emailVerified       DateTime?
-  image               String?
-  onboardingCompleted Boolean           @default(false)
-  onboardingIntent    OnboardingIntent?
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
+  id                   String            @id @default(uuid())
+  name                 String?
+  username             String?
+  email                String            @unique
+  emailVerified        DateTime?
+  image                String?
+  onboardingCompleted  Boolean           @default(false)
+  onboardingIntent     OnboardingIntent?
+  workspaceTourVersion Int               @default(0)
+  dashboardTourVersion Int               @default(0)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
 
   businesses BusinessUser[]
   accounts   Account[]

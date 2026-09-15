@@ -15,12 +15,15 @@ import { ReactNode, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import LoadingBar from "@/components/ui/LoadingBar";
+import WorkspaceTour from "@/components/ui/tours/WorkspaceTour";
 
 type WorkspaceLayoutClientProps = {
   children: ReactNode;
   businessId: string;
   currentAccount: DashboardNavAccount;
 };
+
+const CURRENT_WORKSPACE_TOUR_VERSION = 1;
 
 export default function WorkspaceLayoutClient({
   children,
@@ -30,6 +33,7 @@ export default function WorkspaceLayoutClient({
   const [businesses, setBusinesses] = useState<BusinessOwnerShip[]>([]);
   const [locations, setLocations] = useState<LocationJson[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [navigationFrom, setNavigationFrom] = useState<string | null>(null);
 
   const pathname = usePathname();
@@ -90,6 +94,12 @@ export default function WorkspaceLayoutClient({
     name: session?.user?.name ?? currentAccount.name,
     image: session?.user?.image ?? currentAccount.image,
     accessLevel: session?.user?.accessLevel ?? currentAccount.accessLevel,
+    workspaceTourVersion:
+      session?.user?.workspaceTourVersion ??
+      currentAccount.workspaceTourVersion,
+    dashboardTourVersion:
+      session?.user?.dashboardTourVersion ??
+      currentAccount.dashboardTourVersion,
   };
 
   const navLinks = workspaceLinks(businessId);
@@ -108,6 +118,8 @@ export default function WorkspaceLayoutClient({
 
         <MobileNavBar
           variant="workspace"
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
           currentBusiness={currentBusiness}
           currentAccount={activeAccount}
           navLinks={navLinks}
@@ -120,6 +132,13 @@ export default function WorkspaceLayoutClient({
 
       <div className="hidden md:block border-b-[0.1rem] border-gray-300">
         {/* Location / Enter Dashboard control */}
+        <WorkspaceTour
+          shouldStartTour={
+            (currentAccount.workspaceTourVersion ?? 0) <
+            CURRENT_WORKSPACE_TOUR_VERSION
+          }
+          openMobileNav={setIsOpen}
+        />
         <EnterDashboardDropdown businessId={businessId} locations={locations} />
       </div>
 

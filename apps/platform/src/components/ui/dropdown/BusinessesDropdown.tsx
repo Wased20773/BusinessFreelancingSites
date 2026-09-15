@@ -164,6 +164,7 @@ export default function BusinessesDropdown({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
+            data-tour="business-selector"
             variant={variant}
             type="button"
             className="flex w-[calc(100%-1.5rem)] justify-center items-center gap-2 mx-3 my-2 md:w-auto"

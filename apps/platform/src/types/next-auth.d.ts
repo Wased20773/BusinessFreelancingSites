@@ -5,6 +5,8 @@ declare module "next-auth" {
     user: {
       id?: string;
       onboardingCompleted?: boolean;
+      workspaceTourVersion?: number;
+      dashboardTourVersion?: number;
       businessId?: string;
       businessSlug?: string;
       businessName?: string;
@@ -18,6 +20,8 @@ declare module "next-auth/jwt" {
   interface JWT {
     userId?: string;
     onboardingCompleted?: boolean;
+    workspaceTourVersion?: number;
+    dashboardTourVersion?: number;
     businessId?: string;
     businessSlug?: string;
     businessName?: string;

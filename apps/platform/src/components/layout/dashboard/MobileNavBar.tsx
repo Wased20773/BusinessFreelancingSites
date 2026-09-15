@@ -3,7 +3,6 @@
 import Image from "next/image";
 import BurgerButton from "@/components/icons/burger-button.svg";
 import ExitButtonWhite from "@/components/icons/exit-white.svg";
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import "@/components/layout/dashboard/MobileNavBar.css";
@@ -15,6 +14,8 @@ import AccountDropdown from "@/components/ui/dropdown/AccountDropdown";
 import ArrowIcon from "@/components/icons/arrow";
 
 export default function MobileNavBar({
+  isOpen,
+  setIsOpen,
   currentBusiness,
   currentAccount,
   variant,
@@ -24,9 +25,9 @@ export default function MobileNavBar({
   locations,
   onNavigate,
 }: DashboardNavProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
   const pathname = usePathname();
+
+  if (!setIsOpen) return <p>setIsOpen does not exist.</p>;
 
   return (
     <header className="md:hidden flex justify-between items-center gap-1 border-b border-gray-300 bg-gray-50 p-2 z-20">
@@ -170,7 +171,11 @@ export default function MobileNavBar({
               const isSelected = pathname === link.href;
 
               return (
-                <li key={link.href} className="border-t border-gray-300">
+                <li
+                  key={link.href}
+                  data-tour={`${link.name.toLowerCase().replaceAll(" ", "-")}-nav`}
+                  className="border-t border-gray-300"
+                >
                   <Link
                     href={link.href}
                     aria-current={isSelected ? "page" : undefined}
@@ -195,7 +200,10 @@ export default function MobileNavBar({
         {/* Extras */}
         {variant === "workspace" && (
           <div className="p-3">
-            <div className="min-w-0 w-fit flex items-center py-2">
+            <div
+              data-tour="account-dropdown"
+              className="min-w-0 w-fit flex items-center py-2"
+            >
               <AccountDropdown
                 theme="dark"
                 currentAccount={currentAccount}

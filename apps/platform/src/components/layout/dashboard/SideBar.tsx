@@ -79,7 +79,10 @@ export default function SideBar({
             const isSelected = pathname === link.href;
 
             return (
-              <li key={link.href}>
+              <li
+                key={link.href}
+                data-tour={`${link.name.toLowerCase().replaceAll(" ", "-")}-nav`}
+              >
                 <Link
                   href={link.href}
                   aria-current={isSelected ? "page" : undefined}
@@ -103,11 +106,13 @@ export default function SideBar({
       {/* Extras */}
       <div className="min-w-0 w-fit flex flex-col gap-3 p-2">
         {variant === "workspace" && (
-          <AccountDropdown
-            theme={"light"}
-            currentAccount={currentAccount}
-            onNavigate={onNavigate}
-          />
+          <div data-tour="account-dropdown">
+            <AccountDropdown
+              theme={"light"}
+              currentAccount={currentAccount}
+              onNavigate={onNavigate}
+            />
+          </div>
         )}
         {variant === "settings" && (
           <Link

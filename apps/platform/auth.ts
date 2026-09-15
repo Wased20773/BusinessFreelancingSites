@@ -7,6 +7,8 @@ import { getObjectUrl } from "@/lib/s3/get-url";
 type BusinessToken = {
   userId?: string;
   onboardingCompleted?: boolean;
+  workspaceTourVersion?: number;
+  dashboardTourVersion?: number;
 
   /*
    * These represent the business the user has
@@ -80,7 +82,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
        */
       if (
         trigger === "update" ||
-        businessToken.onboardingCompleted === undefined
+        businessToken.onboardingCompleted === undefined ||
+        businessToken.workspaceTourCompleted === undefined ||
+        businessToken.dashboardTourCompletedCompleted === undefined
       ) {
         const userData = await prisma.user.findUnique({
           where: {
@@ -89,27 +93,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           select: {
             onboardingCompleted: true,
+            workspaceTourVersion: true,
+            dashboardTourVersion: true,
           },
         });
 
         if (userData) {
           businessToken.onboardingCompleted = userData.onboardingCompleted;
+          businessToken.workspaceTourVersion = userData.workspaceTourVersion;
+          businessToken.dashboardTourVersion = userData.dashboardTourVersion;
         }
       }
 
       /*
        * BUSINESS SELECTION
-       *
-       * A business should NEVER be selected with:
-       *
-       * findFirst({ where: { userId } })
-       *
-       * because one user can belong to multiple businesses
-       * with different access levels.
-       *
-       * Instead, the client explicitly passes a businessId
-       * through useSession().update() when the user selects
-       * or switches businesses.
        */
       const requestedBusinessId =
         trigger === "update" && typeof session?.businessId === "string"
@@ -193,6 +190,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       if (businessToken.onboardingCompleted !== undefined) {
         session.user.onboardingCompleted = businessToken.onboardingCompleted;
+      }
+
+      if (businessToken.workspaceTourVersion !== undefined) {
+        session.user.workspaceTourVersion = businessToken.workspaceTourVersion;
+      }
+
+      if (businessToken.dashboardTourVersion !== undefined) {
+        session.user.dashboardTourVersion = businessToken.dashboardTourVersion;
       }
 
       /*

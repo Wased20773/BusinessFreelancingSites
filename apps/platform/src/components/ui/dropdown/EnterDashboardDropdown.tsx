@@ -119,7 +119,12 @@ export default function EnterDashboardDropdown({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant={"outline"} type="button" className="md:mx-3 md:my-2">
+          <Button
+            data-tour="location-selector"
+            variant={"outline"}
+            type="button"
+            className="md:mx-3 md:my-2"
+          >
             Enter Dashboard <ArrowIcon size={15} />
           </Button>
         </DropdownMenuTrigger>

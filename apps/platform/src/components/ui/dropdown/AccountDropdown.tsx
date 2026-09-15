@@ -45,6 +45,7 @@ export default function AccountDropdown({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
+          // NOTE: data-tour is inside the navbars
           variant="ghost"
           className={[
             "min-w-0 flex items-center gap-2 px-0",
