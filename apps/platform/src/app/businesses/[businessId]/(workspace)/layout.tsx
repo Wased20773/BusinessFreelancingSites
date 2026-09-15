@@ -26,7 +26,6 @@ export default async function WorkspaceLayout({
     image: session.user.image,
     accessLevel: session.user.accessLevel,
     workspaceTourVersion: session.user.workspaceTourVersion,
-    dashboardTourVersion: session.user.dashboardTourVersion,
   };
 
   const { businessId } = await params;

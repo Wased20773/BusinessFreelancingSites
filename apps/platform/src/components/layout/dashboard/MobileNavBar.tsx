@@ -229,7 +229,7 @@ export default function MobileNavBar({
           </div>
         )}
         {variant === "dashboard" && (
-          <div className="p-3">
+          <div data-tour="return-to-workspace" className="p-3">
             <Link
               href={`/businesses/${businessId}`}
               className="flex items-center justify-center gap-2 px-2 py-2"

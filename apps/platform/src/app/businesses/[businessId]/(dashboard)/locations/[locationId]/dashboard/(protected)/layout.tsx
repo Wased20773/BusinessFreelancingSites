@@ -40,6 +40,7 @@ export default async function DashboardLayout({
     name: session.user.name,
     image: session.user.image,
     accessLevel: session.user.accessLevel,
+    dashboardTourVersion: session.user.dashboardTourVersion,
   };
 
   const { businessId, locationId } = await params;

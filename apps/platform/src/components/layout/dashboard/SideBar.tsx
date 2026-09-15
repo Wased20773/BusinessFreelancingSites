@@ -125,14 +125,16 @@ export default function SideBar({
           </Link>
         )}
         {variant === "dashboard" && (
-          <Link
-            href={`/businesses/${businessId}`}
-            className="flex items-center gap-2 px-2"
-            onClick={() => onNavigate?.(`/businesses/${businessId}`)}
-          >
-            <ArrowIcon direction="left" size={20} />
-            <span>Go Back to Workspace</span>
-          </Link>
+          <div data-tour="return-to-workspace">
+            <Link
+              href={`/businesses/${businessId}`}
+              className="flex items-center gap-2 px-2"
+              onClick={() => onNavigate?.(`/businesses/${businessId}`)}
+            >
+              <ArrowIcon direction="left" size={20} />
+              <span>Go Back to Workspace</span>
+            </Link>
+          </div>
         )}
       </div>
     </aside>

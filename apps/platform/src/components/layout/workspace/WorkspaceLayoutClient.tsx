@@ -97,9 +97,6 @@ export default function WorkspaceLayoutClient({
     workspaceTourVersion:
       session?.user?.workspaceTourVersion ??
       currentAccount.workspaceTourVersion,
-    dashboardTourVersion:
-      session?.user?.dashboardTourVersion ??
-      currentAccount.dashboardTourVersion,
   };
 
   const navLinks = workspaceLinks(businessId);
