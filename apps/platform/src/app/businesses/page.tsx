@@ -198,7 +198,7 @@ export default function BusinessesPage() {
       <p className="text-gray-500 mt-1">Select a business to get started.</p>
       <div className="border-[0.1rem] border-gray-300 shadow-lg rounded-lg mt-5">
         <div className="w-full">
-          <div className="justify-self-end p-2">
+          <div className="flex justify-end p-2">
             <button
               className="shrink-0 border-[0.1rem] rounded-lg px-3 py-2"
               type="button"

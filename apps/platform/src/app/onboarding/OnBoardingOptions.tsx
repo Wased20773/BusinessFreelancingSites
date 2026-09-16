@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import PeopleGroupIcon from "@/components/icons/people-group.svg";
 import ShopIcon from "@/components/icons/shop.svg";
 import CodeIcon from "@/components/icons/code.svg";
+import ArrowIcon from "@/components/icons/arrow";
 
 type OnboardingType = "staff" | "business" | "developer" | null;
 
@@ -40,9 +41,7 @@ type OnboardingResponse = {
 
 export default function OnBoardingOptions() {
   const [selectedType, setSelectedType] = useState<OnboardingType>(null);
-
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { update } = useSession();
@@ -202,18 +201,22 @@ export default function OnBoardingOptions() {
 
   return (
     <div className="mx-3">
-      <div className="max-w-[1000px] border-[0.1rem] border-gray-400 rounded-lg mx-auto mt-10 overflow-hidden">
-        <div
-          className={`
-            flex w-[200%]
-            transition-transform duration-700 ease-in-out
-            ${selectedType ? "-translate-x-1/2" : "translate-x-0"}
-          `}
-        >
+      <div className="max-w-[1000px] h-fit border-[0.1rem] border-gray-400 rounded-lg mx-auto mt-10 overflow-hidden">
+        <div className="relative overflow-hidden">
           {/* ################################ */}
           {/* ##### Role Selection Step ##### */}
           {/* ################################ */}
-          <section className="w-1/2 shrink-0 px-5 py-5">
+          <section
+            className={`
+              w-full px-5 py-5
+              transition-all duration-700 ease-in-out
+              ${
+                selectedType
+                  ? "absolute inset-x-0 top-0 -translate-x-full opacity-0 pointer-events-none"
+                  : "relative translate-x-0 opacity-100"
+              }
+            `}
+          >
             <div className="flex flex-col items-center">
               <h1 className="text-xl font-semibold">
                 What best describes you?
@@ -310,17 +313,27 @@ export default function OnBoardingOptions() {
           {/* ##### Selected Role Step ##### */}
           {/* ############################## */}
 
-          <section className="w-1/2 shrink-0 px-5 py-5">
+          <section
+            className={`
+              w-full px-5 py-5
+              transition-all duration-700 ease-in-out
+              ${
+                selectedType
+                  ? "relative translate-x-0 opacity-100"
+                  : "absolute inset-x-0 top-0 translate-x-full opacity-0 pointer-events-none"
+              }
+            `}
+          >
             <button
               type="button"
-              className="text-blue-500 mb-5 disabled:opacity-50"
+              className="flex flex-row items-center justify-center gap-2 text-blue-500 mb-5 disabled:opacity-50"
               onClick={() => {
                 setSelectedType(null);
                 setErrorMessage(null);
               }}
               disabled={isSubmitting}
             >
-              ← Back
+              <ArrowIcon direction="left" size={15} /> Back
             </button>
 
             {/* ################ */}
