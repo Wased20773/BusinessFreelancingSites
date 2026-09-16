@@ -42,7 +42,7 @@ export default function BusinessList({
                   onClick={() =>
                     void handleBusinessSelect(businessUser.business.id)
                   }
-                  className="block w-full h-full text-left border-[0.1rem] border-gray-300 rounded-lg px-4 py-4 hover:border-blue-400 hover:bg-gray-50 transition-colors"
+                  className="block w-full h-full text-left rounded-lg shadow-md px-4 py-4 hover:border-blue-400 hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex flex-col h-full">
                     <h2 className="font-semibold text-lg">

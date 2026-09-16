@@ -206,11 +206,11 @@ export default function BusinessesPage() {
       {/* ######################### */}
       <h1 className="text-2xl font-semibold">Your Businesses</h1>
       <p className="text-gray-500 mt-1">Select a business to get started.</p>
-      <div className="border-[0.1rem] border-gray-300 shadow-lg rounded-lg mt-5">
+      <div className="shadow-lg rounded-lg mt-5">
         <div className="w-full">
           <div className="flex justify-end p-2">
             <button
-              className="shrink-0 border-[0.1rem] rounded-lg px-3 py-2"
+              className="shrink-0 border-[0.1rem] text-blue-800 bg-blue-200 border-blue-400 rounded-lg shadow- px-3 py-2"
               type="button"
               onClick={() => {
                 setCreateErrorMessage(null);
