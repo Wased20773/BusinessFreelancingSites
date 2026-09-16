@@ -119,62 +119,67 @@ export default function CreateLocationModal({
             />
           </div>
 
-          <div className="flex gap-3"></div>
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-start gap-3">
+              {/* Country */}
+              <div className="w-[150px]">
+                <label
+                  className="font-semibold"
+                  htmlFor="create-location-country"
+                >
+                  Country
+                </label>
+                <GenericSelect
+                  placeholder="Select Country"
+                  items={countries}
+                  setSelected={(countryCode) => {
+                    setCountryCode(countryCode);
+                    setStateCode(null);
+                  }}
+                />
+                <input type="hidden" name="country" value={countryCode ?? ""} />
+              </div>
 
-          <div className="grid grid-cols-[3fr_1fr] grid-rows-2 md:grid-cols-[2fr_1fr_1fr_auto] md:grid-rows-1 gap-3">
-            {/* Country */}
+              {/* State */}
+              <div className="w-[150px]">
+                <label
+                  className="font-semibold"
+                  htmlFor="create-location-state"
+                >
+                  State
+                </label>
+                <GenericSelect
+                  placeholder="Select State"
+                  items={countryCode ? states : null}
+                  setSelected={setStateCode}
+                />
+                <input type="hidden" name="state" value={stateCode ?? ""} />
+              </div>
+
+              {/* City */}
+              <div className="w-[150px]">
+                <label className="font-semibold" htmlFor="create-location-city">
+                  City
+                </label>
+                <GenericSelect
+                  placeholder="Select City"
+                  items={stateCode ? cities : null}
+                  setSelected={setSelectedCity}
+                />
+                <input type="hidden" name="city" value={selectedCity ?? ""} />
+              </div>
+            </div>
+
+            {/* ZIP */}
             <div>
               <label
-                className="font-semibold"
-                htmlFor="create-location-country"
+                className="block font-semibold"
+                htmlFor="create-location-zip"
               >
-                Country
-              </label>
-              <GenericSelect
-                placeholder={"Select Country"}
-                items={countries}
-                setSelected={(countryCode) => {
-                  setCountryCode(countryCode);
-                  setStateCode(null);
-                }}
-              />
-              <input type="hidden" name="country" value={countryCode ?? ""} />
-            </div>
-
-            {/* State */}
-            <div>
-              <label className="font-semibold" htmlFor="create-location-state">
-                State
-              </label>
-              <GenericSelect
-                placeholder={"Select State"}
-                items={countryCode ? states : null}
-                setSelected={setStateCode}
-              />
-              <input type="hidden" name="state" value={stateCode ?? ""} />
-            </div>
-
-            {/* City */}
-            <div>
-              <label className="font-semibold" htmlFor="create-location-city">
-                City
-              </label>
-              <GenericSelect
-                placeholder={"Select City"}
-                items={stateCode ? cities : null}
-                setSelected={setSelectedCity}
-              />
-              <input type="hidden" name="city" value={selectedCity ?? ""} />
-            </div>
-
-            {/* Zip */}
-            <div className="col-span-2 md:col-span-1">
-              <label className="font-semibold" htmlFor="create-location-zip">
                 ZIP / Postal Code
               </label>
-
               <input
-                className="block w-[75px] border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 disabled:opacity-50"
+                className="block w-[75x] border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 disabled:opacity-50"
                 id="create-location-zip"
                 name="zip"
                 type="text"

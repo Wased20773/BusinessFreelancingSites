@@ -147,19 +147,9 @@ export default function EditLocationForm({
             />
           </div>
 
-          {/* Country / State / City / ZIP */}
-          <div
-            className="
-              grid
-              grid-cols-[3fr_1fr]
-              grid-rows-2
-              md:grid-cols-[2fr_1fr_1fr_auto]
-              md:grid-rows-1
-              gap-3
-            "
-          >
+          <div className="flex flex-wrap items-start gap-3">
             {/* Country */}
-            <div>
+            <div className="w-[150px]">
               <label className="font-semibold" htmlFor="location-country">
                 Country
               </label>
@@ -186,7 +176,7 @@ export default function EditLocationForm({
             </div>
 
             {/* State */}
-            <div>
+            <div className="w-[150px]">
               <label className="font-semibold" htmlFor="location-state">
                 State
               </label>
@@ -212,7 +202,7 @@ export default function EditLocationForm({
             </div>
 
             {/* City */}
-            <div>
+            <div className="w-[150px]">
               <label className="font-semibold" htmlFor="location-city">
                 City
               </label>
@@ -230,15 +220,16 @@ export default function EditLocationForm({
 
               <input type="hidden" name="city" value={selectedCity ?? ""} />
             </div>
+          </div>
 
-            {/* ZIP */}
-            <div className="col-span-2 md:col-span-1">
-              <label className="font-semibold" htmlFor="location-zip">
-                ZIP / Postal Code
-              </label>
+          {/* ZIP */}
+          <div className="col-span-2 md:col-span-1">
+            <label className="block font-semibold" htmlFor="location-zip">
+              ZIP / Postal Code
+            </label>
 
-              <input
-                className="
+            <input
+              className="
                   block w-[75px]
                   border-[0.1rem] border-b-[0.2rem]
                   rounded-lg border-blue-400
@@ -246,12 +237,11 @@ export default function EditLocationForm({
                   px-3 py-2
                   disabled:opacity-50
                 "
-                id="location-zip"
-                name="zip"
-                type="text"
-                defaultValue={locationData.zip ?? ""}
-              />
-            </div>
+              id="location-zip"
+              name="zip"
+              type="text"
+              defaultValue={locationData.zip ?? ""}
+            />
           </div>
         </div>
       </fieldset>
