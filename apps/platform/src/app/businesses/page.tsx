@@ -99,6 +99,11 @@ export default function BusinessesPage() {
 
     const name = formData.get("name");
     const address = formData.get("address");
+    const country = formData.get("country");
+    const state = formData.get("state");
+    const city = formData.get("city");
+    const zip = formData.get("zip");
+    const parking = formData.get("parking") === "on";
 
     if (typeof name !== "string" || !name.trim()) {
       setCreateErrorMessage("A business name is required.");
@@ -110,25 +115,30 @@ export default function BusinessesPage() {
       return;
     }
 
+    const requestBody = {
+      name: typeof name === "string" ? name.trim() : "",
+      address: address.trim(),
+      country: typeof country === "string" ? country.trim() : "",
+      state: typeof state === "string" ? state.trim() : "",
+      city: typeof city === "string" ? city.trim() : "",
+      zip: typeof zip === "string" ? zip.trim() : "",
+      parking: parking,
+    };
+
     setIsSubmitting(true);
     setCreateErrorMessage(null);
 
     try {
       const createBusinessToast = toast.promise<CreateBusinessResponse>(
         axios
-          .post<CreateBusinessResponse>("/api/onboarding/business", {
-            name: name.trim(),
-            address: address.trim(),
-          })
+          .post<CreateBusinessResponse>("/api/onboarding/business", requestBody)
           .then((response) => response.data),
         {
           loading: "Creating business...",
-
           success: (data) => ({
             message: "Business created",
             description: `${data.business.name} was created successfully.`,
           }),
-
           error: (error) => {
             if (axios.isAxiosError<{ error?: string }>(error)) {
               return {

@@ -26,6 +26,7 @@ export default function CreateLocationModal({
 }: CreateLocationModalProps) {
   const [countryCode, setCountryCode] = useState<string | null>(null);
   const [stateCode, setStateCode] = useState<string | null>(null);
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
 
   const countries = Country.getAllCountries().map((country) => ({
     name: country.name,
@@ -129,7 +130,6 @@ export default function CreateLocationModal({
               >
                 Country
               </label>
-
               <GenericSelect
                 placeholder={"Select Country"}
                 items={countries}
@@ -138,6 +138,7 @@ export default function CreateLocationModal({
                   setStateCode(null);
                 }}
               />
+              <input type="hidden" name="country" value={countryCode ?? ""} />
             </div>
 
             {/* State */}
@@ -150,6 +151,7 @@ export default function CreateLocationModal({
                 items={countryCode ? states : null}
                 setSelected={setStateCode}
               />
+              <input type="hidden" name="state" value={stateCode ?? ""} />
             </div>
 
             {/* City */}
@@ -157,11 +159,12 @@ export default function CreateLocationModal({
               <label className="font-semibold" htmlFor="create-location-city">
                 City
               </label>
-
               <GenericSelect
                 placeholder={"Select City"}
                 items={stateCode ? cities : null}
+                setSelected={setSelectedCity}
               />
+              <input type="hidden" name="city" value={selectedCity ?? ""} />
             </div>
 
             {/* Zip */}
@@ -189,7 +192,7 @@ export default function CreateLocationModal({
               <input
                 className="disabled:opacity-50 mr-2"
                 id="create-location-parking"
-                name="country"
+                name="parking"
                 type="checkbox"
                 disabled={isSubmitting}
               />

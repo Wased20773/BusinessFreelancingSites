@@ -42,6 +42,7 @@ export default function EnterDashboardDropdown({
     const state = formData.get("state");
     const zip = formData.get("zip");
     const country = formData.get("country");
+    const parking = formData.get("parking");
 
     if (typeof address !== "string" || !address.trim()) {
       setCreateErrorMessage("A location address is required.");
@@ -54,6 +55,7 @@ export default function EnterDashboardDropdown({
       state: typeof state === "string" ? state.trim() : "",
       zip: typeof zip === "string" ? zip.trim() : "",
       country: typeof country === "string" ? country.trim() : "",
+      parking: typeof parking === "boolean" ? parking : false,
     };
 
     setIsSubmitting(true);

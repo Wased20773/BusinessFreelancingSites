@@ -3,11 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { createSlug } from "@/app/api/route_helper";
 import { NextResponse } from "next/server";
 
-type CreateBusinessBody = {
-  name?: string;
-  address?: string;
-};
-
 // POST /api/admin/onboarding/business
 export async function POST(request: Request): Promise<NextResponse> {
   try {
@@ -25,7 +20,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     // ##########################
     // ##### Validate Input #####
     // ##########################
-    const body = (await request.json()) as CreateBusinessBody;
+    const body = await request.json();
 
     const businessName = body.name?.trim();
     const locationAddress = body.address?.trim();
@@ -101,6 +96,11 @@ export async function POST(request: Request): Promise<NextResponse> {
         data: {
           businessId: business.id,
           address: locationAddress,
+          country: body.country,
+          state: body.state,
+          city: body.city,
+          zip: body.zip,
+          parking: body.parking,
         },
         select: {
           id: true,
