@@ -1,6 +1,5 @@
 "use client";
 
-import ArrowIcon from "@/components/icons/arrow";
 import EditIcon from "@/components/icons/edit.svg";
 import ExitIconBlack from "@/components/icons/exit-black.svg";
 import RequiredField from "@/components/ui/RequiredField";
@@ -13,7 +12,6 @@ import {
 import { ACCESS_LEVEL, type BusinessApiKeyJson } from "@/types/types";
 import axios from "axios";
 import Image from "next/image";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -295,7 +293,7 @@ export default function ApiKeyDetailsPage() {
       </p>
 
       {/* Main Information */}
-      <section className="border border-gray-300 rounded-xl mt-5 p-5">
+      <section className="border border-gray-200 rounded-xl shadow-sm mt-5 p-5">
         {/* Key Information */}
         <div>
           <h2 className="text-xl font-semibold">API Key Information</h2>
@@ -488,7 +486,7 @@ export default function ApiKeyDetailsPage() {
       </section>
 
       {/* Danger Zone */}
-      <section className="border border-red-400 bg-red-50 rounded-xl p-5 mt-5">
+      <section className="border border-red-400 bg-red-50 rounded-xl shadow-red-400 shadow-sm p-5 mt-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold text-red-700">

@@ -172,97 +172,106 @@ export default function WorkspacePage() {
   }
 
   return (
-    <section className="max-w-[1000px] mx-auto p-5">
-      {/* Heading */}
+    <section
+      aria-labelledby="workspace-overview-heading"
+      className="mx-auto max-w-[1000px] p-5"
+    >
       <div className="mb-5">
-        <h1 className="text-3xl font-semibold">Overview</h1>
+        <h1 id="workspace-overview-heading" className="text-3xl font-semibold">
+          Overview
+        </h1>
 
-        <p className="text-gray-500 mt-2">
+        <p className="mt-2 text-gray-500">
           View your business details and workspace activity.
         </p>
       </div>
 
-      {/* Business Identity */}
-      <section className="border border-gray-300 rounded-xl p-5 mb-5">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-2xl font-semibold">{businessData.name}</h2>
-
-          {businessData.domain && (
-            <a
-              href={`https://${businessData.domain}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-blue-600 hover:underline w-fit"
-            >
-              <ExternalLink size={15} />
-              https://{businessData.domain}
-            </a>
-          )}
-
-          <p className="text-sm text-gray-500 mt-2">
-            Created {formatDateTime(businessData.createdAt, "date")}
-          </p>
-        </div>
-      </section>
-
-      {/* Workspace Summary */}
-      <section className="border border-gray-300 rounded-xl p-5">
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold">Workspace Summary</h2>
-
-          <p className="text-sm text-gray-500 mt-1">
-            Resources available to you within this business.
-          </p>
-        </div>
-
-        <div
-          className={`
-            grid grid-cols-1 gap-3
-            ${
-              canViewLocations && canViewMembers && canViewApiKeys
-                ? "sm:grid-cols-2 md:grid-cols-3"
-                : "sm:grid-cols-2"
-            }
-          `}
+      <div className="space-y-5">
+        {/* Business Identity */}
+        <section
+          aria-labelledby="business-identity-heading"
+          className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
         >
-          {/* Locations */}
-          {canViewLocations && (
-            <div className="border border-gray-200 rounded-lg p-4">
-              <p className="text-sm text-gray-500">Locations</p>
-
-              <p className="text-3xl font-semibold mt-1">{locationCount}</p>
-            </div>
-          )}
-
-          {/* Members */}
-          {canViewMembers && (
-            <div className="border border-gray-200 rounded-lg p-4">
-              <p className="text-sm text-gray-500">Members</p>
-
-              <p className="text-3xl font-semibold mt-1">{memberCount}</p>
-            </div>
-          )}
-
-          {/* API Keys */}
-          {canViewApiKeys && (
-            <div
-              className={`
-                border border-gray-200
-                rounded-lg p-4
-                ${
-                  canViewLocations && canViewMembers
-                    ? "sm:col-span-2 sm:w-1/2 sm:justify-self-center md:col-span-1 md:w-full"
-                    : ""
-                }
-              `}
+          <div className="border-b border-gray-300 px-5 py-4 sm:px-6">
+            <h2
+              id="business-identity-heading"
+              className="text-lg font-semibold text-gray-900"
             >
-              <p className="text-sm text-gray-500">API Keys</p>
+              Business
+            </h2>
+          </div>
 
-              <p className="text-3xl font-semibold mt-1">{apiKeyCount}</p>
-            </div>
-          )}
-        </div>
-      </section>
+          <div className="px-5 py-5 sm:px-6">
+            <p className="text-xl font-semibold text-gray-900">
+              {businessData.name}
+            </p>
+
+            {businessData.domain && (
+              <a
+                href={`https://${businessData.domain}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex max-w-full items-center gap-2 break-all text-sm text-blue-700 hover:underline"
+              >
+                <ExternalLink size={15} className="shrink-0" />
+                https://{businessData.domain}
+              </a>
+            )}
+
+            <p className="mt-3 text-sm text-gray-600">
+              Created {formatDateTime(businessData.createdAt, "date")}
+            </p>
+          </div>
+        </section>
+
+        {/* Workspace Summary */}
+        <section
+          aria-labelledby="workspace-summary-heading"
+          className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+        >
+          <div className="border-b border-gray-300 px-5 py-4 sm:px-6">
+            <h2
+              id="workspace-summary-heading"
+              className="text-lg font-semibold text-gray-900"
+            >
+              Workspace Summary
+            </h2>
+
+            <p className="mt-1 text-sm text-gray-600">
+              Resources available to you within this business.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3 px-5 py-5 sm:px-6">
+            {canViewLocations && (
+              <div className="min-w-[160px] flex-[1_1_160px] rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-sm text-gray-600">Locations</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-gray-900">
+                  {locationCount}
+                </p>
+              </div>
+            )}
+
+            {canViewMembers && (
+              <div className="min-w-[160px] flex-[1_1_160px] rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-sm text-gray-600">Members</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-gray-900">
+                  {memberCount}
+                </p>
+              </div>
+            )}
+
+            {canViewApiKeys && (
+              <div className="min-w-[160px] flex-[1_1_160px] rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-sm text-gray-600">API Keys</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-gray-900">
+                  {apiKeyCount}
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
     </section>
   );
 }

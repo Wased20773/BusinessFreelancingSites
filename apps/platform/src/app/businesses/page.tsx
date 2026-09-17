@@ -206,7 +206,7 @@ export default function BusinessesPage() {
       {/* ######################### */}
       <h1 className="text-2xl font-semibold">Your Businesses</h1>
       <p className="text-gray-500 mt-1">Select a business to get started.</p>
-      <div className="shadow-lg rounded-lg mt-5">
+      <div className="border border-gray-100 shadow-lg rounded-lg mt-5">
         <div className="w-full">
           <div className="flex justify-end p-2">
             <button

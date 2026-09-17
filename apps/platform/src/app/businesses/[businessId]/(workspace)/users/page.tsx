@@ -115,180 +115,162 @@ export default function UsersPage() {
 
   return (
     <section
-      className="max-w-[1000px] mx-auto p-5"
+      className="mx-auto max-w-[1000px] p-5"
       aria-labelledby="users-heading"
     >
-      {/* Heading */}
       <div className="mb-6">
         <h1 id="users-heading" className="text-3xl font-semibold">
           Members
         </h1>
 
-        <p className="text-gray-500 mt-1">
+        <p className="mt-1 text-gray-500">
           {canManageMembers
             ? "Manage the people who have access to this business."
             : "View the people who have access to this business."}
         </p>
       </div>
 
-      {/* Actions */}
-      {canManageMembers && (
-        <section className="workspace-card mb-5">
-          <ActionItem
-            href={`/businesses/${businessId}/users/access-level`}
-            icon={KeyIcon}
-            label="Access Levels"
-            setIsLoading={setIsLoading}
-          />
+      <div className="space-y-5">
+        {canManageMembers && (
+          <nav
+            aria-label="Member actions"
+            className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 shadow-sm"
+          >
+            <ActionItem
+              href={`/businesses/${businessId}/users/access-level`}
+              icon={KeyIcon}
+              label="Access Levels"
+              setIsLoading={setIsLoading}
+            />
 
-          <Divider />
+            <Divider />
 
-          <ActionItem
-            href={`/businesses/${businessId}/users/search`}
-            icon={SearchIcon}
-            label="Add Member"
-            setIsLoading={setIsLoading}
-          />
-        </section>
-      )}
+            <ActionItem
+              href={`/businesses/${businessId}/users/search`}
+              icon={SearchIcon}
+              label="Add Member"
+              setIsLoading={setIsLoading}
+            />
+          </nav>
+        )}
 
-      {/* Members */}
-      <section className="border border-gray-300 rounded-xl p-5">
-        <div className="flex justify-between items-start gap-4 mb-4">
-          <div>
-            <h2 className="text-xl font-semibold">Business Members</h2>
+        <section
+          aria-labelledby="business-members-heading"
+          className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-gray-300 px-5 py-4 sm:px-6">
+            <div>
+              <h2
+                id="business-members-heading"
+                className="text-lg font-semibold text-gray-900"
+              >
+                Business Members
+              </h2>
 
-            <p className="text-sm text-gray-500 mt-1">
-              {canManageMembers
-                ? "View and manage member access for this business."
-                : "View members and their assigned access levels."}
-            </p>
+              <p className="mt-1 text-sm text-gray-600">
+                {canManageMembers
+                  ? "View and manage member access for this business."
+                  : "View members and their assigned access levels."}
+              </p>
+            </div>
+
+            <span className="rounded-lg bg-gray-100 px-2.5 py-1 text-sm tabular-nums text-gray-700">
+              {businessUserData.length}{" "}
+              {businessUserData.length === 1 ? "member" : "members"}
+            </span>
           </div>
 
-          <span className="text-sm text-gray-500 whitespace-nowrap">
-            {businessUserData.length}{" "}
-            {businessUserData.length === 1 ? "member" : "members"}
-          </span>
-        </div>
+          <div className="px-5 py-5 sm:px-6">
+            {businessUserData.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-5 py-8 text-center">
+                <p className="font-semibold text-gray-900">No members found</p>
 
-        {businessUserData.length === 0 ? (
-          <div className="border border-dashed border-gray-300 rounded-lg px-5 py-8 text-center">
-            <p className="font-semibold">No members found</p>
-
-            <p className="text-sm text-gray-500 mt-1">
-              {canManageMembers
-                ? "Add a member by searching for their email address."
-                : "There are no other members attached to this business."}
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {businessUserData.slice(0, visibleUsers).map((businessUser) => {
-              const memberContent = (
-                <>
-                  {/* Profile */}
-                  <Image
-                    className="rounded-full border border-gray-300 shrink-0"
-                    src={businessUser.user?.image || PlaceholderAccountIcon}
-                    alt="Profile picture"
-                    width={40}
-                    height={40}
-                  />
-
-                  {/* Member Info */}
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">
-                      {businessUser.user?.name || "Missing name"}
-                    </p>
-
-                    <div className="flex items-center gap-2 mt-1 min-w-0">
+                <p className="mt-1 text-sm text-gray-600">
+                  {canManageMembers
+                    ? "Add a member by searching for their email address."
+                    : "There are no other members attached to this business."}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {businessUserData.slice(0, visibleUsers).map((businessUser) => {
+                  const memberContent = (
+                    <>
                       <Image
-                        src={GoogleLogoIcon}
-                        alt="Google account provider"
-                        width={14}
-                        height={14}
+                        className="shrink-0 rounded-full border border-gray-300"
+                        src={businessUser.user?.image || PlaceholderAccountIcon}
+                        alt="Profile picture"
+                        width={40}
+                        height={40}
                       />
 
-                      <span className="text-sm text-gray-500 truncate">
-                        {businessUser.user?.email || "Missing email"}
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-gray-900">
+                          {businessUser.user?.name || "Missing name"}
+                        </p>
+
+                        <div className="mt-1 flex min-w-0 items-center gap-2">
+                          <Image
+                            src={GoogleLogoIcon}
+                            alt="Google account provider"
+                            width={14}
+                            height={14}
+                          />
+
+                          <span className="truncate text-sm text-gray-600">
+                            {businessUser.user?.email || "Missing email"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span className="rounded-md border border-gray-200 bg-gray-100 px-2 py-1 text-xs font-medium capitalize text-gray-700">
+                        {businessUser.role?.accessLevel || "Missing role"}
                       </span>
+                    </>
+                  );
+
+                  if (canManageMembers) {
+                    return (
+                      <Link
+                        key={businessUser.id}
+                        href={`/businesses/${businessId}/users/${
+                          businessUser.user?.id || "not-found"
+                        }`}
+                        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-gray-200 px-3 py-2 transition-colors hover:border-gray-300 hover:bg-gray-50"
+                        onClick={() => setIsLoading(true)}
+                      >
+                        {memberContent}
+                      </Link>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={businessUser.id}
+                      className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-gray-200 px-3 py-2"
+                    >
+                      {memberContent}
                     </div>
-                  </div>
+                  );
+                })}
 
-                  {/* Role */}
-                  <span className="text-sm capitalize bg-gray-100 border border-gray-200 rounded-md px-2 py-1">
-                    {businessUser.role?.accessLevel || "Missing role"}
-                  </span>
-                </>
-              );
-
-              /*
-               * Owner/Admin:
-               * clickable row → member management page
-               *
-               * Staff:
-               * same information, but read-only
-               */
-              if (canManageMembers) {
-                return (
-                  <Link
-                    key={businessUser.id}
-                    href={`/businesses/${businessId}/users/${
-                      businessUser.user?.id || "not-found"
-                    }`}
-                    className="
-                        grid grid-cols-[auto_minmax(0,1fr)_auto]
-                        items-center gap-3
-                        border border-gray-200 rounded-lg
-                        px-4 py-3
-                        hover:bg-gray-50
-                        hover:border-gray-300
-                        transition-colors
-                      "
-                    onClick={() => setIsLoading(true)}
+                {visibleUsers < businessUserData.length && (
+                  <button
+                    className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg border border-gray-300 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                    type="button"
+                    onClick={() =>
+                      setVisibleUsers((current) => current + USERS_PER_PAGE)
+                    }
                   >
-                    {memberContent}
-                  </Link>
-                );
-              }
-
-              return (
-                <div
-                  key={businessUser.id}
-                  className="
-                      grid grid-cols-[auto_minmax(0,1fr)_auto]
-                      items-center gap-3
-                      border border-gray-200 rounded-lg
-                      px-4 py-3
-                    "
-                >
-                  {memberContent}
-                </div>
-              );
-            })}
-
-            {visibleUsers < businessUserData.length && (
-              <button
-                className="
-                  flex justify-center items-center gap-1
-                  border border-gray-300 rounded-lg
-                  py-2 mt-2
-                  hover:bg-gray-50
-                  transition-colors
-                "
-                type="button"
-                onClick={() =>
-                  setVisibleUsers((current) => current + USERS_PER_PAGE)
-                }
-              >
-                <span>Load More</span>
-
-                <ArrowIcon direction="down" size={16} />
-              </button>
+                    <span>Load More</span>
+                    <ArrowIcon direction="down" size={16} />
+                  </button>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </section>
+        </section>
+      </div>
     </section>
   );
 }

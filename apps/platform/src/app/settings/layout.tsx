@@ -35,6 +35,7 @@ export default async function SettingsLayout({
    */
   const currentBusiness = {
     name: session.user.businessName ?? "",
+    imageKey: session.user.businessImageKey ?? "",
   };
 
   return (

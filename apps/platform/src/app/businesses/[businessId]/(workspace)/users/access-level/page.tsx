@@ -57,7 +57,7 @@ export default function AccessLevelsPage() {
         Understand what each business role is allowed to manage.
       </p>
 
-      <section className="border border-gray-300 rounded-xl mt-5 p-5">
+      <section className="border border-gray-200 rounded-xl shadow-sm mt-5 p-5">
         <p className="text-gray-600 mb-6 max-w-[750px]">
           Access levels determine what a member can view or manage within a
           business. Review each role carefully before assigning permissions.

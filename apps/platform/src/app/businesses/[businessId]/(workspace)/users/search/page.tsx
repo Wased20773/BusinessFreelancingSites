@@ -218,7 +218,7 @@ export default function SearchPage() {
       </p>
 
       {/* Search */}
-      <section className="border border-gray-300 rounded-xl mt-5 p-5">
+      <section className="border border-gray-200 rounded-xl shadow-sm mt-5 p-5">
         <div className="mb-5">
           <h2 className="text-xl font-semibold">Find By Email</h2>
 

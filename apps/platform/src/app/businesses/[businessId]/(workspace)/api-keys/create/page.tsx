@@ -132,7 +132,7 @@ export default function CreateApiKeyPage() {
           </p>
         </div>
 
-        <section className="border border-gray-300 rounded-xl p-5">
+        <section className="border border-gray-200 rounded-xl shadow-sm p-5">
           <div>
             <p className="text-sm text-gray-500">Key Name</p>
 
@@ -236,7 +236,7 @@ export default function CreateApiKeyPage() {
       </p>
 
       {/* Form */}
-      <section className="border border-gray-300 rounded-xl mt-5 p-5">
+      <section className="border border-gray-200 rounded-xl shadow-sm mt-5 p-5">
         <form onSubmit={handleSubmit}>
           <div>
             <label className="font-semibold" htmlFor="api-key-name">

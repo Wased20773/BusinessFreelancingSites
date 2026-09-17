@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { UserJson } from "@/types/types";
 import LoadingBar from "@/components/ui/LoadingBar";
+import Divider from "@/components/layout/Divider";
 
 export default function AccountPage() {
   const { update } = useSession();
@@ -257,57 +258,53 @@ export default function AccountPage() {
 
   return (
     <section
-      className="max-w-[1000px] mx-auto p-5"
+      className="mx-auto max-w-[1000px] p-5"
       aria-labelledby="account-heading"
     >
-      {/* Heading */}
       <div className="mb-6">
         <h1 id="account-heading" className="text-3xl font-semibold">
           Account
         </h1>
-
-        <p className="text-gray-500 mt-1">
+        <p className="mt-1 text-gray-500">
           Manage your personal account information.
         </p>
       </div>
 
-      {/* Profile */}
-      <section className="border border-gray-300 rounded-xl p-5">
-        <div className="flex items-center gap-4">
+      {/* Profile and account details */}
+      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex min-w-0 items-center gap-4">
           {accountData.image ? (
             <Image
               src={accountData.image}
               alt="Account profile"
               width={64}
               height={64}
-              className="rounded-full border border-gray-300"
+              className="shrink-0 rounded-full border border-gray-300"
             />
           ) : (
-            <div className="flex items-center justify-center size-16 rounded-full border border-gray-300 bg-gray-100 text-xl font-semibold">
+            <div className="flex size-16 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-gray-100 text-xl font-semibold text-gray-700">
               {(accountData.name ?? accountData.email).charAt(0).toUpperCase()}
             </div>
           )}
 
           <div className="min-w-0">
-            <h2 className="text-xl font-semibold truncate">
+            <h2 className="truncate text-lg font-semibold text-gray-900">
               {accountData.name ?? "Unnamed Account"}
             </h2>
-
-            <p className="text-sm text-gray-500 truncate">
+            <p className="truncate text-sm text-gray-600">
               {accountData.email}
             </p>
           </div>
         </div>
 
-        <div className="border-t border-gray-200 my-6" />
+        <Divider />
 
         {/* Name */}
         <div>
-          <div className="flex justify-between items-start gap-4">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-xl font-semibold">Name</h2>
-
-              <p className="text-sm text-gray-500 mt-1">
+              <h2 className="text-base font-semibold text-gray-900">Name</h2>
+              <p className="mt-1 text-sm text-gray-600">
                 This name is displayed throughout the platform as your account
                 identity.
               </p>
@@ -317,20 +314,22 @@ export default function AccountPage() {
               <button
                 type="button"
                 aria-label="Edit account name"
-                className="shrink-0 rounded-lg p-2 hover:bg-gray-100 transition-colors"
+                className="shrink-0 rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50"
                 onClick={() => setIsEditingName(true)}
               >
-                <Image src={EditIcon} alt="" width={22} height={22} />
+                <Image src={EditIcon} alt="" width={20} height={20} />
               </button>
             )}
           </div>
 
           {isEditingName ? (
             <form className="mt-4" onSubmit={handleNameSubmit}>
-              <label className="font-semibold" htmlFor="account-name">
+              <label
+                className="font-medium text-gray-900"
+                htmlFor="account-name"
+              >
                 Name <RequiredField />
               </label>
-
               <input
                 id="account-name"
                 name="name"
@@ -339,33 +338,27 @@ export default function AccountPage() {
                 onChange={(event) => setName(event.target.value)}
                 disabled={isSavingName}
                 required
-                className="
-                  block w-full mt-1
-                  rounded-lg
-                  border-[0.1rem] border-b-[0.2rem]
-                  border-blue-400
-                  bg-gray-100
-                  px-3 py-2
-                  disabled:opacity-50
-                "
+                className="mt-1 block w-full rounded-lg border-[0.1rem] border-b-[0.2rem] border-blue-400 bg-gray-100 px-3 py-2 disabled:opacity-50"
               />
 
               {nameError && (
-                <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">
+                <p
+                  role="alert"
+                  className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                >
                   {nameError}
                 </p>
               )}
 
-              <div className="flex justify-end gap-2 mt-4">
+              <div className="mt-4 flex justify-end gap-2">
                 <button
                   type="button"
                   disabled={isSavingName}
                   onClick={cancelNameEdit}
-                  className="rounded-lg border border-gray-300 px-4 py-2 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
-
                 <button
                   type="submit"
                   disabled={
@@ -373,7 +366,7 @@ export default function AccountPage() {
                     !name.trim() ||
                     name.trim() === (accountData.name ?? "")
                   }
-                  className="rounded-lg border border-green-500 bg-emerald-300 px-4 py-2 text-green-900 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg border border-emerald-500 bg-emerald-300 px-4 py-2 text-sm font-medium text-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSavingName ? "Saving..." : "Save Changes"}
                 </button>
@@ -381,24 +374,24 @@ export default function AccountPage() {
             </form>
           ) : (
             <div className="mt-4">
-              <p className="text-sm text-gray-500">Current Name</p>
-
-              <p className="font-medium mt-1">
+              <p className="text-sm text-gray-600">Current Name</p>
+              <p className="mt-1 font-medium text-gray-900">
                 {accountData.name ?? "Not set"}
               </p>
             </div>
           )}
         </div>
 
-        <div className="border-t border-gray-200 my-6" />
+        <Divider />
 
         {/* Username */}
         <div>
-          <div className="flex justify-between items-start gap-4">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-xl font-semibold">Username</h2>
-
-              <p className="text-sm text-gray-500 mt-1">
+              <h2 className="text-base font-semibold text-gray-900">
+                Username
+              </h2>
+              <p className="mt-1 text-sm text-gray-600">
                 Your username provides another way to identify your account
                 within the platform.
               </p>
@@ -408,20 +401,22 @@ export default function AccountPage() {
               <button
                 type="button"
                 aria-label="Edit username"
-                className="shrink-0 rounded-lg p-2 hover:bg-gray-100 transition-colors"
+                className="shrink-0 rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50"
                 onClick={() => setIsEditingUsername(true)}
               >
-                <Image src={EditIcon} alt="" width={22} height={22} />
+                <Image src={EditIcon} alt="" width={20} height={20} />
               </button>
             )}
           </div>
 
           {isEditingUsername ? (
             <form className="mt-4" onSubmit={handleUsernameSubmit}>
-              <label className="font-semibold" htmlFor="account-username">
+              <label
+                className="font-medium text-gray-900"
+                htmlFor="account-username"
+              >
                 Username <RequiredField />
               </label>
-
               <input
                 id="account-username"
                 name="username"
@@ -430,33 +425,27 @@ export default function AccountPage() {
                 onChange={(event) => setUsername(event.target.value)}
                 disabled={isSavingUsername}
                 required
-                className="
-                  block w-full mt-1
-                  rounded-lg
-                  border-[0.1rem] border-b-[0.2rem]
-                  border-blue-400
-                  bg-gray-100
-                  px-3 py-2
-                  disabled:opacity-50
-                "
+                className="mt-1 block w-full rounded-lg border-[0.1rem] border-b-[0.2rem] border-blue-400 bg-gray-100 px-3 py-2 disabled:opacity-50"
               />
 
               {usernameError && (
-                <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">
+                <p
+                  role="alert"
+                  className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                >
                   {usernameError}
                 </p>
               )}
 
-              <div className="flex justify-end gap-2 mt-4">
+              <div className="mt-4 flex justify-end gap-2">
                 <button
                   type="button"
                   disabled={isSavingUsername}
                   onClick={cancelUsernameEdit}
-                  className="rounded-lg border border-gray-300 px-4 py-2 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
-
                 <button
                   type="submit"
                   disabled={
@@ -464,7 +453,7 @@ export default function AccountPage() {
                     !username.trim() ||
                     username.trim() === (accountData.username ?? "")
                   }
-                  className="rounded-lg border border-green-500 bg-emerald-300 px-4 py-2 text-green-900 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg border border-emerald-500 bg-emerald-300 px-4 py-2 text-sm font-medium text-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSavingUsername ? "Saving..." : "Save Changes"}
                 </button>
@@ -472,60 +461,58 @@ export default function AccountPage() {
             </form>
           ) : (
             <div className="mt-4">
-              <p className="text-sm text-gray-500">Current Username</p>
-
-              <p className="font-medium mt-1">
+              <p className="text-sm text-gray-600">Current Username</p>
+              <p className="mt-1 font-medium text-gray-900">
                 {accountData.username ?? "Not set"}
               </p>
             </div>
           )}
         </div>
 
-        <div className="border-t border-gray-200 my-6" />
+        <Divider />
 
         {/* Account Information */}
         <div>
-          <h2 className="text-xl font-semibold">Account Information</h2>
+          <h2 className="text-base font-semibold text-gray-900">
+            Account Information
+          </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
+          <dl className="mt-4 grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
             <div>
-              <p className="text-sm text-gray-500">Email</p>
-
-              <p className="font-medium mt-1 break-all">{accountData.email}</p>
+              <dt className="font-medium text-gray-600">Email</dt>
+              <dd className="mt-1 break-all text-gray-900">
+                {accountData.email}
+              </dd>
             </div>
 
             <div>
-              <p className="text-sm text-gray-500">Account Created</p>
-
-              <p className="font-medium mt-1">
+              <dt className="font-medium text-gray-600">Account Created</dt>
+              <dd className="mt-1 text-gray-900">
                 {formatDateTime(accountData.createdAt, "date")}
-              </p>
+              </dd>
             </div>
 
             <div>
-              <p className="text-sm text-gray-500">Last Updated</p>
-
-              <p className="font-medium mt-1">
+              <dt className="font-medium text-gray-600">Last Updated</dt>
+              <dd className="mt-1 text-gray-900">
                 {formatDateTime(accountData.updatedAt, "date")}
-              </p>
+              </dd>
             </div>
-          </div>
+          </dl>
         </div>
       </section>
 
-      {/* Danger Zone */}
-      <section className="border border-red-400 bg-red-50 rounded-xl p-5 mt-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Account deletion */}
+      <section className="mt-5 rounded-2xl border border-red-300 bg-red-50 p-5 shadow-red-400 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-red-700">
+            <h2 className="text-base font-semibold text-red-800">
               Delete Account
             </h2>
-
-            <p className="text-sm text-red-500 mt-1">
+            <p className="mt-1 text-sm text-red-700">
               Permanently delete your account and associated personal data.
             </p>
-
-            <p className="text-sm text-red-400 mt-1">
+            <p className="mt-1 text-sm text-red-600">
               Account deletion is not available yet.
             </p>
           </div>
@@ -533,16 +520,7 @@ export default function AccountPage() {
           <button
             type="button"
             disabled
-            className="
-              shrink-0
-              rounded-lg
-              border border-red-300
-              bg-red-50
-              px-4 py-2
-              font-medium text-red-500
-              cursor-not-allowed
-              opacity-60
-            "
+            className="shrink-0 cursor-not-allowed rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 opacity-60"
           >
             Delete Account
           </button>

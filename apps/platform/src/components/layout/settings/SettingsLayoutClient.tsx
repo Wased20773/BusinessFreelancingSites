@@ -24,6 +24,7 @@ export default function SettingsLayoutClient({
   const pathname = usePathname();
 
   const [navigationTarget, setNavigationTarget] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
 
   const isNavigating =
     navigationTarget !== null && pathname !== navigationTarget;
@@ -42,6 +43,8 @@ export default function SettingsLayoutClient({
       />
 
       <MobileNavBar
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
         currentBusiness={currentBusiness}
         currentAccount={currentAccount}
         variant="settings"

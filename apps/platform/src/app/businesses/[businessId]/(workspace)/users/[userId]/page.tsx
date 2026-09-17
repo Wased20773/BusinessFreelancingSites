@@ -398,7 +398,7 @@ export default function UserDetailsPage() {
       </p>
 
       {/* Member Information */}
-      <section className="border border-gray-300 rounded-xl mt-5 p-5">
+      <section className="border border-gray-200 rounded-xl shadow-sm mt-5 p-5">
         {/* General */}
         <div>
           <h2 className="text-xl font-semibold">Member Information</h2>
@@ -606,7 +606,7 @@ export default function UserDetailsPage() {
 
       {/* Danger Zone */}
       {canDeleteSelectedUser && (
-        <section className="border border-red-400 bg-red-50 rounded-xl p-5 mt-5">
+        <section className="border border-red-400 bg-red-50 rounded-xl shadow-red-400 shadow-sm p-5 mt-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="text-xl font-semibold text-red-700">

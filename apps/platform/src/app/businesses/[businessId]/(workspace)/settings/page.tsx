@@ -718,31 +718,29 @@ export default function SettingsPage() {
 
   return (
     <section
-      className="max-w-[1000px] mx-auto p-5"
+      className="mx-auto max-w-[1000px] p-5"
       aria-labelledby="settings-heading"
     >
-      {/* Heading */}
       <div>
         <h1 id="settings-heading" className="text-3xl font-semibold">
           Settings
         </h1>
-
-        <p className="text-gray-500 mt-1">
+        <p className="mt-1 text-gray-500">
           {canManageSettings
             ? "Manage your business identity and website information."
             : "View your business identity and website information."}
         </p>
       </div>
 
-      {/* Settings */}
-      <section className="border border-gray-300 rounded-xl mt-5 p-5">
+      <section className="mt-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
         {/* Business Image */}
         <div>
-          <div className="flex justify-between items-start gap-4">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-xl font-semibold">Business Image</h2>
-
-              <p className="text-sm text-gray-800 mt-1 max-w-[700px]">
+              <h2 className="text-base font-semibold text-gray-900">
+                Business Image
+              </h2>
+              <p className="mt-1 max-w-[700px] text-sm text-gray-600">
                 {canManageSettings
                   ? "Your business image is used throughout the platform and may be displayed on your business website."
                   : "A business image is used throughout the platform and may be displayed on your business website"}
@@ -753,20 +751,22 @@ export default function SettingsPage() {
               <button
                 type="button"
                 aria-label="Edit business image"
-                className="shrink-0 rounded-lg p-2 hover:bg-gray-100 transition-colors"
+                className="shrink-0 rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50"
                 onClick={() => setIsEditingImage(true)}
               >
-                <Image src={EditIcon} alt="" width={22} height={22} />
+                <Image src={EditIcon} alt="" width={20} height={20} />
               </button>
             )}
           </div>
 
           {isEditingImage ? (
             <form className="mt-4" onSubmit={handleImageSubmit}>
-              <label className="font-semibold" htmlFor="business-image">
+              <label
+                className="font-medium text-gray-900"
+                htmlFor="business-image"
+              >
                 Business Image
               </label>
-
               <input
                 id="business-image"
                 name="image"
@@ -774,26 +774,19 @@ export default function SettingsPage() {
                 accept="image/jpeg,image/png,image/webp"
                 onChange={handleImageChange}
                 disabled={isSavingImage}
-                className="
-          block w-full mt-1
-          rounded-lg
-          border-[0.1rem] border-b-[0.2rem]
-          border-blue-400
-          bg-gray-100
-          px-3 py-2
-          disabled:opacity-50
-        "
+                className="mt-1 block w-full rounded-lg border-[0.1rem] border-b-[0.2rem] border-blue-400 bg-gray-100 px-3 py-2 disabled:opacity-50"
               />
 
               {cropImageSrc && (
                 <div className="mt-4">
-                  <p className="font-semibold">Crop Image</p>
-
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm font-medium text-gray-900">
+                    Crop Image
+                  </p>
+                  <p className="mt-1 text-sm text-gray-600">
                     Move and zoom the image to select the area you want to use.
                   </p>
 
-                  <div className="relative w-full h-[400px] mt-3 rounded-lg overflow-hidden bg-black">
+                  <div className="relative mt-3 h-[400px] w-full overflow-hidden rounded-lg bg-black">
                     <Cropper
                       image={cropImageSrc}
                       crop={crop}
@@ -805,20 +798,12 @@ export default function SettingsPage() {
                     />
                   </div>
 
-                  <div className="flex justify-end mt-4">
+                  <div className="mt-4 flex justify-end">
                     <button
                       type="button"
                       onClick={() => void handleUseCrop()}
                       disabled={!croppedAreaPixels}
-                      className="
-          rounded-lg
-          border border-blue-500
-          bg-blue-100
-          px-4 py-2
-          text-blue-900
-          disabled:cursor-not-allowed
-          disabled:opacity-50
-        "
+                      className="rounded-lg border border-blue-500 bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Done
                     </button>
@@ -840,35 +825,22 @@ export default function SettingsPage() {
                         alt="Business image preview"
                         width={120}
                         height={120}
-                        className="
-          rounded-lg
-          object-contain
-          transition-opacity
-          hover:opacity-80
-        "
+                        className="rounded-lg object-contain transition-opacity hover:opacity-80"
                       />
                     </button>
-
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="mt-2 text-sm text-gray-600">
                       Click the image to adjust the crop.
                     </p>
                   </div>
-                  <div className="flex justify-between gap-2 mt-4">
+
+                  <div className="mt-4 flex flex-wrap justify-between gap-2">
                     <div>
                       {businessData.imageKey && (
                         <button
                           type="button"
                           disabled={isSavingImage}
                           onClick={() => void handleDeleteImage()}
-                          className="
-                    rounded-lg
-                    border border-red-400
-                    px-4 py-2
-                    text-red-700
-                    hover:bg-red-50
-                    transition-colors
-                    disabled:opacity-50
-                  "
+                          className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50"
                         >
                           Delete Image
                         </button>
@@ -880,30 +852,14 @@ export default function SettingsPage() {
                         type="button"
                         disabled={isSavingImage}
                         onClick={cancelImageEdit}
-                        className="
-                  rounded-lg
-                  border border-gray-300
-                  px-4 py-2
-                  hover:bg-gray-100
-                  transition-colors
-                  disabled:opacity-50
-                "
+                        className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
                       >
                         Cancel
                       </button>
-
                       <button
                         type="submit"
                         disabled={isSavingImage || !image}
-                        className="
-                  rounded-lg
-                  border border-green-500
-                  bg-emerald-300
-                  px-4 py-2
-                  text-green-900
-                  disabled:cursor-not-allowed
-                  disabled:opacity-50
-                "
+                        className="rounded-lg border border-emerald-500 bg-emerald-300 px-4 py-2 text-sm font-medium text-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {isSavingImage
                           ? "Saving..."
@@ -917,15 +873,17 @@ export default function SettingsPage() {
               )}
 
               {errorMessageImage && (
-                <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">
+                <p
+                  role="alert"
+                  className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                >
                   {errorMessageImage}
                 </p>
               )}
             </form>
           ) : (
             <div className="mt-4">
-              <p className="text-sm text-gray-500">Current Image</p>
-
+              <p className="text-sm text-gray-600">Current Image</p>
               {imagePreview ? (
                 <Image
                   src={imagePreview}
@@ -935,7 +893,7 @@ export default function SettingsPage() {
                   className="mt-2 rounded-lg object-contain"
                 />
               ) : (
-                <p className="font-medium mt-1 text-gray-500">
+                <p className="mt-1 text-sm font-medium text-gray-700">
                   No business image configured
                 </p>
               )}
@@ -947,11 +905,12 @@ export default function SettingsPage() {
 
         {/* Business Name */}
         <div>
-          <div className="flex justify-between items-start gap-4">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-xl font-semibold">Business Name</h2>
-
-              <p className="text-sm text-gray-800 mt-1 max-w-[700px]">
+              <h2 className="text-base font-semibold text-gray-900">
+                Business Name
+              </h2>
+              <p className="mt-1 max-w-[700px] text-sm text-gray-600">
                 Your business name is used throughout the platform and may be
                 displayed on your business website.
               </p>
@@ -961,20 +920,22 @@ export default function SettingsPage() {
               <button
                 type="button"
                 aria-label="Edit business name"
-                className="shrink-0 rounded-lg p-2 hover:bg-gray-100 transition-colors"
+                className="shrink-0 rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50"
                 onClick={() => setIsEditingName(true)}
               >
-                <Image src={EditIcon} alt="" width={22} height={22} />
+                <Image src={EditIcon} alt="" width={20} height={20} />
               </button>
             )}
           </div>
 
           {isEditingName ? (
             <form className="mt-4" onSubmit={handleNameSubmit}>
-              <label className="font-semibold" htmlFor="business-name">
+              <label
+                className="font-medium text-gray-900"
+                htmlFor="business-name"
+              >
                 Business Name <RequiredField />
               </label>
-
               <input
                 id="business-name"
                 name="name"
@@ -983,40 +944,27 @@ export default function SettingsPage() {
                 onChange={(event) => setName(event.target.value)}
                 disabled={isSavingName}
                 required
-                className="
-                  block w-full mt-1
-                  rounded-lg
-                  border-[0.1rem] border-b-[0.2rem]
-                  border-blue-400
-                  bg-gray-100
-                  px-3 py-2
-                  disabled:opacity-50
-                "
+                className="mt-1 block w-full rounded-lg border-[0.1rem] border-b-[0.2rem] border-blue-400 bg-gray-100 px-3 py-2 disabled:opacity-50"
               />
 
               {errorMessageName && (
-                <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">
+                <p
+                  role="alert"
+                  className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                >
                   {errorMessageName}
                 </p>
               )}
 
-              <div className="flex justify-end gap-2 mt-4">
+              <div className="mt-4 flex justify-end gap-2">
                 <button
                   type="button"
                   disabled={isSavingName}
                   onClick={cancelNameEdit}
-                  className="
-                    rounded-lg
-                    border border-gray-300
-                    px-4 py-2
-                    hover:bg-gray-100
-                    transition-colors
-                    disabled:opacity-50
-                  "
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
-
                 <button
                   type="submit"
                   disabled={
@@ -1024,15 +972,7 @@ export default function SettingsPage() {
                     !name.trim() ||
                     name.trim() === businessData.name
                   }
-                  className="
-                    rounded-lg
-                    border border-green-500
-                    bg-emerald-300
-                    px-4 py-2
-                    text-green-900
-                    disabled:cursor-not-allowed
-                    disabled:opacity-50
-                  "
+                  className="rounded-lg border border-emerald-500 bg-emerald-300 px-4 py-2 text-sm font-medium text-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSavingName ? "Saving..." : "Save Changes"}
                 </button>
@@ -1040,9 +980,10 @@ export default function SettingsPage() {
             </form>
           ) : (
             <div className="mt-4">
-              <p className="text-sm text-gray-500">Current Name</p>
-
-              <p className="font-medium mt-1">{businessData.name}</p>
+              <p className="text-sm text-gray-600">Current Name</p>
+              <p className="mt-1 font-medium text-gray-900">
+                {businessData.name}
+              </p>
             </div>
           )}
         </div>
@@ -1051,11 +992,10 @@ export default function SettingsPage() {
 
         {/* Domain */}
         <div>
-          <div className="flex justify-between items-start gap-4">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-xl font-semibold">Domain</h2>
-
-              <p className="text-sm text-gray-700 mt-1 max-w-[700px]">
+              <h2 className="text-base font-semibold text-gray-900">Domain</h2>
+              <p className="mt-1 max-w-[700px] text-sm text-gray-600">
                 The domain identifies the website associated with this business.
                 Only change it when the website&apos;s domain changes or the
                 current value is incorrect.
@@ -1066,25 +1006,27 @@ export default function SettingsPage() {
               <button
                 type="button"
                 aria-label="Edit business domain"
-                className="shrink-0 rounded-lg p-2 hover:bg-gray-100 transition-colors"
+                className="shrink-0 rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50"
                 onClick={() => setIsEditingDomain(true)}
               >
-                <Image src={EditIcon} alt="" width={22} height={22} />
+                <Image src={EditIcon} alt="" width={20} height={20} />
               </button>
             )}
           </div>
 
           {isEditingDomain ? (
             <form className="mt-4" onSubmit={handleDomainSubmit}>
-              <label className="font-semibold" htmlFor="business-domain">
+              <label
+                className="font-medium text-gray-900"
+                htmlFor="business-domain"
+              >
                 Domain <RequiredField />
               </label>
 
-              <div className="flex items-center mt-1">
-                <span className="shrink-0 rounded-l-lg border-[0.1rem] border-r-0 border-b-[0.2rem] border-blue-400 bg-gray-200 px-3 py-2 text-gray-500">
+              <div className="mt-1 flex items-center">
+                <span className="shrink-0 rounded-l-lg border-[0.1rem] border-r-0 border-b-[0.2rem] border-blue-400 bg-gray-200 px-3 py-2 text-gray-600">
                   https://
                 </span>
-
                 <input
                   id="business-domain"
                   name="domain"
@@ -1093,41 +1035,28 @@ export default function SettingsPage() {
                   onChange={(event) => handleDomainChange(event.target.value)}
                   disabled={isSavingDomain}
                   required
-                  className="
-                    min-w-0 flex-1
-                    rounded-r-lg
-                    border-[0.1rem] border-b-[0.2rem]
-                    border-blue-400
-                    bg-gray-100
-                    px-3 py-2
-                    disabled:opacity-50
-                  "
+                  className="min-w-0 flex-1 rounded-r-lg border-[0.1rem] border-b-[0.2rem] border-blue-400 bg-gray-100 px-3 py-2 disabled:opacity-50"
                 />
               </div>
 
               {errorMessageDomain && (
-                <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">
+                <p
+                  role="alert"
+                  className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                >
                   {errorMessageDomain}
                 </p>
               )}
 
-              <div className="flex justify-end gap-2 mt-4">
+              <div className="mt-4 flex justify-end gap-2">
                 <button
                   type="button"
                   disabled={isSavingDomain}
                   onClick={cancelDomainEdit}
-                  className="
-                    rounded-lg
-                    border border-gray-300
-                    px-4 py-2
-                    hover:bg-gray-100
-                    transition-colors
-                    disabled:opacity-50
-                  "
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
-
                 <button
                   type="submit"
                   disabled={
@@ -1135,15 +1064,7 @@ export default function SettingsPage() {
                     !domain.trim() ||
                     domain === (businessData.domain ?? "")
                   }
-                  className="
-                    rounded-lg
-                    border border-green-500
-                    bg-emerald-300
-                    px-4 py-2
-                    text-green-900
-                    disabled:cursor-not-allowed
-                    disabled:opacity-50
-                  "
+                  className="rounded-lg border border-emerald-500 bg-emerald-300 px-4 py-2 text-sm font-medium text-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSavingDomain ? "Saving..." : "Save Changes"}
                 </button>
@@ -1151,24 +1072,20 @@ export default function SettingsPage() {
             </form>
           ) : (
             <div className="mt-4">
-              <p className="text-sm text-gray-500">Current Domain</p>
+              <p className="text-sm text-gray-600">Current Domain</p>
 
               {businessData.domain ? (
                 <Link
                   href={`https://${businessData.domain}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 mt-1 text-blue-600 hover:underline"
+                  className="mt-1 inline-flex items-center gap-1.5 break-all text-blue-700 hover:underline"
                 >
                   <ExternalLink size={15} />
-
-                  <span>
-                    https://
-                    {businessData.domain}
-                  </span>
+                  <span>https://{businessData.domain}</span>
                 </Link>
               ) : (
-                <p className="font-medium mt-1 text-gray-500">
+                <p className="mt-1 text-sm font-medium text-gray-700">
                   No domain configured
                 </p>
               )}
