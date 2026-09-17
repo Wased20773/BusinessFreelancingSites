@@ -1,12 +1,9 @@
-import { LocationJson } from "@/types/types";
-import { InputEvent, SubmitEvent, useMemo, useState } from "react";
-
-import "@/app/dashboard/(protected)/page.css";
+import type { LocationJson } from "@/types/types";
+import { type InputEvent, type SubmitEvent, useMemo, useState } from "react";
+import { City, Country, State } from "country-state-city";
 
 import RequiredField from "../RequiredField";
 import { GenericSelect } from "../select/GenericSelect";
-
-import { Country, State, City } from "country-state-city";
 
 type EditLocationFormProps = {
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
@@ -20,6 +17,9 @@ type EditLocationFormProps = {
   handleDelete(): void;
 };
 
+const inputClass =
+  "mt-1 block w-full rounded-lg border-[0.1rem] border-b-[0.2rem] border-blue-400 bg-gray-100 px-3 py-2 disabled:opacity-50";
+
 export default function EditLocationForm({
   handleSubmit,
   handleFormInput,
@@ -31,38 +31,21 @@ export default function EditLocationForm({
   isSaving,
   isDeleting,
 }: EditLocationFormProps) {
-  /*
-   * Existing saved values.
-   *
-   * Country and state are stored using their codes:
-   *
-   * country = "US"
-   * state = "OR"
-   * city = "Portland"
-   */
   const [countryCode, setCountryCode] = useState<string | null>(
     locationData.country ?? null,
   );
-
   const [stateCode, setStateCode] = useState<string | null>(
     locationData.state ?? null,
   );
-
   const [selectedCity, setSelectedCity] = useState<string | null>(
     locationData.city ?? null,
   );
 
-  /*
-   * Countries
-   */
   const countries = Country.getAllCountries().map((country) => ({
     name: country.name,
     key: country.isoCode,
   }));
 
-  /*
-   * States belonging to the selected country.
-   */
   const states = useMemo(() => {
     if (!countryCode) return null;
 
@@ -74,9 +57,6 @@ export default function EditLocationForm({
       }));
   }, [countryCode]);
 
-  /*
-   * Cities belonging to the selected country/state.
-   */
   const cities = useMemo(() => {
     if (!countryCode || !stateCode) return null;
 
@@ -110,250 +90,197 @@ export default function EditLocationForm({
   return (
     <form
       id="edit-location-form"
-      className="dashboard-card p-4"
+      className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
       onSubmit={handleSubmit}
       onInput={handleFormInput}
     >
-      {/* ######################### */}
-      {/* ##### Location Info ##### */}
-      {/* ######################### */}
+      <div className="space-y-6 px-5 py-4 sm:p-6">
+        <fieldset disabled={isProcessing}>
+          <legend className="text-base font-semibold text-gray-900">
+            Location Info
+          </legend>
 
-      <fieldset className="mb-5" disabled={isProcessing}>
-        <legend>Location Info</legend>
-
-        <div className="flex flex-col gap-4">
-          {/* Address */}
-          <div>
-            <label className="font-semibold" htmlFor="location-address">
-              Address
-              <RequiredField />
-            </label>
-
-            <input
-              className="
-                block w-full
-                border-[0.1rem] border-b-[0.2rem]
-                rounded-lg border-blue-400
-                bg-gray-100
-                px-3 py-2 mt-1
-                disabled:opacity-50
-              "
-              id="location-address"
-              name="address"
-              type="text"
-              defaultValue={locationData.address}
-              placeholder="Enter the business address"
-              required
-            />
-          </div>
-
-          <div className="flex flex-wrap items-start gap-3">
-            {/* Country */}
-            <div className="w-[150px]">
-              <label className="font-semibold" htmlFor="location-country">
-                Country
+          <div className="space-y-4">
+            <div>
+              <label
+                className="font-medium text-gray-900"
+                htmlFor="location-address"
+              >
+                Address
+                <RequiredField />
               </label>
-
-              <GenericSelect
-                placeholder="Select Country"
-                items={countries}
-                defaultValue={countryCode ?? undefined}
-                setSelected={(newCountryCode) => {
-                  setCountryCode(newCountryCode);
-
-                  /*
-                   * Changing country invalidates the
-                   * existing state and city.
-                   */
-                  setStateCode(null);
-                  setSelectedCity(null);
-
-                  notifyFormChange();
-                }}
+              <input
+                className={inputClass}
+                id="location-address"
+                name="address"
+                type="text"
+                defaultValue={locationData.address}
+                placeholder="Enter the business address"
+                required
               />
-
-              <input type="hidden" name="country" value={countryCode ?? ""} />
             </div>
 
-            {/* State */}
-            <div className="w-[150px]">
-              <label className="font-semibold" htmlFor="location-state">
-                State
-              </label>
+            <div className="flex flex-wrap items-start gap-3">
+              <div className="w-[150px]">
+                <label
+                  className="font-medium text-gray-900"
+                  htmlFor="location-country"
+                >
+                  Country
+                </label>
+                <GenericSelect
+                  placeholder="Select Country"
+                  items={countries}
+                  defaultValue={countryCode ?? undefined}
+                  setSelected={(newCountryCode) => {
+                    setCountryCode(newCountryCode);
+                    setStateCode(null);
+                    setSelectedCity(null);
+                    notifyFormChange();
+                  }}
+                />
+                <input type="hidden" name="country" value={countryCode ?? ""} />
+              </div>
 
-              <GenericSelect
-                placeholder="Select State"
-                items={countryCode ? states : null}
-                defaultValue={stateCode ?? undefined}
-                setSelected={(newStateCode) => {
-                  setStateCode(newStateCode);
+              <div className="w-[150px]">
+                <label
+                  className="font-medium text-gray-900"
+                  htmlFor="location-state"
+                >
+                  State
+                </label>
+                <GenericSelect
+                  placeholder="Select State"
+                  items={countryCode ? states : null}
+                  defaultValue={stateCode ?? undefined}
+                  setSelected={(newStateCode) => {
+                    setStateCode(newStateCode);
+                    setSelectedCity(null);
+                    notifyFormChange();
+                  }}
+                />
+                <input type="hidden" name="state" value={stateCode ?? ""} />
+              </div>
 
-                  /*
-                   * Changing state invalidates the
-                   * existing city.
-                   */
-                  setSelectedCity(null);
-
-                  notifyFormChange();
-                }}
-              />
-
-              <input type="hidden" name="state" value={stateCode ?? ""} />
+              <div className="w-[150px]">
+                <label
+                  className="font-medium text-gray-900"
+                  htmlFor="location-city"
+                >
+                  City
+                </label>
+                <GenericSelect
+                  placeholder="Select City"
+                  items={stateCode ? cities : null}
+                  defaultValue={selectedCity ?? undefined}
+                  setSelected={(newCity) => {
+                    setSelectedCity(newCity);
+                    notifyFormChange();
+                  }}
+                />
+                <input type="hidden" name="city" value={selectedCity ?? ""} />
+              </div>
             </div>
 
-            {/* City */}
-            <div className="w-[150px]">
-              <label className="font-semibold" htmlFor="location-city">
-                City
+            <div>
+              <label
+                className="block font-medium text-gray-900"
+                htmlFor="location-zip"
+              >
+                ZIP / Postal Code
               </label>
-
-              <GenericSelect
-                placeholder="Select City"
-                items={stateCode ? cities : null}
-                defaultValue={selectedCity ?? undefined}
-                setSelected={(newCity) => {
-                  setSelectedCity(newCity);
-
-                  notifyFormChange();
-                }}
+              <input
+                className="block w-[100px] rounded-lg border-[0.1rem] border-b-[0.2rem] border-blue-400 bg-gray-100 px-3 py-2 disabled:opacity-50"
+                id="location-zip"
+                name="zip"
+                type="text"
+                defaultValue={locationData.zip ?? ""}
               />
-
-              <input type="hidden" name="city" value={selectedCity ?? ""} />
             </div>
           </div>
+        </fieldset>
 
-          {/* ZIP */}
-          <div className="col-span-2 md:col-span-1">
-            <label className="block font-semibold" htmlFor="location-zip">
-              ZIP / Postal Code
-            </label>
+        <fieldset disabled={isProcessing}>
+          <legend className="text-base font-semibold text-gray-900">
+            Location Settings
+          </legend>
 
-            <input
-              className="
-                  block w-[75px]
-                  border-[0.1rem] border-b-[0.2rem]
-                  rounded-lg border-blue-400
-                  bg-gray-100
-                  px-3 py-2
-                  disabled:opacity-50
-                "
-              id="location-zip"
-              name="zip"
-              type="text"
-              defaultValue={locationData.zip ?? ""}
-            />
+          <div className="space-y-4">
+            <div>
+              <label
+                className="flex cursor-pointer items-center gap-2 font-medium text-gray-900"
+                htmlFor="location-parking"
+              >
+                <input
+                  className="disabled:opacity-50"
+                  id="location-parking"
+                  name="parking"
+                  type="checkbox"
+                  defaultChecked={locationData.parking}
+                />
+                Parking Available
+              </label>
+              <p className="mt-1 text-sm text-gray-600">
+                Select this if customers have access to parking at this
+                location.
+              </p>
+            </div>
+
+            <div>
+              <label
+                className="flex cursor-pointer items-center gap-2 font-medium text-gray-900"
+                htmlFor="location-isActive"
+              >
+                <input
+                  className="disabled:opacity-50"
+                  id="location-isActive"
+                  name="isActive"
+                  type="checkbox"
+                  defaultChecked={locationData.isActive}
+                />
+                Location Active
+              </label>
+              <p className="mt-1 text-sm text-gray-600">
+                Disable this to prevent the location from appearing on your
+                business website.
+              </p>
+            </div>
+
+            <div>
+              <label
+                className="flex cursor-pointer items-center gap-2 font-medium text-gray-900"
+                htmlFor="location-enableHours"
+              >
+                <input
+                  className="disabled:opacity-50"
+                  id="location-enableHours"
+                  name="enableHours"
+                  type="checkbox"
+                  defaultChecked={locationData.enableHours}
+                />
+                Enable Working Hours
+              </label>
+              <p className="mt-1 text-sm text-gray-600">
+                Enable this to display this location&apos;s working hours on
+                your business website.
+              </p>
+            </div>
           </div>
-        </div>
-      </fieldset>
+        </fieldset>
 
-      {/* ############################# */}
-      {/* ##### Location Settings ##### */}
-      {/* ############################# */}
+        {errorMessage && (
+          <p
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          >
+            {errorMessage}
+          </p>
+        )}
+      </div>
 
-      <fieldset className="mb-5" disabled={isProcessing}>
-        <legend>Location Settings</legend>
-
-        <div className="flex flex-col gap-4">
-          {/* Parking */}
-          <div>
-            <label className="font-semibold flex" htmlFor="location-parking">
-              <input
-                className="disabled:opacity-50 mr-2"
-                id="location-parking"
-                name="parking"
-                type="checkbox"
-                defaultChecked={locationData.parking}
-              />
-
-              <span className="font-semibold">Parking Available</span>
-            </label>
-
-            <p className="text-sm text-gray-500 mt-1">
-              Select this if customers have access to parking at this location.
-            </p>
-          </div>
-
-          {/* Active */}
-          <div>
-            <label
-              className="font-semibold flex cursor-pointer"
-              htmlFor="location-isActive"
-            >
-              <input
-                className="disabled:opacity-50 mr-2"
-                id="location-isActive"
-                name="isActive"
-                type="checkbox"
-                defaultChecked={locationData.isActive}
-              />
-
-              <span className="font-semibold">Location Active</span>
-            </label>
-
-            <p className="text-sm text-gray-500 mt-1">
-              Disable this to prevent the location from appearing on your
-              business website.
-            </p>
-          </div>
-
-          {/* Working Hours */}
-          <div>
-            <label
-              className="font-semibold flex cursor-pointer"
-              htmlFor="location-enableHours"
-            >
-              <input
-                className="disabled:opacity-50 mr-2"
-                id="location-enableHours"
-                name="enableHours"
-                type="checkbox"
-                defaultChecked={locationData.enableHours}
-              />
-
-              <span className="font-semibold">Enable Working Hours</span>
-            </label>
-
-            <p className="text-sm text-gray-500 mt-1">
-              Enable this to display this location&apos;s working hours on your
-              business website.
-            </p>
-          </div>
-        </div>
-      </fieldset>
-
-      {/* Error */}
-      {errorMessage && (
-        <p
-          role="alert"
-          className="
-            text-red-500
-            bg-red-100
-            border-[0.1rem] border-red-500
-            rounded-lg
-            px-2 py-1
-            mb-4
-          "
-        >
-          {errorMessage}
-        </p>
-      )}
-
-      {/* ##################### */}
-      {/* ##### Actions ####### */}
-      {/* ##################### */}
-
-      <div className="flex justify-between gap-3 mt-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50 px-5 py-4 sm:px-6">
         <button
-          className="
-            bg-red-300
-            border-[0.1rem] border-red-500
-            rounded-lg
-            text-red-900
-            px-3 py-1
-            cursor-pointer
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-          "
+          className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
           type="button"
           disabled={isProcessing}
           onClick={handleDelete}
@@ -362,16 +289,7 @@ export default function EditLocationForm({
         </button>
 
         <button
-          className="
-            bg-emerald-300
-            border-[0.1rem] border-green-500
-            rounded-lg
-            text-green-900
-            px-3 py-1
-            cursor-pointer
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-          "
+          className="rounded-lg border border-emerald-500 bg-emerald-300 px-4 py-2 text-sm font-medium text-emerald-900 transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
           type="submit"
           disabled={isProcessing || !canSubmit}
         >

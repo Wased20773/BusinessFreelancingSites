@@ -1,14 +1,13 @@
-import Divider from "@/components/layout/Divider";
-import { CategoryJson } from "@/types/types";
-import Link from "next/link";
-import ReorderControls from "../controls/ReorderControls";
-import { getCategories } from "@/lib/api/categories";
-import { toast } from "sonner";
-import { moveOrder, ReorderDirection } from "@/lib/api/reorder";
-import axios from "axios";
 import ChevronIcon from "@/components/icons/chevron";
+import { getCategories } from "@/lib/api/categories";
+import { moveOrder, type ReorderDirection } from "@/lib/api/reorder";
+import type { CategoryJson } from "@/types/types";
+import axios from "axios";
+import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Dispatch, SetStateAction, useState } from "react";
+import { type Dispatch, type SetStateAction, useState } from "react";
+import { toast } from "sonner";
+import ReorderControls from "../controls/ReorderControls";
 
 type CategoryListParams = {
   isLoading: boolean;
@@ -57,16 +56,11 @@ export default function CategoryList({
       (category) => category.id === parentCategoryId,
     );
 
-    if (!selectedCategory) {
-      return;
-    }
+    if (!selectedCategory) return;
 
     setCategoryData(selectedCategory.subcategories ?? []);
   }
 
-  // ----------------------------
-  // MOVE CATEGORY
-  // ----------------------------
   async function handleMoveCategory(
     categoryId: string,
     direction: ReorderDirection,
@@ -87,11 +81,9 @@ export default function CategoryList({
             direction === "up"
               ? `Moving ${isSubcategory ? "subcategory" : "category"} up`
               : `Moving ${isSubcategory ? "subcategory" : "category"} down`,
-
           success: isSubcategory
             ? "Subcategory order updated"
             : "Category order updated",
-
           error: (error) => {
             if (axios.isAxiosError(error)) {
               return {
@@ -136,26 +128,32 @@ export default function CategoryList({
 
   return (
     <section
-      className="dashboard-card"
       aria-labelledby={`${isSubcategory ? "subcategory" : "category"}-heading`}
+      className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
     >
-      <h2
-        id={`${isSubcategory ? "subcategory" : "category"}-heading`}
-        className="px-3 py-2"
-      >
-        {isSubcategory ? "Subcategories" : "Categories"}
-      </h2>
+      <div className="border-b border-gray-300 px-5 py-4 sm:px-6">
+        <h2
+          id={`${isSubcategory ? "subcategory" : "category"}-heading`}
+          className="text-lg font-semibold text-gray-900"
+        >
+          {isSubcategory ? "Subcategories" : "Categories"}
+        </h2>
+      </div>
+
       {isLoading ? (
-        <p>Loading {isSubcategory ? "subcategories" : "categories"}...</p>
+        <p className="px-5 py-8 text-sm text-gray-600 sm:px-6">
+          Loading {isSubcategory ? "subcategories" : "categories"}...
+        </p>
       ) : errorMessage ? (
-        <p role="alert">{errorMessage}</p>
+        <p role="alert" className="px-5 py-8 text-sm text-red-700 sm:px-6">
+          {errorMessage}
+        </p>
       ) : categoryData.length === 0 ? (
-        <div>
-          <p className="font-semibold">
+        <div className="p-5 sm:px-6">
+          <p className="font-semibold text-gray-900">
             You have no {isSubcategory ? "subcategories" : "categories"}
           </p>
-
-          <p className="text-gray-500">
+          <p className="mt-1 text-sm text-gray-600">
             {isSubcategory
               ? "Create a subcategory to start organizing the items shown on your website."
               : "Create a category to start organizing the items shown on your website."}
@@ -163,17 +161,16 @@ export default function CategoryList({
         </div>
       ) : (
         <>
-          {/* MOBILE */}
-          <ul className="md:hidden">
+          {/* Mobile */}
+          <ul className="divide-y divide-gray-200 md:hidden">
             {categoryData.map((category, idx) => {
               const isProcessingCategory = processingCategoryId === category.id;
-
               const isFirst = idx === 0;
               const isLast = idx === categoryData.length - 1;
 
               return (
-                <li key={category.id} className="grid grid-cols-[1fr_auto]">
-                  <div className="min-w-0 px-3 py-2 flex items-center gap-5">
+                <li key={category.id}>
+                  <div className="flex min-w-0 items-center gap-3 px-3 py-2">
                     {canManage && (
                       <ReorderControls
                         id={category.id}
@@ -186,7 +183,7 @@ export default function CategoryList({
 
                     <Link
                       href={getCategoryHref(category.id)}
-                      className="flex-1 min-w-0 flex items-center"
+                      className="flex min-w-0 flex-1 items-center gap-2"
                       aria-label={
                         canManage
                           ? `Edit ${category.name}`
@@ -194,70 +191,64 @@ export default function CategoryList({
                       }
                       onClick={() => setIsLoading(true)}
                     >
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-gray-900">
                           {category.name}
                         </p>
-
-                        <p className="text-gray-500 truncate">
+                        <p className="truncate text-xs text-gray-600">
                           Order: {category.order}
                         </p>
                       </div>
 
-                      <div className="shrink-0">
-                        <ChevronIcon direction="right" size={30} />
-                      </div>
+                      <span className="shrink-0 text-gray-500">
+                        <ChevronIcon direction="right" size={22} />
+                      </span>
                     </Link>
                   </div>
-
-                  {categoryData.length !== idx + 1 && (
-                    <div className="col-span-2">
-                      <Divider />
-                    </div>
-                  )}
                 </li>
               );
             })}
           </ul>
 
-          {/* DESKTOP */}
+          {/* Desktop */}
           <div className="hidden overflow-x-auto md:block">
-            <table className="w-full border-collapse text-left">
+            <table className="w-full border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-gray-600">
+                <tr className="border-b border-gray-300 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
                   <th scope="col" className="px-3 py-2 font-semibold">
                     Name
                   </th>
-
                   <th scope="col" className="px-3 py-2 font-semibold">
                     Order
                   </th>
-
                   {canManage && (
                     <th scope="col" className="px-3 py-2 font-semibold">
                       Reorder
                     </th>
                   )}
-
-                  <th scope="col" className="w-12 px-3 py-2"></th>
+                  <th scope="col" className="w-12 px-3 py-2" />
                 </tr>
               </thead>
 
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-gray-200">
                 {categoryData.map((category, idx) => {
                   const isProcessingCategory =
                     processingCategoryId === category.id;
-
                   const isFirst = idx === 0;
                   const isLast = idx === categoryData.length - 1;
 
                   return (
-                    <tr key={category.id} className="border-gray-300">
-                      <th scope="row" className="px-3 py-2 font-normal">
+                    <tr key={category.id}>
+                      <th
+                        scope="row"
+                        className="px-3 py-2 font-medium text-gray-900"
+                      >
                         {category.name}
                       </th>
 
-                      <td className="px-3 py-2">{category.order}</td>
+                      <td className="px-3 py-2 text-gray-600">
+                        {category.order}
+                      </td>
 
                       {canManage && (
                         <td className="px-3 py-2">
@@ -271,7 +262,7 @@ export default function CategoryList({
                         </td>
                       )}
 
-                      <td>
+                      <td className="px-3 py-2">
                         <Link
                           href={getCategoryHref(category.id)}
                           aria-label={
@@ -279,9 +270,9 @@ export default function CategoryList({
                               ? `Edit ${category.name}`
                               : `Enter ${category.name}`
                           }
-                          className="flex justify-center w-fit"
+                          className="flex size-8 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-blue-50"
                         >
-                          <ChevronIcon direction="right" size={30} />
+                          <ChevronIcon direction="right" size={22} />
                         </Link>
                       </td>
                     </tr>

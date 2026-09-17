@@ -299,17 +299,13 @@ export default function LocationPage() {
         </h1>
       </header>
 
-      <div className="mt-[1.5rem]">
-        {/* LOCATION INFORMATION */}
+      <div className="mt-6 space-y-5">
         <LocationInfo
           locationData={locationData}
           canManage={canManageLocation}
           setIsLoading={setIsLoading}
         />
 
-        <Divider />
-
-        {/* BUSINESS DAYS */}
         <CreateDaysForm
           locationData={locationData}
           hasMultipleLocations={locationCount > 1}
@@ -322,7 +318,10 @@ export default function LocationPage() {
         />
 
         {errorMessage && (
-          <p role="alert" className="p-5">
+          <p
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          >
             {errorMessage}
           </p>
         )}

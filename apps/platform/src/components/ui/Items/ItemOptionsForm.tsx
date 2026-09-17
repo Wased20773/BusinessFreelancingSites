@@ -1,4 +1,3 @@
-import "@/app/dashboard/(protected)/page.css";
 import type { ReorderDirection } from "@/lib/api/reorder";
 import type { ItemOptionsJson } from "@/types/types";
 import type { Dispatch, SetStateAction, SubmitEvent } from "react";
@@ -43,89 +42,80 @@ export default function ItemOptionsForm({
   handleDeleteOption,
   isDeletingOption,
 }: ItemOptionsFormProps) {
-  if (!canManage) {
-    return (
-      <section
-        className="dashboard-card mt-[1.5rem] p-4"
-        aria-labelledby="item-options-heading"
-      >
-        <h2 id="item-options-heading">Item Options</h2>
+  return (
+    <section
+      className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+      aria-labelledby="item-options-heading"
+    >
+      <div className="border-b border-gray-300 px-5 py-4 sm:px-6">
+        <h2
+          id="item-options-heading"
+          className="text-lg font-semibold text-gray-900"
+        >
+          Item Options
+        </h2>
+      </div>
 
-        <p>
-          Options can be add-ons or variations of an item, each with its own
-          price. For example, added toppings or different sizes.
-        </p>
+      <div className="p-5 sm:p-6">
+        <div className="space-y-2 text-sm leading-6 text-gray-600">
+          <p>
+            Options can be add-ons or variations of an item, each with its own
+            price. For example, added toppings or different sizes.
+          </p>
+          <p>
+            If the item has a price, option prices are added to it. If the item
+            is $0.00, the option price is used instead.
+          </p>
+        </div>
 
-        <p>
-          If the item has a price, option prices are added to it. If the item is
-          $0.00, the option price is used instead.
-        </p>
+        {canManage ? (
+          <div className="mt-5">
+            <CreateOptionForm
+              handleCreateOption={handleCreateOption}
+              isCreatingOption={isCreatingOption}
+              isSynced={createOptionIsSynced}
+              setIsSynced={setCreateOptionIsSynced}
+              hasSyncGroup={hasSyncGroup}
+            />
 
-        {options.length === 0 ? (
-          <p className="pt-4">This item has no options</p>
+            <ExistingOptionsForm
+              options={options}
+              processingOptionId={processingOptionId}
+              handleUpdateOption={handleUpdateOption}
+              handleMoveOption={handleMoveOption}
+              handleDeleteOption={handleDeleteOption}
+              isDeletingOption={isDeletingOption}
+            />
+          </div>
+        ) : options.length === 0 ? (
+          <p className="mt-5 text-sm text-gray-600">This item has no options</p>
         ) : (
-          <div className="divide-y divide-gray-300">
+          <div className="mt-5 divide-y divide-gray-200">
             {options.map((option) => (
-              <div key={option.id} className="py-4">
+              <div key={option.id} className="py-3">
                 <div className="flex justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="font-medium truncate">{option.name}</p>
-
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="truncate text-sm font-medium text-gray-900">
+                      {option.name}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-600">
                       Order: {option.order}
                     </p>
                   </div>
 
-                  <p className="font-medium whitespace-nowrap">
+                  <p className="whitespace-nowrap text-sm font-medium text-gray-900">
                     ${Number(option.price).toFixed(2)}
                   </p>
                 </div>
 
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="mt-2 text-xs text-gray-600">
                   {option.isAvailable ? "Available" : "Unavailable"}
                 </p>
               </div>
             ))}
           </div>
         )}
-      </section>
-    );
-  }
-  return (
-    <section
-      className="dashboard-card mt-[1.5rem] p-4"
-      aria-labelledby="item-options-heading"
-    >
-      <h2 id="item-options-heading">Item Options</h2>
-
-      <p>
-        Options can be add-ons or variations of an item, each with its own
-        price. For example, added toppings or different sizes.
-      </p>
-
-      <p>
-        If the item has a price, option prices are added to it. If the item is
-        $0.00, the option price is used instead.
-      </p>
-
-      {/* CREATE OPTION */}
-      <CreateOptionForm
-        handleCreateOption={handleCreateOption}
-        isCreatingOption={isCreatingOption}
-        isSynced={createOptionIsSynced}
-        setIsSynced={setCreateOptionIsSynced}
-        hasSyncGroup={hasSyncGroup}
-      />
-
-      {/* EXISTING OPTIONS */}
-      <ExistingOptionsForm
-        options={options}
-        processingOptionId={processingOptionId}
-        handleUpdateOption={handleUpdateOption}
-        handleMoveOption={handleMoveOption}
-        handleDeleteOption={handleDeleteOption}
-        isDeletingOption={isDeletingOption}
-      />
+      </div>
     </section>
   );
 }

@@ -1,8 +1,7 @@
 import EditIcon from "@/components/icons/edit.svg";
-import Divider from "@/components/layout/Divider";
-import Image, { StaticImageData } from "next/image";
+import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
-import { Dispatch, SetStateAction } from "react";
+import type { Dispatch, SetStateAction } from "react";
 
 type ListCardProps = {
   variant: string;
@@ -32,35 +31,36 @@ export default function ListCard({
   const mobileContent = (
     <>
       {status && (
-        <div
-          className={[
-            "min-w-[1.25rem] min-h-[1.25rem] rounded-full border-[0.2rem]",
-            status.isActive
-              ? "border-green-500 bg-emerald-400"
-              : "border-zinc-500 bg-zinc-400",
-          ]
-            .filter(Boolean)
-            .join(" ")}
+        <span
+          aria-hidden="true"
+          className={`size-3 shrink-0 rounded-full ${
+            status.isActive ? "bg-emerald-500" : "bg-gray-400"
+          }`}
         />
       )}
 
       {icon && (
-        <Image className="shrink-0" src={icon} alt="" width={50} height={50} />
+        <Image
+          className="size-10 shrink-0 object-contain"
+          src={icon}
+          alt=""
+          width={40}
+          height={40}
+        />
       )}
 
-      <div className="flex-1 min-w-0">
-        <p className="whitespace-nowrap font-semibold truncate">{title}</p>
-
-        <p className="whitespace-nowrap text-gray-500 truncate">{subtitle}</p>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium text-gray-900">{title}</p>
+        <p className="truncate text-sm text-gray-600">{subtitle}</p>
       </div>
 
       {path && (
         <Image
-          className="shrink-0"
+          className="shrink-0 object-contain"
           src={EditIcon}
           alt=""
-          width={50}
-          height={50}
+          width={30}
+          height={30}
           aria-hidden="true"
         />
       )}
@@ -69,54 +69,47 @@ export default function ListCard({
 
   return (
     <>
-      {/* MOBILE */}
       {variant === "mobile" && (
-        <li key={id}>
+        <li
+          className={isLast ? "border-b border-gray-200" : undefined}
+          key={id}
+        >
           {path ? (
             <Link
               href={path}
-              aria-label="Edit"
-              className="min-w-0 flex items-center gap-3"
+              aria-label={`Edit ${title ?? "entry"}`}
+              className="flex min-w-0 items-center gap-3 px-3 py-2 transition-colors hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-500"
               onClick={() => setIsLoading(true)}
             >
               {mobileContent}
             </Link>
           ) : (
-            <div className="min-w-0 flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3 px-3 py-2">
               {mobileContent}
-            </div>
-          )}
-
-          {isLast && (
-            <div className="col-span-2">
-              <Divider />
             </div>
           )}
         </li>
       )}
 
-      {/* DESKTOP */}
       {variant === "desktop" && (
-        <tr className="border-gray-300">
+        <tr className="text-gray-700">
           {status ? (
             <>
-              <th scope="row" className="px-3 py-2 font-normal align-middle">
-                <div
-                  className={[
-                    "size-5 mx-auto rounded-full border-[0.2rem]",
-                    status.isActive
-                      ? "border-green-500 bg-emerald-400"
-                      : "border-zinc-500 bg-zinc-400",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
+              <th scope="row" className="px-3 py-2 font-normal">
+                <span
+                  aria-hidden="true"
+                  className={`mx-auto block size-3 rounded-full ${
+                    status.isActive ? "bg-emerald-500" : "bg-gray-400"
+                  }`}
                 />
               </th>
-
-              <td className="px-3 py-2 font-normal">{title}</td>
+              <td className="px-3 py-2 font-medium text-gray-900">{title}</td>
             </>
           ) : (
-            <th scope="row" className="px-3 py-2 font-normal">
+            <th
+              scope="row"
+              className="px-3 py-2 text-left font-medium text-gray-900"
+            >
               {title}
             </th>
           )}
@@ -130,22 +123,21 @@ export default function ListCard({
           )}
 
           {path && (
-            <td>
-              <div className="flex justify-center items-center">
-                <Link
-                  href={path}
-                  aria-label="Edit"
-                  onClick={() => setIsLoading(true)}
-                >
-                  <Image
-                    src={EditIcon}
-                    alt=""
-                    width={30}
-                    height={30}
-                    aria-hidden="true"
-                  />
-                </Link>
-              </div>
+            <td className="px-3 py-2">
+              <Link
+                href={path}
+                aria-label={`Edit ${title ?? "entry"}`}
+                className="mx-auto flex size-9 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-500"
+                onClick={() => setIsLoading(true)}
+              >
+                <Image
+                  src={EditIcon}
+                  alt=""
+                  width={30}
+                  height={30}
+                  aria-hidden="true"
+                />
+              </Link>
             </td>
           )}
         </tr>

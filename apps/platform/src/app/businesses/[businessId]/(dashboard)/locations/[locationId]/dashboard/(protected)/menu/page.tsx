@@ -1,6 +1,5 @@
 "use client";
 
-import Divider from "@/components/layout/Divider";
 import type { CategoryJson } from "@/types/types";
 import axios from "axios";
 import { useParams } from "next/navigation";
@@ -113,25 +112,23 @@ export default function CategoriesPage() {
   return (
     <section
       aria-labelledby="menu-heading"
-      className="max-w-[1000px] mx-auto p-5"
+      className="mx-auto max-w-[1000px] p-5"
     >
       <h1 id="menu-heading">Menu</h1>
 
-      <div className="mt-[1.5rem]">
-        {/* Management Actions */}
+      <div className="mt-6 space-y-5">
         {canManageMenu && (
-          <>
-            <nav className="dashboard-card" aria-label="Category actions">
-              <ActionItem
-                href="menu/create"
-                icon={CreateButtonIcon}
-                label="Create Category"
-                setIsLoading={setIsLoading}
-              />
-            </nav>
-
-            <Divider />
-          </>
+          <nav
+            aria-label="Category actions"
+            className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 shadow-sm"
+          >
+            <ActionItem
+              href="menu/create"
+              icon={CreateButtonIcon}
+              label="Create Category"
+              setIsLoading={setIsLoading}
+            />
+          </nav>
         )}
 
         <CategoryList

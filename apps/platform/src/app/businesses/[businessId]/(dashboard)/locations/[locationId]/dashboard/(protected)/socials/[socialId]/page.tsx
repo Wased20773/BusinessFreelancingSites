@@ -8,7 +8,7 @@ import { ACCESS_LEVEL, type SocialJson } from "@/types/types";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
-import { InputEvent, SubmitEvent, useEffect, useState } from "react";
+import { type SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type SocialPlatform = keyof typeof SOCIAL_PLATFORMS;
@@ -38,25 +38,21 @@ export default function EditSocialPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
-
   const [isSynced, setIsSynced] = useState<boolean>(false);
-
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [canSubmit, setCanSubmit] = useState<boolean>(false);
 
   const [selectedPlatform, setSelectedPlatform] = useState<SocialPlatform | "">(
     "",
   );
-
-  const [previewUrl, setPreviewUrl] = useState<string>("https://");
-
   const [profileName, setProfileName] = useState<string>("");
 
   const { data: session, status } = useSession();
   const currentAccessLevel = session?.user?.accessLevel;
+
   const canManageSocials =
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin;
+
   const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
@@ -77,7 +73,6 @@ export default function EditSocialPage() {
           {
             loading: "Loading social...",
             success: "Social loaded.",
-
             error: (error) => {
               if (axios.isAxiosError<{ error?: string }>(error)) {
                 return {
@@ -97,7 +92,6 @@ export default function EditSocialPage() {
         );
 
         const socials = await socialsToast.unwrap();
-
         const selectedSocial = socials.find((social) => social.id === socialId);
 
         if (!selectedSocial) {
@@ -105,22 +99,10 @@ export default function EditSocialPage() {
           return;
         }
 
-        const platform = getPlatformFromDomain(selectedSocial.domain) ?? "";
-
         setSocialData(selectedSocial);
-        setSelectedPlatform(platform);
+        setSelectedPlatform(getPlatformFromDomain(selectedSocial.domain) ?? "");
         setProfileName(selectedSocial.profileName);
         setIsSynced(selectedSocial.isSynced);
-        setCanSubmit(Boolean(selectedSocial.profileName?.trim()));
-
-        setPreviewUrl(
-          platform && selectedSocial.profileName.trim()
-            ? `https://${SOCIAL_PLATFORMS[platform].domain}/${selectedSocial.profileName.replaceAll(
-                " ",
-                "-",
-              )}`
-            : "",
-        );
       } catch (error) {
         console.error("Error in Edit Social page:", error);
 
@@ -141,55 +123,53 @@ export default function EditSocialPage() {
     }
   }, [businessId, locationId, socialId, status, canManageSocials]);
 
-  function handleFormInput(event: InputEvent<HTMLFormElement>) {
-    const formData = new FormData(event.currentTarget);
+  const trimmedProfileName = profileName.trim();
 
-    const platform = formData.get("platform");
-    const profileName = formData.get("profileName");
+  const validPlatform =
+    selectedPlatform !== "" &&
+    Object.prototype.hasOwnProperty.call(SOCIAL_PLATFORMS, selectedPlatform);
 
-    const profileNameValue =
-      typeof profileName === "string" ? profileName.trim() : "";
+  const selectedPlatformData = validPlatform
+    ? SOCIAL_PLATFORMS[selectedPlatform as SocialPlatform]
+    : null;
 
-    const hasPlatform =
-      typeof platform === "string" && platform in SOCIAL_PLATFORMS;
+  const previewUrl =
+    selectedPlatformData && trimmedProfileName
+      ? `https://${selectedPlatformData.domain}/${trimmedProfileName.replaceAll(
+          " ",
+          "-",
+        )}`
+      : "";
 
-    const hasProfileName = profileNameValue !== "";
+  const hasChanges =
+    socialData !== null &&
+    selectedPlatformData !== null &&
+    (selectedPlatformData.domain !== socialData.domain ||
+      trimmedProfileName !== socialData.profileName.trim() ||
+      isSynced !== socialData.isSynced);
 
-    setCanSubmit(hasPlatform && hasProfileName);
-
-    setPreviewUrl(
-      hasPlatform && profileNameValue
-        ? `https://${
-            SOCIAL_PLATFORMS[platform as SocialPlatform].domain
-          }/${profileNameValue.replaceAll(" ", "-")}`
-        : "",
-    );
-  }
+  const canSubmit =
+    selectedPlatformData !== null && trimmedProfileName !== "" && hasChanges;
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const formData = new FormData(event.currentTarget);
-
-    const platform = formData.get("platform");
-    const profileName = formData.get("profileName");
-
-    if (
-      typeof platform !== "string" ||
-      !(platform in SOCIAL_PLATFORMS) ||
-      typeof profileName !== "string" ||
-      !profileName.trim()
-    ) {
+    if (!socialData || !selectedPlatformData || !trimmedProfileName) {
       setErrorMessage("A social platform and profile name are required.");
       return;
     }
 
-    const selectedPlatform = SOCIAL_PLATFORMS[platform as SocialPlatform];
+    const changed =
+      selectedPlatformData.domain !== socialData.domain ||
+      trimmedProfileName !== socialData.profileName.trim() ||
+      isSynced !== socialData.isSynced;
+
+    if (!changed) return;
 
     const requestBody = {
-      domain: selectedPlatform.domain,
-      profileName: profileName.trim(),
-      icon: selectedPlatform.icon,
+      domain: selectedPlatformData.domain,
+      profileName: trimmedProfileName,
+      icon: selectedPlatformData.icon,
       isSynced,
     };
 
@@ -207,7 +187,6 @@ export default function EditSocialPage() {
         {
           loading: "Updating social...",
           success: "Social updated.",
-
           error: (error) => {
             if (axios.isAxiosError<{ error?: string }>(error)) {
               return {
@@ -229,6 +208,8 @@ export default function EditSocialPage() {
       const updatedSocial = await updateToast.unwrap();
 
       setSocialData(updatedSocial);
+      setSelectedPlatform(getPlatformFromDomain(updatedSocial.domain) ?? "");
+      setProfileName(updatedSocial.profileName);
       setIsSynced(updatedSocial.isSynced);
     } catch (error) {
       console.error("Error updating social:", error);
@@ -264,7 +245,6 @@ export default function EditSocialPage() {
         {
           loading: "Deleting social...",
           success: "Social deleted.",
-
           error: (error) => {
             if (axios.isAxiosError<{ error?: string }>(error)) {
               return {
@@ -312,12 +292,14 @@ export default function EditSocialPage() {
     reason: "Your current access level does not include social management.",
   });
 
-  if (pageState) {
-    return pageState;
-  }
+  if (pageState) return pageState;
 
   if (errorMessage && !socialData) {
-    return <p className="p-5">{errorMessage}</p>;
+    return (
+      <p role="alert" className="p-5">
+        {errorMessage}
+      </p>
+    );
   }
 
   if (!socialData) {
@@ -331,7 +313,6 @@ export default function EditSocialPage() {
       aria-labelledby="edit-social-heading"
       className="max-w-[1000px] mx-auto p-5 pt-0"
     >
-      {/* HEADER */}
       <PageHeading
         path={`/businesses/${businessId}/locations/${locationId}/dashboard/socials`}
         ariaLabel="Return to socials"
@@ -343,7 +324,6 @@ export default function EditSocialPage() {
       <div className="mt-[0.5rem]">
         <EditSocialForm
           handleSubmit={handleSubmit}
-          handleFormInput={handleFormInput}
           handleDelete={handleDelete}
           isProcessing={isProcessing}
           selectedPlatform={selectedPlatform}

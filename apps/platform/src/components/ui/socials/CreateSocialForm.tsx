@@ -1,16 +1,19 @@
+import type { Dispatch, FormEvent, SetStateAction, SubmitEvent } from "react";
 import IsSyncedCheckbox from "../IsSyncedCheckbox";
-import { Dispatch, InputEvent, SetStateAction, SubmitEvent } from "react";
 import RequiredField from "../RequiredField";
 
 type CreateSocialFormParams = {
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
-  handleFormInput(event: InputEvent<HTMLFormElement>): void;
+  handleFormInput(event: FormEvent<HTMLFormElement>): void;
   isCreating: boolean;
   canSubmit: boolean;
   errorMessage: string | null;
   isSynced: boolean;
   setIsSynced: Dispatch<SetStateAction<boolean>>;
 };
+
+const inputClass =
+  "mt-1 block w-full rounded-lg border-[0.1rem] border-b-[0.2rem] border-blue-400 bg-gray-100 px-3 py-2 disabled:opacity-50";
 
 export default function CreateSocialForm({
   handleSubmit,
@@ -23,88 +26,98 @@ export default function CreateSocialForm({
 }: CreateSocialFormParams) {
   return (
     <form
-      className="dashboard-card flex flex-col gap-5 p-4"
+      className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
       onSubmit={handleSubmit}
       onInput={handleFormInput}
+      onChange={handleFormInput}
     >
-      <fieldset>
-        <legend>Social info</legend>
+      <div className="space-y-6 p-5 sm:p-6">
+        <fieldset disabled={isCreating} className="space-y-4">
+          <legend className="mb-3 text-lg font-semibold text-gray-900">
+            Social info
+          </legend>
 
-        <div>
-          <label htmlFor="social-platform">
-            Platform
-            <RequiredField />
-          </label>
+          <div>
+            <label
+              htmlFor="social-platform"
+              className="font-medium text-gray-900"
+            >
+              Platform
+              <RequiredField />
+            </label>
 
-          <select
-            className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-            id="social-platform"
-            name="platform"
-            defaultValue=""
-            disabled={isCreating}
-            required
-          >
-            <option value="" disabled>
-              Select a platform
-            </option>
+            <select
+              className={inputClass}
+              id="social-platform"
+              name="platform"
+              defaultValue=""
+              required
+            >
+              <option value="" disabled>
+                Select a platform
+              </option>
+              <option value="instagram">Instagram</option>
+              <option value="facebook">Facebook</option>
+              <option value="youtube">YouTube</option>
+              <option value="tiktok">TikTok</option>
+              <option value="twitter">Twitter</option>
+            </select>
+          </div>
 
-            <option value="instagram">Instagram</option>
-            <option value="facebook">Facebook</option>
-            <option value="youtube">YouTube</option>
-            <option value="tiktok">TikTok</option>
-            <option value="twitter">Twitter</option>
-          </select>
-        </div>
+          <div>
+            <label
+              htmlFor="social-profile-name"
+              className="font-medium text-gray-900"
+            >
+              Profile name
+              <RequiredField />
+            </label>
+            <p className="mt-1 text-sm text-gray-600">
+              The name or username used to identify your business on this
+              platform.
+            </p>
 
-        <div>
-          <p>
-            The name or username used to identify your business on this
-            platform.
-          </p>
+            <input
+              className={inputClass}
+              id="social-profile-name"
+              name="profileName"
+              type="text"
+              required
+            />
+          </div>
+        </fieldset>
 
-          <label htmlFor="social-profile-name">
-            Profile name
-            <RequiredField />
-          </label>
-
-          <input
-            className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-            id="social-profile-name"
-            name="profileName"
-            type="text"
-            disabled={isCreating}
-            required
+        <div className="border-t border-gray-100">
+          <IsSyncedCheckbox
+            hasSyncGroup={true}
+            htmlFor="sync-social"
+            inputName="sync-social"
+            isSynced={isSynced}
+            setIsSynced={setIsSynced}
+            isSaving={isCreating}
+            description="Add this social to all locations"
           />
         </div>
-      </fieldset>
 
-      <IsSyncedCheckbox
-        hasSyncGroup={true}
-        htmlFor="sync-social"
-        inputName="sync-social"
-        isSynced={isSynced}
-        setIsSynced={setIsSynced}
-        isSaving={isCreating}
-        description="Add this social to all locations"
-      />
+        {errorMessage && (
+          <p
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          >
+            {errorMessage}
+          </p>
+        )}
+      </div>
 
-      {errorMessage && (
-        <p className="text-red-600" role="alert">
-          {errorMessage}
-        </p>
-      )}
-
-      <button
-        className="
-              border-[0.1rem] border-emerald-500 rounded-md
-              bg-emerald-300 text-emerald-900
-              transition-opacity disabled:cursor-not-allowed disabled:opacity-50
-              md:w-fit px-2 py-1"
-        type="submit"
-        disabled={isCreating || !canSubmit}
-      >
-        {isCreating ? "Creating..." : "Create"}
-      </button>
+      <div className="flex justify-end border-t border-gray-100 bg-gray-50 px-5 py-4 sm:px-6">
+        <button
+          className="rounded-lg border border-emerald-500 bg-emerald-300 px-4 py-2 text-sm font-medium text-emerald-900 transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
+          type="submit"
+          disabled={isCreating || !canSubmit}
+        >
+          {isCreating ? "Creating..." : "Create"}
+        </button>
+      </div>
     </form>
   );
 }

@@ -28,7 +28,7 @@ export default function DeleteModal({
       aria-modal="true"
       aria-labelledby="delete-modal-heading"
     >
-      <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-lg">
+      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
         <h2 id="delete-modal-heading" className="text-xl font-semibold">
           {title}
         </h2>

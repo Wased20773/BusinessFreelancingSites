@@ -1,8 +1,8 @@
 "use client";
 
 import CreateButtonIcon from "@/components/icons/create-button.svg";
-import Divider from "@/components/layout/Divider";
 import ActionItem from "@/components/ui/ActionItem";
+import PageState from "@/components/ui/PageState";
 import SocialsList from "@/components/ui/socials/SocialsList";
 import type { SocialJson } from "@/types/types";
 import axios from "axios";
@@ -11,7 +11,6 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../page.css";
-import PageState from "@/components/ui/PageState";
 
 export default function SocialsPage() {
   const params = useParams<{
@@ -51,7 +50,6 @@ export default function SocialsPage() {
           {
             loading: "Loading socials...",
             success: "Socials loaded.",
-
             error: (error) => {
               if (axios.isAxiosError<{ error?: string }>(error)) {
                 return {
@@ -71,7 +69,6 @@ export default function SocialsPage() {
         );
 
         const data = await socialsToast.unwrap();
-
         setSocialsData(data);
       } catch (error) {
         console.error("Error in Socials page:", error);
@@ -110,33 +107,34 @@ export default function SocialsPage() {
   return (
     <section
       aria-labelledby="socials-heading"
-      className="max-w-[1000px] mx-auto p-5"
+      className="mx-auto max-w-[1000px] p-5"
     >
       <h1 id="socials-heading">Socials</h1>
 
-      <div className="mt-[1.5rem]">
+      <div className="mt-6 space-y-5">
         {canManageSocials && (
-          <>
-            <nav className="dashboard-card" aria-label="Social actions">
-              <ActionItem
-                href="socials/create"
-                icon={CreateButtonIcon}
-                label="Create Social"
-                setIsLoading={setIsLoading}
-              />
-            </nav>
-
-            <Divider />
-          </>
+          <nav
+            aria-label="Social actions"
+            className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 shadow-sm"
+          >
+            <ActionItem
+              href="socials/create"
+              icon={CreateButtonIcon}
+              label="Create Social"
+              setIsLoading={setIsLoading}
+            />
+          </nav>
         )}
 
-        <SocialsList
-          socialsData={socialsData}
-          isLoading={isLoading}
-          errorMessage={errorMessage}
-          canManage={canManageSocials}
-          setIsLoading={setIsLoading}
-        />
+        <section aria-label="Socials list">
+          <SocialsList
+            socialsData={socialsData}
+            isLoading={isLoading}
+            errorMessage={errorMessage}
+            canManage={canManageSocials}
+            setIsLoading={setIsLoading}
+          />
+        </section>
       </div>
     </section>
   );

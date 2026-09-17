@@ -164,11 +164,14 @@ export default function CategoryPage() {
         heading={subcategoryData.name}
       />
 
-      <div className="mt-[0.5rem]">
+      <div className="mt-[0.5rem] space-y-5">
         {/* ACTIONS */}
         {canManageMenu && (
           <>
-            <nav className="dashboard-card">
+            <nav
+              aria-label="Subcategory actions"
+              className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 shadow-sm"
+            >
               <ActionItem
                 href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/${subcategoryId}/items/create`}
                 icon={CreateButtonIcon}
@@ -176,8 +179,6 @@ export default function CategoryPage() {
                 setIsLoading={setIsLoading}
               />
             </nav>
-
-            <Divider />
           </>
         )}
 
@@ -187,8 +188,6 @@ export default function CategoryPage() {
           categoryData={subcategoryData}
           canManage={canManageMenu}
         />
-
-        <Divider />
 
         {/* ITEMS */}
         <ItemsList

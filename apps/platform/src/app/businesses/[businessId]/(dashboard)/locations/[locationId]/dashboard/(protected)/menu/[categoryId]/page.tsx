@@ -137,7 +137,6 @@ export default function CategoryPage() {
       aria-labelledby="category-heading"
       className="max-w-[1000px] mx-auto p-5 pt-0"
     >
-      {/* HEADER */}
       <PageHeading
         path={`/businesses/${businessId}/locations/${locationId}/dashboard/menu`}
         ariaLabel="Return to menu"
@@ -146,42 +145,36 @@ export default function CategoryPage() {
         heading={categoryData.name}
       />
 
-      <div className="mt-[0.5rem]">
-        {/* Management Actions */}
+      <div className="mt-[0.5rem] space-y-5">
         {canManageMenu && (
-          <>
-            <nav className="dashboard-card">
-              <ActionItem
-                href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/items/create`}
-                icon={CreateButtonIcon}
-                label="Create Item"
-                setIsLoading={setIsLoading}
-              />
-
-              <Divider />
-
-              <ActionItem
-                href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/create`}
-                icon={CreateButtonIcon}
-                label="Create Subcategory"
-                setIsLoading={setIsLoading}
-              />
-            </nav>
+          <nav
+            aria-label="Category actions"
+            className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 shadow-sm"
+          >
+            <ActionItem
+              href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/items/create`}
+              icon={CreateButtonIcon}
+              label="Create Item"
+              setIsLoading={setIsLoading}
+            />
 
             <Divider />
-          </>
+
+            <ActionItem
+              href={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/${categoryId}/subcategories/create`}
+              icon={CreateButtonIcon}
+              label="Create Subcategory"
+              setIsLoading={setIsLoading}
+            />
+          </nav>
         )}
 
-        {/* CATEGORY INFORMATION */}
         <CategoryInfo
           categoryId={categoryId}
           categoryData={categoryData}
           canManage={canManageMenu}
         />
 
-        <Divider />
-
-        {/* ITEMS */}
         <ItemsList
           categoryId={categoryId}
           categoryData={categoryData}
@@ -191,9 +184,6 @@ export default function CategoryPage() {
           canManage={canManageMenu}
         />
 
-        <Divider />
-
-        {/* SUBCATEGORIES */}
         <CategoryList
           type="subcategory"
           parentCategoryId={categoryData.id}

@@ -1,14 +1,44 @@
 "use client";
 
 import EditContactForm from "@/components/ui/contacts/EditContactForm";
-import { ACCESS_LEVEL, type ContactJson } from "@/types/types";
-import { useSession } from "next-auth/react";
-import PageState from "@/components/ui/PageState";
-import axios from "axios";
-import { useParams, useRouter } from "next/navigation";
-import { InputEvent, SubmitEvent, useEffect, useState } from "react";
-import { toast } from "sonner";
 import PageHeading from "@/components/ui/PageHeader";
+import PageState from "@/components/ui/PageState";
+import { ACCESS_LEVEL, type ContactJson } from "@/types/types";
+import axios from "axios";
+import { useSession } from "next-auth/react";
+import { useParams, useRouter } from "next/navigation";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  type InputEvent,
+  type SubmitEvent,
+  useEffect,
+  useState,
+} from "react";
+import { toast } from "sonner";
+
+type ContactDraft = {
+  phoneNumber: string | null;
+  email: string | null;
+  isPersonal: boolean;
+};
+
+type FormChangeEvent =
+  | InputEvent<HTMLFormElement>
+  | ChangeEvent<HTMLFormElement>;
+
+function normalizeValue(value: FormDataEntryValue | null): string | null {
+  if (typeof value !== "string") return null;
+  return value.trim() || null;
+}
+
+function draftFromContact(contact: ContactJson): ContactDraft {
+  return {
+    phoneNumber: contact.phoneNumber?.trim() || null,
+    email: contact.email?.trim() || null,
+    isPersonal: contact.isPersonal,
+  };
+}
 
 export default function EditContactPage() {
   const params = useParams<{
@@ -24,19 +54,21 @@ export default function EditContactPage() {
   const contactId = params.contactId;
 
   const [contactData, setContactData] = useState<ContactJson | null>(null);
+  const [draft, setDraft] = useState<ContactDraft | null>(null);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isSynced, setIsSynced] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [canSubmit, setCanSubmit] = useState<boolean>(false);
 
   const { data: session, status } = useSession();
   const currentAccessLevel = session?.user?.accessLevel;
+
   const canManageContacts =
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin;
+
   const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
@@ -76,7 +108,6 @@ export default function EditContactPage() {
         );
 
         const contacts = await contactsToast.unwrap();
-
         const selectedContact = contacts.find(
           (contact) => contact.id === contactId,
         );
@@ -87,11 +118,8 @@ export default function EditContactPage() {
         }
 
         setContactData(selectedContact);
+        setDraft(draftFromContact(selectedContact));
         setIsSynced(selectedContact.isSynced);
-
-        setCanSubmit(
-          Boolean(selectedContact.phoneNumber || selectedContact.email),
-        );
       } catch (error) {
         console.error("Error in Edit Contact page:", error);
 
@@ -112,39 +140,27 @@ export default function EditContactPage() {
     }
   }, [businessId, locationId, contactId, status, canManageContacts]);
 
-  function handleFormInput(event: InputEvent<HTMLFormElement>) {
+  function handleFormInput(event: FormChangeEvent) {
     const formData = new FormData(event.currentTarget);
 
-    const phoneNumber = formData.get("phoneNumber");
-    const email = formData.get("email");
-
-    const hasPhoneNumber =
-      typeof phoneNumber === "string" && phoneNumber.trim() !== "";
-
-    const hasEmail = typeof email === "string" && email.trim() !== "";
-
-    setCanSubmit(hasPhoneNumber || hasEmail);
+    setDraft({
+      phoneNumber: normalizeValue(formData.get("phoneNumber")),
+      email: normalizeValue(formData.get("email")),
+      isPersonal: formData.has("contactType"),
+    });
   }
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!contactData) return;
+
     const formData = new FormData(event.currentTarget);
 
-    const phoneNumber = formData.get("phoneNumber");
-    const email = formData.get("email");
-    const contactType = formData.get("contactType");
-
     const requestBody = {
-      phoneNumber:
-        typeof phoneNumber === "string" && phoneNumber.trim()
-          ? phoneNumber.trim()
-          : null,
-
-      email: typeof email === "string" && email.trim() ? email.trim() : null,
-
-      isPersonal: contactType !== null,
-
+      phoneNumber: normalizeValue(formData.get("phoneNumber")),
+      email: normalizeValue(formData.get("email")),
+      isPersonal: formData.has("contactType"),
       isSynced,
     };
 
@@ -152,9 +168,18 @@ export default function EditContactPage() {
       setErrorMessage(
         "A contact must include either a phone number or an email",
       );
-
       return;
     }
+
+    const saved = draftFromContact(contactData);
+
+    const hasChanges =
+      requestBody.phoneNumber !== saved.phoneNumber ||
+      requestBody.email !== saved.email ||
+      requestBody.isPersonal !== saved.isPersonal ||
+      requestBody.isSynced !== contactData.isSynced;
+
+    if (!hasChanges) return;
 
     setIsSaving(true);
     setErrorMessage(null);
@@ -191,6 +216,7 @@ export default function EditContactPage() {
       const updatedContact = await updateToast.unwrap();
 
       setContactData(updatedContact);
+      setDraft(draftFromContact(updatedContact));
       setIsSynced(updatedContact.isSynced);
     } catch (error) {
       console.error("Error updating contact:", error);
@@ -273,9 +299,7 @@ export default function EditContactPage() {
     reason: "Your current access level does not allow contact management.",
   });
 
-  if (pageState) {
-    return pageState;
-  }
+  if (pageState) return pageState;
 
   if (errorMessage && !contactData) {
     return (
@@ -289,6 +313,17 @@ export default function EditContactPage() {
     return <p className="p-5">This contact could not be found.</p>;
   }
 
+  const saved = draftFromContact(contactData);
+
+  const hasChanges =
+    draft !== null &&
+    (draft.phoneNumber !== saved.phoneNumber ||
+      draft.email !== saved.email ||
+      draft.isPersonal !== saved.isPersonal ||
+      isSynced !== contactData.isSynced);
+
+  const hasContactMethod = Boolean(draft?.phoneNumber || draft?.email);
+  const canSubmit = hasChanges && hasContactMethod;
   const isProcessing = isSaving || isDeleting;
 
   return (
@@ -296,7 +331,6 @@ export default function EditContactPage() {
       aria-labelledby="edit-contact-heading"
       className="max-w-[1000px] mx-auto p-5 pt-0"
     >
-      {/* HEADER */}
       <PageHeading
         path={`/businesses/${businessId}/locations/${locationId}/dashboard/contacts`}
         ariaLabel="Return to contacts"

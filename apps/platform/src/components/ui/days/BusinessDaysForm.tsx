@@ -1,6 +1,5 @@
-import Divider from "@/components/layout/Divider";
-import { LocationJson } from "@/types/types";
-import { Dispatch, SetStateAction, SubmitEvent } from "react";
+import type { LocationJson } from "@/types/types";
+import type { Dispatch, SetStateAction, SubmitEvent } from "react";
 
 export type DayOfWeek =
   | "Monday"
@@ -53,6 +52,11 @@ type BusinessDaysFormProps = {
   removeSpecialHour(day: DayOfWeek, hourIdx: number): Promise<void>;
 };
 
+const inputClass =
+  "mt-1 block w-full rounded-lg border-[0.1rem] border-b-[0.2rem] border-blue-400 bg-gray-100 px-3 py-2";
+
+const labelClass = "text-xs font-medium text-gray-600";
+
 export default function BusinessDaysForm({
   locationData,
   days,
@@ -71,26 +75,21 @@ export default function BusinessDaysForm({
 }: BusinessDaysFormProps) {
   return (
     <form
-      className="dashboard-card flex flex-col gap-5"
+      className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm pt-4"
       onSubmit={handleSubmit}
     >
-      <fieldset>
-        <legend>Business Schedule</legend>
+      <fieldset className="px-5">
+        <legend className="text-base font-semibold text-gray-900">
+          Business Schedule
+        </legend>
 
-        {canManage ? (
-          <p>
-            Set the regular opening and closing time for each day. Special hours
-            can be added separately when this location operates outside of its
-            normal schedule.
-          </p>
-        ) : (
-          <p>
-            View the days the business is open as well as their open and close
-            hours.
-          </p>
-        )}
+        <p className="text-sm text-gray-600">
+          {canManage
+            ? "Set the regular opening and closing time for each day. Special hours can be added separately when this location operates outside of its normal schedule."
+            : "View the days the business is open as well as their open and close hours."}
+        </p>
 
-        <div className="flex flex-col gap-5 mt-2">
+        <div className="mt-5 space-y-4">
           {locationData.days.map((locationDay) => {
             const day = locationDay.dayOfWeek as DayOfWeek;
             const currentDay = days[day];
@@ -98,16 +97,16 @@ export default function BusinessDaysForm({
             return (
               <div
                 key={currentDay.id}
-                className="dashboard-card !bg-neutral-100 flex flex-col"
+                className="overflow-hidden rounded-xl border border-gray-200 bg-white"
               >
-                {/* DAY HEADER */}
-                <div className="flex justify-between items-center mb-5">
-                  <span className="font-semibold">{day}</span>
+                {/* Day heading */}
+                <div className="flex items-center justify-between gap-3 bg-gray-50 px-4 py-3">
+                  <span className="font-semibold text-gray-900">{day}</span>
 
                   {canManage ? (
                     <label
                       htmlFor={`${day}-isClosed`}
-                      className="flex items-center gap-2 cursor-pointer"
+                      className="flex cursor-pointer items-center gap-2 text-sm font-medium text-gray-700"
                     >
                       <input
                         id={`${day}-isClosed`}
@@ -116,9 +115,7 @@ export default function BusinessDaysForm({
                         checked={currentDay.isClosed}
                         onChange={(event) => {
                           setDays((currentDays) => {
-                            if (!currentDays) {
-                              return currentDays;
-                            }
+                            if (!currentDays) return currentDays;
 
                             return {
                               ...currentDays,
@@ -133,41 +130,39 @@ export default function BusinessDaysForm({
                       Closed
                     </label>
                   ) : (
-                    <span className="text-gray-500">
+                    <span className="text-sm text-gray-600">
                       {currentDay.isClosed ? "Closed" : "Open"}
                     </span>
                   )}
                 </div>
 
                 {!currentDay.isClosed && (
-                  <>
-                    {/* ######################## */}
-                    {/* ##### REGULAR HOURS #### */}
-                    {/* ######################## */}
-
+                  <div className="space-y-5 px-4 py-4">
+                    {/* Regular hours */}
                     <div>
-                      <p className="font-semibold">Regular Hours</p>
+                      <h3 className="text-sm font-medium text-gray-700">
+                        Regular Hours
+                      </h3>
 
                       {canManage && (
-                        <p className="text-sm text-gray-500 mb-3">
+                        <p className="mt-0.5 text-xs text-gray-500">
                           Set the normal opening and closing time for this day.
                         </p>
                       )}
 
                       {canManage ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
                           <div>
                             <label
                               htmlFor={`${day}-openTime`}
-                              className="font-semibold"
+                              className={labelClass}
                             >
                               Open
                             </label>
-
                             <input
                               id={`${day}-openTime`}
                               type="time"
-                              className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
+                              className={inputClass}
                               value={currentDay.hour?.openTime ?? ""}
                               onChange={(event) =>
                                 updateRegularHour(
@@ -182,15 +177,14 @@ export default function BusinessDaysForm({
                           <div>
                             <label
                               htmlFor={`${day}-closeTime`}
-                              className="font-semibold"
+                              className={labelClass}
                             >
                               Close
                             </label>
-
                             <input
                               id={`${day}-closeTime`}
                               type="time"
-                              className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
+                              className={inputClass}
                               value={currentDay.hour?.closeTime ?? ""}
                               onChange={(event) =>
                                 updateRegularHour(
@@ -203,17 +197,16 @@ export default function BusinessDaysForm({
                           </div>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
                           <div>
-                            <p className="font-semibold">Open</p>
-                            <p className="mt-1">
+                            <p className={labelClass}>Open</p>
+                            <p className="mt-1 text-gray-700">
                               {currentDay.hour?.openTime || "Not set"}
                             </p>
                           </div>
-
                           <div>
-                            <p className="font-semibold">Close</p>
-                            <p className="mt-1">
+                            <p className={labelClass}>Close</p>
+                            <p className="mt-1 text-gray-700">
                               {currentDay.hour?.closeTime || "Not set"}
                             </p>
                           </div>
@@ -221,19 +214,15 @@ export default function BusinessDaysForm({
                       )}
                     </div>
 
-                    {/* ######################## */}
-                    {/* ##### SPECIAL HOURS #### */}
-                    {/* ######################## */}
-
-                    <Divider />
-
-                    <div>
-                      <div className="flex justify-between items-start gap-3">
+                    {/* Special hours */}
+                    <div className="border-t border-gray-100 pt-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <p className="font-semibold">Special Hours</p>
-
+                          <h3 className="text-sm font-medium text-gray-700">
+                            Special Hours
+                          </h3>
                           {canManage && (
-                            <p className="text-sm text-gray-500">
+                            <p className="mt-0.5 text-xs text-gray-500">
                               Add operating hours for this day.
                             </p>
                           )}
@@ -242,7 +231,7 @@ export default function BusinessDaysForm({
                         {canManage && (
                           <button
                             type="button"
-                            className="border-[0.1rem] border-blue-400 rounded-lg px-3 py-1"
+                            className="rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-50"
                             onClick={() => addSpecialHour(day)}
                           >
                             Add Another
@@ -251,28 +240,27 @@ export default function BusinessDaysForm({
                       </div>
 
                       {currentDay.specialHours.length > 0 && (
-                        <div className="flex flex-col gap-4 mt-4">
+                        <div className="mt-4 space-y-3">
                           {currentDay.specialHours.map(
                             (specialHour, hourIdx) => (
                               <div
                                 key={specialHour.id ?? hourIdx}
-                                className="border-[0.1rem] border-gray-300 rounded-lg px-3 py-1"
+                                className="rounded-lg border border-gray-200 bg-gray-50 p-3"
                               >
                                 {canManage ? (
                                   <>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div className="grid gap-3 sm:grid-cols-2">
                                       <div>
                                         <label
                                           htmlFor={`${day}-${hourIdx}-special-openTime`}
-                                          className="font-semibold"
+                                          className={labelClass}
                                         >
                                           Open
                                         </label>
-
                                         <input
                                           id={`${day}-${hourIdx}-special-openTime`}
                                           type="time"
-                                          className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
+                                          className={inputClass}
                                           value={specialHour.openTime}
                                           onChange={(event) =>
                                             updateSpecialHour(
@@ -288,15 +276,14 @@ export default function BusinessDaysForm({
                                       <div>
                                         <label
                                           htmlFor={`${day}-${hourIdx}-special-closeTime`}
-                                          className="font-semibold"
+                                          className={labelClass}
                                         >
                                           Close
                                         </label>
-
                                         <input
                                           id={`${day}-${hourIdx}-special-closeTime`}
                                           type="time"
-                                          className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
+                                          className={inputClass}
                                           value={specialHour.closeTime}
                                           onChange={(event) =>
                                             updateSpecialHour(
@@ -313,15 +300,14 @@ export default function BusinessDaysForm({
                                     <div className="mt-3">
                                       <label
                                         htmlFor={`${day}-${hourIdx}-special-title`}
-                                        className="font-semibold"
+                                        className={labelClass}
                                       >
                                         Title
                                       </label>
-
                                       <input
                                         id={`${day}-${hourIdx}-special-title`}
                                         type="text"
-                                        className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
+                                        className={inputClass}
                                         value={specialHour.title}
                                         onChange={(event) =>
                                           updateSpecialHour(
@@ -337,14 +323,13 @@ export default function BusinessDaysForm({
                                     <div className="mt-3">
                                       <label
                                         htmlFor={`${day}-${hourIdx}-special-note`}
-                                        className="font-semibold"
+                                        className={labelClass}
                                       >
                                         Note
                                       </label>
-
                                       <textarea
                                         id={`${day}-${hourIdx}-special-note`}
-                                        className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2 mt-1"
+                                        className={inputClass}
                                         value={specialHour.note}
                                         onChange={(event) =>
                                           updateSpecialHour(
@@ -359,7 +344,7 @@ export default function BusinessDaysForm({
 
                                     <button
                                       type="button"
-                                      className="mt-3 text-red-500"
+                                      className="mt-3 rounded-lg px-2 py-1 text-sm font-medium text-red-700 hover:bg-red-50"
                                       onClick={() =>
                                         void removeSpecialHour(day, hourIdx)
                                       }
@@ -368,37 +353,36 @@ export default function BusinessDaysForm({
                                     </button>
                                   </>
                                 ) : (
-                                  <>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <div className="space-y-3 text-sm">
+                                    <div className="grid gap-3 sm:grid-cols-2">
                                       <div>
-                                        <p className="font-semibold">Open</p>
-                                        <p className="mt-1">
+                                        <p className={labelClass}>Open</p>
+                                        <p className="mt-1 text-gray-700">
                                           {specialHour.openTime || "Not set"}
                                         </p>
                                       </div>
-
                                       <div>
-                                        <p className="font-semibold">Close</p>
-                                        <p className="mt-1">
+                                        <p className={labelClass}>Close</p>
+                                        <p className="mt-1 text-gray-700">
                                           {specialHour.closeTime || "Not set"}
                                         </p>
                                       </div>
                                     </div>
 
-                                    <div className="mt-3">
-                                      <p className="font-semibold">Title</p>
-                                      <p className="mt-1">
+                                    <div>
+                                      <p className={labelClass}>Title</p>
+                                      <p className="mt-1 text-gray-700">
                                         {specialHour.title || "Not provided"}
                                       </p>
                                     </div>
 
-                                    <div className="mt-3">
-                                      <p className="font-semibold">Note</p>
-                                      <p className="mt-1">
+                                    <div>
+                                      <p className={labelClass}>Note</p>
+                                      <p className="mt-1 whitespace-pre-wrap text-gray-700">
                                         {specialHour.note || "Not provided"}
                                       </p>
                                     </div>
-                                  </>
+                                  </div>
                                 )}
                               </div>
                             ),
@@ -406,7 +390,7 @@ export default function BusinessDaysForm({
                         </div>
                       )}
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             );
@@ -416,10 +400,10 @@ export default function BusinessDaysForm({
 
       {canManage && (
         <>
-          <div className="border-t border-gray-300 pt-5">
+          <div className="border-t border-gray-100 px-5 py-4 mt-4 sm:px-6">
             <label
               htmlFor="apply-to-synced"
-              className="flex items-start gap-2 cursor-pointer"
+              className="flex cursor-pointer items-start gap-2"
             >
               <input
                 id="apply-to-synced"
@@ -432,11 +416,10 @@ export default function BusinessDaysForm({
               />
 
               <span>
-                <span className="font-semibold block">
+                <span className="block font-semibold text-gray-900">
                   Apply to synchronized locations
                 </span>
-
-                <span className="text-sm text-gray-500">
+                <span className="text-sm leading-6 text-gray-600">
                   Keep synchronized days, regular hours, and special hours
                   updated across their other synchronized locations. Turn this
                   off to change only this location. When saving changes after
@@ -448,18 +431,23 @@ export default function BusinessDaysForm({
           </div>
 
           {errorMessage && (
-            <p role="alert" className="text-red-500">
+            <p
+              role="alert"
+              className="mx-5 mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 sm:mx-6"
+            >
               {errorMessage}
             </p>
           )}
 
-          <button
-            className="w-full md:w-fit bg-emerald-300 border-[0.1rem] border-green-500 rounded-lg text-green-900 px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            type="submit"
-            disabled={!canSubmit}
-          >
-            {isSaving ? "Saving..." : "Save Changes"}
-          </button>
+          <div className="flex justify-end border-t border-gray-100 bg-gray-50 px-5 py-4 sm:px-6">
+            <button
+              className="rounded-lg border border-emerald-500 bg-emerald-300 px-4 py-2 text-sm font-medium text-emerald-900 transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
+              type="submit"
+              disabled={!canSubmit}
+            >
+              {isSaving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
         </>
       )}
     </form>

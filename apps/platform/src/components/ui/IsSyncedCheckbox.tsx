@@ -37,7 +37,7 @@ export default function IsSyncedCheckbox({
           />
 
           <span>
-            <span className="font-semibold block">Add to all locations</span>
+            <span className="font-semibold block">Sync to all locations</span>
             <span className="text-sm text-gray-500">{description}</span>
           </span>
         </label>

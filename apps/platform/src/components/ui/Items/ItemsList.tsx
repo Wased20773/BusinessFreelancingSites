@@ -2,7 +2,6 @@ import { CategoryJson } from "@/types/types";
 import Image from "next/image";
 import Link from "next/link";
 import EditIcon from "@/components/icons/edit.svg";
-import Divider from "@/components/layout/Divider";
 import { moveOrder, ReorderDirection } from "@/lib/api/reorder";
 import { Dispatch, SetStateAction, useState } from "react";
 import { toast } from "sonner";
@@ -104,28 +103,34 @@ export default function ItemsList({
 
   return (
     <section
-      className="dashboard-card"
       aria-labelledby="category-items-heading"
+      className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
     >
-      <h2 id="category-items-heading" className="px-3 py-2">
-        Items
-      </h2>
+      <div className="border-b border-gray-300 px-5 py-4 sm:px-6">
+        <h2
+          id="category-items-heading"
+          className="text-lg font-semibold text-gray-900"
+        >
+          Items
+        </h2>
+      </div>
 
       {categoryData.items?.length === 0 ? (
-        <p className="px-3 pb-3">This category has no items</p>
+        <p className="p-5 text-sm text-gray-600 sm:px-6">
+          This category has no items
+        </p>
       ) : (
         <>
-          {/* MOBILE */}
-          <ul className="md:hidden">
+          {/* Mobile */}
+          <ul className="divide-y divide-gray-200 md:hidden">
             {categoryData.items?.map((item, idx) => {
               const isProcessingItem = processingItemId === item.id;
-
               const isFirst = idx === 0;
               const isLast = idx === (categoryData.items?.length ?? 0) - 1;
 
               return (
-                <li key={item.id} className="grid grid-cols-[1fr_auto]">
-                  <div className="min-w-0 px-3 flex items-center gap-5">
+                <li key={item.id}>
+                  <div className="flex min-w-0 items-center gap-3 px-3 py-2">
                     {canManage && (
                       <ReorderControls
                         id={item.id}
@@ -135,102 +140,96 @@ export default function ItemsList({
                         handleMove={handleMoveItem}
                       />
                     )}
+
                     <Link
                       href={`${categoryId}/items/${item.id}`}
-                      className="flex-1 min-w-0 flex items-center"
+                      className="flex min-w-0 flex-1 items-center gap-2"
                       aria-label={
                         canManage ? `Edit ${item.name}` : `View ${item.name}`
                       }
                       onClick={() => setIsLoading(true)}
                     >
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-gray-900">
+                          {item.name}
+                        </p>
+                        <p className="truncate text-sm text-gray-700">
                           ${Number(item.price).toFixed(2)}
                         </p>
-
-                        <p className="font-semibold truncate">{item.name}</p>
-
-                        <p className="text-gray-500 truncate">
+                        <p className="truncate text-xs text-gray-600">
                           Order: {item.order}
                         </p>
                       </div>
 
-                      {canManage ? (
-                        <Image
-                          className="h-fit"
-                          src={EditIcon}
-                          alt=""
-                          width={50}
-                          height={50}
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        <ChevronIcon direction="right" size={30} />
-                      )}
+                      <span className="shrink-0 text-gray-600">
+                        {canManage ? (
+                          <Image
+                            src={EditIcon}
+                            alt=""
+                            width={30}
+                            height={30}
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <ChevronIcon direction="right" size={22} />
+                        )}
+                      </span>
                     </Link>
                   </div>
-
-                  {categoryData.items?.length !== idx + 1 && (
-                    <div className="col-span-2">
-                      <Divider />
-                    </div>
-                  )}
                 </li>
               );
             })}
           </ul>
 
-          {/* DESKTOP */}
+          {/* Desktop */}
           <div className="hidden overflow-x-auto md:block">
             <table
-              className="w-full border-collapse text-left"
+              className="w-full border-collapse text-left text-sm"
               aria-labelledby="category-items-heading"
             >
               <thead>
-                <tr className="border-b border-gray-600">
+                <tr className="border-b border-gray-300 bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
                   <th scope="col" className="px-3 py-2 font-semibold">
                     Item
                   </th>
-
                   <th scope="col" className="px-3 py-2 font-semibold">
                     Price
                   </th>
-
                   <th scope="col" className="px-3 py-2 font-semibold">
                     Order
                   </th>
-
                   {canManage && (
                     <th scope="col" className="px-3 py-2 font-semibold">
                       Reorder
                     </th>
                   )}
-
-                  <th scope="col" className="w-12 px-3 py-2"></th>
+                  <th scope="col" className="w-12 px-3 py-2" />
                 </tr>
               </thead>
 
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-gray-200">
                 {categoryData.items?.map((item, idx) => {
                   const isProcessingItem = processingItemId === item.id;
-
                   const isFirst = idx === 0;
                   const isLast = idx === (categoryData.items?.length ?? 0) - 1;
 
                   return (
-                    <tr key={item.id} className="border-gray-300">
-                      <th scope="row" className="px-3 py-2 font-normal">
+                    <tr key={item.id}>
+                      <th
+                        scope="row"
+                        className="px-3 py-2 font-medium text-gray-900"
+                      >
                         {item.name}
                       </th>
 
-                      <td className="px-3 py-2">
+                      <td className="px-3 py-2 text-gray-700">
                         ${Number(item.price).toFixed(2)}
                       </td>
 
-                      <td className="px-3 py-2">{item.order}</td>
+                      <td className="px-3 py-2 text-gray-600">{item.order}</td>
 
-                      <td className="px-3 py-2">
-                        {canManage && (
+                      {canManage && (
+                        <td className="px-3 py-2">
                           <ReorderControls
                             id={item.id}
                             isProcessing={isProcessingItem}
@@ -238,10 +237,10 @@ export default function ItemsList({
                             isLast={isLast}
                             handleMove={handleMoveItem}
                           />
-                        )}
-                      </td>
+                        </td>
+                      )}
 
-                      <td>
+                      <td className="px-3 py-2">
                         <Link
                           href={`${categoryId}/items/${item.id}`}
                           aria-label={
@@ -249,7 +248,7 @@ export default function ItemsList({
                               ? `Edit ${item.name}`
                               : `View ${item.name}`
                           }
-                          className="flex justify-center w-fit"
+                          className="flex size-10 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-blue-50"
                           onClick={() => setIsLoading(true)}
                         >
                           {canManage ? (

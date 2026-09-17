@@ -1,7 +1,7 @@
+import EditIcon from "@/components/icons/edit.svg";
+import type { LocationJson } from "@/types/types";
 import Image from "next/image";
 import Link from "next/link";
-import EditIcon from "@/components/icons/edit.svg";
-import { LocationJson } from "@/types/types";
 import type { Dispatch, SetStateAction } from "react";
 
 type LocationInfoParams = {
@@ -17,67 +17,92 @@ export default function LocationInfo({
 }: LocationInfoParams) {
   return (
     <section
-      className="dashboard-card p-4"
       aria-labelledby="location-info-heading"
+      className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
     >
-      <div className="flex justify-between items-center">
-        <h2 id="location-info-heading">Location Information</h2>
+      <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-4 sm:px-6">
+        <h2
+          id="location-info-heading"
+          className="text-lg font-semibold text-gray-900"
+        >
+          Location Information
+        </h2>
 
         {canManage && (
           <Link
             href="location/edit"
-            className="shrink-0"
+            aria-label="Edit location information"
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 transition-colors hover:border-blue-300 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-500"
             onClick={() => setIsLoading(true)}
           >
             <Image
               src={EditIcon}
               alt=""
               aria-hidden="true"
-              className="md:min-w-[30px] min-w-[50px] h-fit"
+              width={20}
+              height={20}
             />
           </Link>
         )}
       </div>
 
-      <div className="mt-3">
-        <p className="font-semibold">Address</p>
-        <p>{locationData.address}</p>
-      </div>
+      <dl className="grid gap-x-6 gap-y-4 px-5 py-5 text-sm sm:grid-cols-2 sm:px-6">
+        <div className="sm:col-span-2">
+          <dt className="font-medium text-gray-600">Address</dt>
+          <dd className="mt-1 break-words font-medium text-gray-900">
+            {locationData.address}
+          </dd>
+        </div>
 
-      <div className="mt-3">
-        <p className="font-semibold">City</p>
-        <p>{locationData.city || "Not stated"}</p>
-      </div>
+        <div>
+          <dt className="font-medium text-gray-600">City</dt>
+          <dd className="mt-1 text-gray-900">
+            {locationData.city || "Not stated"}
+          </dd>
+        </div>
 
-      <div className="mt-3">
-        <p className="font-semibold">State</p>
-        <p>{locationData.state || "Not stated"}</p>
-      </div>
+        <div>
+          <dt className="font-medium text-gray-600">State</dt>
+          <dd className="mt-1 text-gray-900">
+            {locationData.state || "Not stated"}
+          </dd>
+        </div>
 
-      <div className="mt-3">
-        <p className="font-semibold">ZIP / Postal Code</p>
-        <p>{locationData.zip || "Not stated"}</p>
-      </div>
+        <div>
+          <dt className="font-medium text-gray-600">ZIP / Postal Code</dt>
+          <dd className="mt-1 text-gray-900">
+            {locationData.zip || "Not stated"}
+          </dd>
+        </div>
 
-      <div className="mt-3">
-        <p className="font-semibold">Country</p>
-        <p>{locationData.country || "Not stated"}</p>
-      </div>
+        <div>
+          <dt className="font-medium text-gray-600">Country</dt>
+          <dd className="mt-1 text-gray-900">
+            {locationData.country || "Not stated"}
+          </dd>
+        </div>
 
-      <div className="mt-3">
-        <p className="font-semibold">Parking Available</p>
-        <p>{locationData.parking ? "Yes" : "No"}</p>
-      </div>
+        <div>
+          <dt className="font-medium text-gray-600">Parking Available</dt>
+          <dd className="mt-1 text-gray-900">
+            {locationData.parking ? "Yes" : "No"}
+          </dd>
+        </div>
 
-      <div className="mt-3">
-        <p className="font-semibold">Active</p>
-        <p>{locationData.isActive ? "Yes" : "No"}</p>
-      </div>
+        <div>
+          <dt className="font-medium text-gray-600">Active</dt>
+          <dd className="mt-1 text-gray-900">
+            {locationData.isActive ? "Yes" : "No"}
+          </dd>
+        </div>
 
-      <div className="mt-3">
-        <p className="font-semibold">Business Hours Enabled</p>
-        <p>{locationData.enableHours ? "Yes" : "No"}</p>
-      </div>
+        <div>
+          <dt className="font-medium text-gray-600">Business Hours Enabled</dt>
+          <dd className="mt-1 text-gray-900">
+            {locationData.enableHours ? "Yes" : "No"}
+          </dd>
+        </div>
+      </dl>
     </section>
   );
 }

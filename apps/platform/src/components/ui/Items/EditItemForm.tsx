@@ -1,17 +1,18 @@
 "use client";
 
-import { ItemJson } from "@/types/types";
+import Divider from "@/components/layout/Divider";
+import type { ItemJson } from "@/types/types";
 import Image from "next/image";
-import {
+import type {
   ChangeEvent,
   Dispatch,
   InputEvent,
   SetStateAction,
   SubmitEvent,
 } from "react";
-import RequiredField from "../RequiredField";
-import IsSyncedCheckbox from "../IsSyncedCheckbox";
 import Cropper, { type Area, type Point } from "react-easy-crop";
+import IsSyncedCheckbox from "../IsSyncedCheckbox";
+import RequiredField from "../RequiredField";
 
 type EditItemFormParams = {
   canManage: boolean;
@@ -40,6 +41,11 @@ type EditItemFormParams = {
   handleDeleteImage(): Promise<void>;
   handleDelete(): Promise<void>;
 };
+
+const inputClass =
+  "mt-1 block w-full rounded-lg border-[0.1rem] border-b-[0.2rem] border-blue-400 bg-gray-100 px-3 py-2 disabled:opacity-50";
+
+const labelClass = "font-medium text-gray-900";
 
 export default function EditItemForm({
   canManage,
@@ -70,218 +76,222 @@ export default function EditItemForm({
 }: EditItemFormParams) {
   if (!canManage) {
     return (
-      <section className="dashboard-card flex flex-col gap-5 p-4">
-        <fieldset>
-          <legend>Item info</legend>
+      <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="p-5 sm:p-6">
+          <h2 className="text-base font-semibold text-gray-900">Item info</h2>
 
-          <div>
-            <p className="text-sm text-gray-500">Name</p>
-            <p className="font-medium mt-1">{itemData.name}</p>
+          <dl className="mt-4 space-y-4 text-sm">
+            <div>
+              <dt className="font-medium text-gray-600">Name</dt>
+              <dd className="mt-1 text-gray-900">{itemData.name}</dd>
+            </div>
+
+            <div>
+              <dt className="font-medium text-gray-600">Description</dt>
+              <dd className="mt-1 whitespace-pre-wrap text-gray-900">
+                {itemData.description ?? "No description provided."}
+              </dd>
+            </div>
+
+            <div>
+              <dt className="font-medium text-gray-600">Contains</dt>
+              <dd className="mt-1 text-gray-900">
+                {itemData.containsList.length > 0
+                  ? itemData.containsList.join(", ")
+                  : "No ingredients listed."}
+              </dd>
+            </div>
+
+            <div>
+              <dt className="font-medium text-gray-600">Calories</dt>
+              <dd className="mt-1 text-gray-900">
+                {itemData.calories !== null
+                  ? `${itemData.calories} kcal`
+                  : "Not provided"}
+              </dd>
+            </div>
+
+            <div>
+              <dt className="font-medium text-gray-600">Price</dt>
+              <dd className="mt-1 font-medium text-gray-900">
+                ${Number(itemData.price).toFixed(2)}
+              </dd>
+            </div>
+          </dl>
+
+          <Divider />
+
+          <h3 className="text-sm font-medium text-gray-900">Image</h3>
+          <div className="mt-3">
+            {imagePreview ? (
+              <Image
+                src={imagePreview}
+                alt={`${itemData.name} image`}
+                width={300}
+                height={300}
+                className="max-h-[300px] w-auto rounded-md object-contain"
+              />
+            ) : (
+              <p className="text-sm text-gray-600">No image provided.</p>
+            )}
           </div>
 
-          <div>
-            <p className="text-sm text-gray-500">Description</p>
+          <Divider />
 
-            <p className="mt-1">
-              {itemData.description ?? "No description provided."}
-            </p>
-          </div>
+          <h3 className="text-sm font-medium text-gray-900">Availability</h3>
+          <p className="mt-1 text-sm text-gray-700">
+            {itemData.isAvailable ? "Available" : "Unavailable"}
+          </p>
 
-          <div>
-            <p className="text-sm text-gray-500">Contains</p>
-
-            <p className="mt-1">
-              {itemData.containsList.length > 0
-                ? itemData.containsList.join(", ")
-                : "No ingredients listed."}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm text-gray-500">Calories</p>
-
-            <p className="mt-1">
-              {itemData.calories !== null
-                ? `${itemData.calories} kcal`
-                : "Not provided"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm text-gray-500">Price</p>
-
-            <p className="font-medium mt-1">
-              ${Number(itemData.price).toFixed(2)}
-            </p>
-          </div>
-        </fieldset>
-
-        <fieldset className="flex items-start">
-          <legend>Image</legend>
-
-          {imagePreview ? (
-            <Image
-              src={imagePreview}
-              alt={`${itemData.name} image`}
-              width={300}
-              height={300}
-              className="max-h-[300px] w-auto rounded-md object-contain"
-            />
-          ) : (
-            <p className="text-gray-500">No image provided.</p>
-          )}
-        </fieldset>
-
-        <fieldset>
-          <legend>Availability</legend>
-
-          <p>{itemData.isAvailable ? "Available" : "Unavailable"}</p>
-        </fieldset>
-
-        <p className="w-fit border-[0.1rem] border-b-[0.2rem] rounded-lg border-gray-400 bg-gray-100 px-3 py-2">
-          Display Order: {itemData.order}
-        </p>
+          <p className="mt-4 inline-flex rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-700">
+            Display Order: {itemData.order}
+          </p>
+        </div>
       </section>
     );
   }
+
   return (
     <form
-      className="dashboard-card flex flex-col gap-5 p-4"
+      className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
       onSubmit={handleSubmit}
       onInput={handleFormInput}
     >
-      <fieldset disabled={isProcessing}>
-        <legend>Item info</legend>
+      <div className="p-5 sm:p-6">
+        <fieldset disabled={isProcessing}>
+          <legend className="text-base font-semibold text-gray-900">
+            Item info
+          </legend>
 
-        <div>
-          <label htmlFor="item-name">
-            Name
-            <RequiredField />
-          </label>
-
-          <input
-            className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-            id="item-name"
-            name="name"
-            type="text"
-            defaultValue={itemData.name}
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="item-description">Description</label>
-
-          <textarea
-            className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-            id="item-description"
-            name="description"
-            rows={4}
-            defaultValue={itemData.description ?? ""}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="item-contains">
-            What does the item contain? Please separate with a comma.
-          </label>
-
-          <input
-            className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-            id="item-contains"
-            name="containsList"
-            type="text"
-            defaultValue={itemData.containsList.join(", ")}
-            placeholder="pepper, salt, onions ..."
-          />
-        </div>
-
-        <div>
-          <label htmlFor="item-calories">Calories (kcal)</label>
-
-          <input
-            className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-            id="item-calories"
-            name="calories"
-            type="number"
-            min="0"
-            step="5"
-            defaultValue={itemData.calories ?? ""}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="item-price">
-            Price
-            <RequiredField />
-          </label>
-
-          <input
-            className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-            id="item-price"
-            name="price"
-            type="number"
-            min="0"
-            step="0.01"
-            defaultValue={Number(itemData.price)}
-            required
-          />
-        </div>
-      </fieldset>
-
-      <fieldset disabled={isProcessing}>
-        <legend>Image</legend>
-
-        <div>
-          <label htmlFor="item-image">
-            {itemData.imageKey ? "Replace image" : "Add image"}
-          </label>
-
-          <input
-            className="block w-full border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-            id="item-image"
-            name="image"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={handleImageChange}
-          />
-        </div>
-
-        {cropImageSrc && (
-          <div className="mt-4">
-            <p className="font-semibold">Crop Image</p>
-
-            <p className="text-sm text-gray-500 mt-1">
-              Move and zoom the image to select the area you want to use.
-            </p>
-
-            <div className="relative w-full h-[400px] mt-3 rounded-lg overflow-hidden bg-black">
-              <Cropper
-                image={cropImageSrc}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={handleCropComplete}
+          <div className="mt-4 space-y-4">
+            <div>
+              <label htmlFor="item-name" className={labelClass}>
+                Name
+                <RequiredField />
+              </label>
+              <input
+                className={inputClass}
+                id="item-name"
+                name="name"
+                type="text"
+                defaultValue={itemData.name}
+                required
               />
             </div>
 
-            <div className="flex justify-end mt-4">
-              <button
-                type="button"
-                onClick={() => void handleUseCrop()}
-                disabled={!croppedAreaPixels}
-                className="rounded-lg border border-blue-500 bg-blue-100 px-4 py-2 text-blue-900 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Done
-              </button>
+            <div>
+              <label htmlFor="item-description" className={labelClass}>
+                Description
+              </label>
+              <textarea
+                className={inputClass}
+                id="item-description"
+                name="description"
+                rows={4}
+                defaultValue={itemData.description ?? ""}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="item-contains" className={labelClass}>
+                What does the item contain? Please separate with a comma.
+              </label>
+              <input
+                className={inputClass}
+                id="item-contains"
+                name="containsList"
+                type="text"
+                defaultValue={itemData.containsList.join(", ")}
+                placeholder="pepper, salt, onions ..."
+              />
+            </div>
+
+            <div>
+              <label htmlFor="item-calories" className={labelClass}>
+                Calories (kcal)
+              </label>
+              <input
+                className={inputClass}
+                id="item-calories"
+                name="calories"
+                type="number"
+                min="0"
+                step="5"
+                defaultValue={itemData.calories ?? ""}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="item-price" className={labelClass}>
+                Price
+                <RequiredField />
+              </label>
+              <input
+                className={inputClass}
+                id="item-price"
+                name="price"
+                type="number"
+                min="0"
+                step="0.01"
+                defaultValue={Number(itemData.price)}
+                required
+              />
             </div>
           </div>
-        )}
+        </fieldset>
 
-        {!cropImageSrc && imagePreview && (
-          <>
+        <Divider />
+
+        <fieldset disabled={isProcessing}>
+          <legend className="text-sm font-medium text-gray-900">Image</legend>
+
+          <div className="mt-3">
+            <label htmlFor="item-image" className={labelClass}>
+              {itemData.imageKey ? "Replace image" : "Add image"}
+            </label>
+            <input
+              className={inputClass}
+              id="item-image"
+              name="image"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleImageChange}
+            />
+          </div>
+
+          {cropImageSrc && (
+            <div className="mt-4">
+              <p className="text-sm font-medium text-gray-900">Crop Image</p>
+              <p className="mt-1 text-sm text-gray-600">
+                Move and zoom the image to select the area you want to use.
+              </p>
+
+              <div className="relative mt-3 h-[400px] w-full overflow-hidden rounded-lg bg-black">
+                <Cropper
+                  image={cropImageSrc}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={1}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropComplete={handleCropComplete}
+                />
+              </div>
+
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => void handleUseCrop()}
+                  disabled={!croppedAreaPixels}
+                  className="rounded-lg border border-blue-500 bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!cropImageSrc && imagePreview && (
             <div className="mt-4">
               <button
                 type="button"
@@ -298,76 +308,90 @@ export default function EditItemForm({
                 />
               </button>
 
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="mt-2 text-sm text-gray-600">
                 Click the image to adjust the crop.
               </p>
             </div>
+          )}
+
+          {errorMessageImage && (
+            <p role="alert" className="mt-3 text-sm text-red-700">
+              {errorMessageImage}
+            </p>
+          )}
+
+          {itemData.imageKey && (
+            <button
+              className="mt-4 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              type="button"
+              disabled={isProcessing}
+              onClick={handleDeleteImage}
+            >
+              Delete Image
+            </button>
+          )}
+        </fieldset>
+
+        <Divider />
+
+        <fieldset disabled={isProcessing}>
+          <legend className="text-sm font-medium text-gray-900">
+            Availability
+          </legend>
+
+          <label
+            htmlFor="item-available"
+            className="mt-3 flex cursor-pointer items-center gap-2 text-sm font-medium text-gray-900"
+          >
+            <input
+              id="item-available"
+              name="isAvailable"
+              type="checkbox"
+              defaultChecked={itemData.isAvailable}
+              className="size-4 accent-blue-600"
+            />
+            Available?
+          </label>
+        </fieldset>
+
+        <p className="mt-4 inline-flex rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-700">
+          Display Order: {itemData.order}
+        </p>
+
+        {hasSyncGroup && (
+          <>
+            <Divider />
+            <IsSyncedCheckbox
+              hasSyncGroup={hasSyncGroup}
+              htmlFor="sync-item"
+              inputName="sync-item"
+              isSynced={isSynced}
+              setIsSynced={setIsSynced}
+              isSaving={isSaving}
+              description="Apply changes to synchronized copies across locations."
+            />
           </>
         )}
+      </div>
 
-        {errorMessageImage && (
-          <p role="alert" className="mt-3 text-red-600">
-            {errorMessageImage}
-          </p>
-        )}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-300 bg-gray-50 px-5 py-4 sm:px-6">
+        <button
+          className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+          type="button"
+          disabled={isProcessing}
+          onClick={handleDelete}
+        >
+          {isDeleting ? "Deleting..." : "Delete Item"}
+        </button>
 
-        {itemData.imageKey && (
-          <button
-            className="w-fit border-[0.1rem] border-gray-500 rounded-md text-gray-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-            type="button"
-            disabled={isProcessing}
-            onClick={handleDeleteImage}
-          >
-            Delete Image
-          </button>
-        )}
-      </fieldset>
-
-      <fieldset disabled={isProcessing}>
-        <legend>Availability</legend>
-
-        <label htmlFor="item-available" className="cursor-pointer">
-          <input
-            className="mr-2"
-            id="item-available"
-            name="isAvailable"
-            type="checkbox"
-            defaultChecked={itemData.isAvailable}
-          />
-          Available?
-        </label>
-      </fieldset>
-
-      <p className="w-fit border-[0.1rem] border-b-[0.2rem] rounded-lg border-gray-400 bg-gray-100 px-3 py-2">
-        Display Order: {itemData.order}
-      </p>
-
-      <IsSyncedCheckbox
-        hasSyncGroup={hasSyncGroup}
-        htmlFor={"sync-item"}
-        inputName={"sync-item"}
-        isSynced={isSynced}
-        setIsSynced={setIsSynced}
-        isSaving={isSaving}
-        description={"Apply changes to synchronized copies across locations."}
-      />
-
-      <button
-        className="bg-emerald-300 border-[0.1rem] border-emerald-500 rounded-md text-emerald-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-        type="submit"
-        disabled={isProcessing || !canSubmit}
-      >
-        {isSaving ? "Saving..." : "Save"}
-      </button>
-
-      <button
-        className="bg-red-300 border-[0.1rem] border-red-500 rounded-md text-red-900 px-2 py-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-        type="button"
-        disabled={isProcessing}
-        onClick={handleDelete}
-      >
-        {isDeleting ? "Deleting..." : "Delete Item"}
-      </button>
+        <button
+          className="rounded-lg border border-emerald-500 bg-emerald-300 px-4 py-2 text-sm font-medium text-emerald-900 transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
+          type="submit"
+          disabled={isProcessing || !canSubmit}
+        >
+          {isSaving ? "Saving..." : "Save"}
+        </button>
+      </div>
     </form>
   );
 }

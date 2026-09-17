@@ -1,9 +1,9 @@
 "use client";
 
 import CreateButtonIcon from "@/components/icons/create-button.svg";
-import Divider from "@/components/layout/Divider";
 import ActionItem from "@/components/ui/ActionItem";
 import ContactsList from "@/components/ui/contacts/ContactsList";
+import PageState from "@/components/ui/PageState";
 import type { ContactJson } from "@/types/types";
 import axios from "axios";
 import { useParams } from "next/navigation";
@@ -11,7 +11,6 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import "../page.css";
-import PageState from "@/components/ui/PageState";
 
 export default function ContactsPage() {
   const params = useParams<{
@@ -51,16 +50,10 @@ export default function ContactsPage() {
           {
             loading: "Loading contacts...",
             success: "Contacts loaded.",
-
             error: (error) => {
-              if (
-                axios.isAxiosError<{
-                  error?: string;
-                }>(error)
-              ) {
+              if (axios.isAxiosError<{ error?: string }>(error)) {
                 return {
                   message: "Failed to load contacts.",
-
                   description:
                     error.response?.data?.error ??
                     `Status code: ${error.response?.status ?? "No response"}`,
@@ -69,7 +62,6 @@ export default function ContactsPage() {
 
               return {
                 message: "Unexpected error.",
-
                 description: "Something went wrong while loading the contacts.",
               };
             },
@@ -77,16 +69,11 @@ export default function ContactsPage() {
         );
 
         const data = await contactsToast.unwrap();
-
         setContactData(data);
       } catch (error) {
         console.error("Error in Contacts page:", error);
 
-        if (
-          axios.isAxiosError<{
-            error?: string;
-          }>(error)
-        ) {
+        if (axios.isAxiosError<{ error?: string }>(error)) {
           setErrorMessage(
             error.response?.data?.error ?? "Failed to load contact data.",
           );
@@ -98,13 +85,6 @@ export default function ContactsPage() {
       }
     }
 
-    /*
-     * Developer access does not include
-     * dashboard contact information.
-     *
-     * Staff can retrieve the data because
-     * they have read-only access.
-     */
     if (status === "authenticated" && canViewContacts) {
       void getContactData();
     }
@@ -127,34 +107,34 @@ export default function ContactsPage() {
   return (
     <section
       aria-labelledby="contacts-heading"
-      className="max-w-[1000px] mx-auto p-5"
+      className="mx-auto max-w-[1000px] p-5"
     >
       <h1 id="contacts-heading">Contacts</h1>
 
-      <div className="mt-[1.5rem]">
-        {/* Management Actions */}
+      <div className="mt-6 space-y-5">
         {canManageContacts && (
-          <>
-            <nav className="dashboard-card" aria-label="Contact actions">
-              <ActionItem
-                href={`/businesses/${businessId}/locations/${locationId}/dashboard/contacts/create`}
-                icon={CreateButtonIcon}
-                label="Create Contact"
-                setIsLoading={setIsLoading}
-              />
-            </nav>
-
-            <Divider />
-          </>
+          <nav
+            aria-label="Contact actions"
+            className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 shadow-sm"
+          >
+            <ActionItem
+              href={`/businesses/${businessId}/locations/${locationId}/dashboard/contacts/create`}
+              icon={CreateButtonIcon}
+              label="Create Contact"
+              setIsLoading={setIsLoading}
+            />
+          </nav>
         )}
 
-        <ContactsList
-          isLoading={isLoading}
-          contactData={contactData}
-          errorMessage={errorMessage}
-          canManage={canManageContacts}
-          setIsLoading={setIsLoading}
-        />
+        <section aria-label="Contacts list">
+          <ContactsList
+            isLoading={isLoading}
+            contactData={contactData}
+            errorMessage={errorMessage}
+            canManage={canManageContacts}
+            setIsLoading={setIsLoading}
+          />
+        </section>
       </div>
     </section>
   );

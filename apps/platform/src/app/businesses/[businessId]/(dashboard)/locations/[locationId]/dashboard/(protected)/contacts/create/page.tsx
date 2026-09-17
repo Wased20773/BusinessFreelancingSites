@@ -174,6 +174,7 @@ export default function CreateContactPage() {
           canSubmit={canSubmit}
           isSynced={isSynced}
           setIsSynced={setIsSynced}
+          errorMessage={errorMessage}
         />
       </div>
     </section>
