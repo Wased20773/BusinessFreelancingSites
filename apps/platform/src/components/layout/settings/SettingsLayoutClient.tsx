@@ -53,7 +53,7 @@ export default function SettingsLayoutClient({
         onNavigate={(href) => setNavigationTarget(href)}
       />
 
-      <main className="min-h-0 overflow-y-scroll">
+      <main className="min-h-0 overflow-y-auto">
         {isNavigating ? <LoadingBar /> : children}
       </main>
     </div>

@@ -75,7 +75,7 @@ export default function DashboardLayoutClient({
         openMobileNav={setIsOpen}
       />
 
-      <main className="min-h-0 overflow-y-scroll">
+      <main className="min-h-0 overflow-y-auto">
         {isNavigating ? <LoadingBar /> : children}
       </main>
     </div>
