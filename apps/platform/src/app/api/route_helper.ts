@@ -656,9 +656,9 @@ export async function rateLimiterRead(
 ) {
   if (authentication.authenticationType === "apiKey") {
     const rateLimit = await consumeToken({
-      key: `rate:user:${authentication.userId}:read`,
-      capacity: 30,
-      tokensPerMinute: 30,
+      key: `rate:user:${authentication.businessId}:read`,
+      capacity: 150,
+      tokensPerMinute: 60,
     });
 
     if (!rateLimit.allowed) {
