@@ -1,7 +1,7 @@
 ---
 title: ROADMAP
 
-last-verified: 2026-7-22
+last-verified: 2026-9-18
 status: planned
 ---
 
@@ -51,51 +51,43 @@ Primary goal:
 
 Primary goal:
 
-> Complete the frontend for the platform so business owners can manage their business through a usable dashboard.
+> Complete the frontend for the platform so business owners and other users can manage or view their business through a usable dashboard.
 
-### Platform Website
+- [x] Build the login flow
 
-- [ ] Build the public landing page
-- [ ] Build the login flow
-- [ ] Add business creation flow for new clients
+### App Foundation
 
-### Dashboard Foundation
+- [x] Build the Account/Workspace/Dashboard layout
+- [x] Add sidebar navigation
+- [x] Add loading states
+- [x] Add error states
+- [x] Add empty states
 
-- [ ] Build the dashboard layout
-- [ ] Add sidebar navigation
-- [ ] Add protected routes
-- [ ] Add loading states
-- [ ] Add error states
-- [ ] Add empty states
+### App Pages
 
-### Dashboard Pages
-
-- [ ] Build account management page
-- [ ] Build business management page
-- [ ] Build business users page
-- [ ] Build categories page
-- [ ] Build items page
-- [ ] Build item options UI
-- [ ] Build contacts page
-- [ ] Build socials page
-- [ ] Build locations page
-- [ ] Build hours management UI
+- [x] Account: Build Account page
+- [x] Workspace: Build Business users page
+- [x] Workspace: Build Business API Key management page
+- [x] Workspace: Build Business settings page
+- [x] Dashboard: Build Menu UI
+- [x] Dashboard: Build item UI
+- [x] Dashboard: Build item options UI
+- [x] Dashboard: Build contacts page
+- [x] Dashboard: Build socials page
+- [x] Dashboard: Build locations page
+- [x] Dashboard: Build days/hours management UI
+- [x] Overview page for workspace and dashboard
 
 ### Frontend API Integration
 
-- [ ] Connect dashboard pages to Admin API
-- [ ] Add create/update/delete flows
-- [ ] Add reorder flows
-- [ ] Add image upload UI
-- [ ] Add form validation
-- [ ] Add success/error feedback
-
-### Frontend Testing
-
-- [ ] Test key dashboard pages
-- [ ] Test forms with Vitest + React Testing Library
-- [ ] Test loading and error states
-- [ ] Test protected route behavior
+- [x] Connect dashboard pages to Admin API
+- [x] Implement record synchronization across locations
+- [x] Add create/update/delete flows
+- [x] Add reorder flows
+- [x] Add image upload
+- [x] Add form validation
+- [x] Add success/error feedback
+- [x] Integrate Auth.js for session authentication
 
 ### Deployment
 
