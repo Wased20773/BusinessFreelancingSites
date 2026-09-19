@@ -154,7 +154,35 @@ export default function ItemsList({
                           {item.name}
                         </p>
                         <p className="truncate text-sm text-gray-700">
-                          ${Number(item.price).toFixed(2)}
+                          {(() => {
+                            const itemPrice = Number(item.price);
+
+                            // Item has a base price; options are add-ons/toppings.
+                            if (itemPrice > 0) {
+                              return `$${itemPrice.toFixed(2)}`;
+                            }
+
+                            // Without a base price, available options determine the price.
+                            const optionPrices = item.options
+                              .filter((option) => option.isAvailable)
+                              .map((option) => Number(option.price))
+                              .filter((price) => Number.isFinite(price))
+                              .sort((a, b) => a - b);
+
+                            if (optionPrices.length === 0) {
+                              return null;
+                            }
+
+                            const lowestPrice = optionPrices[0];
+                            const highestPrice =
+                              optionPrices[optionPrices.length - 1];
+
+                            if (lowestPrice === highestPrice) {
+                              return `$${lowestPrice.toFixed(2)}`;
+                            }
+
+                            return `$${lowestPrice.toFixed(2)} – $${highestPrice.toFixed(2)}`;
+                          })()}
                         </p>
                         <p className="truncate text-xs text-gray-600">
                           Order: {item.order}
@@ -223,7 +251,35 @@ export default function ItemsList({
                       </th>
 
                       <td className="px-3 py-2 text-gray-700">
-                        ${Number(item.price).toFixed(2)}
+                        {(() => {
+                          const itemPrice = Number(item.price);
+
+                          // Item has a base price; options are add-ons/toppings.
+                          if (itemPrice > 0) {
+                            return `$${itemPrice.toFixed(2)}`;
+                          }
+
+                          // Without a base price, available options determine the price.
+                          const optionPrices = item.options
+                            .filter((option) => option.isAvailable)
+                            .map((option) => Number(option.price))
+                            .filter((price) => Number.isFinite(price))
+                            .sort((a, b) => a - b);
+
+                          if (optionPrices.length === 0) {
+                            return null;
+                          }
+
+                          const lowestPrice = optionPrices[0];
+                          const highestPrice =
+                            optionPrices[optionPrices.length - 1];
+
+                          if (lowestPrice === highestPrice) {
+                            return `$${lowestPrice.toFixed(2)}`;
+                          }
+
+                          return `$${lowestPrice.toFixed(2)} – $${highestPrice.toFixed(2)}`;
+                        })()}
                       </td>
 
                       <td className="px-3 py-2 text-gray-600">{item.order}</td>
