@@ -1,10 +1,18 @@
-import type { Dispatch, FormEvent, SetStateAction, SubmitEvent } from "react";
+import type {
+  ChangeEvent,
+  Dispatch,
+  InputEvent,
+  SetStateAction,
+  SubmitEvent,
+} from "react";
 import IsSyncedCheckbox from "../IsSyncedCheckbox";
 import RequiredField from "../RequiredField";
 
 type CreateSocialFormParams = {
   handleSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void>;
-  handleFormInput(event: FormEvent<HTMLFormElement>): void;
+  handleFormInput(
+    event: InputEvent<HTMLFormElement> | ChangeEvent<HTMLFormElement>,
+  ): void;
   isCreating: boolean;
   canSubmit: boolean;
   errorMessage: string | null;
@@ -60,7 +68,7 @@ export default function CreateSocialForm({
               <option value="facebook">Facebook</option>
               <option value="youtube">YouTube</option>
               <option value="tiktok">TikTok</option>
-              <option value="twitter">Twitter</option>
+              <option value="x">X</option>
             </select>
           </div>
 

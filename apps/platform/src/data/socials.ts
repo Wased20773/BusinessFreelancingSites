@@ -19,4 +19,8 @@ export const SOCIAL_PLATFORMS = {
     domain: "twitter.com",
     icon: "social-icons/twitter/normal.svg",
   },
+  x: {
+    domain: "x.com",
+    icon: "social-icons/x/normal.svg",
+  },
 } as const;
