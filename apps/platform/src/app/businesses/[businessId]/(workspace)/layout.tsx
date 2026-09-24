@@ -17,7 +17,7 @@ export default async function WorkspaceLayout({
 }: WorkspaceLayoutProps) {
   const session = await auth();
 
-  if (!session?.user) redirect("/dashboard/login");
+  if (!session?.user) redirect("/login");
   if (!session.user.accessLevel)
     return <div>We were unable to get your access level, please try again</div>;
 

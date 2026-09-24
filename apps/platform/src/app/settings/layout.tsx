@@ -15,7 +15,7 @@ export default async function SettingsLayout({
   const session = await auth();
 
   if (!session?.user) {
-    redirect("/dashboard/login");
+    redirect("/login");
   }
 
   if (!session.user.accessLevel) {

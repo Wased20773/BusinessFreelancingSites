@@ -25,7 +25,7 @@ export default function HomePage() {
                 trucks.
               </p>
               <Link
-                href="/dashboard/login"
+                href="/login"
                 className="w-fit rounded-lg px-6 py-3 bg-blue-500 text-white"
               >
                 Get Started

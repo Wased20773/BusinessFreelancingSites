@@ -7,7 +7,7 @@ export default async function OnBoarding() {
   const session = await auth();
 
   if (!session?.user) {
-    redirect("/dashboard/login");
+    redirect("/login");
   }
 
   if (session.user.onboardingCompleted) {

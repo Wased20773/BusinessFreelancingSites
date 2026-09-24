@@ -2,8 +2,8 @@ import { auth } from "@/auth";
 import LoginButton from "@/components/auth/LoginButton";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import MaleUsingComputer from "../../../../public/images/male_using_laptop.jpg";
-import BPLogo from "../../../../public/logo.svg";
+import MaleUsingComputer from "../../../public/images/male_using_laptop.jpg";
+import BPLogo from "../../../public/logo.svg";
 
 export default async function Login() {
   const session = await auth();
