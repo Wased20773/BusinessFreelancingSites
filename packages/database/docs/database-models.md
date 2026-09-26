@@ -3,7 +3,7 @@ title: DatabaseModels
 code-paths:
   - packages/database/prisma/schema.prisma
 
-last-verified: 2026-09-27
+last-verified: 2026-09-25
 status: planned
 ---
 
