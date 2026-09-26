@@ -3,7 +3,7 @@ title: DatabaseModels
 code-paths:
   - packages/database/prisma/schema.prisma
 
-last-verified: 2026-07-30
+last-verified: 2026-09-27
 status: planned
 ---
 
@@ -15,189 +15,300 @@ A shared PostgreSQL database stores business information for all client websites
 
 ### BusinessApiKey
 
-| Field      | Type                       | Notes                                                                                                     |
-| ---------- | -------------------------- | --------------------------------------------------------------------------------------------------------- |
-| id         | UUID                       | Primary key                                                                                               |
-| businessId | FK → [Business](#business) | Foreign key referencing the business that owns this key                                                   |
-| name       | String                     | Friendly name like "Production Website" or "Development". Businesses may have multiple websites later     |
-| keyHash    | String                     | The hashed API key                                                                                        |
-| keyPrefix  | String                     | Lets the dashboard display something like `bp_abc1234...` so the owner knows which key they're looking at |
-| isActive   | Boolean                    | Quick enable/disable without deleting                                                                     |
+| Field        | Type                  | Notes                                                |
+| ------------ | --------------------- | ---------------------------------------------------- |
+| `id`         | String                | Primary key (UUID)                                   |
+| `businessId` | String                |                                                      |
+| `name`       | String                | Name used to identify the key                        |
+| `keyHash`    | String                | Unique hash of the API key                           |
+| `keyPrefix`  | String                | Prefix shown to identify the key                     |
+| `isActive`   | Boolean               | Defaults to true; controls whether the key is active |
+| `createdAt`  | DateTime              | Creation timestamp                                   |
+| `updatedAt`  | DateTime              | Last update timestamp                                |
+| `business`   | [Business](#business) | Relation; deletes cascade                            |
+
+**Constraints and indexes:** `@@index([businessId])`.
 
 ### Business
 
-| Field      | Type                            | Notes                                                                                                               |
-| ---------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| id         | UUID                            | Primary key                                                                                                         |
-| name       | String                          | Business name                                                                                                       |
-| users      | [BusinessUser[]](#businessuser) | User connections for this business, including each user's role for this business                                    |
-| categories | [Category[]](#category)         | Menu categories owned by this business to help organize frontend menu page/s                                        |
-| contacts   | [Contact[]](#contact)           | Optional Contact records for the business                                                                           |
-| socials    | [Social[]](#social)             | Optional Social record media links                                                                                  |
-| locations  | [Location[]](#location)         | Exact locations; used for frontend world mapping                                                                    |
-| items      | [Item[]](#item)                 | All items owned by this business, even though items are also organized by category                                  |
-| slug       | String                          | Globally unique, system-generated URL-safe business identifier. Used to fetch business-specific data; business-name |
-| domain     | String?                         | Optional production domain per business app; business-name.com                                                      |
+| Field              | Type                                | Notes                               |
+| ------------------ | ----------------------------------- | ----------------------------------- |
+| `id`               | String                              | Primary key (UUID)                  |
+| `name`             | String                              |                                     |
+| `slug`             | String                              | Globally unique business slug       |
+| `domain`           | String?                             | Unique when present                 |
+| `imageKey`         | String?                             | Optional stored image key           |
+| `originalImageKey` | String?                             | Optional original image key         |
+| `createdAt`        | DateTime                            | Creation timestamp                  |
+| `updatedAt`        | DateTime                            | Last update timestamp               |
+| `users`            | [BusinessUser](#businessuser)[]     | Users and their business roles      |
+| `locations`        | [Location](#location)[]             | Locations that own business content |
+| `apiKeys`          | [BusinessApiKey](#businessapikey)[] | API keys for this business          |
 
 ### User
 
-| Field         | Type                            | Notes                                                     |
-| ------------- | ------------------------------- | --------------------------------------------------------- |
-| id            | UUID                            | Primary key                                               |
-| name          | String?                         | Optional user's name                                      |
-| username      | String?                         | Optional user's username                                  |
-| email         | String                          | Globally unique email/login identifier                    |
-| emailVerified | DateTime?                       | Optional timestamp for when the user's email was verified |
-| businesses    | [BusinessUser[]](#businessuser) | Businesses this user is connected to                      |
-| accounts      | [Account[]](#account)           | OAuth/provider accounts connected to this user            |
-| sessions      | [Session[]](#session)           | Active or saved login sessions for this user              |
-
-### Role
-
-| Field       | Type                                 | Notes                                                                           |
-| ----------- | ------------------------------------ | ------------------------------------------------------------------------------- |
-| id          | UUID                                 | Primary key                                                                     |
-| accessLevel | [AccessLevel](#access-level-choices) | owner, admin, staff                                                             |
-| description | String                               | Predefined description to help the user understand the access level permissions |
-| users       | [BusinessUser[]](#businessuser)      | Business-user connections using this role                                       |
-
-### Account
-
-| Field             | Type               | Notes                                                           |
-| ----------------- | ------------------ | --------------------------------------------------------------- |
-| id                | UUID               | Primary key                                                     |
-| userId            | FK → [User](#user) | Foreign key referencing the user who owns this provider account |
-| type              | String             | Account type used by Auth.js, such as oauth                     |
-| provider          | String             | OAuth provider name, such as google, twitter, facebook, etc.    |
-| providerAccountId | String             | Unique account ID from the OAuth provider                       |
-| refresh_token     | String?            | Optional refresh token from the provider                        |
-| access_token      | String?            | Optional access token from the provider                         |
-| expires_at        | Int?               | Optional expiration timestamp for the access token              |
-| token_type        | String?            | Optional token type, usually Bearer                             |
-| scope             | String?            | Optional OAuth permission scopes granted by the provider        |
-| id_token          | String?            | Optional ID token from the provider                             |
-| session_state     | String?            | Optional provider-specific session state                        |
-
-### Session
-
-| Field        | Type               | Notes                                      |
-| ------------ | ------------------ | ------------------------------------------ |
-| id           | UUID               | Primary key                                |
-| userId       | FK → [User](#user) | Foreign key referencing the logged-in user |
-| sessionToken | String             | Unique session token used by Auth.js       |
-| expires      | DateTime           | Timestamp for when the session expires     |
+| Field                  | Type                            | Notes                                 |
+| ---------------------- | ------------------------------- | ------------------------------------- |
+| `id`                   | String                          | Primary key (UUID)                    |
+| `name`                 | String?                         |                                       |
+| `username`             | String?                         |                                       |
+| `email`                | String                          | Unique email address                  |
+| `emailVerified`        | DateTime?                       |                                       |
+| `image`                | String?                         |                                       |
+| `onboardingCompleted`  | Boolean                         | Defaults to false                     |
+| `onboardingIntent`     | OnboardingIntent?               | Optional onboarding selection         |
+| `workspaceTourVersion` | Int                             | Workspace tour version; defaults to 0 |
+| `dashboardTourVersion` | Int                             | Dashboard tour version; defaults to 0 |
+| `createdAt`            | DateTime                        | Creation timestamp                    |
+| `updatedAt`            | DateTime                        | Last update timestamp                 |
+| `businesses`           | [BusinessUser](#businessuser)[] | Business memberships                  |
+| `accounts`             | [Account](#account)[]           | Linked provider accounts              |
+| `sessions`             | [Session](#session)[]           | User sessions                         |
 
 ### BusinessUser
 
-| Field      | Type                       | Notes                                                |
-| ---------- | -------------------------- | ---------------------------------------------------- |
-| id         | UUID                       | Primary key                                          |
-| businessId | FK → [Business](#business) | The business this user connection belongs to         |
-| userId     | FK → [User](#user)         | The user connected to the business                   |
-| roleId     | FK → [Role](#role)         | The role this user has inside this specific business |
+| Field        | Type                  | Notes                       |
+| ------------ | --------------------- | --------------------------- |
+| `id`         | String                | Primary key (UUID)          |
+| `businessId` | String                | Business in this membership |
+| `userId`     | String                | User in this membership     |
+| `roleId`     | String                | Role within this business   |
+| `createdAt`  | DateTime              | Creation timestamp          |
+| `updatedAt`  | DateTime              | Last update timestamp       |
+| `business`   | [Business](#business) | Relation; deletes cascade   |
+| `user`       | [User](#user)         | Relation; deletes cascade   |
+| `role`       | [Role](#role)         | Relation; deletes cascade   |
 
-### Category
+**Constraints and indexes:** `@@unique([businessId, userId])`.
 
-| Field       | Type                        | Notes                                                                                                 |
-| ----------- | --------------------------- | ----------------------------------------------------------------------------------------------------- |
-| id          | UUID                        | Primary key                                                                                           |
-| businessId  | FK → [Business](#business)  | The Business this category belongs to                                                                 |
-| parentId    | FK -> [Category](#category) | For more organization for a category (drinks -> cups, bottles, etc.)                                  |
-| name        | String                      | User defined Category name; Drinks, Orders, Beverages, Alcohol, Toppings, etc.                        |
-| description | String?                     | Optional category description                                                                         |
-| order       | Int                         | Helps display the Category in a specific order in the frontend; Orders(1) -> Toppings(2) -> Drinks(3) |
-| isVisible   | boolean                     | Whether the category appears on the public website (example; weekend special category)                |
-| items       | [Item[]](#item)             | Items inside this Category                                                                            |
+### Role
 
-### Contact
+| Field         | Type                            | Notes                          |
+| ------------- | ------------------------------- | ------------------------------ |
+| `id`          | String                          | Primary key (UUID)             |
+| `accessLevel` | AccessLevel                     | Unique access level            |
+| `description` | String                          | Role description               |
+| `createdAt`   | DateTime                        | Creation timestamp             |
+| `updatedAt`   | DateTime                        | Last update timestamp          |
+| `users`       | [BusinessUser](#businessuser)[] | Memberships assigned this role |
 
-| Field       | Type                       | Notes                                                                                          |
-| ----------- | -------------------------- | ---------------------------------------------------------------------------------------------- |
-| id          | UUID                       | Primary key                                                                                    |
-| businessId  | FK → [Business](#business) | The Business this contact belongs to                                                           |
-| phoneNumber | String?                    | Optional phone number to contact the business                                                  |
-| email       | String?                    | Optional email address to the business for any inquiries                                       |
-| isPersonal  | boolean                    | Whether the contact is business owned or their personal contact. Helps determine calling hours |
+### Account
 
-### Social
+| Field               | Type          | Notes                                        |
+| ------------------- | ------------- | -------------------------------------------- |
+| `id`                | String        | Primary key (UUID)                           |
+| `userId`            | String        |                                              |
+| `type`              | String        |                                              |
+| `provider`          | String        |                                              |
+| `providerAccountId` | String        | Account identifier at the provider           |
+| `refresh_token`     | String?       |                                              |
+| `access_token`      | String?       |                                              |
+| `expires_at`        | Int?          | Optional provider token expiration timestamp |
+| `token_type`        | String?       |                                              |
+| `scope`             | String?       |                                              |
+| `id_token`          | String?       |                                              |
+| `session_state`     | String?       |                                              |
+| `createdAt`         | DateTime      | Creation timestamp                           |
+| `updatedAt`         | DateTime      | Last update timestamp                        |
+| `user`              | [User](#user) | Relation; deletes cascade                    |
 
-| Field       | Type                       | Notes                                                                                 |
-| ----------- | -------------------------- | ------------------------------------------------------------------------------------- |
-| id          | UUID                       | Primary key                                                                           |
-| businessId  | FK → [Business](#business) | The Business record this social link belongs to                                       |
-| domain      | String                     | Predefined Social platform name; `instagram.com`, `twitter.com`, `facebook.com`, etc. |
-| profileName | String                     | Business Social platform account name; used at the end of the domain in url           |
-| url         | String                     | Predefined domain for Social URL profile; `${domain}/${profileName}`                  |
-| icon        | String                     | Predefined Icon images, must be supported; businesses/icons/socials/facebook.webp     |
+**Constraints and indexes:** `@@unique([provider, providerAccountId])`.
+
+### Session
+
+| Field          | Type          | Notes                     |
+| -------------- | ------------- | ------------------------- |
+| `id`           | String        | Primary key (UUID)        |
+| `sessionToken` | String        | Unique session token      |
+| `userId`       | String        |                           |
+| `expires`      | DateTime      | Session expiration        |
+| `user`         | [User](#user) | Relation; deletes cascade |
+
+### VerificationToken
+
+| Field        | Type     | Notes                   |
+| ------------ | -------- | ----------------------- |
+| `identifier` | String   | Verification identifier |
+| `token`      | String   | Verification token      |
+| `expires`    | DateTime | Token expiration        |
+
+**Constraints and indexes:** `@@unique([identifier, token])`.
 
 ### Location
 
-| Field       | Type                          | Notes                                                                                                                                                                                                    |
-| ----------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| id          | UUID                          | Primary key                                                                                                                                                                                              |
-| businessId  | FK → [Business](#business)    | The Business this location belongs to                                                                                                                                                                    |
-| address     | String                        | Street address                                                                                                                                                                                           |
-| zip         | String?                       | Optional ZIP/postal code                                                                                                                                                                                 |
-| country     | String?                       | Optional country                                                                                                                                                                                         |
-| state       | String?                       | Optional state                                                                                                                                                                                           |
-| city        | String?                       | Optional city                                                                                                                                                                                            |
-| parking     | boolean                       | Whether parking is available                                                                                                                                                                             |
-| isActive    | boolean                       | Is this location serving customers? Has this location temporarily closed?                                                                                                                                |
-| enableHours | boolean                       | defaulted to false, allows an hourly formate for rendering the locations hours for its days, else it just renders the locations opening days (can only be enabled when hours have been set for all days) |
-| days        | [LocationDay[]](#locationday) | The days this location is open                                                                                                                                                                           |
+| Field         | Type                          | Notes                                       |
+| ------------- | ----------------------------- | ------------------------------------------- |
+| `id`          | String                        | Primary key (UUID)                          |
+| `businessId`  | String                        | Owning business                             |
+| `address`     | String                        | Address; unique within the business         |
+| `zip`         | String?                       |                                             |
+| `country`     | String?                       |                                             |
+| `state`       | String?                       |                                             |
+| `city`        | String?                       |                                             |
+| `parking`     | Boolean                       | Defaults to false                           |
+| `isActive`    | Boolean                       | Defaults to true                            |
+| `enableHours` | Boolean                       | Defaults to false                           |
+| `createdAt`   | DateTime                      | Creation timestamp                          |
+| `updatedAt`   | DateTime                      | Last update timestamp                       |
+| `business`    | [Business](#business)         | Relation; deletes cascade                   |
+| `days`        | [LocationDay](#locationday)[] | Weekly days for this location               |
+| `categories`  | [Category](#category)[]       | Location-owned categories and subcategories |
+| `contacts`    | [Contact](#contact)[]         | Location-owned contact information          |
+| `socials`     | [Social](#social)[]           | Location-owned social profiles              |
+| `items`       | [Item](#item)[]               | Location-owned items                        |
+
+**Constraints and indexes:** `@@unique([businessId, address])`; `@@index([businessId])`.
 
 ### LocationDay
 
-| Field      | Type                       | Notes                                                         |
-| ---------- | -------------------------- | ------------------------------------------------------------- |
-| id         | UUID                       | Primary key                                                   |
-| locationId | FK → [Location](#location) | The Location the days belong to                               |
-| dayOfWeek  | DayOfWeek                  | Predefined days of the week; Monday, Tuesday, Wednesday, etc. |
-| isClosed   | Boolean                    | Whether the location is closed on this day                    |
-| hours      | [Hour[]](#hour)            | All the hours for this day, there should be no overlap        |
+| Field          | Type                  | Notes                                      |
+| -------------- | --------------------- | ------------------------------------------ |
+| `id`           | String                | Primary key (UUID)                         |
+| `locationId`   | String                |                                            |
+| `dayOfWeek`    | DayOfWeek             | Weekday; unique within the location        |
+| `isClosed`     | Boolean               | Defaults to true                           |
+| `syncGroupId`  | String?               | Optional group used to synchronize records |
+| `isSynced`     | Boolean               | Defaults to false                          |
+| `createdAt`    | DateTime              | Creation timestamp                         |
+| `updatedAt`    | DateTime              | Last update timestamp                      |
+| `hour`         | [Hour](#hour)?        | Optional regular hour for this weekday     |
+| `specialHours` | [Hour](#hour)[]       | Special hour ranges for this weekday       |
+| `location`     | [Location](#location) | Relation; deletes cascade                  |
+
+**Constraints and indexes:** `@@unique([locationId, dayOfWeek])`; `@@index([locationId])`.
 
 ### Hour
 
-| Field         | Type                              | Notes                                                              |
-| ------------- | --------------------------------- | ------------------------------------------------------------------ |
-| id            | UUID                              | Primary key                                                        |
-| locationDayId | FK -> [LocationDay](#locationday) | The Days the hours belong to                                       |
-| openTime      | String?                           | Opening time; 09:00                                                |
-| closeTime     | String?                           | Closing time; 21:00                                                |
-| title         | String?                           | Optional title for the hours set (Happy Hour)                      |
-| note          | String?                           | Optional note about the hours (selling specials only at this hour) |
-| isDisabled    | boolean                           | Disables the hours set (prevents full deletion)                    |
+| Field          | Type                         | Notes                                          |
+| -------------- | ---------------------------- | ---------------------------------------------- |
+| `id`           | String                       | Primary key (UUID)                             |
+| `openTime`     | String                       | Opening time stored as a string                |
+| `closeTime`    | String                       | Closing time stored as a string                |
+| `title`        | String?                      | Optional hour title                            |
+| `note`         | String?                      | Optional note                                  |
+| `isDisabled`   | Boolean                      | Defaults to false                              |
+| `syncGroupId`  | String?                      | Optional group used to synchronize records     |
+| `isSynced`     | Boolean                      | Defaults to false                              |
+| `createdAt`    | DateTime                     | Creation timestamp                             |
+| `updatedAt`    | DateTime                     | Last update timestamp                          |
+| `regularDayId` | String?                      | Optional, unique weekday ID for a regular hour |
+| `regularDay`   | [LocationDay](#locationday)? | Weekday for this regular hour                  |
+| `specialDayId` | String?                      | Optional weekday ID for a special hour         |
+| `specialDay`   | [LocationDay](#locationday)? | Weekday for this special hour                  |
+
+**Constraints and indexes:** `@@unique([specialDayId, openTime, closeTime])`; `@@index([specialDayId])`.
+
+### Category
+
+| Field           | Type                  | Notes                                      |
+| --------------- | --------------------- | ------------------------------------------ |
+| `id`            | String                | Primary key (UUID)                         |
+| `locationId`    | String                | Owning location                            |
+| `parentId`      | String?               | Optional parent category ID                |
+| `name`          | String                |                                            |
+| `description`   | String?               |                                            |
+| `order`         | Int                   | Display order; defaults to 1               |
+| `isVisible`     | Boolean               | Defaults to true                           |
+| `syncGroupId`   | String?               | Optional group used to synchronize records |
+| `isSynced`      | Boolean               | Defaults to false                          |
+| `createdAt`     | DateTime              | Creation timestamp                         |
+| `updatedAt`     | DateTime              | Last update timestamp                      |
+| `location`      | [Location](#location) | Relation; deletes cascade                  |
+| `parent`        | Category?             | Optional parent category                   |
+| `subcategories` | Category[]            | Child categories                           |
+| `items`         | [Item](#item)[]       | Items in this category                     |
+
+**Constraints and indexes:** `@@unique([locationId, parentId, name])`; `@@index([locationId, parentId])`; `@@index([syncGroupId])`.
+
+### Contact
+
+| Field         | Type                  | Notes                                      |
+| ------------- | --------------------- | ------------------------------------------ |
+| `id`          | String                | Primary key (UUID)                         |
+| `locationId`  | String                | Owning location                            |
+| `phoneNumber` | String?               | Optional phone number                      |
+| `email`       | String?               | Optional contact email                     |
+| `isPersonal`  | Boolean               | Defaults to false                          |
+| `syncGroupId` | String?               | Optional group used to synchronize records |
+| `isSynced`    | Boolean               | Defaults to false                          |
+| `createdAt`   | DateTime              | Creation timestamp                         |
+| `updatedAt`   | DateTime              | Last update timestamp                      |
+| `location`    | [Location](#location) | Relation; deletes cascade                  |
+
+**Constraints and indexes:** `@@index([locationId])`; `@@index([syncGroupId])`.
+
+### Social
+
+| Field         | Type                  | Notes                                      |
+| ------------- | --------------------- | ------------------------------------------ |
+| `id`          | String                | Primary key (UUID)                         |
+| `locationId`  | String                | Owning location                            |
+| `domain`      | String                | Social platform domain                     |
+| `profileName` | String                | Profile identifier                         |
+| `url`         | String                | Profile URL                                |
+| `icon`        | String                | Icon reference                             |
+| `syncGroupId` | String?               | Optional group used to synchronize records |
+| `isSynced`    | Boolean               | Defaults to false                          |
+| `createdAt`   | DateTime              | Creation timestamp                         |
+| `updatedAt`   | DateTime              | Last update timestamp                      |
+| `location`    | [Location](#location) | Relation; deletes cascade                  |
+
+**Constraints and indexes:** `@@unique([locationId, domain, profileName])`; `@@index([locationId])`; `@@index([syncGroupId])`.
 
 ### Item
 
-| Field        | Type                          | Notes                                                                                                                |
-| ------------ | ----------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| id           | UUID                          | Primary key                                                                                                          |
-| businessId   | FK → [Business](#business)    | The Business this item belongs to                                                                                    |
-| categoryId   | FK → [Category](#category)    | The Category this item belongs to                                                                                    |
-| name         | String                        | Item name; Bottle Water                                                                                              |
-| description  | String?                       | Optional item description                                                                                            |
-| containsList | string[]                      | List of what the item contains to help with the frontend; tomato, onions, salt, pepper, etc.                         |
-| calories     | Int?                          | Optional calorie count                                                                                               |
-| price        | decimal                       | The price of the Item which should not include the "$" sign; 1.99, 5, 2.5                                            |
-| order        | Int                           | Helps display the Item in a specific order in the frontend; Cheese Burger(1) -> Double Cheese Burger(2) -> Combo(3)  |
-| isAvailable  | boolean                       | Whether the item is available/displayed (example; seasonal items)                                                    |
-| slug         | String                        | System-generated URL-safe identifier. Must be unique inside the business; bottle-water                               |
-| imageKey     | String?                       | Optional image storage key that uses AWS S3 Buckets; businesses/business-slug/menu-items/bottle-water-ITEM_UUID.webp |
-| options      | [ItemOptions[]](#itemoptions) | When there are multiple options for this item (e.g. different meat prices; small, medium, or large prices)           |
+| Field              | Type                        | Notes                                      |
+| ------------------ | --------------------------- | ------------------------------------------ |
+| `id`               | String                      | Primary key (UUID)                         |
+| `locationId`       | String                      | Owning location                            |
+| `categoryId`       | String                      | Category containing this item              |
+| `name`             | String                      |                                            |
+| `description`      | String?                     |                                            |
+| `containsList`     | String[]                    | List of item contents                      |
+| `calories`         | Int?                        |                                            |
+| `price`            | Decimal                     | Price with precision 10, scale 2           |
+| `order`            | Int                         | Display order; defaults to 1               |
+| `isAvailable`      | Boolean                     | Defaults to true                           |
+| `slug`             | String                      | Unique within the location                 |
+| `imageKey`         | String?                     | Optional image storage key                 |
+| `originalImageKey` | String?                     | Optional original image key                |
+| `syncGroupId`      | String?                     | Optional group used to synchronize records |
+| `isSynced`         | Boolean                     | Defaults to false                          |
+| `createdAt`        | DateTime                    | Creation timestamp                         |
+| `updatedAt`        | DateTime                    | Last update timestamp                      |
+| `location`         | [Location](#location)       | Relation; deletes cascade                  |
+| `category`         | [Category](#category)       | Relation; deletes cascade                  |
+| `options`          | [ItemOption](#itemoption)[] | Options for this item                      |
 
-### ItemOptions
+**Constraints and indexes:** `@@unique([locationId, slug])`; `@@index([locationId])`; `@@index([categoryId])`; `@@index([syncGroupId])`.
 
-| Field       | Type               | Notes                                                                                               |
-| ----------- | ------------------ | --------------------------------------------------------------------------------------------------- |
-| id          | UUID               | Primary key                                                                                         |
-| itemId      | FK → [Item](#item) | The Item this option belongs to                                                                     |
-| name        | String             | Option name; small, medium, large                                                                   |
-| price       | Int                | The individual price for this option (overides the price from item.price)                           |
-| order       | Int                | Helps display the ItemOption in a specific order in the frontend; small(1) -> medium(2) -> large(3) |
-| isAvailable | boolean            | Whether the option is available/displayed (example; out of stock)                                   |
+### ItemOption
+
+| Field         | Type          | Notes                                      |
+| ------------- | ------------- | ------------------------------------------ |
+| `id`          | String        | Primary key (UUID)                         |
+| `itemId`      | String        | Owning item                                |
+| `name`        | String        |                                            |
+| `price`       | Decimal       | Option price with precision 10, scale 2    |
+| `order`       | Int           | Display order; defaults to 1               |
+| `isAvailable` | Boolean       | Defaults to true                           |
+| `syncGroupId` | String?       | Optional group used to synchronize records |
+| `isSynced`    | Boolean       | Defaults to false                          |
+| `createdAt`   | DateTime      | Creation timestamp                         |
+| `updatedAt`   | DateTime      | Last update timestamp                      |
+| `item`        | [Item](#item) | Relation; deletes cascade                  |
+
+**Constraints and indexes:** `@@unique([itemId, name])`; `@@index([itemId])`; `@@index([syncGroupId])`.
 
 ## Enums
+
+### OnboardingIntent
+
+| Value     | Label     | Meaning                                          |
+| --------- | --------- | ------------------------------------------------ |
+| staff     | Staff     | Intent to be a staff member at a business        |
+| business  | Business  | Intent to create a business                      |
+| developer | Developer | Intent to develop client websites for a business |
 
 ### AccessLevel
 
@@ -226,44 +337,25 @@ A shared PostgreSQL database stores business information for all client websites
 - **Business User Join Model:** A user account can be connected to more than one business. The `BusinessUser` model stores the JOIN relationship between a user and a business, including the user's role for that specific business. This allows the same email account to be an admin for one business and staff for another.
 - **Role Organization:** Roles are kept in their own model instead of being stored directly on `User`. This keeps access-level data organized and leaves room to add more role-related fields later.
 - **Contacts Info:** A business can be self owned, which in most cases they might just use their mobile phone. Another business might be using a dedicated business number which is only accessible in the business location (e.g. landline). Providing this information would allow the frontend to demonstrate calling hours that would link to the location hours.
-- **Menu Ordering:** Every business should have one or many categories to organize their menu items and each category should have one or many items in them. The field `order` allows for manual organization to tell where each set goes. They might want drinks to go before alcohol, or they might want to switch the order a menu item is displayed to show more popular items first. There should be a button to manually change the order number which will swap the two sets (categories, items, or item options).
-- **Social Media Linkage:** Not all businesses have a social media to promote their own business. But when they do they will be able to select from a predefined set of data for the social media we provide. This is to avoid malicious redirects to an unsafe site where the user could write to a phishing link.
-- **Social Media URL Field:** When creating a Social model it must be created with a `url` value for its field. However, the url itself is not created entirly by the user. The domain (predefined values) is used for the url which the user has no control of modifying. For example, `domain=instagram.com`, then url will be the complete url for the businesses social media profile at `https://${domain}/${profileName}`. At times, this can be wrong, so the user must validate first before confirming the changes.
-- **Location Hours:** A business can have one or many locations and each location can have one or more hours to show per day of the week when the business is available at that location. Open and close times are required for each day set unless it is typically closed on that specified day through `isClosed` where open and close times will be disabled. If there is a split in hours, provide the same day with a different open and close time; there should be no overlap (handled by api).
-
-This schema supports structures like:
-
-```json
-{
-  "business": {
-    "locations": [
-      {
-        "addressOne": "Example St.",
-        "days": [
-          {
-            "dayOfWeek": "Monday",
-            "hours": {
-              "openTime": "9:00",
-              "closeTime": "20:00"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-- **isClosed field in LocationDay:** This field determines if the location is open on the day specified via `dayOfWeek`. This should only grey out the hours on the specified day to prevent there deletion incase the business decides to open back on that day (using the previously set hours).
-- **Locations Frontend:** For every location, there is a location hours for each day created. When rendered in the frontend, it should only populate cards were days are created in a table in weekday format (not like a month calender). From that table, the user should be able to click a button to expand a days hours or they can continue to view all weekdays hours as normally. The user should be able to click a button that ask for which weekday, if they would like to title the hour (Happy Hour, etc.), a note of what this hours mean (if necessary) and to set its hours. By clicking on one of the weekday hour cards they can edit the title, note, hours, disable it or delete the record. In addition to changing the hours, they can also use the hold and drag interaction to extend or shorten the hour (no overlap or closeTime<=openTime or openTime>=closeTime).
-- **Contains List:** `containsList` is stored as a list of strings so the frontend can render item contents individually instead of parsing one long text field.
-- **Business Api Key:** If you are the developer of the business then you will be given access to generating an Api key for the business website. Once generated the key will reveal itself ONLY ONCE, a `keyPrefix` displays the Api key up to 10 characters of the total hashed string for reference sake. If the developer forgot or lost their key they must regenerate the key again and use that in their .env file.
+- **Synchronization:** A business can have many items but some locations may not serve that. Thats where synchronization helps. Synchronization makes sure to add the same record (category, item, contacts, socials, days, hours) to all locations so that when you make any new additions they all get updated equally. Synchronization can also be disabled on creation to make that record unique. If a record has a syncGroupId and its sync is disabled changes to that record will not be shared. If this is later enabled again then the new changes overwrite all records.
+- **Menu Ordering:** Every business location should have one or many categories to organize their menu items and each category should have one or many items in them. The field `order` allows for manual organization to tell where each set goes. They might want drinks to go before alcohol, or they might want to switch the order a menu item is displayed to show more popular items first or to organize the menu in a relative order (1: Breakfast, 2: Dinner, 3: Drinks, ...). There should be a button to manually change the order number which will swap the two sets (categories, items, or item options).
+- **Social Media Linkage:** Not all businesses have a social media to promote their own business. But when they do they will be able to select from a predefined set of data for the social media we provide. This is to avoid malicious redirects to an unsafe site where the user could write to a phishing link. All links reference the supported media we provide by their domain followed by there profile name.
+- **Social Media URL Field:** When creating a Social model it must be created with a `url` value for its field. However, the url itself is not created entirly by the user. The domain (a predefined value) is used for the url which the user has no control of modifying. For example, `domain=instagram.com`, then url will be the complete url for the businesses social media profile at `https://${domain}/${profileName}`.
+- **Location Hours:** A business can have one or many locations and each location can have one or more hours to show per day of the week when the business is available at that location. Each location includes open and closing hours with optional special hours. Special hours must not overlap (handled by api). Hours come with a title and note for extra context of the hours (e.g., breakfast special hours, happy hour, etc).
+- **Contains List:** `containsList` is stored as an array of strings so the frontend can render item contents individually instead of parsing one long text field. Example: ["pepper", "salt", "chicken", "basil", "lemon"]
+- **Business Api Keys:** If you are the developer of the business then you will be given access to generating an Api key for the business website. Once generated the key will reveal itself ONLY ONCE, a `keyPrefix` displays the Api key up to 10 characters of the total hashed string for reference sake. If the developer forgot or lost their key they must regenerate the key again and use that in their .env file.
 
 ## Slug Design Choice
 
 Slugs are system-generated URL-safe identifiers and locked. They are used for routing, public URLs, and stable data fetching.
 
 Business users should not directly edit slugs because invalid or changed slugs could break public pages, image references, or existing links.
+
+The only location where slugs are editable are in the items name change to help serve a function to search for items like this:
+
+https://client-page.com/`<locationAddress>`/`categoryName`/`<itemSlug>`
+
+Where the itemSlug is required but the other two params are optional. This will then send the params to the api route where it will search based on those values.
 
 ### Slug Rules
 
@@ -290,17 +382,6 @@ Business users should not directly edit slugs because invalid or changed slugs c
 | Business | Used to identify and fetch business-specific data. |
 | Item     | Used for future item pages and stable item URLs.   |
 
-## Database Constraints
-
-| Model        | Constraint                   | Reason                                                                                                  |
-| ------------ | ---------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Business     | `slug` unique                | Each business needs one stable public identifier.                                                       |
-| Business     | `domain` unique when present | Two businesses should not use the same production domain.                                               |
-| User         | `email` unique               | One real account per email address.                                                                     |
-| BusinessUser | `businessId + userId` unique | The same user should not be added to the same business twice.                                           |
-| Category     | `businessId + name` unique   | Prevents duplicate category names inside the same business.                                             |
-| Item         | `businessId + slug` unique   | Allows different businesses to have the same item slug while preventing duplicates inside one business. |
-
 ## Out of Scope
 
 - **Normal Customer Accounts:** At times some businesses would like to have normal user logins to encourage a point system. However, at this time, that would require additional models and at times a custom model for only that business. After MVP it is possible to integrate this feature but it is not a priority for the MVP.
@@ -312,34 +393,40 @@ Business users should not directly edit slugs because invalid or changed slugs c
 
 ```txt
 Business
+├── BusinessApiKey[]
 ├── BusinessUser[]
-│     ├── User
-│     └── Role
-├── Category[]
-│     └── Item[]
-|       └── ItemOption[]
-├── Contact[]
-├── Social[]
-├── Location[]
-│     └── LocationDay[]
-|           └── Hours[]
-└── Item[]
-      └── ItemOption[]
+└── Location[]
+    ├── LocationDay[]
+    │   ├── hour? → Hour (regular)
+    │   └── specialHours[] → Hour
+    ├── Category[]
+    │   ├── parent? / subcategories[] → Category
+    │   └── items[]
+    ├── Contact[]
+    ├── Social[]
+    └── Item[]
 ```
+
+`Item` has both `locationId` and `categoryId`. `Location.items` and `Category.items` refer to item records through those separate foreign keys. Category, Contact, Social, and Item records belong to locations, not directly to businesses.
 
 ### Ownership / Foreign Keys
 
-```txt
-BusinessUser.businessId → Business.id
-BusinessUser.userId     → User.id
-BusinessUser.roleId     → Role.id
-Category.businessId     → Business.id
-Contact.businessId      → Business.id
-Social.businessId       → Business.id
-Location.businessId     → Business.id
-LocationDay.locationId  → Location.id
-Hour.locationDay        → locationDay.id
-Item.businessId         → Business.id
-Item.categoryId         → Category.id
-ItemOption.itemId       → Item.id
-```
+| Foreign key                 | References       | On delete |
+| --------------------------- | ---------------- | --------- |
+| `BusinessApiKey.businessId` | `Business.id`    | Cascade   |
+| `BusinessUser.businessId`   | `Business.id`    | Cascade   |
+| `BusinessUser.userId`       | `User.id`        | Cascade   |
+| `BusinessUser.roleId`       | `Role.id`        | Cascade   |
+| `Account.userId`            | `User.id`        | Cascade   |
+| `Session.userId`            | `User.id`        | Cascade   |
+| `Location.businessId`       | `Business.id`    | Cascade   |
+| `LocationDay.locationId`    | `Location.id`    | Cascade   |
+| `Hour.regularDayId`         | `LocationDay.id` | Cascade   |
+| `Hour.specialDayId`         | `LocationDay.id` | Cascade   |
+| `Category.locationId`       | `Location.id`    | Cascade   |
+| `Category.parentId`         | `Category.id`    | Restrict  |
+| `Contact.locationId`        | `Location.id`    | Cascade   |
+| `Social.locationId`         | `Location.id`    | Cascade   |
+| `Item.locationId`           | `Location.id`    | Cascade   |
+| `Item.categoryId`           | `Category.id`    | Cascade   |
+| `ItemOption.itemId`         | `Item.id`        | Cascade   |
