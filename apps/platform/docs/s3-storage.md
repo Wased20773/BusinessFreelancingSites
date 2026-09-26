@@ -5,10 +5,13 @@ code-path:
   - /platform/src/lib/s3/upload.ts
   - /platform/src/lib/s3/delete.ts
   - /platform/src/lib/s3/client.ts
+  - /platform/src/lib/s3/copy.ts
+  - /platform/src/lib/s3/get-url.ts
   - /platform/src/lib/images/process.ts
-  - /platform/src/app/api/admin/items/[itemId]/image/route.ts
+  - /platform/src/app/api/businesses/[businessId]/locations/[locationId]/items/[itemId]/image/route.ts
+  - /platform/src/app/api/businesses/[businessId]/locations/[locationId]/items/[itemId]/route.ts
 
-last-verified: 2026-08-07
+last-verified: 2026-09-26
 status: planned
 ---
 
@@ -204,7 +207,7 @@ HEIC/ HEIF & AVIF are common image formats when taken from a mobile device. Unle
 
 ## Stored Format
 
-All uploaded images are converted to **WebP** before being stored in Amazon S3.
+All uploaded images are compared to a **WebP** file extension version of the original image before being stored in Amazon S3. **WebP** is natrually more efficient and smaller than their counterparts while still providing the same quality. This allows us to provide faster load times, lower storage and cut on bandwidth cost.
 
 Regardless of whether the original upload is:
 
@@ -218,15 +221,14 @@ the stored object becomes:
 ITEM_UUID.webp
 ```
 
+only if `webp` is the more optimal choice.
+
 ### Benefits
 
 - Smaller file sizes
 - Faster downloads
 - Lower bandwidth usage
-- Consistent object naming
 - Simpler frontend rendering
-
-Videos are excluded from this conversion.
 
 ### Sharp
 
@@ -246,7 +248,7 @@ businesses/{businessId}/categories/{categoryId}.webp
 
 ### Business Logo
 
-If a business does decide to change their logo from the default they provided, they can easily upload it and it would replace both frontend logo and tab icon by adding it as a new logo image upload. tab icon would require a separate path due to the size of them. So in future iterations the schema for Business can add `logoKey` and `tabKey` as optional string rows. Then the tab icon would be generated through MetaData where it can generate the title and tab icon link from the S3 bucket.
+If a business does decide to change their logo from the default they provided, they can easily replace it and it would affect both frontend logo and the tab icon immediately after. The tab icon might require a separate path due to the size of them. So in future iterations the schema for Business can add `logoKey` and `tabKey` as optional string rows. Then the tab icon would be generated through MetaData where it can generate the title and tab icon link from the S3 bucket.
 
 ```txt
 businesses/{businessId}/logo.webp
@@ -254,20 +256,36 @@ businesses/{businessId}/logo.webp
 
 ### Gallery Images
 
-When the user might want a gallery of images, not related to the menu, logo, or videos. This would be a place where if the business needs are to present images of their business throughout their front-facing web page. A Frontend example could be a carousel slider or a homepage with a hero with sliding images, or special images to separate content from each other like divider images or background images throughout the web page.
+When the user might want a gallery of images, not related to the menu, logo, or videos. This would be a place where if the business needs are to present images of their business throughout their front-facing web page. A Frontend example could be a carousel slider or a homepage with a hero with sliding images, or special images to separate content from each other like divider images or background images throughout the web page. To further support this design, the gallery could be stored as a hashmap where the key is defined in the dashboard.
+
+An example of this cold be creating a gallery for the "hero images", and "about us" images
+
+```json
+"gallery": {
+    "hero": ["heroKeyOne","heroKeyTwo"],
+    "about": ["aboutKeyOne","aboutKeyTwo","aboutKeyThree"]
+}
+```
+
+Then they will be stored within there context:
+
+```txt
+businesses/{businessId}/gallery/hero/{imageId}.webp
+businesses/{businessId}/gallery/about/{imageId}.webp
+```
 
 > NOTE: There is no schema for Gallery or any document drafting the use case for Gallery
 
 ```txt
-businesses/{businessId}/gallery/{imageId}.webp
+businesses/{businessId}/gallery/{key}/{imageId}.webp
 ```
 
 ### Videos
 
-This would be great if the business needs are to present short clips on a card for UX. This can also be used for things like gifs but it might be better to separate that logic in a different object key prefix.
+This would be great if the business needs are to present short clips on a card for UX. This can also be used for things like gifs but it might be better to separate that logic in a different object key prefix, keeping it in the gallery as a gif type rather than image, or to leave that up to the developers existing tools. Just like the gallery, we can store it in a hashmap.
 
 ```txt
-businesses/{businessId}/videos/{videoId}.mp4
+businesses/{businessId}/videos/{key}/{videoId}.mp4
 ```
 
 Video uploads will use a separate validation and processing pipeline.
@@ -305,13 +323,3 @@ businesses/{businessId}/items/{itemId}.webp
 ```
 
 Public URLs are generated when needed in the frontend.
-
-### Separation of Responsibilities
-
-Route handlers coordinate requests.
-
-Media processing prepares files.
-
-S3 helpers communicate with Amazon S3.
-
-Each layer has a single responsibility.
