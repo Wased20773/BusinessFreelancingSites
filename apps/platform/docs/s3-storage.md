@@ -288,7 +288,9 @@ This would be great if the business needs are to present short clips on a card f
 businesses/{businessId}/videos/{key}/{videoId}.mp4
 ```
 
-Video uploads will use a separate validation and processing pipeline.
+Video uploads will use a separate validation and processing pipeline. Only links will need to be stored.
+
+NOTE: Is it better to save video ID's or video links as the object key.
 
 ## Design Decisions
 
