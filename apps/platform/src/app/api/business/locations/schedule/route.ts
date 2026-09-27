@@ -14,21 +14,9 @@ const DAY_ORDER = [
   "Sunday",
 ] as const;
 
-// GET /api/business/locations/[locationId]/schedule
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ locationId: string }> },
-): Promise<NextResponse> {
+// GET /api/business/locations/schedule
+export async function GET(request: Request): Promise<NextResponse> {
   try {
-    const { locationId } = await params;
-
-    if (!locationId) {
-      return NextResponse.json(
-        { error: "Missing locationId" },
-        { status: 400 },
-      );
-    }
-
     const authentication = await authenticateBusinessReadAccess(request, [
       AccessLevel.developer,
       AccessLevel.owner,
@@ -44,6 +32,8 @@ export async function GET(
 
     if (rateLimit instanceof NextResponse) return rateLimit;
 
+    const { locationId } = await authentication;
+
     const location = await prisma.location.findFirst({
       where: {
         id: locationId,
@@ -51,7 +41,16 @@ export async function GET(
       },
       select: {
         id: true,
-        businessId: true,
+        address: true,
+        zip: true,
+        country: true,
+        state: true,
+        city: true,
+        parking: true,
+        isActive: true,
+        enableHours: true,
+        createdAt: true,
+        updatedAt: true,
         days: {
           select: {
             id: true,

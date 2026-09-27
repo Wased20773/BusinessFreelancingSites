@@ -23,15 +23,9 @@ export async function GET(request: Request): Promise<NextResponse> {
     authentication.locationId,
     {
       categories: {
-        // Only return parent categories at the root level.
-        where: {
-          parentId: null,
-        },
-
-        orderBy: {
-          order: "asc",
-        },
-
+        // Parent categories at the root level.
+        where: { parentId: null },
+        orderBy: { order: "asc" },
         select: {
           id: true,
           locationId: true,

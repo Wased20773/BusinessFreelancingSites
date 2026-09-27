@@ -89,15 +89,12 @@ export default function EditBusinessDaysPage() {
       try {
         const locationToast = toast.promise<LocationJson>(
           axios
-            .get<LocationJson>(
-              `/api/business/locations/${locationId}/schedule`,
-              {
-                headers: {
-                  "x-business-id": businessId,
-                  "x-location-id": locationId,
-                },
+            .get<LocationJson>(`/api/business/locations/schedule`, {
+              headers: {
+                "x-business-id": businessId,
+                "x-location-id": locationId,
               },
-            )
+            })
             .then((response) => response.data),
           {
             loading: "Loading business days...",

@@ -33,7 +33,6 @@ export async function GET(request: Request): Promise<NextResponse> {
             description: true,
             order: true,
             isVisible: true,
-            items: true,
             subcategories: true,
 
             ...(authentication.authenticationType === "session"

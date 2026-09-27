@@ -77,15 +77,12 @@ export default function LocationPage() {
           }),
 
           // Get schedule data for the selected location.
-          axios.get<LocationJson>(
-            `/api/business/locations/${locationId}/schedule`,
-            {
-              headers: {
-                "x-business-id": businessId,
-                "x-location-id": locationId,
-              },
+          axios.get<LocationJson>(`/api/business/locations/schedule`, {
+            headers: {
+              "x-business-id": businessId,
+              "x-location-id": locationId,
             },
-          ),
+          }),
         ]).then(([locationsResponse, scheduleResponse]) => ({
           locations: locationsResponse.data,
           schedule: scheduleResponse.data,

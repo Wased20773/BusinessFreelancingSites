@@ -6,9 +6,9 @@ code-paths:
   - apps/platform/src/app/api/business/locations
   - apps/platform/src/app/api/business/menu
   - apps/platform/src/app/api/business/socials
-  - apps/platform/src/app/api/business/route.ts
+  - apps/platform/src/app/api/business
 
-last-verified: 2026-07-31
+last-verified: 2026-09-26
 status: planned
 ---
 
@@ -38,7 +38,20 @@ External client websites must provide a valid Business Platform API key using th
 Authorization: Bearer bp_example_key
 ```
 
-You can read more about creating your own Business Platform Api key via the POST request in [docs/api_routes/adminAPI.md#post-apiadminapi-keys](../../docs/api_routes/adminAPI.md#post-apiadminapi-keys) document
+You can read more about creating your own Business Platform Api key via the POST request in [docs/api_routes/adminAPI.md#post-apiadminapi-keys](../../docs/api_routes/adminAPI.md#post-apiadminapi-keys) document.
+
+### Sync Fields
+
+These will only show up in the dashboards authenticated session requests. Not all request return these fields however when they do they will look like this:
+
+```json
+"syncGroupId": "UUID",
+"isSynced": "Boolean"
+```
+
+This helps keep relavant records in sync when multiple locations contain the same record.
+
+When a response includes these fields there will be a `SYNC` badge next to the path.
 
 ## Business
 
@@ -48,12 +61,24 @@ Fetches basic public business information by slug.
 
 This route should only return the business model fields needed to identify and display the business. It should not return contacts, socials, locations, hours, or menu data.
 
-#### Returns
+#### Headers
 
-- Business id
-- Business name
-- Business slug
-- Domain
+| Key           | Type |
+| ------------- | ---- |
+| x-business-id | UUID |
+
+#### Response
+
+```json
+{
+  "id": "UUID",
+  "name": "String",
+  "slug": "String",
+  "domain": "String | null",
+  "createdAt": "DateTime",
+  "updatedAt": "DateTime"
+}
+```
 
 #### Used For
 
@@ -64,13 +89,34 @@ This route should only return the business model fields needed to identify and d
 
 ## Contacts
 
-### GET /api/business/contacts
+### GET /api/business/contacts `SYNC`
 
-Fetches public contact information for a business.
+Fetches public contact information for a businesses location.
 
-#### Returns
+### Headers
 
-- [Contact](../../../../packages/database/docs/database-models.md#contact)
+| Key           | Type |
+| ------------- | ---- |
+| x-location-id | UUID |
+| x-business-id | UUID |
+
+#### Response
+
+```json
+{
+  "contacts": [
+    {
+      "id": "UUID",
+      "locationId": "UUID",
+      "phoneNumber": "String | null",
+      "email": "String | null",
+      "isPersonal": "Boolean",
+      "createdAt": "DateTime",
+      "updatedAt": "DateTime"
+    }
+  ]
+}
+```
 
 #### Used For
 
@@ -80,13 +126,33 @@ Fetches public contact information for a business.
 
 ## Socials
 
-### GET /api/business/socials
+### GET /api/business/socials `SYNC`
 
-Fetches public social media links for a business.
+Fetches public social media links for a businesses location.
 
-#### Returns
+#### Headers
 
-- [Social](../../../../packages/database/docs/database-models.md#social)
+| Key           | Type |
+| ------------- | ---- |
+| x-location-id | UUID |
+| x-business-id | UUID |
+
+#### Response
+
+```json
+{
+  "socials": [
+    {
+      "id": "UUID",
+      "locationId": "UUID",
+      "domain": "String",
+      "profileName": "String",
+      "url": "String",
+      "icon": "String"
+    }
+  ]
+}
+```
 
 #### Used For
 
@@ -98,13 +164,33 @@ Fetches public social media links for a business.
 
 ### GET /api/business/locations
 
-Fetches active public locations for a business, including each location's working days and hours.
+Fetches all public locations for a business.
 
-#### Returns
+#### Headers
 
-- [Location](../../../../packages/database/docs/database-models.md#location)
-  - [LocationDay](../../../../packages/database/docs/database-models.md#locationday)
-    - [Hour](../../../../packages/database/docs/database-models.md#hour)
+| Key           | Type |
+| ------------- | ---- |
+| x-business-id | UUID |
+
+#### Response
+
+```json
+[
+  {
+    "id": "UUID",
+    "address": "String",
+    "zip": "String | null",
+    "country": "String | null",
+    "state": "String | null",
+    "city": "String | null",
+    "parking": "Boolean",
+    "isActive": "Boolean",
+    "enableHours": "Boolean",
+    "createdAt": "DateTime",
+    "updatedAt": "DateTime"
+  }
+]
+```
 
 #### Used For
 
@@ -112,49 +198,260 @@ Fetches active public locations for a business, including each location's workin
 - Footer address information
 - Homepage location section
 - Map/address display
-- Business hours display
+
+### GET api/business/locations/schedule
+
+Fetches the schedule for the specified location in a business. Also provides the location info specified in the header.
+
+#### Headers
+
+| Key           | Type |
+| ------------- | ---- |
+| x-location-id | UUID |
+| x-business-id | UUID |
+
+### Response
+
+```json
+{
+  "id": "UUID",
+  "address": "String",
+  "zip": "String",
+  "country": "String",
+  "state": "String",
+  "city": "String",
+  "parking": "Boolean",
+  "isActive": "Boolean",
+  "enabledHours": "Boolean",
+  "createdAt": "DateTime",
+  "updatedAt": "DateTime",
+  "days": [
+    {
+      "id": "UUID",
+      "locationId": "UUID",
+      "dayOfWeek": "Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday",
+      "isClosed": "Boolean",
+      "createdAt": "DateTime",
+      "updatedAt": "DateTime",
+      "hour": {
+        "id": "UUID",
+        "regularDayId": "UUID",
+        "openTime": "HH:MM",
+        "closeTime": "HH:MM",
+        "title": "String",
+        "note": "String",
+        "isDisabled": "Boolean",
+        "createdAt": "DateTime",
+        "updatedAt": "DateTime"
+      },
+      "specialHours": {
+        "id": "UUID",
+        "specialDayId": "UUID",
+        "openTime": "HH:MM",
+        "closeTime": "HH:MM",
+        "title": "String",
+        "note": "String",
+        "isDisabled": "Boolean",
+        "createdAt": "DateTime",
+        "updatedAt": "DateTime"
+      }
+    }
+  ]
+}
+```
 
 ## Categories
 
-### GET /api/business/categories
+### GET /api/business/categories `SYNC`
 
-Fetches all visible categories for a business, this does not include the items that come with it.
+Fetches all categories for a businesses location, including their subcategories.
 
-#### Returns
+#### Headers
 
-- [Category](../../../../packages/database/docs/database-models.md#category)
+| Key           | Type |
+| ------------- | ---- |
+| x-location-id | UUID |
+| x-business-id | UUID |
+
+#### Response
+
+```json
+{
+  "categories": [
+    {
+      "id": "UUID",
+      "locationId": "UUID",
+      "name": "String",
+      "description": "String | null",
+      "order": "Int",
+      "isVisible": "Boolean",
+      "subcategories": [],
+      "createdAt": "DateTime",
+      "updatedAt": "DateTime"
+    }
+  ]
+}
+```
+
+`subcategories` is the exact same as a category entry
 
 #### Used For
 
-- Public menu page
 - Category navigation
 - Homepage category previews
 
-## Menu
+### GET /api/business/categories/[categoryId] `SYNC`
 
-### GET /api/business/menu
+Fetches the specified category, including its subcategory, items and item options.
 
-Fetches public menu data for a business.
+NOTICE: If you want to get this data from all categories, please use [/api/business/menu](#get-apibusinessmenu-sync)
+route.
 
-This route returns categories, items, and item options because the public menu page usually needs the full menu tree.
+#### Headers
 
-#### Returns
+| Key           | Type |
+| ------------- | ---- |
+| x-location-id | UUID |
+| x-business-id | UUID |
 
-- [Category](../../../../packages/database/docs/database-models.md#category)
-- [Item](../../../../packages/database/docs/database-models.md#item)
-  - [ItemOptions](../../../../packages/database/docs/database-models.md#itemoptions)
+### Response
+
+```json
+{
+  "categories": [
+    {
+      "id": "UUID",
+      "locationId": "UUID",
+      "name": "String",
+      "description": "String | null",
+      "order": "Int",
+      "isVisible": "Boolean",
+      "items": [
+        {
+          "id": "UUID",
+          "locationId": "UUID",
+          "categoryId": "UUID",
+          "name": "String",
+          "description": "String | null",
+          "containsList": "String[]",
+          "calories": "Int",
+          "price": "String",
+          "order": "Int",
+          "isAvailable": "Boolean",
+          "slug": "String",
+          "imageKey": "String",
+          "createdAt": "DateTime",
+          "updatedAt": "DateTime",
+          "options": [
+            {
+              "id": "UUID",
+              "itemId": "UUID",
+              "name": "String",
+              "price": "String",
+              "order": "Int",
+              "isAvailable": "Boolean",
+              "createdAt": "DateTime",
+              "updatedAt": "DateTime"
+            }
+          ]
+        }
+      ],
+      "subcategories": [],
+      "createdAt": "DateTime",
+      "updatedAt": "DateTime"
+    }
+  ]
+}
+```
+
+`subcategories` is the exact same as a category entry
 
 #### Used For
 
-- Public menu page
-- Homepage featured menu section
-- Menu category sections
+- After category selection
+- Rendering data from the selected category
+
+## Menu
+
+### GET /api/business/menu `SYNC`
+
+Fetches all categories, their subcategories, and items with their options.
+
+This route returns the menu in full because the public menu page usually needs the full menu tree.
+
+NOTICE: If you only need one of the categories, please use [/api/business/categories/\[categoryId\]](#get-apibusinesscategoriescategoryid-sync)
+
+#### Headers
+
+| Key           | Type |
+| ------------- | ---- |
+| x-location-id | UUID |
+| x-business-id | UUID |
+
+#### Response
+
+```json
+{
+  "categories": [
+    {
+      "id": "UUID",
+      "locationId": "UUID",
+      "name": "String",
+      "description": "String | null",
+      "order": "Int",
+      "isVisible": "Boolean",
+      "items": [
+        {
+          "id": "UUID",
+          "locationId": "UUID",
+          "categoryId": "UUID",
+          "name": "String",
+          "description": "String | null",
+          "containsList": "String[]",
+          "calories": "Int",
+          "price": "String",
+          "order": "Int",
+          "isAvailable": "Boolean",
+          "slug": "String",
+          "imageKey": "String",
+          "createdAt": "DateTime",
+          "updatedAt": "DateTime",
+          "options": [
+            {
+              "id": "UUID",
+              "itemId": "UUID",
+              "name": "String",
+              "price": "String",
+              "order": "Int",
+              "isAvailable": "Boolean",
+              "createdAt": "DateTime",
+              "updatedAt": "DateTime"
+            }
+          ]
+        }
+      ],
+      "subcategories": [],
+      "createdAt": "DateTime",
+      "updatedAt": "DateTime"
+    }
+  ]
+}
+```
+
+`subcategories` is the exact same as a category entry
+
+#### Used For
+
+- Single page with full menu data (categories, subcategories, items, itemOptions)
+- Render all categories
 
 ## Menu Item
 
-### GET /api/business/menu/items/[itemSlug]
+NOTICE: This API path is currently being worked on and is therefor disabled. Planned to work with a location slug, category slug, and item slug for easier look up.
 
-Fetches one public menu item by its item slug.
+### GET /api/business/menu/items/[itemId]
+
+Fetches one public menu item by its itemId.
 
 This route is only needed if the public business site has individual item detail pages.
 
@@ -164,7 +461,7 @@ This route is only needed if the public business site has individual item detail
 | -------- | ------ | --------- |
 | itemSlug | string | each-taco |
 
-#### Returns
+#### Response
 
 - [Item](../../../../packages/database/docs/database-models.md#item)
   - [ItemOptions](../../../../packages/database/docs/database-models.md#itemoptions)
@@ -174,7 +471,3 @@ This route is only needed if the public business site has individual item detail
 - Public item detail page
 - Shareable item links
 - SEO-friendly item pages
-
-```
-
-```
