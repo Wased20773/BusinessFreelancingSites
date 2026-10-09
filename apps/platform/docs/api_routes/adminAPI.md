@@ -1,852 +1,1775 @@
 ---
 title: Admin API
-code-paths:
-  - /platform/src/app/api/admin/account
-  - /platform/src/app/api/admin/api-keys
-  - /platform/src/app/api/admin/business-user
-  - /platform/src/app/api/admin/categories
-  - /platform/src/app/api/admin/contacts
-  - /platform/src/app/api/admin/items/[itemId]
-  - /platform/src/app/api/admin/locations
-  - /platform/src/app/api/admin/socials
+code-paths  
+  - apps/platform/src/app/api/account
+  - apps/platform/src/app/api/businesses
+  - apps/platform/src/app/api/businesses/[businessId]
+  - apps/platform/src/app/api/businesses/[businessId]/api-keys
+  - apps/platform/src/app/api/businesses/[businessId]/image
+  - apps/platform/src/app/api/businesses/[businessId]/users
+  - apps/platform/src/app/api/businesses/[businessId]/locations
+  - apps/platform/src/app/api/user
+  - apps/platform/src/lib/auth/authenticateBusinessAccess.ts
+  - apps/platform/src/app/api/route_helper.ts
 
-last-verified: 2026-7-31
+last-verified: 2026-10-09
 status: planned
 ---
 
 # Admin API Routes
 
-Used by the platform admin dashboard to create, update, and delete business data.
+Used by the platform dashboard to create, update, and delete business data.
 
-All routes require an authenticated Auth.js session and verify that the user belongs to the current business with the required access level before performing any operation.
+These routes replace the deprecated `/api/admin/*` routes. Every business resource is now addressed through its business (and location) in the URL instead of being inferred from the session.
 
-To view the full JSON return values per route, go to [Admin API Responses](../../docs/api_routes/response/adminAPI.md).
+Go to [docs/api_routes/publicAPI.md](../../docs/api_routes/publicAPI.md) to view the read-only public route documentation.
 
 For the document describing how images are stored and managed, see [S3 Storage](../s3-storage.md).
 
 ## Authentication
 
-All /api/admin API routes require:
+All admin routes use the logged-in user's Auth.js session. These routes are exclusive to the platform dashboard and workspace and are not open to public access, so Business API keys are **never** accepted here. Client websites should use the [Public API](../../docs/api_routes/publicAPI.md) instead.
 
-- A valid Auth.js session.
-- The authenticated user must belong to the current business.
-- The user's access level must satisfy the route's required permissions.
+Routes under `/api/businesses/[businessId]` also verify that the user is linked to that business through a `BusinessUser` record and that their role is one of the route's allowed access levels. This is handled by `authenticateBusinessAccess()`.
 
-The current business is determined from the authenticated session.
+|     | Status                                                       | Reason |
+| --- | ------------------------------------------------------------ | ------ |
+| 401 | No valid session                                             |
+| 403 | User does not belong to the business, or role is not allowed |
 
-## Account
+Each route lists its allowed roles under **Access**. See [AccessLevel](../../../../packages/database/docs/database-models.md#accesslevel) for what each role means.
 
-### GET /api/admin/account
+## Route Params
 
-Fetches the logged-in user's account information and access level for the current business.
+Most routes share these params. They are not repeated in every route below.
 
-#### Returns
+| Param      | Type | Note                                |
+| ---------- | ---- | ----------------------------------- |
+| businessId | UUID | The `Business` the request acts on  |
+| locationId | UUID | The `Location` inside that business |
 
-- Name
-- Username
-- Email
-- image
-- BusinessUserId
-- [AccessLevel](../../../../packages/database/docs/database-models.md#access-level-choices)
-- Access Level Description
+Any other params (`categoryId`, `itemId`, etc.) are listed per route. Every child record is checked against its parent, so an `itemId` from another location will not be found.
 
-#### Used For
+## Sync Fields
 
-- Admin Dashboard
-  - Settings
+Contacts, socials, categories, items, item options, location days, and hours can be **synchronized** across every location of a business. Synced records share a `syncGroupId`.
 
-### GET /api/admin/account/search?email
+Routes that support this are marked with a `SYNC` badge and require one of these body fields:
 
-Fetches a user by email.
+| Method | Field             | Meaning                                                                                       |
+| ------ | ----------------- | --------------------------------------------------------------------------------------------- |
+| POST   | `isSynced`        | `true` creates the record in every location, `false` only in the selected location            |
+| PATCH  | `isSynced`        | `true` updates every synced record in the group, `false` updates (and un-syncs) only this one |
+| DELETE | `deleteAllSynced` | `true` deletes every synced record in the group, `false` deletes only this one                |
 
-#### Required Params
-
-| Param | Type   | Example          |
-| ----- | ------ | ---------------- |
-| email | string | `test@gmail.com` |
-
-#### Returns
-
-- Name
-- Username
-- email
-- image
-
-#### Used For
-
-- Finding users to add to your business
-
-### PATCH /api/admin/account
-
-Updates the logged-in user's public-facing account data.
-
-Example request body:
-
-> Updating your username (empty on creation)
+Synced requests return a summary instead of the record:
 
 ```json
 {
-  "username": "John123"
+  "message": "String",
+  "count": "Int",
+  "syncGroupId": "UUID"
 }
 ```
 
-## API Keys
+A record that was un-synced (`isSynced: false`) keeps its `syncGroupId` and is skipped by later synced updates and deletes until it is synced again.
 
-### GET /api/admin/api-keys
+Because DELETE routes read `deleteAllSynced`, they **require a JSON body**.
 
-Fetches all Business API keys belonging to the authenticated user's current business.
+## Account
 
-The full API key is never returned after creation. Only metadata used to identify the key is returned.
+Routes for the logged-in user's own account. These only require a session.
 
-#### Returns
+### GET /api/account
 
-- ApiKeyId
-- Name
-- Key Prefix
-- Active Status
-- Created Date
-- Updated Date
+Fetches the logged-in user's account.
+
+#### Response
+
+```json
+{
+  "id": "UUID",
+  "name": "String | null",
+  "username": "String | null",
+  "email": "String",
+  "image": "String | null",
+  "createdAt": "DateTime",
+  "updatedAt": "DateTime"
+}
+```
 
 #### Used For
 
-- Developer Dashboard
-  - API Key Management
+- Account settings
 
-### POST /api/admin/api-keys
+### PATCH /api/account
 
-Creates a new Business API key for the authenticated user's current business.
+Updates the logged-in user's name and/or username. At least one field is required.
 
-The generated API key is returned exactly once during creation. It cannot be retrieved again after this request.
+#### Request Body
+
+```json
+{
+  "name": "String",
+  "username": "String"
+}
+```
+
+#### Response
+
+Same as [GET /api/account](#get-apiaccount).
+
+## User
+
+Routes for per-user dashboard state. These only require a session.
+
+### PATCH /api/user/dashboard-tour
+
+Marks the dashboard tour as completed by saving the current tour version on the user.
+
+No request body.
+
+#### Response
+
+```json
+{
+  "dashboardTourVersion": "Int"
+}
+```
+
+### PATCH /api/user/workspace-tour
+
+Marks the workspace tour as completed by saving the current tour version on the user.
+
+No request body.
+
+#### Response
+
+```json
+{
+  "workspaceTourVersion": "Int"
+}
+```
+
+#### Used For
+
+- Hiding a tour once the user has finished it
+- Re-showing a tour when its version is bumped
+
+## Businesses
+
+### GET /api/businesses
+
+Fetches every business the logged-in user belongs to, oldest membership first. Only requires a session.
+
+#### Response
+
+```json
+[
+  {
+    "id": "UUID",
+    "role": {
+      "accessLevel": "owner | admin | staff | developer"
+    },
+    "business": {
+      "id": "UUID",
+      "name": "String",
+      "slug": "String",
+      "domain": "String | null"
+    }
+  }
+]
+```
+
+`id` is the `BusinessUser` id.
+
+#### Used For
+
+- Business switcher
+- Choosing which business to load after login
+
+### GET /api/businesses/[businessId]
+
+Fetches the business and the logged-in user's role in it.
+
+**Access:** `owner`, `admin`, `staff`, `developer`
+
+#### Response
+
+```json
+{
+  "id": "UUID",
+  "name": "String",
+  "slug": "String",
+  "domain": "String | null",
+  "imageKey": "String (URL) | null",
+  "originalImageKey": "String (URL) | null",
+  "createdAt": "DateTime",
+  "updatedAt": "DateTime",
+  "role": {
+    "accessLevel": "owner | admin | staff | developer",
+    "description": "String"
+  }
+}
+```
+
+`imageKey` and `originalImageKey` are returned as viewable URLs, not raw S3 keys.
+
+#### Used For
+
+- Dashboard header and business settings
+- Deciding which dashboard actions to show for the user's role
+
+### PATCH /api/businesses/[businessId]
+
+Updates the business name and/or domain. At least one field is required.
+
+`domain` is normalized (lowercased, spaces become hyphens, unsupported characters removed). The `slug` is not changed.
+
+**Access:** `owner`, `admin`
+
+#### Request Body
+
+```json
+{
+  "name": "String",
+  "domain": "String"
+}
+```
+
+#### Response
+
+```json
+{
+  "id": "UUID",
+  "name": "String",
+  "slug": "String",
+  "domain": "String | null",
+  "createdAt": "DateTime",
+  "updatedAt": "DateTime"
+}
+```
+
+## Business Image
+
+Business images are stored as two files: the cropped `image` shown on the site and the uncropped `originalImage` used to re-crop later.
+
+Images must be JPEG, PNG, or WebP and 10 MB or less.
+
+### POST /api/businesses/[businessId]/image
+
+Uploads the business image. Fails with `409` if the business already has one. Use PATCH to replace it.
+
+**Access:** `owner`, `admin`
+
+#### Request Body (multipart/form-data)
+
+| Key           | Type | Required |
+| ------------- | ---- | -------- |
+| image         | File | Yes      |
+| originalImage | File | Yes      |
+
+#### Response `201`
+
+```json
+{
+  "message": "String",
+  "business": {
+    "id": "UUID",
+    "imageKey": "String",
+    "originalImageKey": "String",
+    "updatedAt": "DateTime"
+  }
+}
+```
+
+### PATCH /api/businesses/[businessId]/image
+
+Replaces the business image. Fails with `409` if the business has no image yet.
+
+Send only `image` to re-crop the existing original. Send `originalImage` too when the user picked a new source image.
+
+**Access:** `owner`, `admin`
+
+#### Request Body (multipart/form-data)
+
+| Key           | Type | Required |
+| ------------- | ---- | -------- |
+| image         | File | Yes      |
+| originalImage | File | No       |
+
+#### Response
+
+Same shape as [POST](#post-apibusinessesbusinessidimage), with status `200`.
+
+### DELETE /api/businesses/[businessId]/image
+
+Removes both business images from the record and from S3.
+
+**Access:** `owner`, `admin`
+
+No request body.
+
+#### Response
+
+Same shape as [POST](#post-apibusinessesbusinessidimage) with `imageKey` and `originalImageKey` set to `null`.
+
+## API Keys
+
+### GET /api/businesses/[businessId]/api-keys
+
+Fetches all Business API keys, newest first. The full key is never returned after creation.
+
+**Access:** `developer`, `owner`, `admin`, `staff`
+
+#### Response
+
+```json
+[
+  {
+    "id": "UUID",
+    "businessId": "UUID",
+    "name": "String",
+    "keyPrefix": "String",
+    "isActive": "Boolean",
+    "createdAt": "DateTime",
+    "updatedAt": "DateTime"
+  }
+]
+```
+
+#### Used For
+
+- Developer Dashboard API key management
+
+### POST /api/businesses/[businessId]/api-keys
+
+Creates a new Business API key.
+
+**Access:** `developer`
 
 #### Security Notes
 
 Business API keys are intended for server-to-server communication only.
 
-The raw API key is shown only ONCE during creation and will not be viewable again. Store it securly before leaving the creation screen.
-
-For a client website, the key should be stored in your .env file like (but not strictly typed):
+The raw `apiKey` is returned **only once** in this response and cannot be retrieved again. Store it securely before leaving the creation screen. On a client website, keep it in an environment variable, for example:
 
 ```env
 BUSINESS_PLATFORM_API_KEY=bp_example_key_here
 ```
 
-Example request body:
-
-> Creating a production API key
+#### Request Body
 
 ```json
 {
-  "name": "Production Website"
+  "name": "String"
 }
 ```
 
-### PATCH /api/admin/api-keys/[apiKeyId]
-
-Updates a Business API key by its `apiKeyId`.
-
-#### Route Param Required
-
-| Param    | Type | Note                                           |
-| -------- | ---- | ---------------------------------------------- |
-| apiKeyId | UUID | The ID of the BusinessApiKey record to update. |
-
-Example request body:
-
-> Disable the specified apiKeyId
+#### Response `201`
 
 ```json
 {
-  "isActive": false
+  "apiKey": "String",
+  "key": {
+    "id": "UUID",
+    "name": "String",
+    "keyPrefix": "String",
+    "isActive": "Boolean",
+    "createdAt": "DateTime"
+  }
 }
 ```
 
-### DELETE /api/admin/api-keys/[apiKeyId]
+### PATCH /api/businesses/[businessId]/api-keys/[apiKeyId]
 
-Deletes a Business API key by its apiKeyId.
+Renames or enables/disables a key. At least one field is required.
 
-Deleting a key permanently revokes access for any website currently using that credential.
+**Access:** `developer`
 
-If you still need the key please use the PATCH request to update `isActive` to false.
+| Param    | Type | Note                           |
+| -------- | ---- | ------------------------------ |
+| apiKeyId | UUID | The `BusinessApiKey` to update |
+
+#### Request Body
+
+```json
+{
+  "name": "String",
+  "isActive": "Boolean"
+}
+```
+
+#### Response
+
+```json
+{
+  "id": "UUID",
+  "name": "String",
+  "keyPrefix": "String",
+  "isActive": "Boolean",
+  "createdAt": "DateTime",
+  "updatedAt": "DateTime"
+}
+```
+
+### DELETE /api/businesses/[businessId]/api-keys/[apiKeyId]
+
+Permanently deletes a key. Any website using it loses access immediately. To pause a key instead, PATCH `isActive` to `false`.
+
+**Access:** `developer`
+
+| Param    | Type | Note                           |
+| -------- | ---- | ------------------------------ |
+| apiKeyId | UUID | The `BusinessApiKey` to delete |
+
+No request body.
+
+#### Response
+
+```json
+{
+  "message": "String"
+}
+```
 
 ## Business Users
 
-### GET /api/admin/business-users
+A `BusinessUser` links a `User` to a business with a role. The logged-in user's own role comes from [GET /api/businesses/[businessId]](#get-apibusinessesbusinessid), not from these routes.
 
-Fetches all users linked to the business in a list
+### GET /api/businesses/[businessId]/users
 
-The authenticated user session determines which business users are returned
+Fetches every other user in the business, sorted by email. The logged-in user is excluded.
 
-#### Returns
+**Access:** `owner`, `admin`, `staff`
 
-- BusinessUserId
-- UserIds
-- Names
-- Usernames
-- Emails
-- [AccessLevel](../../../../packages/database/docs/database-models.md#access-level-choices)
-- Access Level Description
+#### Query Params
+
+| Param  | Type | Required | Note                                                           |
+| ------ | ---- | -------- | -------------------------------------------------------------- |
+| userId | UUID | No       | Only return this user. Returns `400` if it is your own userId. |
+
+#### Response
+
+```json
+[
+  {
+    "id": "UUID",
+    "businessId": "UUID",
+    "userId": "UUID",
+    "roleId": "UUID",
+    "createdAt": "DateTime",
+    "updatedAt": "DateTime",
+    "user": {
+      "id": "UUID",
+      "name": "String | null",
+      "username": "String | null",
+      "email": "String",
+      "image": "String | null",
+      "createdAt": "DateTime",
+      "updatedAt": "DateTime"
+    },
+    "role": {
+      "id": "UUID",
+      "accessLevel": "owner | admin | staff | developer",
+      "description": "String"
+    }
+  }
+]
+```
+
+`id` is the `businessUserId` used by the PATCH and DELETE routes.
 
 #### Used For
 
-- Admin Dashboard
+- Team / members page
 
-### POST /api/admin/business-users
+### GET /api/businesses/[businessId]/users/search?email
 
-Adds businessUser entry to link the User with the current business and giving them a Role.
+Looks up a user by exact email before adding them. Returns `404` if no user has that email and `400` if they already belong to this business.
 
-NOTE: Auth.js adds a User record to the database, this route helps link the created user with the business
+**Access:** `owner`, `admin`
 
-Example request body:
+#### Query Params
 
-> Adding user John to the business
+| Param | Type   | Required | Example          |
+| ----- | ------ | -------- | ---------------- |
+| email | String | Yes      | `test@gmail.com` |
 
-```json
-{
-  "email": "John@email.com",
-  "accessLevel": "admin"
-}
-```
-
-### PATCH /api/admin/business-users/[businessUserId]
-
-Updates a user's access level for the current business.
-
-This route only updates the role assigned to the BusinessUser record. It does not update the user's account information.
-
-#### Route Param Required
-
-| Param          | Type | Note                                                |
-| -------------- | ---- | --------------------------------------------------- |
-| businessUserId | UUID | The ID of the `BusinessUser` join record to update. |
-
-Example request body:
-
-> Updating a user's access level
+#### Response
 
 ```json
 {
-  "accessLevel": "admin"
+  "id": "UUID",
+  "name": "String | null",
+  "username": "String | null",
+  "email": "String",
+  "emailVerified": "DateTime | null",
+  "image": "String | null",
+  "createdAt": "DateTime",
+  "businesses": []
 }
 ```
 
-### DELETE /api/admin/business-users/[businessUserId]
+#### Used For
 
-Deletes a businessUser record to remove the connection between the user and that business via `businessUserId`. This does not delete a User record, or any other record tied to a businessUser record.
+- Finding users to add to your business
 
-#### Frontend Note
+### POST /api/businesses/[businessId]/users
 
-When rendering the list of business users, attach the `businessUserId` to the delete action (for example, as a data attribute or within the component's state). When the user confirms deletion, pass that `businessUserId` to this route.
+Adds an existing user to the business with a role. The user must already have an account (Auth.js creates the `User` record on sign-in).
 
-#### Route Param Required
+**Access:** `owner`, `admin`
 
-| Param          | Type | Note                                                |
-| -------------- | ---- | --------------------------------------------------- |
-| businessUserId | UUID | The ID of the `BusinessUser` join record to delete. |
+#### Request Body
+
+```json
+{
+  "email": "String",
+  "accessLevel": "owner | admin | staff | developer"
+}
+```
+
+#### Response `201`
+
+Same shape as one entry from [GET /api/businesses/[businessId]/users](#get-apibusinessesbusinessidusers).
+
+### PATCH /api/businesses/[businessId]/users/[businessUserId]
+
+Changes a member's role. This does not change the user's account data.
+
+**Access:** `owner`, `admin`
+
+| Param          | Type | Note                         |
+| -------------- | ---- | ---------------------------- |
+| businessUserId | UUID | The `BusinessUser` to update |
+
+Rules:
+
+- You cannot change your own role (`403`).
+- Admins cannot change the owner's role (`403`).
+- Only the owner can set `accessLevel` to `owner`. This is an **ownership transfer**: the selected member becomes owner and the current owner becomes admin, in one transaction.
+
+#### Request Body
+
+```json
+{
+  "accessLevel": "owner | admin | staff | developer"
+}
+```
+
+#### Response
+
+```json
+{
+  "id": "UUID",
+  "businessId": "UUID",
+  "userId": "UUID",
+  "roleId": "UUID",
+  "updatedAt": "DateTime",
+  "user": {
+    "id": "UUID",
+    "name": "String | null",
+    "username": "String | null",
+    "email": "String",
+    "image": "String | null"
+  },
+  "role": {
+    "id": "UUID",
+    "accessLevel": "owner | admin | staff | developer",
+    "description": "String"
+  }
+}
+```
+
+An ownership transfer also includes `createdAt`.
+
+### DELETE /api/businesses/[businessId]/users/[businessUserId]
+
+Removes a member from the business. The `User` record and any business data are not deleted.
+
+**Access:** `owner`, `admin`
+
+| Param          | Type | Note                         |
+| -------------- | ---- | ---------------------------- |
+| businessUserId | UUID | The `BusinessUser` to remove |
+
+Rules:
+
+- You cannot remove yourself through this route (`403`).
+- Admins cannot remove the owner (`403`).
+
+No request body.
+
+#### Response
+
+```json
+{
+  "message": "String"
+}
+```
+
+## Locations
+
+A location is a physical place of the business. Locations themselves are **not** synced.
+
+### POST /api/businesses/[businessId]/locations
+
+Creates a location. Addresses must be unique within the business (`409`).
+
+**Access:** `owner`, `admin`
+
+#### Request Body
+
+```json
+{
+  "address": "String",
+  "city": "String | null",
+  "state": "String | null",
+  "zip": "String | null",
+  "country": "String | null",
+  "parking": "Boolean"
+}
+```
+
+Only `address` is required.
+
+#### Response `201`
+
+```json
+{
+  "message": "String",
+  "location": {
+    "id": "UUID",
+    "address": "String",
+    "zip": "String | null",
+    "country": "String | null",
+    "state": "String | null",
+    "city": "String | null",
+    "parking": "Boolean",
+    "isActive": "Boolean"
+  }
+}
+```
+
+### PATCH /api/businesses/[businessId]/locations/[locationId]
+
+Updates a location.
+
+This route **replaces** the location fields. Any optional field left out is reset (`zip`, `country`, `state`, `city` to `null`, `parking` and `enableHours` to `false`, `isActive` to `true`), so always send the full location.
+
+**Access:** `owner`, `admin`
+
+#### Request Body
+
+```json
+{
+  "address": "String",
+  "zip": "String | null",
+  "country": "String | null",
+  "state": "String | null",
+  "city": "String | null",
+  "parking": "Boolean",
+  "isActive": "Boolean",
+  "enableHours": "Boolean"
+}
+```
+
+#### Response
+
+```json
+{
+  "id": "UUID",
+  "address": "String",
+  "zip": "String | null",
+  "country": "String | null",
+  "state": "String | null",
+  "city": "String | null",
+  "parking": "Boolean",
+  "isActive": "Boolean",
+  "enableHours": "Boolean",
+  "createdAt": "DateTime",
+  "updatedAt": "DateTime"
+}
+```
+
+### DELETE /api/businesses/[businessId]/locations/[locationId]
+
+Deletes a location. Its days, hours, categories, items, options, contacts, and socials are deleted with it. Warn the user before allowing this.
+
+**Access:** `owner`, `admin`
+
+No request body.
+
+#### Response
+
+```json
+{
+  "message": "String"
+}
+```
+
+### GET /api/businesses/[businessId]/locations/[locationId]/overview
+
+Fetches everything the dashboard overview needs for one location in a single request. Days are sorted Monday to Sunday and top-level categories by `order`.
+
+**Access:** `owner`, `admin`, `staff`
+
+#### Response
+
+```json
+{
+  "id": "UUID",
+  "businessId": "UUID",
+  "address": "String",
+  "zip": "String | null",
+  "country": "String | null",
+  "state": "String | null",
+  "city": "String | null",
+  "parking": "Boolean",
+  "isActive": "Boolean",
+  "enableHours": "Boolean",
+  "createdAt": "DateTime",
+  "updatedAt": "DateTime",
+  "days": [
+    {
+      "id": "UUID",
+      "locationId": "UUID",
+      "dayOfWeek": "Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday",
+      "isClosed": "Boolean",
+      "syncGroupId": "UUID | null",
+      "createdAt": "DateTime",
+      "updatedAt": "DateTime",
+      "hour": {
+        "id": "UUID",
+        "openTime": "HH:MM",
+        "closeTime": "HH:MM",
+        "title": "String | null",
+        "note": "String | null",
+        "isDisabled": "Boolean",
+        "syncGroupId": "UUID | null",
+        "isSynced": "Boolean",
+        "createdAt": "DateTime",
+        "updatedAt": "DateTime"
+      }
+    }
+  ],
+  "categories": [
+    {
+      "id": "UUID",
+      "locationId": "UUID",
+      "name": "String",
+      "description": "String | null",
+      "order": "Int",
+      "isVisible": "Boolean",
+      "items": [],
+      "subcategories": [],
+      "syncGroupId": "UUID | null",
+      "isSynced": "Boolean",
+      "createdAt": "DateTime",
+      "updatedAt": "DateTime"
+    }
+  ],
+  "items": [
+    {
+      "id": "UUID",
+      "locationId": "UUID",
+      "categoryId": "UUID",
+      "name": "String",
+      "description": "String | null",
+      "containsList": "String[]",
+      "calories": "Int | null",
+      "price": "String",
+      "order": "Int",
+      "isAvailable": "Boolean",
+      "slug": "String",
+      "imageKey": "String | null",
+      "syncGroupId": "UUID | null",
+      "isSynced": "Boolean",
+      "createdAt": "DateTime",
+      "updatedAt": "DateTime"
+    }
+  ],
+  "contacts": [
+    {
+      "id": "UUID",
+      "locationId": "UUID",
+      "phoneNumber": "String | null",
+      "email": "String | null",
+      "isPersonal": "Boolean",
+      "syncGroupId": "UUID | null",
+      "isSynced": "Boolean",
+      "createdAt": "DateTime",
+      "updatedAt": "DateTime"
+    }
+  ],
+  "socials": [
+    {
+      "id": "UUID",
+      "locationId": "UUID",
+      "domain": "String",
+      "profileName": "String",
+      "url": "String",
+      "icon": "String",
+      "syncGroupId": "UUID | null",
+      "isSynced": "Boolean",
+      "createdAt": "DateTime",
+      "updatedAt": "DateTime"
+    }
+  ]
+}
+```
+
+`hour` is the day's regular hour (or `null`). Special hours are not included. In `categories`, `items` and `subcategories` are the full related records.
+
+#### Used For
+
+- Dashboard overview page
+
+## Location Days
+
+A location's schedule is always a full week of 7 `LocationDay` records. Each day can have one regular hour and any number of special hours.
+
+### POST /api/businesses/[businessId]/locations/[locationId]/days `SYNC`
+
+Creates the full weekly schedule. All 7 days must be sent exactly once.
+
+When `isSynced` is `true`, the week is created for **every location in the business that has no days yet**, and each weekday gets its own `syncGroupId` (all Mondays share one, all Tuesdays share another, and so on). `isSynced` is optional here and defaults to `false`.
+
+**Access:** `owner`, `admin`
+
+#### Request Body
+
+```json
+{
+  "isSynced": "Boolean",
+  "days": [
+    { "dayOfWeek": "Monday", "isClosed": false },
+    { "dayOfWeek": "Tuesday", "isClosed": false },
+    { "dayOfWeek": "Wednesday", "isClosed": false },
+    { "dayOfWeek": "Thursday", "isClosed": false },
+    { "dayOfWeek": "Friday", "isClosed": false },
+    { "dayOfWeek": "Saturday", "isClosed": true },
+    { "dayOfWeek": "Sunday", "isClosed": true }
+  ]
+}
+```
+
+`dayOfWeek` is case-insensitive. `isClosed` defaults to `false`.
+
+#### Response `201`
+
+```json
+{
+  "message": "String",
+  "count": "Int"
+}
+```
+
+### DELETE /api/businesses/[businessId]/locations/[locationId]/days
+
+Deletes the whole weekly schedule (and all of its hours) for the selected location only. Other locations are not affected, even if their days are synced.
+
+**Access:** `owner`, `admin`
+
+No request body.
+
+#### Response
+
+```json
+{
+  "message": "String",
+  "count": "Int"
+}
+```
+
+### PATCH /api/businesses/[businessId]/locations/[locationId]/days/[dayId] `SYNC`
+
+Opens or closes a day.
+
+**Access:** `owner`, `admin`
+
+| Param | Type | Note                        |
+| ----- | ---- | --------------------------- |
+| dayId | UUID | The `LocationDay` to update |
+
+#### Request Body
+
+```json
+{
+  "isClosed": "Boolean",
+  "isSynced": "Boolean"
+}
+```
+
+#### Response
+
+```json
+{
+  "id": "UUID",
+  "locationId": "UUID",
+  "dayOfWeek": "Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday",
+  "isClosed": "Boolean",
+  "syncGroupId": "UUID | null",
+  "isSynced": "Boolean",
+  "updatedAt": "DateTime"
+}
+```
+
+A synced update returns the same record with an added `message`.
+
+## Hours
+
+Hours belong to a `LocationDay` and are either **regular** (one per day) or **special** (many per day, but they cannot overlap each other). Times use `HH:MM` 24-hour format and `openTime` must be earlier than `closeTime`.
+
+Displaying hours on the site is toggled with the location's `enableHours`.
+
+### POST /api/businesses/[businessId]/locations/[locationId]/days/[dayId]/hours `SYNC`
+
+Adds a regular or special hour to a day.
+
+- Regular: fails with `409` if the day (or any synced day) already has one.
+- Special: fails with `409` if it overlaps an existing special hour on the day (or any synced day).
+- Synced: the selected day must belong to a sync group.
+
+**Access:** `owner`, `admin`
+
+| Param | Type | Note                                 |
+| ----- | ---- | ------------------------------------ |
+| dayId | UUID | The `LocationDay` to add the hour to |
+
+#### Request Body
+
+```json
+{
+  "openTime": "HH:MM",
+  "closeTime": "HH:MM",
+  "isSpecial": "Boolean",
+  "isSynced": "Boolean",
+  "title": "String | null",
+  "note": "String | null"
+}
+```
+
+#### Response `201`
+
+```json
+{
+  "id": "UUID",
+  "regularDayId": "UUID | null",
+  "specialDayId": "UUID | null",
+  "openTime": "HH:MM",
+  "closeTime": "HH:MM",
+  "title": "String | null",
+  "note": "String | null",
+  "isDisabled": "Boolean",
+  "syncGroupId": "UUID | null",
+  "isSynced": "Boolean",
+  "createdAt": "DateTime",
+  "updatedAt": "DateTime"
+}
+```
+
+### PATCH /api/businesses/[businessId]/locations/[locationId]/days/[dayId]/hours/[hourId] `SYNC`
+
+Updates an hour. `openTime` and `closeTime` fall back to the current values when left out. Special hours are re-checked for overlaps.
+
+**Access:** `owner`, `admin`
+
+| Param  | Type | Note                                  |
+| ------ | ---- | ------------------------------------- |
+| dayId  | UUID | The `LocationDay` the hour belongs to |
+| hourId | UUID | The `Hour` to update                  |
+
+#### Request Body
+
+```json
+{
+  "isSynced": "Boolean",
+  "openTime": "HH:MM",
+  "closeTime": "HH:MM",
+  "title": "String | null",
+  "note": "String | null",
+  "isDisabled": "Boolean"
+}
+```
+
+Only `isSynced` is required.
+
+#### Response
+
+Same as the [POST](#post-apibusinessesbusinessidlocationslocationiddaysdayidhours-sync) response without `createdAt`. A synced update only returns `{ "message": "String" }`.
+
+### DELETE /api/businesses/[businessId]/locations/[locationId]/days/[dayId]/hours/[hourId] `SYNC`
+
+Deletes an hour.
+
+**Access:** `owner`, `admin`
+
+| Param  | Type | Note                                  |
+| ------ | ---- | ------------------------------------- |
+| dayId  | UUID | The `LocationDay` the hour belongs to |
+| hourId | UUID | The `Hour` to delete                  |
+
+#### Request Body
+
+```json
+{
+  "deleteAllSynced": "Boolean"
+}
+```
+
+#### Response
+
+```json
+{
+  "message": "String"
+}
+```
+
+A synced delete also returns `count`.
 
 ## Categories
 
-### POST /api/admin/categories
+Categories are ordered per location by `order`. A subcategory is a category with a `parentId`. Only one level of nesting is allowed.
 
-Adds a category row to the business.
+### POST /api/businesses/[businessId]/locations/[locationId]/categories `SYNC`
 
-Example request body:
+Creates a top-level category at the end of the list. When synced, it is added to the end of every location's list.
 
-> Creating a category for Tacos with a description
+**Access:** `owner`, `admin`
 
-```json
-{
-  "name": "Tacos",
-  "description": "Traditional street tacos"
-}
-```
-
-### POST /api/admin/categories/[categoryId]/subcategory
-
-Adds a subcategory row to an existing category through `categoryId` and add it as a parentId.
-
-#### Route Param Required
-
-| Param      | Type | Note                                                            |
-| ---------- | ---- | --------------------------------------------------------------- |
-| categoryId | UUID | The ID of the `Category` record to insert the subcategory into. |
-
-Example request body:
-
-> Creating a subcategory for Drinks like cans
+#### Request Body
 
 ```json
 {
-  "name": "cans",
-  "description": "(12oz) can drinks"
+  "name": "String",
+  "description": "String | null",
+  "isSynced": "Boolean"
 }
 ```
 
-### PATCH /api/admin/categories/[categoryId]
-
-Updates a category row by its `categoryId`. This cannot update the order value. This can only be done by move-up or move-down routes.
-
-#### Route Param Required
-
-| Param      | Type | Note                                       |
-| ---------- | ---- | ------------------------------------------ |
-| categoryId | UUID | The ID of the `Category` record to update. |
-
-Example request body:
-
-> Disable a category from displaying on the frontend
+#### Response `201`
 
 ```json
 {
-  "isVisible": false
+  "id": "UUID",
+  "locationId": "UUID",
+  "name": "String",
+  "description": "String | null",
+  "order": "Int",
+  "isVisible": "Boolean",
+  "syncGroupId": "UUID | null",
+  "isSynced": "Boolean",
+  "createdAt": "DateTime",
+  "updatedAt": "DateTime"
 }
 ```
 
-### PATCH /api/admin/categories/[categoryId]/move-up
+### POST /api/businesses/[businessId]/locations/[locationId]/categories/[categoryId]/subcategory `SYNC`
 
-Moves a category one position up within the current business.
+Creates a subcategory at the end of a top-level category. Fails with `400` if `categoryId` is already a subcategory. When synced, the parent category must belong to a sync group and the subcategory is added under every synced copy of the parent.
 
-Moving up means swapping the selected category's `order` value with the category directly above it.
+**Access:** `owner`, `admin`
 
-[ Order: 1 | Drinks ]
+| Param      | Type | Note                          |
+| ---------- | ---- | ----------------------------- |
+| categoryId | UUID | The parent top-level category |
 
-[ Order: 2 | Orders ]
+#### Request Body
 
-[ Order: 3 | Toppings ]
+```json
+{
+  "name": "String",
+  "description": "String | null",
+  "isSynced": "Boolean"
+}
+```
 
-If `Orders` moves up, it swaps order values with `Drinks`.
+#### Response `201`
 
---- TO ---
+Same as [POST categories](#post-apibusinessesbusinessidlocationslocationidcategories-sync) plus `parentId`.
 
-[ Order: 1 | Orders ]
+### PATCH /api/businesses/[businessId]/locations/[locationId]/categories/[categoryId] `SYNC`
 
-[ Order: 2 | Drinks ]
+Updates a category. `order` cannot be changed here, use the move routes.
 
-[ Order: 3 | Toppings ]
+**Access:** `owner`, `admin`
 
-#### Route Param Required
+| Param      | Type | Note                     |
+| ---------- | ---- | ------------------------ |
+| categoryId | UUID | The `Category` to update |
 
-| Param      | Type | Note                                          |
-| ---------- | ---- | --------------------------------------------- |
-| categoryId | UUID | The ID of the `Category` record to "move up". |
+#### Request Body
 
-No body request
+```json
+{
+  "name": "String",
+  "description": "String | null",
+  "isVisible": "Boolean",
+  "isSynced": "Boolean"
+}
+```
 
-### PATCH /api/admin/categories/[categoryId]/move-down
+`name` and `isSynced` are required.
 
-Moves a category one position down within the current business.
+#### Response
 
-Moving down means swapping the selected category's `order` value with the category directly below it.
+```json
+{
+  "id": "UUID",
+  "locationId": "UUID",
+  "name": "String",
+  "description": "String | null",
+  "order": "Int",
+  "isVisible": "Boolean",
+  "syncGroupId": "UUID | null",
+  "isSynced": "Boolean",
+  "updatedAt": "DateTime"
+}
+```
 
-[ Order: 1 | Drinks ]
+### PATCH /api/businesses/[businessId]/locations/[locationId]/categories/[categoryId]/move-up
 
-[ Order: 2 | Orders ]
+Swaps the category's `order` with the category directly above it (same parent, same location). Returns `400` if it is already at the top. Ordering is never synced.
 
-[ Order: 3 | Toppings ]
+```text
+[ Order: 1 | Drinks ]          [ Order: 1 | Tacos  ]
+[ Order: 2 | Tacos  ]   --->   [ Order: 2 | Drinks ]
+[ Order: 3 | Sides  ]          [ Order: 3 | Sides  ]
+```
 
-If `Orders` moves down, it swaps order values with `Toppings`.
+**Access:** `owner`, `admin`
 
---- TO ---
+| Param      | Type | Note                   |
+| ---------- | ---- | ---------------------- |
+| categoryId | UUID | The `Category` to move |
 
-[ Order: 1 | Drinks ]
+No request body.
 
-[ Order: 2 | Toppings ]
+#### Response
 
-[ Order: 3 | Orders ]
+```json
+{
+  "id": "UUID",
+  "locationId": "UUID",
+  "parentId": "UUID | null",
+  "name": "String",
+  "description": "String | null",
+  "order": "Int",
+  "isVisible": "Boolean",
+  "syncGroupId": "UUID | null",
+  "isSynced": "Boolean",
+  "updatedAt": "DateTime"
+}
+```
 
-#### Route Param Required
+### PATCH /api/businesses/[businessId]/locations/[locationId]/categories/[categoryId]/move-down
 
-| Param      | Type | Note                                            |
-| ---------- | ---- | ----------------------------------------------- |
-| categoryId | UUID | The ID of the `Category` record to "move down". |
+Same as [move-up](#patch-apibusinessesbusinessidlocationslocationidcategoriescategoryidmove-up), but swaps with the category directly below it. Returns `400` if it is already at the bottom. The response does not include `locationId` or `parentId`.
 
-No body request
+### DELETE /api/businesses/[businessId]/locations/[locationId]/categories/[categoryId] `SYNC`
 
-### DELETE /api/admin/categories/[categoryId]
+Deletes a category and re-numbers the remaining top-level categories.
 
-Deletes a category row by its `categoryId`.
+A category can only be deleted when it has no items and no subcategories (`409`). For a synced delete, this applies to every category in the group.
 
-#### Route Param Required
+**Access:** `owner`, `admin`
 
-| Param      | Type | Note                                       |
-| ---------- | ---- | ------------------------------------------ |
-| categoryId | UUID | The ID of the `Category` record to delete. |
+| Param      | Type | Note                     |
+| ---------- | ---- | ------------------------ |
+| categoryId | UUID | The `Category` to delete |
 
-Deletion of a category is only possible when there are no items attached to it.
+#### Request Body
+
+```json
+{
+  "deleteAllSynced": "Boolean"
+}
+```
+
+#### Response
+
+```json
+{
+  "message": "String"
+}
+```
 
 ## Category Items
 
-### POST /api/admin/categories/[categoryId]/items
+An item always belongs to a category. Item `slug` is generated from `name` and must be unique within a location.
 
-Adds a new item row to the category by `categoryId`.
+### POST /api/businesses/[businessId]/locations/[locationId]/categories/[categoryId]/items `SYNC`
 
-A Category can exist without items, but an item can't exist without being attached to a category.
+Creates an item at the end of the category. Returns `409` if an item with the same slug already exists in the location (or any synced location). When synced, the category must belong to a sync group and the item is added to every synced copy of it.
 
-#### Route Param Required
+**Access:** `owner`, `admin`
 
-| Param      | Type | Note                                                         |
-| ---------- | ---- | ------------------------------------------------------------ |
-| categoryId | UUID | The ID of the `Category` record to insert the new item into. |
+| Param      | Type | Note                              |
+| ---------- | ---- | --------------------------------- |
+| categoryId | UUID | The `Category` to add the item to |
 
-Example request body:
-
-> Adding the Taco item
+#### Request Body
 
 ```json
 {
-  "name": "Taco",
-  "description": "Taco with onion and cilantro",
-  "price": 2
+  "name": "String",
+  "price": "Number | String",
+  "isSynced": "Boolean",
+  "description": "String | null",
+  "containsList": "String[]",
+  "calories": "Int | null",
+  "isAvailable": "Boolean"
 }
 ```
 
-### PATCH /api/admin/categories/[categoryId]/items/[itemId]/move-up
+`name`, `price`, and `isSynced` are required.
 
-Moves an item one position up within its current category.
+#### Response `201`
 
-#### Route Param Required
+```json
+{
+  "id": "UUID",
+  "locationId": "UUID",
+  "categoryId": "UUID",
+  "name": "String",
+  "description": "String | null",
+  "containsList": "String[]",
+  "calories": "Int | null",
+  "price": "String",
+  "order": "Int",
+  "isAvailable": "Boolean",
+  "slug": "String",
+  "imageKey": "String | null",
+  "syncGroupId": "UUID | null",
+  "isSynced": "Boolean",
+  "createdAt": "DateTime",
+  "updatedAt": "DateTime"
+}
+```
 
-| Param      | Type | Note                                                       |
-| ---------- | ---- | ---------------------------------------------------------- |
-| categoryId | UUID | The ID of the `Category` record where the item is located. |
-| itemId     | UUID | The Id of the `Item` record to "move up"                   |
+A synced create also returns `id`, the new item in the selected location, so the dashboard can open it right away.
 
-No body request
+### PATCH /api/businesses/[businessId]/locations/[locationId]/categories/[categoryId]/items/[itemId]/move-up
 
-### PATCH /api/admin/categories/[categoryId]/items/[itemId]/move-down
+Swaps the item's `order` with the item directly above it in the category. Returns `400` if it is already at the top. Ordering is never synced.
 
-Moves an item one position down within its current category.
+**Access:** `owner`, `admin`
 
-#### Route Param Required
+| Param      | Type | Note                          |
+| ---------- | ---- | ----------------------------- |
+| categoryId | UUID | The `Category` the item is in |
+| itemId     | UUID | The `Item` to move            |
 
-| Param      | Type | Note                                                       |
-| ---------- | ---- | ---------------------------------------------------------- |
-| categoryId | UUID | The ID of the `Category` record where the item is located. |
-| itemId     | UUID | The Id of the `Item` record to "move down"                 |
+o request body.
 
-No body request
+#### Response
+
+```json
+{
+  "id": "UUID",
+  "locationId": "UUID",
+  "categoryId": "UUID",
+  "order": "Int",
+  "updatedAt": "DateTime"
+}
+```
+
+### PATCH /api/businesses/[businessId]/locations/[locationId]/categories/[categoryId]/items/[itemId]/move-down
+
+Same as [move-up](#patch-apibusinessesbusinessidlocationslocationidcategoriescategoryiditemsitemidmove-up), but swaps with the item directly below it.
 
 ## Items
 
-### PATCH /api/admin/items/[itemId]
+### PATCH /api/businesses/[businessId]/locations/[locationId]/items/[itemId] `SYNC`
 
-Updates an item row by its `itemId`.
+Updates an item. The `slug` is regenerated from `name` (`409` if it clashes with another item). `order` and images are changed through their own routes.
 
-This does not allow for order, slug, or imageKey to be updated. These are handled in separate routes, except for slug; slugs are not editable.
+Changing `isSynced` also moves the item's image:
 
-#### Route Param Required
+- Un-syncing gives the item its own private copy of the shared image.
+- Re-syncing switches the item to the group's shared image (or makes the item's image the shared one if the group has none).
 
-| Param  | Type | Note                                   |
-| ------ | ---- | -------------------------------------- |
-| itemId | UUID | The ID of the `Item` record to update. |
+**Access:** `owner`, `admin`
 
-Example request body:
+| Param  | Type | Note                 |
+| ------ | ---- | -------------------- |
+| itemId | UUID | The `Item` to update |
 
-> Changing an items description
+#### Request Body
 
 ```json
 {
-  "description": "Updated description for an item"
+  "name": "String",
+  "price": "Number | String",
+  "isSynced": "Boolean",
+  "description": "String | null",
+  "containsList": "String[]",
+  "calories": "Int | null",
+  "isAvailable": "Boolean"
 }
 ```
 
-### POST /api/admin/items/[itemId]/image
+`name`, `price`, and `isSynced` are required.
 
-Adds an image to the item by its `itemId`.
+#### Response
 
-Image uploads must be 2 MB or less to upload. If an image is uploaded to an item with an existing `imageKey`, the operation is canceled. Supported image types are image/jpeg, image/png, and image/webp. The image must be uploaded first to the S3 bucket before adding the `imageKey` to the item.
+```json
+{
+  "id": "UUID",
+  "locationId": "UUID",
+  "categoryId": "UUID",
+  "name": "String",
+  "description": "String | null",
+  "containsList": "String[]",
+  "calories": "Int | null",
+  "price": "String",
+  "order": "Int",
+  "isAvailable": "Boolean",
+  "slug": "String",
+  "imageKey": "String | null",
+  "originalImageKey": "String | null",
+  "syncGroupId": "UUID | null",
+  "isSynced": "Boolean",
+  "updatedAt": "DateTime"
+}
+```
 
-#### Route Param Required
+A synced update returns the same record with an added `message`.
 
-| Param  | Type | Note                                              |
-| ------ | ---- | ------------------------------------------------- |
-| itemId | UUID | The ID of the `Item` record to add the image for. |
+### DELETE /api/businesses/[businessId]/locations/[locationId]/items/[itemId] `SYNC`
 
-Example request multipart/form-data body:
+Deletes an item and all of its options, then re-numbers the remaining items in the category. Item images are removed from S3 once no other item uses them. Warn the user before allowing this.
 
-> Adding an image to an item
+**Access:** `owner`, `admin`
 
-| Key         | Value             |
-| ----------- | ----------------- |
-| image: File | Image Upload Path |
+| Param  | Type | Note                 |
+| ------ | ---- | -------------------- |
+| itemId | UUID | The `Item` to delete |
 
-### PATCH /api/admin/items/[itemId]/image
+#### Request Body
 
-Replaces an item's image by its `itemId`.
+```json
+{
+  "deleteAllSynced": "Boolean"
+}
+```
 
-This route accepts an image file upload. The admin does not send an `imageKey` manually. The backend uploads the image to S3, generates the new `imageKey`, updates the item record, and returns the updated image reference.
+#### Response
 
-#### Route Param Required
+```json
+{
+  "message": "String"
+}
+```
 
-| Param  | Type | Note                                                 |
-| ------ | ---- | ---------------------------------------------------- |
-| itemId | UUID | The ID of the `Item` record to update the image for. |
+## Item Image
 
-Example request multipart/form-data body:
+Like business images, items store a cropped `image` and an uncropped `originalImage`. Images must be JPEG, PNG, or WebP and 10 MB or less.
 
-> Replacing an item's image
+Synced items share one image in S3. These routes take `isSynced` as a form field, and the DELETE route takes `deleteAllSynced` as JSON.
 
-| Key         | Value             |
-| ----------- | ----------------- |
-| image: File | Image Upload Path |
+### POST /api/businesses/[businessId]/locations/[locationId]/items/[itemId]/image `SYNC`
 
-### DELETE /api/admin/items/[itemId]/image
+Uploads an item image. Fails with `409` if the item (or, when synced, the sync group) already has one. Use PATCH to replace it.
 
-Deletes the image for an item by its `itemId`.
+**Access:** `owner`, `admin`
 
-#### Route Param Required
+| Param  | Type | Note                           |
+| ------ | ---- | ------------------------------ |
+| itemId | UUID | The `Item` to add the image to |
 
-| Param  | Type | Note                                                 |
-| ------ | ---- | ---------------------------------------------------- |
-| itemId | UUID | The ID of the `Item` record to delete the image for. |
+#### Request Body (multipart/form-data)
 
-No body request.
+| Key           | Type                  | Required |
+| ------------- | --------------------- | -------- |
+| image         | File                  | Yes      |
+| originalImage | File                  | Yes      |
+| isSynced      | `"true"` \| `"false"` | Yes      |
 
-### DELETE /api/admin/items/[itemId]
+#### Response `201`
 
-Deletes an item row by its `itemId`.
+```json
+{
+  "message": "String",
+  "item": {
+    "id": "UUID",
+    "locationId": "UUID",
+    "imageKey": "String",
+    "originalImageKey": "String",
+    "updatedAt": "DateTime"
+  }
+}
+```
 
-When deleting an item, all item options will also be deleted. Warn the user before allowing the action.
+A synced upload returns `message`, `count`, `imageKey`, and `originalImageKey`.
 
-No body request.
+### PATCH /api/businesses/[businessId]/locations/[locationId]/items/[itemId]/image `SYNC`
 
-#### Route Param Required
+Replaces an item image. Fails with `409` if there is no image to replace.
 
-| Param  | Type | Note                                   |
-| ------ | ---- | -------------------------------------- |
-| itemId | UUID | The ID of the `Item` record to delete. |
+Send only `image` to re-crop the existing original. Send `originalImage` too when the user picked a new source image. With `isSynced` set to `false` on a synced item, the shared image is left alone and the item gets its own private copy.
+
+**Access:** `owner`, `admin`
+
+| Param  | Type | Note                                |
+| ------ | ---- | ----------------------------------- |
+| itemId | UUID | The `Item` to replace the image for |
+
+#### Request Body (multipart/form-data)
+
+| Key           | Type                  | Required |
+| ------------- | --------------------- | -------- |
+| image         | File                  | Yes      |
+| originalImage | File                  | No       |
+| isSynced      | `"true"` \| `"false"` | Yes      |
+
+#### Response
+
+Same shape as [POST](#post-apibusinessesbusinessidlocationslocationiditemsitemidimage-sync), with status `200`. A synced replace only returns `message` and `count`.
+
+### DELETE /api/businesses/[businessId]/locations/[locationId]/items/[itemId]/image `SYNC`
+
+Removes an item's image. A shared image is only deleted from S3 when the whole group is cleared.
+
+**Access:** `owner`, `admin`
+
+| Param  | Type | Note                                |
+| ------ | ---- | ----------------------------------- |
+| itemId | UUID | The `Item` to remove the image from |
+
+#### Request Body
+
+```json
+{
+  "deleteAllSynced": "Boolean"
+}
+```
+
+#### Response
+
+Same shape as [POST](#post-apibusinessesbusinessidlocationslocationiditemsitemidimage-sync) with `imageKey` and `originalImageKey` set to `null`. A synced delete only returns `message`.
 
 ## Item Options
 
-### POST /api/admin/items/[itemId]/options
+Options are ordered per item by `order`.
 
-Adds an option row to the item by `itemId`.
+### POST /api/businesses/[businessId]/locations/[locationId]/items/[itemId]/options `SYNC`
 
-#### Route Param Required
+Creates an option at the end of the item's list. When synced, the item must belong to a sync group and the option is added to every synced copy of it.
 
-| Param  | Type | Note                                              |
-| ------ | ---- | ------------------------------------------------- |
-| itemId | UUID | The ID of the `Item` record to add the option to. |
+**Access:** `owner`, `admin`
 
-Example request body:
+| Param  | Type | Note                            |
+| ------ | ---- | ------------------------------- |
+| itemId | UUID | The `Item` to add the option to |
 
-> Creating an option with extra cheese.
-
-```json
-{
-  "name": "Extra Cheese",
-  "price": 1.5
-}
-```
-
-### PATCH /api/admin/items/[itemId]/options/[optionId]
-
-Updates an item option row by its `optionId`.
-
-#### Route Param Required
-
-| Param    | Type | Note                                                     |
-| -------- | ---- | -------------------------------------------------------- |
-| itemId   | UUID | The ID of the `Item` record where the option is located. |
-| optionId | UUID | The Id of the `ItemOption` record to update              |
-
-Example request body:
-
-> Updating the items option price
+#### Request Body
 
 ```json
 {
-  "price": 1.25
+  "name": "String",
+  "price": "Number | String",
+  "isSynced": "Boolean",
+  "isAvailable": "Boolean"
 }
 ```
 
-### PATCH /api/admin/items/[itemId]/options/[optionId]/move-up
+`name`, `price`, and `isSynced` are required.
 
-Moves an item option one position up within its current item.
+#### Response `201`
 
-#### Route Param Required
+```json
+{
+  "id": "UUID",
+  "itemId": "UUID",
+  "name": "String",
+  "price": "String",
+  "order": "Int",
+  "isAvailable": "Boolean",
+  "syncGroupId": "UUID | null",
+  "isSynced": "Boolean",
+  "createdAt": "DateTime",
+  "updatedAt": "DateTime"
+}
+```
 
-| Param    | Type | Note                                                     |
-| -------- | ---- | -------------------------------------------------------- |
-| itemId   | UUID | The ID of the `Item` record where the option is located. |
-| optionId | UUID | The Id of the `ItemOption` record to "move up"           |
+### PATCH /api/businesses/[businessId]/locations/[locationId]/items/[itemId]/options/[optionId] `SYNC`
 
-No body request
+Updates an option.
 
-### PATCH /api/admin/items/[itemId]/options/[optionId]/move-down
+**Access:** `owner`, `admin`
 
-Moves an item option one position down within its current item.
+| Param    | Type | Note                        |
+| -------- | ---- | --------------------------- |
+| itemId   | UUID | The `Item` the option is on |
+| optionId | UUID | The `ItemOption` to update  |
 
-#### Route Param Required
+#### Request Body
 
-| Param    | Type | Note                                                     |
-| -------- | ---- | -------------------------------------------------------- |
-| itemId   | UUID | The ID of the `Item` record where the option is located. |
-| optionId | UUID | The Id of the `ItemOption` record to move down           |
+Same as [POST options](#post-apibusinessesbusinessidlocationslocationiditemsitemidoptions-sync).
 
-No body request
+#### Response
 
-### DELETE /api/admin/items/[itemId]/options/[optionId]
+Same as the POST response without `createdAt`. A synced update only returns `{ "message": "String" }`.
 
-Deletes an item option row by its `optionId`.
+### PATCH /api/businesses/[businessId]/locations/[locationId]/items/[itemId]/options/[optionId]/move-up
 
-#### Route Param Required
+Swaps the option's `order` with the option directly above it. Returns `400` if it is already at the top. Ordering is never synced.
 
-| Param    | Type | Note                                                     |
-| -------- | ---- | -------------------------------------------------------- |
-| itemId   | UUID | The ID of the `Item` record where the option is located. |
-| optionId | UUID | The Id of the `ItemOption` record to move down           |
+**Access:** `owner`, `admin`
 
-no body request.
+| Param    | Type | Note                        |
+| -------- | ---- | --------------------------- |
+| itemId   | UUID | The `Item` the option is on |
+| optionId | UUID | The `ItemOption` to move    |
+
+No request body.
+
+#### Response
+
+```json
+{
+  "id": "UUID",
+  "itemId": "UUID",
+  "order": "Int",
+  "updatedAt": "DateTime"
+}
+```
+
+### PATCH /api/businesses/[businessId]/locations/[locationId]/items/[itemId]/options/[optionId]/move-down
+
+Same as [move-up](#patch-apibusinessesbusinessidlocationslocationiditemsitemidoptionsoptionidmove-up), but swaps with the option directly below it.
+
+### DELETE /api/businesses/[businessId]/locations/[locationId]/items/[itemId]/options/[optionId] `SYNC`
+
+Deletes an option and re-numbers the remaining options on the item.
+
+**Access:** `owner`, `admin`
+
+| Param    | Type | Note                        |
+| -------- | ---- | --------------------------- |
+| itemId   | UUID | The `Item` the option is on |
+| optionId | UUID | The `ItemOption` to delete  |
+
+#### Request Body
+
+```json
+{
+  "deleteAllSynced": "Boolean"
+}
+```
+
+#### Response
+
+```json
+{
+  "message": "String"
+}
+```
 
 ## Contacts
 
-### POST /api/admin/contacts
+### POST /api/businesses/[businessId]/locations/[locationId]/contacts `SYNC`
 
-Adds a contact row to the business.
+Creates a contact. A contact needs a phone number, an email, or both.
 
-Example request body:
+**Access:** `owner`, `admin`
 
-> Creating a contact number as personal for the business
-
-```json
-{
-  "phoneNumber": "123-456-7890",
-  "isPersonal": true
-}
-```
-
-### PATCH /api/admin/contacts/[contactId]
-
-Updates a contact row by its `contactId`.
-
-#### Route Param Required
-
-| Param     | Type | Note                                      |
-| --------- | ---- | ----------------------------------------- |
-| contactId | UUID | The ID of the `Contact` record to update. |
-
-Example request body:
-
-> Updates email (was previously empty)
+#### Request Body
 
 ```json
 {
-  "email": "John@gmail.com"
+  "phoneNumber": "String | null",
+  "email": "String | null",
+  "isPersonal": "Boolean",
+  "isSynced": "Boolean"
 }
 ```
 
-### DELETE /api/admin/contacts/[contactId]
+#### Response `201`
 
-Deletes a contact row by its `contactId`.
+```json
+{
+  "id": "UUID",
+  "locationId": "UUID",
+  "phoneNumber": "String | null",
+  "email": "String | null",
+  "isPersonal": "Boolean",
+  "isSynced": "Boolean",
+  "syncGroupId": "UUID | null",
+  "createdAt": "DateTime",
+  "updatedAt": "DateTime"
+}
+```
 
-#### Route Param Required
+### PATCH /api/businesses/[businessId]/locations/[locationId]/contacts/[contactId] `SYNC`
 
-| Param     | Type | Note                                      |
-| --------- | ---- | ----------------------------------------- |
-| contactId | UUID | The ID of the `Contact` record to delete. |
+Updates a contact. Send the full contact, since `phoneNumber`, `email`, and `isPersonal` are all overwritten.
 
-No body request.
+**Access:** `owner`, `admin`
+
+| Param     | Type | Note                    |
+| --------- | ---- | ----------------------- |
+| contactId | UUID | The `Contact` to update |
+
+#### Request Body
+
+Same as [POST contacts](#post-apibusinessesbusinessidlocationslocationidcontacts-sync).
+
+#### Response
+
+Same as the POST response without `createdAt`. A synced update adds a `message`.
+
+### DELETE /api/businesses/[businessId]/locations/[locationId]/contacts/[contactId] `SYNC`
+
+Deletes a contact.
+
+**Access:** `owner`, `admin`
+
+| Param     | Type | Note                    |
+| --------- | ---- | ----------------------- |
+| contactId | UUID | The `Contact` to delete |
+
+#### Request Body
+
+```json
+{
+  "deleteAllSynced": "Boolean"
+}
+```
+
+#### Response
+
+```json
+{
+  "message": "String"
+}
+```
 
 ## Socials
 
-### POST /api/admin/socials
+The `url` is built by the server as `https://{domain}/{profileName as a slug}`. `icon` is the S3 key of a supported platform icon chosen from a dropdown in the dashboard.
 
-Adds a social row to the business.
+### POST /api/businesses/[businessId]/locations/[locationId]/socials `SYNC`
 
-`url` and `icon` are supplied by the system. For the url it uses the contacts `domain` + `profileName`, and the icon comes from a stored bucket inside of S3 Buckets (must be supported through a dropdown selection in the frontend). If the url is not correct then the user should be allowed to edit the URL to the correct location (cannot change domain of social media platform as it will need to be a valid provider via dropdown selection).
+Creates a social link.
 
-Example request body:
+**Access:** `owner`, `admin`
 
-> Adding Instagram as a social media link
+#### Request Body
 
 ```json
 {
   "domain": "instagram.com",
-  "profileName": "Tacos El Guero",
-  "icon": "businesses/icons/socials/instagram.webp"
+  "profileName": "String",
+  "icon": "String",
+  "isSynced": "Boolean"
 }
 ```
 
-### PATCH /api/admin/socials/[socialId]
-
-Updates a social row by its `socialId`.
-
-#### Route Param Required
-
-| Param    | Type | Note                                     |
-| -------- | ---- | ---------------------------------------- |
-| socialId | UUID | The ID of the `Social` record to update. |
-
-Example request body:
-
-> Update the social media profile name
+#### Response `201`
 
 ```json
 {
-  "profileName": "tacoselguero-PDX"
+  "id": "UUID",
+  "locationId": "UUID",
+  "domain": "String",
+  "profileName": "String",
+  "url": "String",
+  "icon": "String",
+  "isSynced": "Boolean",
+  "syncGroupId": "UUID | null",
+  "createdAt": "DateTime",
+  "updatedAt": "DateTime"
 }
 ```
 
-### DELETE /api/admin/socials/[socialId]
+### PATCH /api/businesses/[businessId]/locations/[locationId]/socials/[socialId] `SYNC`
 
-Deletes a social row by its `socialId`.
+Updates a social link and rebuilds its `url`. `domain`, `profileName`, and `icon` are all required.
 
-#### Route Param Required
+**Access:** `owner`, `admin`
 
-| Param    | Type | Note                                     |
-| -------- | ---- | ---------------------------------------- |
-| socialId | UUID | The ID of the `Social` record to delete. |
+| Param    | Type | Note                   |
+| -------- | ---- | ---------------------- |
+| socialId | UUID | The `Social` to update |
 
-No body request.
+#### Request Body
 
-## Locations
+Same as [POST socials](#post-apibusinessesbusinessidlocationslocationidsocials-sync).
 
-### POST /api/admin/locations
-
-Adds a location row to the business.
-
-Example request body:
-
-> Creating a location for 123 Example St with a zip code
+#### Response
 
 ```json
 {
-  "address": "123 Example St",
-  "zip": "12345"
+  "id": "UUID",
+  "domain": "String",
+  "profileName": "String",
+  "url": "String",
+  "icon": "String",
+  "syncGroupId": "UUID | null",
+  "isSynced": "Boolean"
 }
 ```
 
-### PATCH /api/admin/locations/[locationId]
+A synced update adds a `message`.
 
-Updates a location row by its `locationId`.
+### DELETE /api/businesses/[businessId]/locations/[locationId]/socials/[socialId] `SYNC`
 
-#### Route Param Required
+Deletes a social link.
 
-| Param      | Type | Note                                       |
-| ---------- | ---- | ------------------------------------------ |
-| locationId | UUID | The ID of the `Location` record to update. |
+**Access:** `owner`, `admin`
 
-Example request body:
+| Param    | Type | Note                   |
+| -------- | ---- | ---------------------- |
+| socialId | UUID | The `Social` to delete |
 
-> Updating the locations address
+#### Request Body
 
 ```json
 {
-  "address": "456 Main St"
+  "deleteAllSynced": "Boolean"
 }
 ```
 
-### DELETE /api/admin/locations/[locationId]
-
-Deletes a location row by its `locationId`.
-
-#### Route Param Required
-
-| Param      | Type | Note                                       |
-| ---------- | ---- | ------------------------------------------ |
-| locationId | UUID | The ID of the `Location` record to delete. |
-
-When deleting a location, all location hours will also be deleted. Warn the user before allowing the action
-
-## Location Days
-
-### POST /api/admin/locations/[locationId]/days
-
-Adds a location day row to the location by `locationId`.
-
-A location does not need location days, this is to help with the frontend to display opening days. Each day has hours attached if added. In the frontend, a location day is created alongside its hours as separate routes (if provided).
-
-#### Route Param Required
-
-| Param      | Type | Note                                                              |
-| ---------- | ---- | ----------------------------------------------------------------- |
-| locationId | UUID | The ID of the `Location` record to insert the the new day record. |
-
-Example request body:
-
-> Create a working day on Monday
+#### Response
 
 ```json
 {
-  "dayOfWeek": "Monday"
+  "message": "String"
 }
 ```
 
-### PATCH /api/admin/locations/[locationId]/days/[dayId]
-
-Updates a locations day row contents by its `dayId`.
-
-#### Route Param Required
-
-| Param      | Type | Note                                                      |
-| ---------- | ---- | --------------------------------------------------------- |
-| locationId | UUID | The ID of the `Location` record where the day is located. |
-| dayId      | UUID | The ID of the `LocationDay` record to update.             |
+ay is located. |
+| dayId | UUID | The ID of the `LocationDay` record where the hour is located. |
+| hourId | UUID | The ID of the `Hour` record to update. |
 
 Example request body:
 
-> Update a locations status to closed (for temporary closure or no longer serving on that day)
+> Disabling the hour
 
 ```json
 {
-  "isClosed": true
+  "isDisabled": true
 }
 ```
 
-### DELETE /api/admin/locations/[locationId]/days/[dayId]
+### DELETE /api/admin/locations/[locationId]/days/[dayId]/hours/[hourId]
 
-Deletes a location day row by its `dayId`.
-
-When deleting a locations day, all location hours will also be deleted. Warn the user before allowing the action.
+Delete an hour row by its `hourId`.
 
 #### Route Param Required
 
-| Param      | Type | Note                                                      |
-| ---------- | ---- | --------------------------------------------------------- |
-| locationId | UUID | The ID of the `Location` record where the day is located. |
-| dayId      | UUID | The ID of the `LocationDay` record to delete.             |
-
-No body request.
-
-## Hours
-
-### POST /api/admin/locations/[locationId]/days/[dayId]/hours
-
-Adds an hour row to days by its `dayId`.
-
-Hours are not required to present a days availability (you can turn on and off the hourly format through location.enableHours). Hours cannot conflict with each other, meaning a day cant have `openTime=9:00` and `closeTime=18:00` with the same day having `openTime=12:00` and `closeTime=20:00` or any variation that would conflict with other times in that single day.
-
-#### Route Param Required
-
-| Param      | Type | Note                                                       |
-| ---------- | ---- | ---------------------------------------------------------- |
-| locationId | UUID | The ID of the `Location` record where the day is located.  |
-| dayId      | UUID | The ID of the `LocationDay` record to add the hour record. |
-
-Example request body:
-
-> Creating an hour for Happy Hour
-
-```json
-{
-  "openTime": "16:00",
-  "closeTime": "20:00",
-  "title": "Happy Hour",
-  "note": "Serving special dishes!"
-}
-```
-
-### PATCH /api/admin/locations/[locationId]/days/[dayId]/hours/[hourId]
-
-Updates an hours contents by its `hourId`.
-
-#### Route Param Required
-
-| Param      | Type | Note                                                          |
-| ---------- | ---- | ------------------------------------------------------------- |
-| locationId | UUID | The ID of the `Location` record where the day is located.     |
-| dayId      | UUID | The ID of the `LocationDay` record where the hour is located. |
-| hourId     | UUID | The ID of the `Hour` record to update.                        |
+| Param         | Type | Note                                                          |
+| ------------- | ---- | ------------------------------------------------------------- |
+| locationId    | UUID | The ID of the `Location` record where the day is located.     |
+| dayId         | UUID | The ID of the `LocationDay` record where the hour is located. |
+| hourId        | UUID | The ID of the `Hour` record to delete.                        |
+| y is located. |
+| dayId         | UUID | The ID of the `LocationDay` record where the hour is located. |
+| hourId        | UUID | The ID of the `Hour` record to update.                        |
 
 Example request body:
 
