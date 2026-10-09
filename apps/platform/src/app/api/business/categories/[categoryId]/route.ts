@@ -167,8 +167,8 @@ export async function GET(
     console.error("Failed to fetch category:", error);
 
     return NextResponse.json(
-      { error: `Failed to fetch category: ${error}` },
-      { status: 400 },
+      { error: "Failed to fetch category" },
+      { status: 500 },
     );
   }
 }

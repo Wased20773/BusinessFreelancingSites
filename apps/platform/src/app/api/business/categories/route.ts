@@ -33,7 +33,25 @@ export async function GET(request: Request): Promise<NextResponse> {
             description: true,
             order: true,
             isVisible: true,
-            subcategories: true,
+            subcategories: {
+              orderBy: { order: "asc" },
+              select: {
+                id: true,
+                locationId: true,
+                parentId: true,
+                name: true,
+                description: true,
+                order: true,
+                isVisible: true,
+
+                ...(authentication.authenticationType === "session"
+                  ? { syncGroupId: true, isSynced: true }
+                  : {}),
+
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
 
             ...(authentication.authenticationType === "session"
               ? { syncGroupId: true, isSynced: true }
@@ -50,8 +68,8 @@ export async function GET(request: Request): Promise<NextResponse> {
     console.error("Failed to fetch business menu categories:", error);
 
     return NextResponse.json(
-      { error: `Failed to fetch business menu categories: ${error}` },
-      { status: 400 },
+      { error: "Failed to fetch business menu categories" },
+      { status: 500 },
     );
   }
 }

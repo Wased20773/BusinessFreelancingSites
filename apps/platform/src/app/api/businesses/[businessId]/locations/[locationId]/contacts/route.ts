@@ -1,6 +1,7 @@
 import {
   createSyncedResource,
   validateBusinessLocationParams,
+  verifyLocationInBusiness,
 } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
@@ -24,6 +25,13 @@ export async function POST(
     ]);
 
     if (authResult instanceof NextResponse) return authResult;
+
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
 
     const body = await request.json();
 

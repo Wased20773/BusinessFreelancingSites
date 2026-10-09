@@ -1,5 +1,10 @@
-import { auth } from "@/auth";
+import {
+  isUniqueConstraintError,
+  optionalString,
+} from "@/app/api/route_helper";
+import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
+import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
 type RouteContext = {
@@ -8,63 +13,18 @@ type RouteContext = {
   }>;
 };
 
-type CreateLocationBody = {
-  address?: string;
-  city?: string | null;
-  state?: string | null;
-  zip?: string | null;
-  country?: string | null;
-  parking: true | false;
-};
-
-async function getBusinessAccess(userId: string, businessId: string) {
-  return prisma.businessUser.findUnique({
-    where: {
-      businessId_userId: {
-        businessId,
-        userId,
-      },
-    },
-    select: {
-      id: true,
-
-      role: {
-        select: {
-          accessLevel: true,
-        },
-      },
-
-      business: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-  });
-}
-
 // POST /api/businesses/[businessId]/locations
 export async function POST(
   request: Request,
   { params }: RouteContext,
 ): Promise<NextResponse> {
   try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { businessId } = await params;
 
-    // Verify the current user is linked to this business.
-    const businessAccess = await getBusinessAccess(session.user.id, businessId);
-
-    if (!businessAccess) {
+    if (!businessId) {
       return NextResponse.json(
-        { error: "You do not have access to this business" },
-        { status: 403 },
+        { error: "Missing businessId" },
+        { status: 400 },
       );
     }
 
@@ -72,22 +32,16 @@ export async function POST(
      * Only users who can manage business data should
      * be able to create locations.
      */
-    if (
-      businessAccess.role.accessLevel !== "owner" &&
-      businessAccess.role.accessLevel !== "admin"
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "You do not have permission to create locations for this business",
-        },
-        { status: 403 },
-      );
-    }
+    const authResult = await authenticateBusinessAccess(request, businessId, [
+      AccessLevel.owner,
+      AccessLevel.admin,
+    ]);
 
-    const body = (await request.json()) as CreateLocationBody;
+    if (authResult instanceof NextResponse) return authResult;
 
-    const address = body.address?.trim();
+    const body = await request.json();
+
+    const address = optionalString(body.address);
 
     if (!address) {
       return NextResponse.json(
@@ -130,11 +84,11 @@ export async function POST(
         businessId,
         address,
 
-        city: body.city?.trim() || null,
-        state: body.state?.trim() || null,
-        zip: body.zip?.trim() || null,
-        country: body.country?.trim() || null,
-        parking: body.parking || false,
+        city: optionalString(body.city),
+        state: optionalString(body.state),
+        zip: optionalString(body.zip),
+        country: optionalString(body.country),
+        parking: body.parking === true,
       },
       select: {
         id: true,
@@ -156,6 +110,16 @@ export async function POST(
       { status: 201 },
     );
   } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return NextResponse.json(
+        {
+          error:
+            "A location with this address already exists for this business",
+        },
+        { status: 409 },
+      );
+    }
+
     console.error("Failed to create business location:", error);
 
     return NextResponse.json(

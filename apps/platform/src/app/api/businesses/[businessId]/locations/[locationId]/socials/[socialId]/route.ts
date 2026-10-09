@@ -1,8 +1,10 @@
 import {
-  createSlug,
+  createSocialUrl,
   deleteSyncedResource,
   updateSyncedResource,
+  isUniqueConstraintError,
   validateBusinessLocationParams,
+  verifyLocationInBusiness,
 } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
@@ -39,6 +41,13 @@ export async function PATCH(
 
     if (authResult instanceof NextResponse) return authResult;
 
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
+
     const body = await request.json();
 
     if (!body.domain || !body.profileName) {
@@ -55,7 +64,7 @@ export async function PATCH(
       );
     }
 
-    const url = `https://${body.domain}/${createSlug(body.profileName)}`;
+    const url = createSocialUrl(body.domain, body.profileName);
 
     return await updateSyncedResource({
       body,
@@ -80,6 +89,13 @@ export async function PATCH(
       },
     });
   } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return NextResponse.json(
+        { error: "This social profile already exists in this location" },
+        { status: 409 },
+      );
+    }
+
     console.error("Failed to update social:", error);
 
     return NextResponse.json(
@@ -118,6 +134,13 @@ export async function DELETE(
     ]);
 
     if (authResult instanceof NextResponse) return authResult;
+
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
 
     const body = await request.json();
 

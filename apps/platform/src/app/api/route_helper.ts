@@ -137,6 +137,35 @@ export function validateBusinessLocationParams(
   return null;
 }
 
+/*
+ *   Verifies that the location belongs to the business. Call this after
+ *   authenticateBusinessAccess() so a user can't act on another business's
+ *   location by pairing their own businessId with someone else's locationId.
+ **/
+export async function verifyLocationInBusiness(
+  businessId: string,
+  locationId: string,
+): Promise<NextResponse | null> {
+  const location = await prisma.location.findFirst({
+    where: {
+      id: locationId,
+      businessId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!location) {
+    return NextResponse.json(
+      { error: "This location does not exist in our records" },
+      { status: 404 },
+    );
+  }
+
+  return null;
+}
+
 export async function createSyncedResource({
   body,
   model,
@@ -375,7 +404,7 @@ export async function deleteSyncedResource({
   if (!resource) {
     return NextResponse.json(
       { error: `This ${resourceName} does not exist in our records` },
-      { status: 400 },
+      { status: 404 },
     );
   }
 
@@ -490,10 +519,51 @@ export function createDomainSlug(value: string): string {
 }
 
 /*
+ *   Builds a social profile URL from its domain and profile name. Unlike createSlug(),
+ *   this keeps the characters social handles are allowed to use (letters in any case,
+ *   numbers, periods, underscores, hyphens, and @) and only strips whitespace and
+ *   anything else that would break the URL.
+ *
+ *   Example:
+ *       instagram.com + tacos.el_guero -> https://instagram.com/tacos.el_guero
+ *       tiktok.com + @TacosElGuero     -> https://tiktok.com/@TacosElGuero
+ **/
+export function createSocialUrl(domain: unknown, profileName: unknown): string {
+  const handle = String(profileName)
+    .trim()
+    .replace(/[^A-Za-z0-9._@-]/g, "");
+
+  return `https://${String(domain).trim()}/${handle}`;
+}
+
+/*
+ *   Returns the trimmed string, or null when the value is missing, empty, or not a
+ *   string. Used for optional text fields that can be cleared.
+ **/
+export function optionalString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+/*
+ *   Checks if the error is a Prisma unique constraint violation (P2002). Used to return
+ *   a 409 instead of a 500 when a record clashes with an existing one.
+ **/
+export function isUniqueConstraintError(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002"
+  );
+}
+
+/*
  *   Normalizes string to DayOfWeek string value and returns value when its included
  *   in the DayOfWeek type.
  **/
-export function normalizeDayOfWeek(value: string): DayOfWeek | null {
+export function normalizeDayOfWeek(value: unknown): DayOfWeek | null {
+  if (typeof value !== "string" || !value) {
+    return null;
+  }
+
   const normalized =
     value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 
@@ -512,6 +582,21 @@ export function normalizeDayOfWeek(value: string): DayOfWeek | null {
  *       15:30 -> 15 * 60 + 30 -> 930
  *       23:59 -> 23 * 60 + 59 -> 1439
  **/
+/*
+ *   Checks that a value is a valid 24-hour time in H:MM or HH:MM format.
+ *
+ *   Example:
+ *       9:00 -> true
+ *       23:59 -> true
+ *       24:00 -> false
+ *       noon -> false
+ **/
+export function isValidTime(time: unknown): time is string {
+  return (
+    typeof time === "string" && /^([01]?\d|2[0-3]):[0-5]\d$/.test(time.trim())
+  );
+}
+
 export function timeToMinutes(time: string): number {
   const [hours, minutes] = time.split(":").map(Number);
 
@@ -640,7 +725,7 @@ export async function createBusinessApiKey({
 }
 
 export function normalizeTime(time: string): string {
-  const [hours, minutes] = time.split(":");
+  const [hours, minutes] = time.trim().split(":");
 
   return `${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
 }

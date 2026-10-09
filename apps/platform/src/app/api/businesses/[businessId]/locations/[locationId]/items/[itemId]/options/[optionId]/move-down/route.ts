@@ -1,4 +1,7 @@
-import { validateBusinessLocationParams } from "@/app/api/route_helper";
+import {
+  validateBusinessLocationParams,
+  verifyLocationInBusiness,
+} from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
@@ -39,6 +42,13 @@ export async function PATCH(
 
     if (authResult instanceof NextResponse) return authResult;
 
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
+
     /*
      * Validate the Option through its parent Item.
      */
@@ -59,7 +69,7 @@ export async function PATCH(
     if (!currentOption) {
       return NextResponse.json(
         { error: "This item option does not exist in our records" },
-        { status: 400 },
+        { status: 404 },
       );
     }
 

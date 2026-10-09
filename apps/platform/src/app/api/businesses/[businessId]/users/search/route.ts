@@ -71,7 +71,9 @@ export async function GET(
       );
     }
 
-    const { ...user } = searchedUser;
+    // businesses was only needed for the membership check above
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { businesses, ...user } = searchedUser;
 
     return NextResponse.json(user, { status: 200 });
   } catch (error) {

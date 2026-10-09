@@ -3,9 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 import {
-  createSlug,
+  createSocialUrl,
   createSyncedResource,
+  isUniqueConstraintError,
   validateBusinessLocationParams,
+  verifyLocationInBusiness,
 } from "@/app/api/route_helper";
 
 // POST /api/businesses/[businessId]/locations/[locationId]/socials
@@ -26,6 +28,13 @@ export async function POST(
 
     if (authResult instanceof NextResponse) return authResult;
 
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
+
     const body = await request.json();
 
     if (!body.domain) {
@@ -42,7 +51,7 @@ export async function POST(
       );
     }
 
-    const url = `https://${body.domain}/${createSlug(body.profileName)}`;
+    const url = createSocialUrl(body.domain, body.profileName);
 
     if (!body.icon) {
       return NextResponse.json(
@@ -77,6 +86,13 @@ export async function POST(
       },
     });
   } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return NextResponse.json(
+        { error: "This social profile already exists in this location" },
+        { status: 409 },
+      );
+    }
+
     console.error("Failed to create social:", error);
 
     return NextResponse.json(

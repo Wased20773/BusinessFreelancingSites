@@ -59,6 +59,7 @@ export async function GET(
             dayOfWeek: true,
             isClosed: true,
             syncGroupId: true,
+            isSynced: true,
             createdAt: true,
             updatedAt: true,
             hour: {

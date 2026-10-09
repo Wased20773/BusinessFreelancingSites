@@ -1,9 +1,13 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { createSlug } from "@/app/api/route_helper";
+import {
+  createSlug,
+  isUniqueConstraintError,
+  optionalString,
+} from "@/app/api/route_helper";
 import { NextResponse } from "next/server";
 
-// POST /api/admin/onboarding/business
+// POST /api/onboarding/business
 export async function POST(request: Request): Promise<NextResponse> {
   try {
     // #############################
@@ -22,8 +26,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     // ##########################
     const body = await request.json();
 
-    const businessName = body.name?.trim();
-    const locationAddress = body.address?.trim();
+    const businessName = optionalString(body.name);
+    const locationAddress = optionalString(body.address);
 
     if (!businessName) {
       return NextResponse.json(
@@ -71,7 +75,30 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    const slug = baseSlug;
+    /*
+     * Business.slug is unique, so two businesses with the same
+     * name get numbered slugs: tacos, tacos-2, tacos-3, ...
+     */
+    const takenSlugs = new Set(
+      (
+        await prisma.business.findMany({
+          where: {
+            slug: {
+              startsWith: baseSlug,
+            },
+          },
+          select: {
+            slug: true,
+          },
+        })
+      ).map((business) => business.slug),
+    );
+
+    let slug = baseSlug;
+
+    for (let suffix = 2; takenSlugs.has(slug); suffix++) {
+      slug = `${baseSlug}-${suffix}`;
+    }
 
     // ################################
     // ##### Create Business Setup #####
@@ -96,11 +123,11 @@ export async function POST(request: Request): Promise<NextResponse> {
         data: {
           businessId: business.id,
           address: locationAddress,
-          country: body.country,
-          state: body.state,
-          city: body.city,
-          zip: body.zip,
-          parking: body.parking,
+          country: optionalString(body.country),
+          state: optionalString(body.state),
+          city: optionalString(body.city),
+          zip: optionalString(body.zip),
+          parking: body.parking === true,
         },
         select: {
           id: true,
@@ -132,6 +159,17 @@ export async function POST(request: Request): Promise<NextResponse> {
       { status: 201 },
     );
   } catch (error) {
+    // Another business claimed the same slug between the check and the create.
+    if (isUniqueConstraintError(error)) {
+      return NextResponse.json(
+        {
+          error:
+            "A business with this name was just created. Please try again",
+        },
+        { status: 409 },
+      );
+    }
+
     console.error("Failed to create business during onboarding:", error);
 
     return NextResponse.json(

@@ -1,4 +1,7 @@
-import { validateBusinessLocationParams } from "@/app/api/route_helper";
+import {
+  validateBusinessLocationParams,
+  verifyLocationInBusiness,
+} from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
@@ -37,6 +40,13 @@ export async function PATCH(
 
     if (authResult instanceof NextResponse) return authResult;
 
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
+
     // Find the selected category.
     const currentCategory = await prisma.category.findFirst({
       where: {
@@ -53,7 +63,7 @@ export async function PATCH(
     if (!currentCategory) {
       return NextResponse.json(
         { error: "This category does not exist in our records" },
-        { status: 400 },
+        { status: 404 },
       );
     }
 

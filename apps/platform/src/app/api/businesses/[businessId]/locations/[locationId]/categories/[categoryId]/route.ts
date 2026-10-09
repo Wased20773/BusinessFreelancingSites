@@ -1,6 +1,8 @@
 import {
   updateSyncedResource,
+  isUniqueConstraintError,
   validateBusinessLocationParams,
+  verifyLocationInBusiness,
 } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
@@ -40,6 +42,13 @@ export async function PATCH(
 
     if (authResult instanceof NextResponse) return authResult;
 
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
+
     const body = await request.json();
 
     if (!body.name) {
@@ -74,6 +83,13 @@ export async function PATCH(
       },
     });
   } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return NextResponse.json(
+        { error: "A category with this name already exists in this location" },
+        { status: 409 },
+      );
+    }
+
     console.error("Failed to update category:", error);
 
     return NextResponse.json(
@@ -116,6 +132,13 @@ export async function DELETE(
 
     if (authResult instanceof NextResponse) return authResult;
 
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
+
     const body = await request.json();
 
     if (typeof body.deleteAllSynced !== "boolean") {
@@ -139,6 +162,7 @@ export async function DELETE(
       select: {
         id: true,
         locationId: true,
+        parentId: true,
         syncGroupId: true,
         items: {
           select: {
@@ -151,7 +175,7 @@ export async function DELETE(
     if (!category) {
       return NextResponse.json(
         { error: "This category does not exist in our records" },
-        { status: 400 },
+        { status: 404 },
       );
     }
 
@@ -180,6 +204,7 @@ export async function DELETE(
         select: {
           id: true,
           locationId: true,
+          parentId: true,
 
           items: {
             select: {
@@ -208,15 +233,19 @@ export async function DELETE(
       }
 
       /*
-       * Save the affected locations before deleting.
-       * We need them afterward to rebuild Category order.
+       * Save the affected sibling lists (location + parent) before
+       * deleting. We need them afterward to rebuild Category order.
        */
-      const affectedLocationIds = [
-        ...new Set(
-          categoriesToDelete.map(
-            (selectedCategory) => selectedCategory.locationId,
-          ),
-        ),
+      const affectedSiblingGroups = [
+        ...new Map(
+          categoriesToDelete.map((selectedCategory) => [
+            `${selectedCategory.locationId}:${selectedCategory.parentId}`,
+            {
+              locationId: selectedCategory.locationId,
+              parentId: selectedCategory.parentId,
+            },
+          ]),
+        ).values(),
       ];
 
       /*
@@ -236,14 +265,14 @@ export async function DELETE(
       });
 
       /*
-       * Rebuild top-level Category order separately
-       * for every affected location.
+       * Rebuild Category order separately for every
+       * affected sibling list (top-level or subcategories).
        */
-      for (const affectedLocationId of affectedLocationIds) {
+      for (const siblingGroup of affectedSiblingGroups) {
         const remainingCategories = await prisma.category.findMany({
           where: {
-            locationId: affectedLocationId,
-            parentId: null,
+            locationId: siblingGroup.locationId,
+            parentId: siblingGroup.parentId,
           },
           orderBy: {
             order: "asc",
@@ -297,12 +326,14 @@ export async function DELETE(
     });
 
     /*
-     * Reorganize only this location's top-level categories.
+     * Reorganize only the deleted category's siblings
+     * (top-level categories, or the other subcategories
+     * under the same parent).
      */
     const remainingCategories = await prisma.category.findMany({
       where: {
         locationId,
-        parentId: null,
+        parentId: category.parentId,
       },
       orderBy: {
         order: "asc",

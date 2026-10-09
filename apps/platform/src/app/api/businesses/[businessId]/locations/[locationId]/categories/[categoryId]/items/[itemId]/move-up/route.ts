@@ -1,4 +1,7 @@
-import { validateBusinessLocationParams } from "@/app/api/route_helper";
+import {
+  validateBusinessLocationParams,
+  verifyLocationInBusiness,
+} from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
@@ -42,6 +45,13 @@ export async function PATCH(
 
     if (authResult instanceof NextResponse) return authResult;
 
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
+
     // Find the currently selected Item.
     const currentItem = await prisma.item.findFirst({
       where: {
@@ -58,7 +68,7 @@ export async function PATCH(
     if (!currentItem) {
       return NextResponse.json(
         { error: "This item does not exist in our records" },
-        { status: 400 },
+        { status: 404 },
       );
     }
 

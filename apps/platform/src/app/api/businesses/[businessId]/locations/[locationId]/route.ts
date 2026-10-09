@@ -1,6 +1,11 @@
-import { validateBusinessLocationParams } from "@/app/api/route_helper";
+import {
+  isUniqueConstraintError,
+  optionalString,
+  validateBusinessLocationParams,
+} from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
+import { deleteObject } from "@/lib/s3/delete";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
@@ -24,9 +29,56 @@ export async function PATCH(
 
     const body = await request.json();
 
-    if (typeof body.address !== "string" || body.address.trim() === "") {
+    /*
+     * Only fields present in the body are updated.
+     * Send null or "" to clear an optional text field.
+     */
+    const updateData: {
+      address?: string;
+      zip?: string | null;
+      country?: string | null;
+      state?: string | null;
+      city?: string | null;
+      parking?: boolean;
+      isActive?: boolean;
+      enableHours?: boolean;
+    } = {};
+
+    if (body.address !== undefined) {
+      const address = optionalString(body.address);
+
+      if (!address) {
+        return NextResponse.json(
+          { error: "A location address is required" },
+          { status: 400 },
+        );
+      }
+
+      updateData.address = address;
+    }
+
+    for (const field of ["zip", "country", "state", "city"] as const) {
+      if (body[field] !== undefined) {
+        updateData[field] = optionalString(body[field]);
+      }
+    }
+
+    for (const field of ["parking", "isActive", "enableHours"] as const) {
+      if (body[field] !== undefined) {
+        if (typeof body[field] !== "boolean") {
+          return NextResponse.json(
+            { error: `${field} must be a boolean` },
+            { status: 400 },
+          );
+        }
+
+        updateData[field] = body[field];
+      }
+    }
+
+    if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
-        { error: "A location address is required" },
+        { error: "No supported fields were provided" },
         { status: 400 },
       );
     }
@@ -62,36 +114,7 @@ export async function PATCH(
       where: {
         id: location.id,
       },
-      data: {
-        address: body.address.trim(),
-
-        zip:
-          typeof body.zip === "string" && body.zip.trim()
-            ? body.zip.trim()
-            : null,
-
-        country:
-          typeof body.country === "string" && body.country.trim()
-            ? body.country.trim()
-            : null,
-
-        state:
-          typeof body.state === "string" && body.state.trim()
-            ? body.state.trim()
-            : null,
-
-        city:
-          typeof body.city === "string" && body.city.trim()
-            ? body.city.trim()
-            : null,
-
-        parking: typeof body.parking === "boolean" ? body.parking : false,
-
-        isActive: typeof body.isActive === "boolean" ? body.isActive : true,
-
-        enableHours:
-          typeof body.enableHours === "boolean" ? body.enableHours : false,
-      },
+      data: updateData,
       select: {
         id: true,
         address: true,
@@ -111,6 +134,16 @@ export async function PATCH(
       status: 200,
     });
   } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return NextResponse.json(
+        {
+          error:
+            "A location with this address already exists for this business",
+        },
+        { status: 409 },
+      );
+    }
+
     console.error("Failed to update location:", error);
 
     return NextResponse.json(
@@ -148,6 +181,12 @@ export async function DELETE(
       },
       select: {
         id: true,
+        items: {
+          select: {
+            imageKey: true,
+            originalImageKey: true,
+          },
+        },
       },
     });
 
@@ -157,6 +196,14 @@ export async function DELETE(
         { status: 404 },
       );
     }
+
+    const imageKeys = [
+      ...new Set(
+        location.items
+          .flatMap((item) => [item.imageKey, item.originalImageKey])
+          .filter((imageKey): imageKey is string => imageKey !== null),
+      ),
+    ];
 
     /*
      * This deletes only this physical location.
@@ -169,6 +216,47 @@ export async function DELETE(
         id: location.id,
       },
     });
+
+    /*
+     * The cascade removes the Item records but not their S3 objects.
+     *
+     * Synced items at other locations can share the same image,
+     * so only delete objects nothing else points to anymore.
+     */
+    if (imageKeys.length > 0) {
+      const remainingImageReferences = await prisma.item.findMany({
+        where: {
+          OR: [
+            { imageKey: { in: imageKeys } },
+            { originalImageKey: { in: imageKeys } },
+          ],
+        },
+        select: {
+          imageKey: true,
+          originalImageKey: true,
+        },
+      });
+
+      const stillReferencedImageKeys = new Set(
+        remainingImageReferences.flatMap((item) => [
+          item.imageKey,
+          item.originalImageKey,
+        ]),
+      );
+
+      for (const imageKey of imageKeys) {
+        if (stillReferencedImageKeys.has(imageKey)) continue;
+
+        try {
+          await deleteObject(imageKey);
+        } catch (cleanupError) {
+          console.error(
+            `Failed to clean up deleted location's item image "${imageKey}":`,
+            cleanupError,
+          );
+        }
+      }
+    }
 
     return NextResponse.json(
       { message: "Location deleted successfully" },

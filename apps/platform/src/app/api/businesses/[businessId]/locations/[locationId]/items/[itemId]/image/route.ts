@@ -1,6 +1,7 @@
 import {
   imageRequestValidation,
   validateBusinessLocationParams,
+  verifyLocationInBusiness,
 } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { processImage } from "@/lib/images/process";
@@ -52,6 +53,13 @@ export async function POST(
       return authResult;
     }
 
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
+
     const item = await prisma.item.findFirst({
       where: {
         id: itemId,
@@ -66,7 +74,7 @@ export async function POST(
     });
 
     if (!item) {
-      return NextResponse.json({ error: "Item not found" }, { status: 400 });
+      return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
 
     /*
@@ -321,6 +329,13 @@ export async function PATCH(
       return authResult;
     }
 
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
+
     const item = await prisma.item.findFirst({
       where: {
         id: itemId,
@@ -335,7 +350,7 @@ export async function PATCH(
     });
 
     if (!item) {
-      return NextResponse.json({ error: "Item not found" }, { status: 400 });
+      return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
 
     /*
@@ -637,6 +652,13 @@ export async function DELETE(
       return authResult;
     }
 
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
+
     /*
      * DELETE has no image file, so it can stay JSON.
      */
@@ -665,7 +687,7 @@ export async function DELETE(
     if (!item) {
       return NextResponse.json(
         { error: "Item was not found" },
-        { status: 400 },
+        { status: 404 },
       );
     }
 

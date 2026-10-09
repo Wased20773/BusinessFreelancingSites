@@ -1,6 +1,7 @@
 import {
   normalizeDayOfWeek,
   validateBusinessLocationParams,
+  verifyLocationInBusiness,
 } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
@@ -25,6 +26,13 @@ export async function POST(
 
     if (authResult instanceof NextResponse) return authResult;
 
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
+
     const body = await request.json();
 
     // A complete weekly schedule must contain all 7 days.
@@ -39,7 +47,7 @@ export async function POST(
     const normalizedDays: { dayOfWeek: DayOfWeek; isClosed: boolean }[] = [];
 
     for (const day of body.days) {
-      if (!day.dayOfWeek) {
+      if (!day?.dayOfWeek) {
         return NextResponse.json(
           { error: "Each day must include a day of the week" },
           { status: 400 },
@@ -74,8 +82,33 @@ export async function POST(
     }
 
     /*
+     * A location can only have one weekly schedule
+     * (@@unique([locationId, dayOfWeek])).
+     */
+    const existingDay = await prisma.locationDay.findFirst({
+      where: {
+        locationId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (existingDay) {
+      return NextResponse.json(
+        {
+          error:
+            "This location already has a schedule. Remove it before creating a new one",
+        },
+        { status: 409 },
+      );
+    }
+
+    /*
      * If synchronization is ON, create the full week
-     * for every location in this business.
+     * for every location in this business that does not
+     * have a schedule yet. Locations that already have one
+     * are skipped.
      *
      * Each weekday gets its own synchronization group.
      *
@@ -189,6 +222,13 @@ export async function DELETE(
     ]);
 
     if (authResult instanceof NextResponse) return authResult;
+
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
 
     /*
      * This route deletes the complete schedule for only

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 const CURRENT_TOUR_VERSION = 1;
 
-// PATCH /api/user/workshop-tour
+// PATCH /api/user/workspace-tour
 export async function PATCH() {
   const session = await auth();
 

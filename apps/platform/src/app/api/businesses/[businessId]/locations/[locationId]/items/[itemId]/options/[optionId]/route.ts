@@ -1,4 +1,8 @@
-import { validateBusinessLocationParams } from "@/app/api/route_helper";
+import {
+  isUniqueConstraintError,
+  validateBusinessLocationParams,
+  verifyLocationInBusiness,
+} from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
@@ -40,6 +44,13 @@ export async function PATCH(
     if (authResult instanceof NextResponse) {
       return authResult;
     }
+
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
 
     const body = await request.json();
 
@@ -92,7 +103,7 @@ export async function PATCH(
     if (!option) {
       return NextResponse.json(
         { error: "This item option does not exist in our records" },
-        { status: 400 },
+        { status: 404 },
       );
     }
 
@@ -157,6 +168,13 @@ export async function PATCH(
 
     return NextResponse.json(updatedOption, { status: 200 });
   } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return NextResponse.json(
+        { error: "An option with this name already exists on this item" },
+        { status: 409 },
+      );
+    }
+
     console.error("Failed to update item option:", error);
 
     return NextResponse.json(
@@ -203,6 +221,13 @@ export async function DELETE(
       return authResult;
     }
 
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
+
     const body = await request.json();
 
     if (typeof body.deleteAllSynced !== "boolean") {
@@ -235,7 +260,7 @@ export async function DELETE(
     if (!option) {
       return NextResponse.json(
         { error: "This item option does not exist in our records" },
-        { status: 400 },
+        { status: 404 },
       );
     }
 

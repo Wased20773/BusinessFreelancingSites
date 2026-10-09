@@ -1,8 +1,10 @@
 import {
   checkTimeOverlap,
+  isValidTime,
   normalizeTime,
   timeToMinutes,
   validateBusinessLocationParams,
+  verifyLocationInBusiness,
 } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
@@ -43,6 +45,13 @@ export async function PATCH(
     ]);
 
     if (authResult instanceof NextResponse) return authResult;
+
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
 
     const body = await request.json();
 
@@ -86,6 +95,16 @@ export async function PATCH(
     if (!existingHour) {
       return NextResponse.json(
         { error: "This location hour does not exist in our records" },
+        { status: 404 },
+      );
+    }
+
+    if (
+      (body.openTime !== undefined && !isValidTime(body.openTime)) ||
+      (body.closeTime !== undefined && !isValidTime(body.closeTime))
+    ) {
+      return NextResponse.json(
+        { error: "Open and close time must use the HH:MM 24-hour format" },
         { status: 400 },
       );
     }
@@ -304,6 +323,13 @@ export async function DELETE(
 
     if (authResult instanceof NextResponse) return authResult;
 
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
+
     const body = await request.json();
 
     if (typeof body.deleteAllSynced !== "boolean") {
@@ -341,7 +367,7 @@ export async function DELETE(
     if (!hour) {
       return NextResponse.json(
         { error: "This location hour does not exist in our records" },
-        { status: 400 },
+        { status: 404 },
       );
     }
 

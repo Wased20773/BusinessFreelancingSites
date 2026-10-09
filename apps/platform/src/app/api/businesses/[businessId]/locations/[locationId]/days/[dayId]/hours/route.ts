@@ -1,8 +1,10 @@
 import {
   checkTimeOverlap,
+  isValidTime,
   normalizeTime,
   timeToMinutes,
   validateBusinessLocationParams,
+  verifyLocationInBusiness,
 } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
@@ -39,11 +41,25 @@ export async function POST(
 
     if (authResult instanceof NextResponse) return authResult;
 
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
+
     const body = await request.json();
 
     if (!body.openTime || !body.closeTime) {
       return NextResponse.json(
         { error: "Both open and close time must be provided" },
+        { status: 400 },
+      );
+    }
+
+    if (!isValidTime(body.openTime) || !isValidTime(body.closeTime)) {
+      return NextResponse.json(
+        { error: "Open and close time must use the HH:MM 24-hour format" },
         { status: 400 },
       );
     }
@@ -106,7 +122,7 @@ export async function POST(
     if (!day) {
       return NextResponse.json(
         { error: "This location day does not exist in our records" },
-        { status: 400 },
+        { status: 404 },
       );
     }
 

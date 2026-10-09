@@ -148,6 +148,21 @@ export async function POST(
       );
     }
 
+    /*
+     * A business has exactly one owner. Ownership can only
+     * change hands through an ownership transfer:
+     * PATCH /api/businesses/[businessId]/users/[businessUserId]
+     */
+    if (body.accessLevel === AccessLevel.owner) {
+      return NextResponse.json(
+        {
+          error:
+            "A user cannot be added as an owner. Add them first, then transfer ownership",
+        },
+        { status: 403 },
+      );
+    }
+
     // 1. Find the user we are trying to add
     const user = await prisma.user.findUnique({
       where: {

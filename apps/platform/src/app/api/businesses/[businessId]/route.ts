@@ -1,4 +1,7 @@
-import { createDomainSlug } from "@/app/api/route_helper";
+import {
+  createDomainSlug,
+  isUniqueConstraintError,
+} from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { getObjectUrl } from "@/lib/s3/get-url";
@@ -181,6 +184,13 @@ export async function PATCH(
 
     return NextResponse.json(business, { status: 200 });
   } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return NextResponse.json(
+        { error: "This domain is already used by another business" },
+        { status: 409 },
+      );
+    }
+
     console.error("Failed to update business:", error);
 
     return NextResponse.json(

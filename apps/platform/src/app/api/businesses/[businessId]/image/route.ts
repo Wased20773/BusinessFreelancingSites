@@ -11,6 +11,8 @@ import { uploadImage } from "@/lib/s3/upload";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
+const MAX_ORIGINAL_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
+
 async function getOriginalImage(
   request: Request,
 ): Promise<File | null | NextResponse> {
@@ -36,6 +38,13 @@ async function getOriginalImage(
       return NextResponse.json(
         { error: "The uploaded original image is empty" },
         { status: 400 },
+      );
+    }
+
+    if (originalImage.size > MAX_ORIGINAL_IMAGE_SIZE) {
+      return NextResponse.json(
+        { error: "The original image cannot be larger than 10 MB" },
+        { status: 413 },
       );
     }
 

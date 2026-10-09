@@ -1,6 +1,8 @@
 import {
   getNextOrder,
+  isUniqueConstraintError,
   validateBusinessLocationParams,
+  verifyLocationInBusiness,
 } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
@@ -36,6 +38,13 @@ export async function POST(
     ]);
 
     if (authResult instanceof NextResponse) return authResult;
+
+    const locationError = await verifyLocationInBusiness(
+      businessId,
+      locationId,
+    );
+
+    if (locationError) return locationError;
 
     const body = await request.json();
 
@@ -78,7 +87,7 @@ export async function POST(
     if (!item) {
       return NextResponse.json(
         { error: "This item does not exist in our records" },
-        { status: 400 },
+        { status: 404 },
       );
     }
 
@@ -202,6 +211,13 @@ export async function POST(
       { status: 201 },
     );
   } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return NextResponse.json(
+        { error: "An option with this name already exists on this item" },
+        { status: 409 },
+      );
+    }
+
     console.error("Failed to create item option:", error);
 
     return NextResponse.json(

@@ -1,7 +1,6 @@
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
-import { Turret_Road } from "next/font/google";
 import { NextResponse } from "next/server";
 
 // PATCH /api/businesses/[businessId]/users/[businessUserId]

@@ -51,9 +51,11 @@ export async function GET(request: Request): Promise<NextResponse> {
       "contact",
     );
   } catch (error) {
+    console.error("Failed to fetch business contacts:", error);
+
     return NextResponse.json(
-      { error: `Failed to fetch business contacts: ${error}` },
-      { status: 400 },
+      { error: "Failed to fetch business contacts" },
+      { status: 500 },
     );
   }
 }

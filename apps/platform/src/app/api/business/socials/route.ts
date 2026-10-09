@@ -16,67 +16,76 @@ type SocialResponse = {
 
 // GET /api/business/socials
 export async function GET(request: Request): Promise<NextResponse> {
-  const authentication = await authenticateBusinessReadAccess(request, [
-    AccessLevel.developer,
-    AccessLevel.owner,
-    AccessLevel.admin,
-    AccessLevel.staff,
-  ]);
+  try {
+    const authentication = await authenticateBusinessReadAccess(request, [
+      AccessLevel.developer,
+      AccessLevel.owner,
+      AccessLevel.admin,
+      AccessLevel.staff,
+    ]);
 
-  if (authentication instanceof NextResponse) return authentication;
+    if (authentication instanceof NextResponse) return authentication;
 
-  const rateLimit = await rateLimiterRead(authentication);
+    const rateLimit = await rateLimiterRead(authentication);
 
-  if (rateLimit instanceof NextResponse) return rateLimit;
+    if (rateLimit instanceof NextResponse) return rateLimit;
 
-  const response = await getLocationResponse(
-    authentication.businessId,
-    authentication.locationId,
-    {
-      socials: {
-        orderBy: [
-          {
-            domain: "asc",
+    const response = await getLocationResponse(
+      authentication.businessId,
+      authentication.locationId,
+      {
+        socials: {
+          orderBy: [
+            {
+              domain: "asc",
+            },
+            {
+              createdAt: "desc",
+            },
+          ],
+          select: {
+            id: true,
+            locationId: true,
+            domain: true,
+            profileName: true,
+            url: true,
+            icon: true,
+
+            ...(authentication.authenticationType === "session"
+              ? { syncGroupId: true, isSynced: true }
+              : {}),
+
+            createdAt: true,
+            updatedAt: true,
           },
-          {
-            createdAt: "desc",
-          },
-        ],
-        select: {
-          id: true,
-          locationId: true,
-          domain: true,
-          profileName: true,
-          url: true,
-          icon: true,
-
-          ...(authentication.authenticationType === "session"
-            ? { syncGroupId: true, isSynced: true }
-            : {}),
-
-          createdAt: true,
-          updatedAt: true,
         },
       },
-    },
-    "social",
-  );
+      "social",
+    );
 
-  if (!response.ok) return response;
+    if (!response.ok) return response;
 
-  const data = (await response.json()) as {
-    socials: SocialResponse[];
-  };
+    const data = (await response.json()) as {
+      socials: SocialResponse[];
+    };
 
-  const socials = await Promise.all(
-    data.socials.map(async (social) => ({
-      ...social,
-      icon: await getObjectUrl(social.icon),
-    })),
-  );
+    const socials = await Promise.all(
+      data.socials.map(async (social) => ({
+        ...social,
+        icon: await getObjectUrl(social.icon),
+      })),
+    );
 
-  return NextResponse.json({
-    ...data,
-    socials,
-  });
+    return NextResponse.json({
+      ...data,
+      socials,
+    });
+  } catch (error) {
+    console.error("Failed to fetch business socials:", error);
+
+    return NextResponse.json(
+      { error: "Failed to fetch business socials" },
+      { status: 500 },
+    );
+  }
 }

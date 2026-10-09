@@ -49,8 +49,8 @@ export async function GET(request: Request): Promise<NextResponse> {
     console.error("Failed to fetch business locations:", error);
 
     return NextResponse.json(
-      { error: `Failed to fetch business locations: ${error}` },
-      { status: 400 },
+      { error: "Failed to fetch business locations" },
+      { status: 500 },
     );
   }
 }

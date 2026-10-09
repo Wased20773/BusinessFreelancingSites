@@ -83,7 +83,7 @@ export async function authenticateBusinessAccess(
 
     return NextResponse.json(
       { error: "Failed to authenticate" },
-      { status: 400 },
+      { status: 500 },
     );
   }
 }
