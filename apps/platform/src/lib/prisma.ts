@@ -18,6 +18,14 @@ export const prisma =
   new PrismaClient({
     adapter: new PrismaPg({
       connectionString: process.env.DATABASE_URL!,
+
+      // The database is remote, so opening a connection costs a TLS
+      // handshake. pg closes idle connections after 10s by default, which
+      // made the first request after a short pause noticeably slow.
+      // Keep one connection warm and let the rest idle for 5 minutes.
+      min: 1,
+      idleTimeoutMillis: 5 * 60 * 1000,
+      keepAlive: true,
     }),
   });
 

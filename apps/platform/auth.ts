@@ -83,8 +83,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (
         trigger === "update" ||
         businessToken.onboardingCompleted === undefined ||
-        businessToken.workspaceTourCompleted === undefined ||
-        businessToken.dashboardTourCompleted === undefined
+        businessToken.workspaceTourVersion === undefined ||
+        businessToken.dashboardTourVersion === undefined
       ) {
         const userData = await prisma.user.findUnique({
           where: {
