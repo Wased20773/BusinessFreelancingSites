@@ -18,249 +18,145 @@ jest.mock("@/lib/prisma", () => ({
   prisma: mockPrisma,
 }));
 
+const request = new Request("http://localhost/api/businesses/business-123");
+
+const session: Session = {
+  user: {
+    id: "user-123",
+    name: "Tester",
+    email: "tester@example.com",
+  },
+  expires: "2099-01-01T00:00:00.000Z",
+};
+
+async function expectErrorResponse(
+  result: unknown,
+  status: number,
+  body: unknown,
+): Promise<void> {
+  expect(result).toBeInstanceOf(Response);
+
+  if (!(result instanceof Response)) {
+    throw new Error("Expected a Response");
+  }
+
+  expect(result.status).toBe(status);
+  expect(await result.json()).toEqual(body);
+}
+
 describe("authenticateBusinessAccess", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
   });
 
   it("returns 401 when no authenticated session exists", async () => {
     mockedAuth.mockResolvedValue(null);
 
-    const request = new Request("http://localhost/api/admin/test");
-
-    const response = await authenticateBusinessAccess(request, [
+    const result = await authenticateBusinessAccess(request, "business-123", [
       AccessLevel.owner,
     ]);
 
-    expect(response).toBeInstanceOf(Response);
-
-    if (!(response instanceof Response)) {
-      throw new Error("Expected a Response");
-    }
-
-    const responseBody = await response.json();
-
-    expect(response.status).toBe(401);
-
-    expect(responseBody).toEqual({
-      error: "Unauthorized Access",
-    });
+    await expectErrorResponse(result, 401, { error: "Unauthorized Access" });
 
     expect(mockPrisma.businessUser.findFirst).not.toHaveBeenCalled();
   });
 
-  it("returns 401 when the authenticated session has no email", async () => {
+  it("returns 401 when the authenticated session has no user id", async () => {
     mockedAuth.mockResolvedValue({
-      user: {
-        name: "Tester",
-        email: undefined,
-      },
-      expires: "2099-01-01T00:00:00.000Z",
-    });
+      ...session,
+      user: { name: "Tester", email: "tester@example.com" },
+    } as Session);
 
-    const request = new Request("http://localhost/api/admin/test");
-
-    const response = await authenticateBusinessAccess(request, [
+    const result = await authenticateBusinessAccess(request, "business-123", [
       AccessLevel.owner,
     ]);
 
-    expect(response).toBeInstanceOf(Response);
-
-    if (!(response instanceof Response)) {
-      throw new Error("Expected a Response");
-    }
-
-    const responseBody = await response.json();
-
-    expect(response.status).toBe(401);
-
-    expect(responseBody).toEqual({
-      error: "Unauthorized Access",
-    });
+    await expectErrorResponse(result, 401, { error: "Unauthorized Access" });
 
     expect(mockPrisma.businessUser.findFirst).not.toHaveBeenCalled();
   });
 
-  it("returns 403 when the session has no businessId", async () => {
-    mockedAuth.mockResolvedValue({
-      user: {
-        name: "Tester",
-        email: "tester@example.com",
-      },
-      expires: "2099-01-01T00:00:00.000Z",
-    });
+  it("returns 400 when no businessId is provided", async () => {
+    mockedAuth.mockResolvedValue(session);
 
-    const request = new Request("http://localhost/api/admin/test");
-
-    const response = await authenticateBusinessAccess(request, [
+    const result = await authenticateBusinessAccess(request, "", [
       AccessLevel.owner,
     ]);
 
-    expect(response).toBeInstanceOf(Response);
-
-    if (!(response instanceof Response)) {
-      throw new Error("Expected a Response");
-    }
-
-    const responseBody = await response.json();
-
-    expect(response.status).toBe(403);
-
-    expect(responseBody).toEqual({
-      error: "No business selected",
-    });
+    await expectErrorResponse(result, 400, { error: "Missing businessId" });
 
     expect(mockPrisma.businessUser.findFirst).not.toHaveBeenCalled();
   });
 
   it("returns 403 when the user does not have access to the selected business", async () => {
-    mockedAuth.mockResolvedValue({
-      user: {
-        name: "Tester",
-        email: "tester@example.com",
-        businessId: "business-123",
-      },
-      expires: "2099-01-01T00:00:00.000Z",
-    });
-
+    mockedAuth.mockResolvedValue(session);
     mockPrisma.businessUser.findFirst.mockResolvedValue(null);
 
-    const request = new Request("http://localhost/api/admin/test");
+    const result = await authenticateBusinessAccess(request, "business-123", [
+      AccessLevel.owner,
+      AccessLevel.admin,
+    ]);
 
-    const allowedRoles = [AccessLevel.owner, AccessLevel.admin];
-
-    const response = await authenticateBusinessAccess(request, allowedRoles);
-
-    expect(response).toBeInstanceOf(Response);
-
-    if (!(response instanceof Response)) {
-      throw new Error("Expected a Response");
-    }
-
-    const responseBody = await response.json();
-
-    expect(response.status).toBe(403);
-
-    expect(responseBody).toEqual({
-      error: "Forbidden",
-    });
+    await expectErrorResponse(result, 403, { error: "Forbidden" });
 
     expect(mockPrisma.businessUser.findFirst).toHaveBeenCalledWith({
       where: {
-        user: {
-          email: "tester@example.com",
-        },
+        userId: "user-123",
         businessId: "business-123",
         role: {
           accessLevel: {
-            in: allowedRoles,
+            in: [AccessLevel.owner, AccessLevel.admin],
           },
         },
       },
       select: {
-        businessId: true,
         userId: true,
+        businessId: true,
+        role: {
+          select: {
+            id: true,
+            accessLevel: true,
+          },
+        },
       },
     });
   });
 
-  it("returns 400 when the business access lookup fails", async () => {
-    mockedAuth.mockResolvedValue({
-      user: {
-        name: "Tester",
-        email: "tester@example.com",
-        businessId: "business-123",
-      },
-      expires: "2099-01-01T00:00:00.000Z",
-    });
-
+  it("returns 500 when the business access lookup fails", async () => {
+    mockedAuth.mockResolvedValue(session);
     mockPrisma.businessUser.findFirst.mockRejectedValue(
       new Error("Database query failed"),
     );
 
-    const request = new Request("http://localhost/api/admin/test");
-
-    const response = await authenticateBusinessAccess(request, [
+    const result = await authenticateBusinessAccess(request, "business-123", [
       AccessLevel.owner,
     ]);
 
-    expect(response).toBeInstanceOf(Response);
-
-    if (!(response instanceof Response)) {
-      throw new Error("Expected a Response");
-    }
-
-    const responseBody = await response.json();
-
-    expect(response.status).toBe(400);
-
-    expect(responseBody).toEqual({
-      error: "Failed to authenticate",
-    });
-
-    expect(mockPrisma.businessUser.findFirst).toHaveBeenCalledWith({
-      where: {
-        user: {
-          email: "tester@example.com",
-        },
-        businessId: "business-123",
-        role: {
-          accessLevel: {
-            in: [AccessLevel.owner],
-          },
-        },
-      },
-      select: {
-        businessId: true,
-        userId: true,
-      },
-    });
+    await expectErrorResponse(result, 500, { error: "Failed to authenticate" });
   });
 
-  it("returns the authenticated user and business identifiers when access is allowed", async () => {
-    mockedAuth.mockResolvedValue({
-      user: {
-        name: "Tester",
-        email: "tester@example.com",
-        businessId: "business-123",
-      },
-      expires: "2099-01-01T00:00:00.000Z",
-    });
-
+  it("returns the authenticated user, business, and access level when access is allowed", async () => {
+    mockedAuth.mockResolvedValue(session);
     mockPrisma.businessUser.findFirst.mockResolvedValue({
-      businessId: "business-123",
       userId: "user-123",
+      businessId: "business-123",
+      role: {
+        id: "role-admin",
+        accessLevel: AccessLevel.admin,
+      },
     });
 
-    const request = new Request("http://localhost/api/admin/test");
-
-    const allowedRoles = [AccessLevel.owner, AccessLevel.admin];
-
-    const result = await authenticateBusinessAccess(request, allowedRoles);
+    const result = await authenticateBusinessAccess(request, "business-123", [
+      AccessLevel.owner,
+      AccessLevel.admin,
+    ]);
 
     expect(result).not.toBeInstanceOf(Response);
 
     expect(result).toEqual({
       userId: "user-123",
       businessId: "business-123",
-    });
-
-    expect(mockPrisma.businessUser.findFirst).toHaveBeenCalledWith({
-      where: {
-        user: {
-          email: "tester@example.com",
-        },
-        businessId: "business-123",
-        role: {
-          accessLevel: {
-            in: allowedRoles,
-          },
-        },
-      },
-      select: {
-        businessId: true,
-        userId: true,
-      },
+      accessLevel: AccessLevel.admin,
     });
   });
 });

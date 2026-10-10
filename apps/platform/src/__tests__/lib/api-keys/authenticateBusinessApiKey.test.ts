@@ -7,13 +7,9 @@ import { createHash } from "node:crypto";
 import { mockPrisma } from "@/__tests__/mocks/prisma";
 import { authenticateBusinessApiKey } from "@/lib/api-keys/authenticateBusinessApiKey";
 
-jest.mock("@/lib/prisma", () => {
-  const { mockPrisma } = require("@/__tests__/mocks/prisma");
-
-  return {
-    prisma: mockPrisma,
-  };
-});
+jest.mock("@/lib/prisma", () => ({
+  prisma: mockPrisma,
+}));
 
 describe("authenticateBusinessApiKey", () => {
   beforeEach(() => {

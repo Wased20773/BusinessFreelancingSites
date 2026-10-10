@@ -7,18 +7,6 @@ type CreateJsonRequestOptions = {
   headers?: HeadersInit;
 };
 
-export function createImageRouteRequest({
-  itemId = "item-123",
-  method,
-}: {
-  itemId?: string;
-  method: RouteMethod;
-}): Request {
-  return new Request(`http://localhost/api/admin/items/${itemId}/image`, {
-    method,
-  });
-}
-
 export function createJsonRequest({
   url,
   method,
@@ -38,21 +26,48 @@ export function createJsonRequest({
   });
 }
 
+/*
+ * Builds a multipart/form-data request. String values are sent as plain
+ * fields and Files as file uploads.
+ */
+export function createFormDataRequest({
+  url,
+  method,
+  fields,
+}: {
+  url: string;
+  method: RouteMethod;
+  fields: Record<string, string | File>;
+}): Request {
+  const formData = new FormData();
+
+  for (const [key, value] of Object.entries(fields)) {
+    formData.append(key, value);
+  }
+
+  return new Request(url, {
+    method,
+    body: formData,
+  });
+}
+
 export function createApiKeyRequest({
   url,
   apiKey,
+  headers,
 }: {
   url: string;
   apiKey?: string;
+  headers?: HeadersInit;
 }): Request {
-  const headers = new Headers();
+  const requestHeaders = new Headers(headers);
 
   if (apiKey !== undefined) {
-    headers.set("Authorization", `Bearer ${apiKey}`);
+    requestHeaders.set("Authorization", `Bearer ${apiKey}`);
   }
 
   return new Request(url, {
     method: "GET",
-    headers,
+    headers: requestHeaders,
   });
 }
