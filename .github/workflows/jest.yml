@@ -25,7 +25,9 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Node 22.18+ loads jest.config.ts natively. On Node 20, Jest
+          # needs ts-node to read it and fails before running any test.
+          node-version: 24
           cache: npm
           cache-dependency-path: package-lock.json
 
