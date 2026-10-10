@@ -4,10 +4,12 @@ on:
   pull_request:
     branches:
       - platform-dashboard
+      - redesign-dashboard-logic
 
   push:
     branches:
       - platform-dashboard
+      - redesign-dashboard-logic
 
   workflow_dispatch:
 
@@ -29,6 +31,13 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # The Prisma Client is generated into packages/database/generated,
+      # which is gitignored, so it has to be generated on every run.
+      # No database connection is needed to generate it.
+      - name: Generate Prisma Client
+        working-directory: packages/database
+        run: npx prisma generate
 
       - name: Run platform Jest tests
         working-directory: apps/platform
