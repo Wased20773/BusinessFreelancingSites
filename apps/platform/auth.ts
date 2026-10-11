@@ -17,6 +17,18 @@ type BusinessToken = {
   businessId?: string;
   businessSlug?: string;
   businessName?: string;
+
+  /*
+   * The business image's S3 key. A fresh presigned URL is created from it
+   * every time the session is read, because presigned URLs expire after an
+   * hour while the session lasts much longer.
+   */
+  businessImageS3Key?: string | null;
+
+  /*
+   * Legacy: older tokens stored the presigned URL itself here, which broke
+   * once it expired. Kept only so it can be removed from existing tokens.
+   */
   businessImageKey?: string | null;
   accessLevel?: "developer" | "owner" | "admin" | "staff";
 };
@@ -149,14 +161,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           businessToken.businessName = businessUser.business.name;
 
           /*
-           * The database stores the actual S3 image key.
-           *
-           * The session stores the presigned URL so the
-           * frontend can use it directly as an Image src.
+           * Store the S3 key, not a presigned URL. The session
+           * callback signs a fresh URL from it on every read.
            */
-          businessToken.businessImageKey = businessUser.business.imageKey
-            ? await getObjectUrl(businessUser.business.imageKey)
-            : null;
+          businessToken.businessImageS3Key = businessUser.business.imageKey;
+          delete businessToken.businessImageKey;
 
           businessToken.accessLevel = businessUser.role.accessLevel;
         } else {
@@ -170,9 +179,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           delete businessToken.businessId;
           delete businessToken.businessSlug;
           delete businessToken.businessName;
+          delete businessToken.businessImageS3Key;
           delete businessToken.businessImageKey;
           delete businessToken.accessLevel;
         }
+      } else if (
+        businessToken.businessId &&
+        businessToken.businessImageS3Key === undefined
+      ) {
+        /*
+         * Upgrade tokens created before businessImageS3Key existed.
+         * They only hold an expired presigned URL, so look up the
+         * S3 key once and drop the stale URL.
+         */
+        const business = await prisma.business.findUnique({
+          where: {
+            id: businessToken.businessId,
+          },
+          select: {
+            imageKey: true,
+          },
+        });
+
+        businessToken.businessImageS3Key = business?.imageKey ?? null;
+        delete businessToken.businessImageKey;
       }
 
       return businessToken;
@@ -218,8 +248,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.businessName = businessToken.businessName;
       }
 
-      if (businessToken.businessImageKey !== undefined) {
-        session.user.businessImageKey = businessToken.businessImageKey;
+      /*
+       * Presigned URLs expire after an hour, so sign a fresh one on
+       * every read. Signing happens locally (no request to AWS).
+       */
+      if (businessToken.businessImageS3Key !== undefined) {
+        try {
+          session.user.businessImageKey = businessToken.businessImageS3Key
+            ? await getObjectUrl(businessToken.businessImageS3Key)
+            : null;
+        } catch (error) {
+          console.error("Failed to sign the business image URL:", error);
+          session.user.businessImageKey = null;
+        }
       }
 
       if (businessToken.accessLevel) {
