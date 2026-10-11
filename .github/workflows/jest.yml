@@ -1,14 +1,14 @@
-name: Jest Tests
+name: Platform CI
 
 on:
   pull_request:
     branches:
-      - platform-dashboard
+      - main
       - redesign-dashboard-logic
 
   push:
     branches:
-      - platform-dashboard
+      - main
       - redesign-dashboard-logic
 
   workflow_dispatch:
@@ -44,3 +44,51 @@ jobs:
       - name: Run platform Jest tests
         working-directory: apps/platform
         run: npm test -- --runInBand
+
+  build:
+    name: Production Build
+    runs-on: ubuntu-latest
+
+    # The Redis client connects as soon as it is imported. Next.js loads the
+    # route modules while collecting page data, so Redis must be reachable or
+    # the build can hang waiting for a connection.
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    # Placeholder values so modules that read env at import time can load.
+    # Nothing connects to a database, S3, or Google during the build.
+    env:
+      DATABASE_URL: postgres://placeholder:placeholder@localhost:5432/placeholder
+      REDIS_URL: redis://localhost:6379
+      AWS_REGION: us-west-2
+      AWS_S3_BUCKET_NAME: placeholder
+      AUTH_SECRET: placeholder-secret-for-ci-build-only
+      AUTH_GOOGLE_ID: placeholder
+      AUTH_GOOGLE_SECRET: placeholder
+      NEXT_TELEMETRY_DISABLED: 1
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        working-directory: packages/database
+        run: npx prisma generate
+
+      # Compiles and type-checks the app the same way a deploy would.
+      - name: Build platform
+        working-directory: apps/platform
+        run: npm run build
