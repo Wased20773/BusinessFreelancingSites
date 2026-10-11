@@ -3,13 +3,16 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: false,
 
-  // Allows Next.js developement assets and client-side JavaScript to load
-  // when the app is accessed through a temporary Cloudflare Tunnel URL.
-  // allowedDevOrigins: ["*.trycloudflare.com"],
-
-  // Allows Next.js development assets and client-side JavaScript to load
-  // when the app is accessed through a permanent generated NGrok URL.
-  allowedDevOrigins: ["doorpost-slapstick-drainer.ngrok-free.dev"],
+  // Allows Next.js development assets and client-side JavaScript to load when
+  // the app is accessed through a tunnel (ngrok, Cloudflare Tunnel, ...).
+  // Only applies to `next dev`; production builds ignore it.
+  //
+  // Set a comma-separated list in .env.local, for example:
+  //   ALLOWED_DEV_ORIGINS=doorpost-slapstick-drainer.ngrok-free.dev,*.trycloudflare.com
+  allowedDevOrigins:
+    process.env.ALLOWED_DEV_ORIGINS?.split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean) ?? [],
 
   images: {
     remotePatterns: [
