@@ -6,6 +6,13 @@ import { NextResponse } from "next/server";
 import { rateLimiterRead } from "@/app/api/route_helper";
 
 // TODO: Must support filtering with locationSlug, CategorySlug, and ItemSlug for easy client lookup
+/*
+ * Set to false to re-enable this route. A flag is used instead of an early
+ * `return` so TypeScript keeps type-checking the code below; code after a bare
+ * `return` is treated as unreachable and fails `next build`.
+ */
+const ROUTE_DISABLED: boolean = true;
+
 // GET /api/business/menu/items/[itemId]
 export async function GET(
   request: Request,
@@ -17,13 +24,16 @@ export async function GET(
     }>;
   },
 ): Promise<NextResponse> {
-  return NextResponse.json(
-    {
-      error:
-        "This API path is currently being worked on and is therefor disabled. Please try again later",
-    },
-    { status: 404 },
-  );
+  if (ROUTE_DISABLED) {
+    return NextResponse.json(
+      {
+        error:
+          "This API path is currently being worked on and is therefor disabled. Please try again later",
+      },
+      { status: 404 },
+    );
+  }
+
   try {
     const { itemId } = await params;
 
