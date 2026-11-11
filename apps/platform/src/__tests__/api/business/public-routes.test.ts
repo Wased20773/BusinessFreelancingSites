@@ -28,6 +28,16 @@ jest.mock("@/lib/prisma", () => ({
   prisma: mockPrisma,
 }));
 
+// A plain function (not jest.fn) so jest.resetAllMocks() does not clear it.
+// Keeps rateLimiterRead's plan lookup off the business.findUnique mock.
+jest.mock("@/lib/billing/getBusinessPlan", () => ({
+  getBusinessPlan: async () => ({
+    planKey: "free",
+    limits: jest.requireActual("@/lib/billing/plans").PLANS.free,
+    locationSlots: 1,
+  }),
+}));
+
 jest.mock("@/lib/auth/authenticateBusinessReadAccess", () => ({
   authenticateBusinessReadAccess: jest.fn(),
 }));

@@ -7,6 +7,7 @@ import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAcces
 import { prisma } from "@/lib/prisma";
 import { AccessLevel, DayOfWeek } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
+import { allowSync } from "@/lib/billing/sync";
 
 // POST /api/businesses/[businessId]/locations/[locationId]/days
 export async function POST(
@@ -103,6 +104,8 @@ export async function POST(
         { status: 409 },
       );
     }
+
+    body.isSynced = await allowSync(businessId, body.isSynced === true);
 
     /*
      * If synchronization is ON, create the full week

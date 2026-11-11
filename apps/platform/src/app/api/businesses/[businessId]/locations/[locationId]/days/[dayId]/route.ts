@@ -58,6 +58,7 @@ export async function PATCH(
       body,
       model: prisma.locationDay,
       resourceName: "day",
+      businessId,
       id: dayId,
       locationId,
       data: {

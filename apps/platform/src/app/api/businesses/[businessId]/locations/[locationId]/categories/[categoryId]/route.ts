@@ -8,6 +8,7 @@ import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAcces
 import { prisma } from "@/lib/prisma";
 import { AccessLevel, Prisma } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
+import { allowSync } from "@/lib/billing/sync";
 
 // PATCH /api/businesses/[businessId]/locations/[locationId]/categories/[categoryId]
 export async function PATCH(
@@ -62,6 +63,7 @@ export async function PATCH(
       body,
       model: prisma.category,
       resourceName: "category",
+      businessId,
       id: categoryId,
       locationId,
       data: {
@@ -147,6 +149,8 @@ export async function DELETE(
         { status: 400 },
       );
     }
+
+    body.deleteAllSynced = await allowSync(businessId, body.deleteAllSynced);
 
     /*
      * Get the selected category first so we know:

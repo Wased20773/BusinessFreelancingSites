@@ -8,6 +8,7 @@ import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAcces
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
+import { allowSync } from "@/lib/billing/sync";
 
 // POST /api/businesses/[businessId]/locations/[locationId]/items/[itemId]/options
 export async function POST(
@@ -68,6 +69,8 @@ export async function POST(
         { status: 400 },
       );
     }
+
+    body.isSynced = await allowSync(businessId, body.isSynced);
 
     /*
      * Get the selected parent Item.

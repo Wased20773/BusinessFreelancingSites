@@ -4,6 +4,10 @@ import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAcces
 import { prisma } from "@/lib/prisma";
 import { generateBusinessApiKey } from "@/lib/api-keys/generateBusinessApiKey";
 import { parseAllowedOrigins } from "@/lib/api-keys/allowedOrigins";
+import {
+  getBusinessPlan,
+  planLimitResponse,
+} from "@/lib/billing/getBusinessPlan";
 
 type CreateApiKeyBody = {
   name?: unknown;
@@ -119,6 +123,27 @@ export async function POST(
       }
 
       allowedOrigins = parsedOrigins.allowedOrigins;
+    }
+
+    /*
+     * Inactive keys count too. Otherwise a developer could deactivate a key,
+     * create another, and reactivate the first to get past the limit.
+     */
+    const [{ limits }, apiKeyCount] = await Promise.all([
+      getBusinessPlan(businessId),
+      prisma.businessApiKey.count({ where: { businessId } }),
+    ]);
+
+    if (apiKeyCount >= limits.maxApiKeys) {
+      return planLimitResponse(
+        `This business's plan allows ${limits.maxApiKeys} API keys. Upgrade the plan to add more.`,
+      );
+    }
+
+    if (allowedOrigins.length > limits.maxOriginsPerKey) {
+      return planLimitResponse(
+        `This business's plan allows ${limits.maxOriginsPerKey} allowed origins per API key.`,
+      );
     }
 
     const { apiKey, keyHash, keyPrefix } = generateBusinessApiKey();

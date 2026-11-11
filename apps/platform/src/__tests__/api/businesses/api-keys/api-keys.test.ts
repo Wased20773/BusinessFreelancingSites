@@ -12,6 +12,8 @@ import { createRouteContext } from "@/__tests__/helpers/route";
 import { mockPrisma, resetPrismaMock } from "@/__tests__/mocks/prisma";
 import { generateBusinessApiKey } from "@/lib/api-keys/generateBusinessApiKey";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
+import { mockBusinessPlan } from "@/__tests__/helpers/billing";
+import { PLANS } from "@/lib/billing/plans";
 
 import { GET, POST } from "@/app/api/businesses/[businessId]/api-keys/route";
 
@@ -25,6 +27,11 @@ jest.mock("@/lib/auth/authenticateBusinessAccess", () => ({
 
 jest.mock("@/lib/api-keys/generateBusinessApiKey", () => ({
   generateBusinessApiKey: jest.fn(),
+}));
+
+jest.mock("@/lib/billing/getBusinessPlan", () => ({
+  ...jest.requireActual("@/lib/billing/getBusinessPlan"),
+  getBusinessPlan: jest.fn(),
 }));
 
 const mockedGenerateBusinessApiKey = jest.mocked(generateBusinessApiKey);
@@ -123,9 +130,78 @@ describe("/api/businesses/[businessId]/api-keys", () => {
   });
 
   describe("POST", () => {
+    beforeEach(() => {
+      // Free plan with no keys yet: room for one key.
+      mockBusinessPlan("free");
+      mockPrisma.businessApiKey.count.mockResolvedValue(0);
+    });
+
     function postApiKey(body: unknown) {
       return POST(createJsonRequest({ url: URL, method: "POST", body }), context);
     }
+
+    it("returns 403 PLAN_LIMIT when the plan's API key limit is reached", async () => {
+      mockSuccessfulAuthentication();
+      mockPrisma.businessApiKey.count.mockResolvedValue(PLANS.free.maxApiKeys);
+
+      const response = await postApiKey({ name: "Production Website" });
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        error: `This business's plan allows ${PLANS.free.maxApiKeys} API keys. Upgrade the plan to add more.`,
+        code: "PLAN_LIMIT",
+      });
+
+      // Inactive keys count too, so the count is not filtered by isActive.
+      expect(mockPrisma.businessApiKey.count).toHaveBeenCalledWith({
+        where: { businessId: BUSINESS_ID },
+      });
+      expect(mockedGenerateBusinessApiKey).not.toHaveBeenCalled();
+      expect(mockPrisma.businessApiKey.create).not.toHaveBeenCalled();
+    });
+
+    it("returns 403 PLAN_LIMIT when a new key has more origins than the plan allows", async () => {
+      mockSuccessfulAuthentication();
+
+      const allowedOrigins = Array.from(
+        { length: PLANS.free.maxOriginsPerKey + 1 },
+        (_, index) => `https://site${index}.example.com`,
+      );
+
+      const response = await postApiKey({
+        name: "Production Website",
+        allowedOrigins,
+      });
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        error: `This business's plan allows ${PLANS.free.maxOriginsPerKey} allowed origins per API key.`,
+        code: "PLAN_LIMIT",
+      });
+      expect(mockPrisma.businessApiKey.create).not.toHaveBeenCalled();
+    });
+
+    it("uses the paid tier's higher API key and origin limits", async () => {
+      mockSuccessfulAuthentication();
+      mockBusinessPlan("growingBusiness");
+      mockPrisma.businessApiKey.count.mockResolvedValue(PLANS.free.maxApiKeys);
+      mockedGenerateBusinessApiKey.mockReturnValue({
+        apiKey: "bp_abc1234-secret",
+        keyHash: "hashed-key",
+        keyPrefix: "bp_abc1234",
+      });
+      mockPrisma.businessApiKey.create.mockResolvedValue({ id: "api-key-123" });
+
+      const response = await postApiKey({
+        name: "Production Website",
+        allowedOrigins: Array.from(
+          { length: PLANS.growingBusiness.maxOriginsPerKey },
+          (_, index) => `https://site${index}.example.com`,
+        ),
+      });
+
+      expect(response.status).toBe(201);
+    });
 
     it("returns the authentication error response", async () => {
       mockFailedAuthentication(403, "Forbidden");

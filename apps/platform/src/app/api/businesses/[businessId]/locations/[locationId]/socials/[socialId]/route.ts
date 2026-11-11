@@ -70,6 +70,7 @@ export async function PATCH(
       body,
       model: prisma.social,
       resourceName: "social",
+      businessId,
       id: socialId,
       locationId,
       data: {
@@ -148,6 +149,7 @@ export async function DELETE(
       body,
       model: prisma.social,
       resourceName: "social",
+      businessId,
       id: socialId,
       locationId,
     });

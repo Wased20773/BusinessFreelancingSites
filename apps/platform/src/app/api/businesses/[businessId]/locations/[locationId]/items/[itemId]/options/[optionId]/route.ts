@@ -7,6 +7,7 @@ import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAcces
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
+import { allowSync } from "@/lib/billing/sync";
 
 // PATCH /api/businesses/[businessId]/locations/[locationId]/items/[itemId]/options/[optionId]
 export async function PATCH(
@@ -74,6 +75,8 @@ export async function PATCH(
         { status: 400 },
       );
     }
+
+    body.isSynced = await allowSync(businessId, body.isSynced);
 
     /*
      * ItemOption does not have locationId directly.
@@ -236,6 +239,8 @@ export async function DELETE(
         { status: 400 },
       );
     }
+
+    body.deleteAllSynced = await allowSync(businessId, body.deleteAllSynced);
 
     /*
      * Again, validate location through the parent Item.

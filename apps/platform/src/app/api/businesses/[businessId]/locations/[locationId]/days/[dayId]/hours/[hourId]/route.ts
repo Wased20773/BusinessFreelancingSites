@@ -10,6 +10,7 @@ import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAcces
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
+import { allowSync } from "@/lib/billing/sync";
 
 // PATCH /api/businesses/[businessId]/locations/[locationId]/days/[dayId]/hours/[hourId]
 export async function PATCH(
@@ -61,6 +62,8 @@ export async function PATCH(
         { status: 400 },
       );
     }
+
+    body.isSynced = await allowSync(businessId, body.isSynced);
 
     /*
      * Find the selected Hour and make sure it belongs
@@ -338,6 +341,8 @@ export async function DELETE(
         { status: 400 },
       );
     }
+
+    body.deleteAllSynced = await allowSync(businessId, body.deleteAllSynced);
 
     const hour = await prisma.hour.findFirst({
       where: {

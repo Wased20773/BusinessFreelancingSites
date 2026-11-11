@@ -9,6 +9,8 @@ import {
   BusinessReadAuthentication,
   LocationReadAuthentication,
 } from "@/lib/auth/authenticateBusinessReadAccess";
+import { getBusinessPlan } from "@/lib/billing/getBusinessPlan";
+import { allowSync } from "@/lib/billing/sync";
 
 type OrderModel = {
   findFirst: (args: {
@@ -157,9 +159,7 @@ export async function getLocationResponse<T extends Prisma.LocationSelect>(
       );
     }
 
-    const body = options?.signImages
-      ? await signImageKeys(location)
-      : location;
+    const body = options?.signImages ? await signImageKeys(location) : location;
 
     return NextResponse.json(body, { status: 200 });
   } catch (error) {
@@ -242,6 +242,8 @@ export async function createSyncedResource({
     );
   }
 
+  body.isSynced = await allowSync(businessId, body.isSynced);
+
   /*
    * If synchronization is ON, create the resource
    * for every location belonging to this business.
@@ -311,6 +313,7 @@ export async function updateSyncedResource({
   body,
   model,
   resourceName,
+  businessId,
   id,
   locationId,
   data,
@@ -319,6 +322,7 @@ export async function updateSyncedResource({
   body: Record<string, unknown>;
   model: SyncPrismaModel;
   resourceName: LocationResourceName;
+  businessId: string;
   id: string;
   locationId: string;
   data: Record<string, unknown>;
@@ -332,6 +336,8 @@ export async function updateSyncedResource({
       { status: 400 },
     );
   }
+
+  body.isSynced = await allowSync(businessId, body.isSynced);
 
   /*
    * We need the synchronization information before deciding
@@ -418,12 +424,14 @@ export async function deleteSyncedResource({
   body,
   model,
   resourceName,
+  businessId,
   id,
   locationId,
 }: {
   body: Record<string, unknown>;
   model: SyncPrismaModel;
   resourceName: LocationResourceName;
+  businessId: string;
   id: string;
   locationId: string;
 }): Promise<NextResponse> {
@@ -435,6 +443,8 @@ export async function deleteSyncedResource({
       { status: 400 },
     );
   }
+
+  body.deleteAllSynced = await allowSync(businessId, body.deleteAllSynced);
 
   /*
    * We need the synchronization information before deciding
@@ -781,19 +791,22 @@ export function normalizeTime(time: string): string {
 }
 
 /**
- * Using Redis, consume a token using the Token Bucket strategy and limit a users
- * read operation by the indicated amount.
+ * Using Redis, consume a token using the Token Bucket strategy and limit a
+ * business's API-key read operations by its plan's rate limit.
  *
- * Limit are placed based on authentication type.
+ * Every API key of a business shares one bucket. Dashboard (session)
+ * requests are not rate limited.
  */
 export async function rateLimiterRead(
   authentication: LocationReadAuthentication | BusinessReadAuthentication,
 ) {
   if (authentication.authenticationType === "apiKey") {
+    const { limits } = await getBusinessPlan(authentication.businessId);
+
     const rateLimit = await consumeToken({
       key: `rate:user:${authentication.businessId}:read`,
-      capacity: 150,
-      tokensPerMinute: 60,
+      capacity: limits.rateLimit.burst,
+      tokensPerMinute: limits.rateLimit.perMinute,
     });
 
     if (!rateLimit.allowed) {

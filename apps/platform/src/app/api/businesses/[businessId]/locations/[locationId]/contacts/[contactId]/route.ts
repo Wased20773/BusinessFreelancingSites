@@ -59,6 +59,7 @@ export async function PATCH(
       body,
       model: prisma.contact,
       resourceName: "contact",
+      businessId,
       id: contactId,
       locationId,
       data: {
@@ -130,6 +131,7 @@ export async function DELETE(
       body,
       model: prisma.contact,
       resourceName: "contact",
+      businessId,
       id: contactId,
       locationId,
     });

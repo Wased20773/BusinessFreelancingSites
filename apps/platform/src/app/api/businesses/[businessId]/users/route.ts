@@ -1,4 +1,8 @@
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
+import {
+  getBusinessPlan,
+  planLimitResponse,
+} from "@/lib/billing/getBusinessPlan";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
@@ -160,6 +164,20 @@ export async function POST(
             "A user cannot be added as an owner. Add them first, then transfer ownership",
         },
         { status: 403 },
+      );
+    }
+
+    /*
+     * Every BusinessUser counts as a member, including the owner.
+     */
+    const [{ limits }, memberCount] = await Promise.all([
+      getBusinessPlan(businessId),
+      prisma.businessUser.count({ where: { businessId } }),
+    ]);
+
+    if (memberCount >= limits.maxMembers) {
+      return planLimitResponse(
+        `This business's plan allows ${limits.maxMembers} members. Upgrade the plan to add more.`,
       );
     }
 

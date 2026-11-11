@@ -16,6 +16,7 @@ import {
 } from "@/lib/s3/keys";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
+import { allowSync } from "@/lib/billing/sync";
 
 // PATCH /api/businesses/[businessId]/locations/[locationId]/items/[itemId]
 export async function PATCH(
@@ -80,6 +81,8 @@ export async function PATCH(
         { status: 400 },
       );
     }
+
+    body.isSynced = await allowSync(businessId, body.isSynced);
 
     const item = await prisma.item.findFirst({
       where: {
@@ -427,6 +430,7 @@ export async function PATCH(
       body,
       model: prisma.item,
       resourceName: "item",
+      businessId,
       id: itemId,
       locationId,
       data: {
@@ -586,6 +590,8 @@ export async function DELETE(
         { status: 400 },
       );
     }
+
+    body.deleteAllSynced = await allowSync(businessId, body.deleteAllSynced);
 
     const item = await prisma.item.findFirst({
       where: {

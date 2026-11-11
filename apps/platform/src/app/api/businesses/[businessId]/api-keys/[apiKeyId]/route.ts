@@ -3,6 +3,10 @@ import { AccessLevel } from "@business-freelancer/database";
 import { prisma } from "@/lib/prisma";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { parseAllowedOrigins } from "@/lib/api-keys/allowedOrigins";
+import {
+  getBusinessPlan,
+  planLimitResponse,
+} from "@/lib/billing/getBusinessPlan";
 
 type RouteContext = {
   params: Promise<{
@@ -91,7 +95,9 @@ export async function PATCH(
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
-        { error: "Provide a name, isActive, or allowedOrigins value to update" },
+        {
+          error: "Provide a name, isActive, or allowedOrigins value to update",
+        },
         { status: 400 },
       );
     }
@@ -106,11 +112,33 @@ export async function PATCH(
 
       select: {
         id: true,
+        allowedOrigins: true,
       },
     });
 
     if (!existingKey) {
       return NextResponse.json({ error: "API key not found" }, { status: 404 });
+    }
+
+    /*
+     * Over the plan's limit (for example after a lapse to Free), origins can
+     * only be removed, never added, so the key can get back under the limit.
+     */
+    if (updateData.allowedOrigins) {
+      const { limits } = await getBusinessPlan(businessId);
+
+      const addsOrigin = updateData.allowedOrigins.some(
+        (origin) => !existingKey.allowedOrigins.includes(origin),
+      );
+
+      if (
+        updateData.allowedOrigins.length > limits.maxOriginsPerKey &&
+        addsOrigin
+      ) {
+        return planLimitResponse(
+          `This business's plan allows ${limits.maxOriginsPerKey} allowed origins per API key. Remove origins to get under the limit before adding new ones.`,
+        );
+      }
     }
 
     const updatedKey = await prisma.businessApiKey.update({

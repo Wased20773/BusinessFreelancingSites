@@ -10,6 +10,13 @@ jest.mock("@/lib/prisma", () => ({
   prisma: mockPrisma,
 }));
 
+jest.mock("@/lib/billing/getBusinessPlan", () => ({
+  getBusinessPlan: jest.fn(),
+}));
+
+import { getBusinessPlan } from "@/lib/billing/getBusinessPlan";
+import { PLANS, type PlanKey } from "@/lib/billing/plans";
+
 import {
   getSlug,
   createSlug,
@@ -34,6 +41,7 @@ import {
 } from "@/app/api/route_helper";
 
 const mockedConsumeToken = jest.mocked(consumeToken);
+const mockedGetBusinessPlan = jest.mocked(getBusinessPlan);
 
 beforeEach(() => {
   jest.resetAllMocks();
@@ -457,6 +465,7 @@ describe("updateSyncedResource", () => {
       body,
       model: mockPrisma.contact as never,
       resourceName: "contact",
+      businessId: "business-123",
       id: "contact-123",
       locationId: "location-123",
       data,
@@ -574,6 +583,7 @@ describe("deleteSyncedResource", () => {
       body,
       model: mockPrisma.social as never,
       resourceName: "social",
+      businessId: "business-123",
       id: "social-123",
       locationId: "location-123",
     });
@@ -949,6 +959,14 @@ describe("checkTimeOverlap", () => {
 });
 
 describe("rateLimiterRead", () => {
+  function mockPlan(planKey: PlanKey) {
+    mockedGetBusinessPlan.mockResolvedValue({
+      planKey,
+      limits: PLANS[planKey],
+      locationSlots: 1,
+    });
+  }
+
   it("does not rate limit dashboard session requests", async () => {
     const result = await rateLimiterRead({
       businessId: "business-123",
@@ -957,31 +975,37 @@ describe("rateLimiterRead", () => {
     });
 
     expect(result).toBeUndefined();
+    expect(mockedGetBusinessPlan).not.toHaveBeenCalled();
     expect(mockedConsumeToken).not.toHaveBeenCalled();
   });
 
-  it("allows API-key requests while tokens remain", async () => {
-    mockedConsumeToken.mockResolvedValue({
-      allowed: true,
-      remainingTokens: 149,
-      retryAfterMs: 0,
-    });
+  it.each(Object.keys(PLANS) as PlanKey[])(
+    "uses the %s plan's rate limit for API-key requests",
+    async (planKey) => {
+      mockPlan(planKey);
+      mockedConsumeToken.mockResolvedValue({
+        allowed: true,
+        remainingTokens: 1,
+        retryAfterMs: 0,
+      });
 
-    const result = await rateLimiterRead({
-      businessId: "business-123",
-      authenticationType: "apiKey",
-    });
+      const result = await rateLimiterRead({
+        businessId: "business-123",
+        authenticationType: "apiKey",
+      });
 
-    expect(result).toBeUndefined();
-
-    expect(mockedConsumeToken).toHaveBeenCalledWith({
-      key: "rate:user:business-123:read",
-      capacity: 150,
-      tokensPerMinute: 60,
-    });
-  });
+      expect(result).toBeUndefined();
+      expect(mockedGetBusinessPlan).toHaveBeenCalledWith("business-123");
+      expect(mockedConsumeToken).toHaveBeenCalledWith({
+        key: "rate:user:business-123:read",
+        capacity: PLANS[planKey].rateLimit.burst,
+        tokensPerMinute: PLANS[planKey].rateLimit.perMinute,
+      });
+    },
+  );
 
   it("returns 429 when an API-key request runs out of tokens", async () => {
+    mockPlan("free");
     mockedConsumeToken.mockResolvedValue({
       allowed: false,
       remainingTokens: 0,

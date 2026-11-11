@@ -16,6 +16,7 @@ import {
 import { uploadImage } from "@/lib/s3/upload";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
+import { allowSync } from "@/lib/billing/sync";
 
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 
@@ -91,7 +92,8 @@ export async function POST(
       return imageResult;
     }
 
-    const { image, isSynced } = imageResult;
+    const { image } = imageResult;
+    const isSynced = await allowSync(businessId, imageResult.isSynced);
 
     const originalImageResult = await getOriginalImage(
       originalImageRequest,
@@ -369,7 +371,8 @@ export async function PATCH(
       return imageResult;
     }
 
-    const { image, isSynced } = imageResult;
+    const { image } = imageResult;
+    const isSynced = await allowSync(businessId, imageResult.isSynced);
 
     const originalImageResult = await getOriginalImage(
       originalImageRequest,
@@ -670,6 +673,8 @@ export async function DELETE(
         { status: 400 },
       );
     }
+
+    body.deleteAllSynced = await allowSync(businessId, body.deleteAllSynced);
 
     const item = await prisma.item.findFirst({
       where: {

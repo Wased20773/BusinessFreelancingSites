@@ -15,6 +15,7 @@ const MODEL_METHODS = [
   "delete",
   "deleteMany",
   "groupBy",
+  "count",
 ] as const;
 
 type MockModel = Record<(typeof MODEL_METHODS)[number], jest.Mock>;

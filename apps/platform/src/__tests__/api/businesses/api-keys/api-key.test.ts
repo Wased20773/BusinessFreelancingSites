@@ -10,6 +10,9 @@ import {
 import { createJsonRequest } from "@/__tests__/helpers/request";
 import { createRouteContext } from "@/__tests__/helpers/route";
 import { mockPrisma, resetPrismaMock } from "@/__tests__/mocks/prisma";
+import { mockBusinessPlan } from "@/__tests__/helpers/billing";
+import { getBusinessPlan } from "@/lib/billing/getBusinessPlan";
+import { PLANS } from "@/lib/billing/plans";
 
 import {
   PATCH,
@@ -24,6 +27,13 @@ jest.mock("@/lib/auth/authenticateBusinessAccess", () => ({
   authenticateBusinessAccess: jest.fn(),
 }));
 
+jest.mock("@/lib/billing/getBusinessPlan", () => ({
+  ...jest.requireActual("@/lib/billing/getBusinessPlan"),
+  getBusinessPlan: jest.fn(),
+}));
+
+const mockedGetBusinessPlan = jest.mocked(getBusinessPlan);
+
 const URL = `http://localhost/api/businesses/${BUSINESS_ID}/api-keys/api-key-123`;
 
 const context = createRouteContext({
@@ -36,6 +46,21 @@ const ownershipLookup = {
   select: { id: true },
 };
 
+// PATCH also reads the current origins for the plan's origin limit.
+const patchOwnershipLookup = {
+  where: { id: "api-key-123", businessId: BUSINESS_ID },
+  select: { id: true, allowedOrigins: true },
+};
+
+const existingKey = { id: "api-key-123", allowedOrigins: [] as string[] };
+
+function origins(count: number) {
+  return Array.from(
+    { length: count },
+    (_, index) => `https://site${index}.example.com`,
+  );
+}
+
 describe("/api/businesses/[businessId]/api-keys/[apiKeyId]", () => {
   beforeEach(() => {
     jest.resetAllMocks();
@@ -43,6 +68,10 @@ describe("/api/businesses/[businessId]/api-keys/[apiKeyId]", () => {
   });
 
   describe("PATCH", () => {
+    beforeEach(() => {
+      mockBusinessPlan("free");
+    });
+
     function patchApiKey(body: unknown, routeContext = context) {
       return PATCH(
         createJsonRequest({ url: URL, method: "PATCH", body }),
@@ -99,9 +128,88 @@ describe("/api/businesses/[businessId]/api-keys/[apiKeyId]", () => {
       expect(await response.json()).toEqual({ error: "API key not found" });
 
       expect(mockPrisma.businessApiKey.findFirst).toHaveBeenCalledWith(
-        ownershipLookup,
+        patchOwnershipLookup,
       );
       expect(mockPrisma.businessApiKey.update).not.toHaveBeenCalled();
+    });
+
+    it("does not look up the plan when origins are not changed", async () => {
+      mockSuccessfulAuthentication();
+      mockPrisma.businessApiKey.findFirst.mockResolvedValue(existingKey);
+      mockPrisma.businessApiKey.update.mockResolvedValue({ id: "api-key-123" });
+
+      const response = await patchApiKey({ isActive: false });
+
+      expect(response.status).toBe(200);
+      expect(mockedGetBusinessPlan).not.toHaveBeenCalled();
+    });
+
+    it("returns 403 PLAN_LIMIT when saving more origins than the plan allows", async () => {
+      mockSuccessfulAuthentication();
+      mockPrisma.businessApiKey.findFirst.mockResolvedValue(existingKey);
+
+      const response = await patchApiKey({
+        allowedOrigins: origins(PLANS.free.maxOriginsPerKey + 1),
+      });
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        error: `This business's plan allows ${PLANS.free.maxOriginsPerKey} allowed origins per API key. Remove origins to get under the limit before adding new ones.`,
+        code: "PLAN_LIMIT",
+      });
+      expect(mockPrisma.businessApiKey.update).not.toHaveBeenCalled();
+    });
+
+    it("lets a key over the limit (after a lapse) remove origins", async () => {
+      const current = origins(PLANS.free.maxOriginsPerKey + 3);
+
+      mockSuccessfulAuthentication();
+      mockPrisma.businessApiKey.findFirst.mockResolvedValue({
+        id: "api-key-123",
+        allowedOrigins: current,
+      });
+      mockPrisma.businessApiKey.update.mockResolvedValue({ id: "api-key-123" });
+
+      // Still over the limit, but only removing.
+      const response = await patchApiKey({ allowedOrigins: current.slice(1) });
+
+      expect(response.status).toBe(200);
+      expect(mockPrisma.businessApiKey.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { allowedOrigins: current.slice(1) },
+        }),
+      );
+    });
+
+    it("blocks a key over the limit from swapping in a new origin", async () => {
+      const current = origins(PLANS.free.maxOriginsPerKey + 1);
+
+      mockSuccessfulAuthentication();
+      mockPrisma.businessApiKey.findFirst.mockResolvedValue({
+        id: "api-key-123",
+        allowedOrigins: current,
+      });
+
+      // Same count, but one origin is new.
+      const response = await patchApiKey({
+        allowedOrigins: [...current.slice(1), "https://new.example.com"],
+      });
+
+      expect(response.status).toBe(403);
+      expect(mockPrisma.businessApiKey.update).not.toHaveBeenCalled();
+    });
+
+    it("uses the paid tier's higher origin limit", async () => {
+      mockSuccessfulAuthentication();
+      mockBusinessPlan("growingBusiness");
+      mockPrisma.businessApiKey.findFirst.mockResolvedValue(existingKey);
+      mockPrisma.businessApiKey.update.mockResolvedValue({ id: "api-key-123" });
+
+      const response = await patchApiKey({
+        allowedOrigins: origins(PLANS.growingBusiness.maxOriginsPerKey),
+      });
+
+      expect(response.status).toBe(200);
     });
 
     it("renames and deactivates the API key", async () => {
@@ -113,7 +221,7 @@ describe("/api/businesses/[businessId]/api-keys/[apiKeyId]", () => {
       };
 
       mockSuccessfulAuthentication();
-      mockPrisma.businessApiKey.findFirst.mockResolvedValue({ id: "api-key-123" });
+      mockPrisma.businessApiKey.findFirst.mockResolvedValue(existingKey);
       mockPrisma.businessApiKey.update.mockResolvedValue(updatedKey);
 
       const response = await patchApiKey({
@@ -141,7 +249,7 @@ describe("/api/businesses/[businessId]/api-keys/[apiKeyId]", () => {
 
     it("normalizes and saves allowed origins", async () => {
       mockSuccessfulAuthentication();
-      mockPrisma.businessApiKey.findFirst.mockResolvedValue({ id: "api-key-123" });
+      mockPrisma.businessApiKey.findFirst.mockResolvedValue(existingKey);
       mockPrisma.businessApiKey.update.mockResolvedValue({ id: "api-key-123" });
 
       const response = await patchApiKey({
@@ -165,7 +273,7 @@ describe("/api/businesses/[businessId]/api-keys/[apiKeyId]", () => {
 
     it("clears allowed origins with an empty array", async () => {
       mockSuccessfulAuthentication();
-      mockPrisma.businessApiKey.findFirst.mockResolvedValue({ id: "api-key-123" });
+      mockPrisma.businessApiKey.findFirst.mockResolvedValue(existingKey);
       mockPrisma.businessApiKey.update.mockResolvedValue({ id: "api-key-123" });
 
       const response = await patchApiKey({ allowedOrigins: [] });
@@ -189,7 +297,7 @@ describe("/api/businesses/[businessId]/api-keys/[apiKeyId]", () => {
 
     it("returns 500 when updating the API key fails", async () => {
       mockSuccessfulAuthentication();
-      mockPrisma.businessApiKey.findFirst.mockResolvedValue({ id: "api-key-123" });
+      mockPrisma.businessApiKey.findFirst.mockResolvedValue(existingKey);
       mockPrisma.businessApiKey.update.mockRejectedValue(
         new Error("Database update failed"),
       );
@@ -234,7 +342,7 @@ describe("/api/businesses/[businessId]/api-keys/[apiKeyId]", () => {
 
     it("deletes an API key belonging to the business", async () => {
       mockSuccessfulAuthentication();
-      mockPrisma.businessApiKey.findFirst.mockResolvedValue({ id: "api-key-123" });
+      mockPrisma.businessApiKey.findFirst.mockResolvedValue(existingKey);
 
       const response = await deleteApiKey();
 
@@ -250,7 +358,7 @@ describe("/api/businesses/[businessId]/api-keys/[apiKeyId]", () => {
 
     it("returns 500 when deleting the API key fails", async () => {
       mockSuccessfulAuthentication();
-      mockPrisma.businessApiKey.findFirst.mockResolvedValue({ id: "api-key-123" });
+      mockPrisma.businessApiKey.findFirst.mockResolvedValue(existingKey);
       mockPrisma.businessApiKey.delete.mockRejectedValue(
         new Error("Database delete failed"),
       );

@@ -13,6 +13,7 @@ import { createRouteContext } from "@/__tests__/helpers/route";
 import { mockPrisma, resetPrismaMock } from "@/__tests__/mocks/prisma";
 import { Prisma } from "@business-freelancer/database";
 import { deleteObject } from "@/lib/s3/delete";
+import { mockBusinessPlan } from "@/__tests__/helpers/billing";
 
 import { POST } from "@/app/api/businesses/[businessId]/locations/route";
 import {
@@ -27,6 +28,11 @@ jest.mock("@/lib/prisma", () => ({
 
 jest.mock("@/lib/auth/authenticateBusinessAccess", () => ({
   authenticateBusinessAccess: jest.fn(),
+}));
+
+jest.mock("@/lib/billing/getBusinessPlan", () => ({
+  ...jest.requireActual("@/lib/billing/getBusinessPlan"),
+  getBusinessPlan: jest.fn(),
 }));
 
 const mockedDeleteObject = jest.mocked(deleteObject);
@@ -68,12 +74,51 @@ describe("/api/businesses/[businessId]/locations", () => {
   });
 
   describe("POST", () => {
+    beforeEach(() => {
+      // Free plan, 1 slot, no locations yet: room for one location.
+      mockBusinessPlan("free", 1);
+      mockPrisma.location.count.mockResolvedValue(0);
+    });
+
     function postLocation(body: unknown, context = businessContext) {
       return POST(
         createJsonRequest({ url: BASE_URL, method: "POST", body }),
         context,
       );
     }
+
+    it("returns 403 PLAN_LIMIT when every location slot is used", async () => {
+      mockSuccessfulAuthentication();
+      mockBusinessPlan("growingBusiness", 2);
+      mockPrisma.location.count.mockResolvedValue(2);
+
+      const response = await postLocation({ address: "123 Example St" });
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        error:
+          "This business has used all 2 of its location slots. Buy another slot to add a location.",
+        code: "PLAN_LIMIT",
+      });
+
+      expect(mockPrisma.location.count).toHaveBeenCalledWith({
+        where: { businessId: BUSINESS_ID },
+      });
+      expect(mockPrisma.location.create).not.toHaveBeenCalled();
+    });
+
+    it("allows a location when a bought slot is free, on any plan", async () => {
+      mockSuccessfulAuthentication();
+      mockBusinessPlan("free", 3);
+      mockPrisma.location.count.mockResolvedValue(2);
+      mockPrisma.location.findUnique.mockResolvedValue(null);
+      mockPrisma.location.create.mockResolvedValue({ id: LOCATION_ID });
+
+      const response = await postLocation({ address: "123 Example St" });
+
+      expect(response.status).toBe(201);
+      expect(mockPrisma.location.create).toHaveBeenCalled();
+    });
 
     it("returns 400 when businessId is missing", async () => {
       const response = await postLocation(

@@ -115,8 +115,8 @@ Like Discord server boosts: **anyone in the business can pay**, regardless of ro
 
 Sync is the upgrade hook: a business with several locations sees how much easier managing them is on a paid plan.
 
-- On Free, sync toggles are disabled with an upgrade prompt. Creates, updates, and deletes apply **only to the location being edited**.
-- While sync is unavailable, writes **must leave existing `syncGroupId` / `isSynced` values untouched**. Today, saving with sync off sets `isSynced: false`, which detaches the record from its group. Preserving them means sync resumes exactly where it left off after paying.
+- On Free, sync toggles are disabled with an upgrade prompt, and the server treats every sync flag (`isSynced`, `deleteAllSynced`) as false. Creates, updates, and deletes apply **only to the location being edited**.
+- Editing a synced record on Free detaches **only that record**: it gets its own copy of any shared image and keeps its `syncGroupId`, so it can rejoin its group with the sync toggle after upgrading. Records that aren't edited stay synced.
 
 ## API Keys and CORS
 
@@ -138,7 +138,7 @@ Sync is the upgrade hook: a business with several locations sees how much easier
 - **Enforcement points:**
     - Rate limiter: the limit comes from the business's tier.
     - Creation checks: locations (against slots), members, API keys, origins per key (against the tier).
-    - Sync: `createSyncedResource` / `updateSyncedResource` / `deleteSyncedResource` in `route_helper.ts`.
+    - Sync: `allowSync()` in `lib/billing/sync.ts`, called inside `createSyncedResource` / `updateSyncedResource` / `deleteSyncedResource` in `route_helper.ts`, and directly in every route with its own sync code (categories, subcategories, items, item images, item options, days, hours).
 - **Stripe:** Checkout in subscription mode (tiers) and payment mode (slots), Customer Portal (cards, invoices, cancel), webhooks (subscription changes, completed slot payments, disputes) to keep the database in sync. The app reads plan, status, and slots from the database only, never from Stripe during a request.
 - **UI:** a workspace Billing page (plan, usage against limits, payer badge, subscribe, switch tier, take over, buy slots).
 - **Launch migration:** existing businesses start on Free with 1 slot. Businesses that already have more than one location get matching slots for free, so nobody is over their limit at launch. No live site uses the API today, so nothing breaks.
@@ -166,6 +166,7 @@ Sync is the upgrade hook: a business with several locations sees how much easier
 | Pay-as-you-go balance (a few cents per created item, contact, social) | Too confusing and more than needed. |
 | Locking locations after a lapse (owner chooses which stay editable) | Not needed: slots are owned permanently, so a lapse never affects locations. |
 | "N oldest locations stay editable" | Confusing and would draw complaints. |
+| On Free, edit a synced record locally while leaving `isSynced` / `syncGroupId` untouched | Synced items share one image in S3, so a "local" image change could overwrite or delete the image the other locations use. Detaching only the edited record (it keeps its `syncGroupId`) is safe and can be undone after upgrading. |
 | Refunds on location slots | Goes against "bought once, kept"; no real use case at this scale. Chargebacks are still handled. |
 | Billing pauses API keys via `isActive` | Developers can toggle `isActive`; billing must not depend on a user-editable flag. |
 

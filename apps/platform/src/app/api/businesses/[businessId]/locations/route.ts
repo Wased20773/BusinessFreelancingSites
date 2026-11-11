@@ -3,6 +3,10 @@ import {
   optionalString,
 } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
+import {
+  getBusinessPlan,
+  planLimitResponse,
+} from "@/lib/billing/getBusinessPlan";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
@@ -47,6 +51,21 @@ export async function POST(
       return NextResponse.json(
         { error: "A location address is required" },
         { status: 400 },
+      );
+    }
+
+    /*
+     * Each location uses one slot. Deleting a location frees its slot,
+     * so we count the locations that exist right now.
+     */
+    const [{ locationSlots }, locationCount] = await Promise.all([
+      getBusinessPlan(businessId),
+      prisma.location.count({ where: { businessId } }),
+    ]);
+
+    if (locationCount >= locationSlots) {
+      return planLimitResponse(
+        `This business has used all ${locationSlots} of its location slots. Buy another slot to add a location.`,
       );
     }
 

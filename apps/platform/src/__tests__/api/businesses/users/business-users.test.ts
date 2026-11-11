@@ -11,6 +11,8 @@ import {
 import { createJsonRequest } from "@/__tests__/helpers/request";
 import { createRouteContext } from "@/__tests__/helpers/route";
 import { mockPrisma, resetPrismaMock } from "@/__tests__/mocks/prisma";
+import { mockBusinessPlan } from "@/__tests__/helpers/billing";
+import { PLANS } from "@/lib/billing/plans";
 
 import { GET, POST } from "@/app/api/businesses/[businessId]/users/route";
 import {
@@ -25,6 +27,11 @@ jest.mock("@/lib/prisma", () => ({
 
 jest.mock("@/lib/auth/authenticateBusinessAccess", () => ({
   authenticateBusinessAccess: jest.fn(),
+}));
+
+jest.mock("@/lib/billing/getBusinessPlan", () => ({
+  ...jest.requireActual("@/lib/billing/getBusinessPlan"),
+  getBusinessPlan: jest.fn(),
 }));
 
 const BASE_URL = `http://localhost/api/businesses/${BUSINESS_ID}/users`;
@@ -161,12 +168,58 @@ describe("/api/businesses/[businessId]/users", () => {
   });
 
   describe("POST", () => {
+    beforeEach(() => {
+      // Free plan with only the owner so far: room for more members.
+      mockBusinessPlan("free");
+      mockPrisma.businessUser.count.mockResolvedValue(1);
+    });
+
     function postUser(body: unknown) {
       return POST(
         createJsonRequest({ url: BASE_URL, method: "POST", body }),
         businessContext,
       );
     }
+
+    it("returns 403 PLAN_LIMIT when the plan's member limit is reached", async () => {
+      mockSuccessfulAuthentication();
+      mockPrisma.businessUser.count.mockResolvedValue(PLANS.free.maxMembers);
+
+      const response = await postUser({
+        email: "john@example.com",
+        accessLevel: "admin",
+      });
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        error: `This business's plan allows ${PLANS.free.maxMembers} members. Upgrade the plan to add more.`,
+        code: "PLAN_LIMIT",
+      });
+
+      // The owner counts as a member, so every BusinessUser is counted.
+      expect(mockPrisma.businessUser.count).toHaveBeenCalledWith({
+        where: { businessId: BUSINESS_ID },
+      });
+      expect(mockPrisma.user.findUnique).not.toHaveBeenCalled();
+      expect(mockPrisma.businessUser.create).not.toHaveBeenCalled();
+    });
+
+    it("uses the paid tier's higher member limit", async () => {
+      mockSuccessfulAuthentication();
+      mockBusinessPlan("localBusiness");
+      mockPrisma.businessUser.count.mockResolvedValue(PLANS.free.maxMembers);
+      mockPrisma.user.findUnique.mockResolvedValue({ id: "user-456" });
+      mockPrisma.businessUser.findFirst.mockResolvedValue(null);
+      mockPrisma.role.findFirst.mockResolvedValue({ id: "role-admin" });
+      mockPrisma.businessUser.create.mockResolvedValue(businessUser);
+
+      const response = await postUser({
+        email: "john@example.com",
+        accessLevel: "admin",
+      });
+
+      expect(response.status).toBe(201);
+    });
 
     it("returns the authentication error response", async () => {
       mockFailedAuthentication();
