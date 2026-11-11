@@ -54,11 +54,12 @@ No request body.
 ```json
 {
   "name": "String",
-  "isActive": "Boolean"
+  "isActive": "Boolean",
+  "allowedOrigins": ["https://example.com", "http://localhost:5173"]
 }
 ```
 
-Both fields are optional, but at least one must be provided.
+All fields are optional, but at least one must be provided. `allowedOrigins` replaces the whole list (send `[]` to clear it). At most 10 origins, each `scheme://host[:port]` with no path. `http://` is only allowed for localhost.
 
 ### DELETE /api/admin/api-keys/[apiKeyId]
 

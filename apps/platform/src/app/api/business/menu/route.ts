@@ -151,6 +151,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         },
       },
       "menu",
+      { signImages: true },
     );
   } catch (error) {
     console.error("Failed to fetch business menu:", error);

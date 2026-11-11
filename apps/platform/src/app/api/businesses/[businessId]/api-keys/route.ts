@@ -3,9 +3,11 @@ import { AccessLevel } from "@business-freelancer/database";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { generateBusinessApiKey } from "@/lib/api-keys/generateBusinessApiKey";
+import { parseAllowedOrigins } from "@/lib/api-keys/allowedOrigins";
 
 type CreateApiKeyBody = {
   name?: unknown;
+  allowedOrigins?: unknown;
 };
 
 // GET /api/businesses/[businessId]/api-keys
@@ -48,6 +50,7 @@ export async function GET(
         name: true,
         keyPrefix: true,
         isActive: true,
+        allowedOrigins: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -103,6 +106,21 @@ export async function POST(
       );
     }
 
+    let allowedOrigins: string[] = [];
+
+    if (body.allowedOrigins !== undefined) {
+      const parsedOrigins = parseAllowedOrigins(body.allowedOrigins);
+
+      if ("error" in parsedOrigins) {
+        return NextResponse.json(
+          { error: parsedOrigins.error },
+          { status: 400 },
+        );
+      }
+
+      allowedOrigins = parsedOrigins.allowedOrigins;
+    }
+
     const { apiKey, keyHash, keyPrefix } = generateBusinessApiKey();
 
     const createdKey = await prisma.businessApiKey.create({
@@ -111,12 +129,14 @@ export async function POST(
         name: body.name.trim(),
         keyHash,
         keyPrefix,
+        allowedOrigins,
       },
       select: {
         id: true,
         name: true,
         keyPrefix: true,
         isActive: true,
+        allowedOrigins: true,
         createdAt: true,
       },
     });

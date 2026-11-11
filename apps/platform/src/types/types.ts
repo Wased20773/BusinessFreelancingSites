@@ -43,13 +43,19 @@ export type CreateBusinessApiKeyResponse = {
   apiKey: string;
   key: Pick<
     BusinessApiKeyJson,
-    "id" | "name" | "keyPrefix" | "isActive" | "createdAt"
+    "id" | "name" | "keyPrefix" | "isActive" | "allowedOrigins" | "createdAt"
   >;
 };
 
 export type UpdateBusinessApiKeyResponse = Pick<
   BusinessApiKeyJson,
-  "id" | "name" | "keyPrefix" | "isActive" | "createdAt" | "updatedAt"
+  | "id"
+  | "name"
+  | "keyPrefix"
+  | "isActive"
+  | "allowedOrigins"
+  | "createdAt"
+  | "updatedAt"
 >;
 
 // Business

@@ -162,6 +162,7 @@ export async function GET(
         },
       },
       "category",
+      { signImages: true },
     );
   } catch (error) {
     console.error("Failed to fetch category:", error);

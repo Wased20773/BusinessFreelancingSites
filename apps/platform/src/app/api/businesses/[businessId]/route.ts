@@ -5,6 +5,7 @@ import {
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { getObjectUrl } from "@/lib/s3/get-url";
+import { deleteObjects } from "@/lib/s3/delete";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 
@@ -195,6 +196,145 @@ export async function PATCH(
 
     return NextResponse.json(
       { error: "Failed to update business" },
+      { status: 500 },
+    );
+  }
+}
+
+// DELETE /api/businesses/[businessId]
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ businessId: string }> },
+): Promise<NextResponse> {
+  try {
+    const { businessId } = await params;
+
+    if (!businessId) {
+      return NextResponse.json(
+        { error: "Missing businessId" },
+        { status: 400 },
+      );
+    }
+
+    const authentication = await authenticateBusinessAccess(
+      request,
+      businessId,
+      [AccessLevel.owner],
+    );
+
+    if (authentication instanceof NextResponse) {
+      return authentication;
+    }
+
+    const body = (await request.json().catch(() => ({}))) as {
+      confirmName?: unknown;
+    };
+
+    if (typeof body.confirmName !== "string" || !body.confirmName.trim()) {
+      return NextResponse.json(
+        { error: "Type the business name to confirm the deletion" },
+        { status: 400 },
+      );
+    }
+
+    /*
+     * Collect every image key before deleting. The cascade removes the
+     * records that hold them, but not the objects in S3.
+     */
+    const business = await prisma.business.findUnique({
+      where: {
+        id: businessId,
+      },
+      select: {
+        id: true,
+        name: true,
+        imageKey: true,
+        originalImageKey: true,
+        locations: {
+          select: {
+            items: {
+              select: {
+                imageKey: true,
+                originalImageKey: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!business) {
+      return NextResponse.json(
+        { error: "Business could not be found" },
+        { status: 404 },
+      );
+    }
+
+    if (body.confirmName.trim() !== business.name.trim()) {
+      return NextResponse.json(
+        { error: "The business name does not match" },
+        { status: 400 },
+      );
+    }
+
+    // TODO(billing): cancel the business's Stripe subscription here, before
+    // deleting, so a deleted business can never keep being charged.
+
+    /*
+     * Deletes the business and, through the configured cascades, its
+     * memberships, API keys, and locations along with everything inside them
+     * (days, hours, categories, items, options, contacts, socials).
+     */
+    await prisma.business.delete({
+      where: {
+        id: business.id,
+      },
+    });
+
+    /*
+     * Best-effort image cleanup. The business is already gone, so a failure
+     * here is logged rather than reported to the user. Item images are only
+     * shared between this business's own locations, so every key is safe to
+     * remove.
+     */
+    const imageKeys = [
+      business.imageKey,
+      business.originalImageKey,
+      ...business.locations.flatMap((location) =>
+        location.items.flatMap((item) => [
+          item.imageKey,
+          item.originalImageKey,
+        ]),
+      ),
+    ].filter((imageKey): imageKey is string => imageKey !== null);
+
+    if (imageKeys.length > 0) {
+      try {
+        const failedKeys = await deleteObjects(imageKeys);
+
+        if (failedKeys.length > 0) {
+          console.error(
+            `Failed to clean up ${failedKeys.length} image(s) of deleted business "${business.id}":`,
+            failedKeys,
+          );
+        }
+      } catch (cleanupError) {
+        console.error(
+          `Failed to clean up images of deleted business "${business.id}":`,
+          cleanupError,
+        );
+      }
+    }
+
+    return NextResponse.json(
+      { message: "Business deleted successfully" },
+      { status: 200 },
+    );
+  } catch (error) {
+    console.error("Failed to delete business:", error);
+
+    return NextResponse.json(
+      { error: "Failed to delete business" },
       { status: 500 },
     );
   }

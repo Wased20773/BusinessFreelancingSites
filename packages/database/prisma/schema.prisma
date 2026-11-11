@@ -35,6 +35,24 @@ enum DayOfWeek {
   Sunday
 }
 
+enum PlanTier {
+  familyBusiness
+  localBusiness
+  growingBusiness
+}
+
+// Mirrors Stripe's subscription statuses so webhooks can store them directly.
+enum SubscriptionStatus {
+  incomplete
+  incomplete_expired
+  trialing
+  active
+  past_due
+  canceled
+  unpaid
+  paused
+}
+
 model BusinessApiKey {
   id         String @id @default(uuid())
   businessId String
@@ -45,12 +63,57 @@ model BusinessApiKey {
 
   isActive Boolean @default(true)
 
+  // Browser origins (scheme://host[:port]) allowed to call the public API with
+  // this key. Empty means browser requests are rejected; server-to-server
+  // requests (no Origin header) are always allowed.
+  allowedOrigins String[] @default([])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
+}
+
+model Subscription {
+  id         String @id @default(uuid())
+  businessId String @unique
+  payerId    String
+
+  stripeSubscriptionId String             @unique
+  tier                 PlanTier
+  status               SubscriptionStatus
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean            @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  payer    User     @relation(fields: [payerId], references: [id], onDelete: Restrict)
+
+  @@index([payerId])
+}
+
+model LocationSlotPurchase {
+  id         String  @id @default(uuid())
+  businessId String
+  buyerId    String? // null if the buyer's account is deleted; the slot stays
+
+  // Null for slots granted for free
+  stripeCheckoutSessionId String? @unique
+  stripePaymentIntentId   String? @unique
+
+  revokedAt DateTime? // set by a chargeback; revoked slots don't count
+
+  createdAt DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  buyer    User?    @relation(fields: [buyerId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+  @@index([buyerId])
 }
 
 model Business {
@@ -63,28 +126,33 @@ model Business {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  users     BusinessUser[]
-  locations Location[]
-  apiKeys   BusinessApiKey[]
+  users         BusinessUser[]
+  locations     Location[]
+  apiKeys       BusinessApiKey[]
+  subscription  Subscription?
+  slotPurchases LocationSlotPurchase[]
 }
 
 model User {
-  id                   String            @id @default(uuid())
+  id                   String                 @id @default(uuid())
   name                 String?
   username             String?
-  email                String            @unique
+  email                String                 @unique
   emailVerified        DateTime?
   image                String?
-  onboardingCompleted  Boolean           @default(false)
+  onboardingCompleted  Boolean                @default(false)
   onboardingIntent     OnboardingIntent?
-  workspaceTourVersion Int               @default(0)
-  dashboardTourVersion Int               @default(0)
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
+  workspaceTourVersion Int                    @default(0)
+  dashboardTourVersion Int                    @default(0)
+  paidSubscriptions    Subscription[]
+  slotPurchases        LocationSlotPurchase[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
 
-  businesses BusinessUser[]
-  accounts   Account[]
-  sessions   Session[]
+  businesses       BusinessUser[]
+  accounts         Account[]
+  sessions         Session[]
+  stripeCustomerId String?        @unique // created the first time this user pays
 }
 
 model BusinessUser {

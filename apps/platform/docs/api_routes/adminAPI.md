@@ -250,6 +250,34 @@ Updates the business name and/or domain. At least one field is required.
 }
 ```
 
+### DELETE /api/businesses/[businessId]
+
+Permanently deletes the business. There is no restore.
+
+The database cascade removes its memberships, API keys, and locations along with everything inside them (days, hours, categories, items, options, contacts, socials). The business image and every item image are then removed from S3 using the keys stored on the records. Image cleanup is best-effort: failures are logged and do not fail the request, because the business is already gone.
+
+Websites using the business's API keys stop working immediately.
+
+**Access:** `owner`
+
+#### Request Body
+
+```json
+{
+  "confirmName": "String"
+}
+```
+
+`confirmName` must equal the business name exactly (surrounding whitespace is ignored). Otherwise the request fails with `400` and nothing is deleted.
+
+#### Response
+
+```json
+{
+  "message": "Business deleted successfully"
+}
+```
+
 ## Business Image
 
 Business images are stored as two files: the cropped `image` shown on the site and the uncropped `originalImage` used to re-crop later.

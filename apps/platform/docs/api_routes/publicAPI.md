@@ -40,6 +40,20 @@ Authorization: Bearer bp_example_key
 
 You can read more about creating your own Business Platform Api key via the POST request in [docs/api_routes/adminAPI.md#post-apiadminapi-keys](../../docs/api_routes/adminAPI.md#post-apiadminapi-keys) document.
 
+### Browser Requests (CORS)
+
+Each API key has a list of **allowed origins** (managed on the API key page in the workspace, or via `allowedOrigins` on the API key PATCH/POST routes).
+
+- Requests **without** an `Origin` header (server-to-server, e.g. a Next.js server component or route handler) are always allowed.
+- Requests **with** an `Origin` header (browser `fetch` from a client website) are only allowed when the origin is in the key's list. Otherwise the API responds `403` with the blocked origin in the error message.
+- A key with no allowed origins can only be used server-to-server.
+
+Origins use the format `scheme://host[:port]` with no path, e.g. `https://example.com`, `https://*.example.com` (any subdomain, not the apex), or `http://localhost:5173`. Plain `http://` is only accepted for localhost.
+
+Preflight (`OPTIONS`) requests for `/api/business/*` are answered in [src/proxy.ts](../../src/proxy.ts). Only `GET` and the `Authorization`, `X-Location-Id`, and `Content-Type` headers are allowed, and credentials (cookies) are never allowed cross-origin.
+
+> CORS only restricts browsers. A key used from browser JavaScript is visible to anyone visiting the site, so the origin list stops other websites from using it but is not a secret. Keep keys used in the browser limited to these read-only routes.
+
 ### Sync Fields
 
 These will only show up in the dashboards authenticated session requests. Not all request return these fields however when they do they will look like this:

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { AccessLevel } from "@business-freelancer/database";
 import { prisma } from "@/lib/prisma";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
+import { parseAllowedOrigins } from "@/lib/api-keys/allowedOrigins";
 
 type RouteContext = {
   params: Promise<{
@@ -13,6 +14,7 @@ type RouteContext = {
 type UpdateApiKeyBody = {
   name?: unknown;
   isActive?: unknown;
+  allowedOrigins?: unknown;
 };
 
 // PATCH /api/businesses/[businessId]/api-keys/[apiKeyId]
@@ -49,6 +51,7 @@ export async function PATCH(
     const updateData: {
       name?: string;
       isActive?: boolean;
+      allowedOrigins?: string[];
     } = {};
 
     if (body.name !== undefined) {
@@ -73,9 +76,22 @@ export async function PATCH(
       updateData.isActive = body.isActive;
     }
 
+    if (body.allowedOrigins !== undefined) {
+      const parsedOrigins = parseAllowedOrigins(body.allowedOrigins);
+
+      if ("error" in parsedOrigins) {
+        return NextResponse.json(
+          { error: parsedOrigins.error },
+          { status: 400 },
+        );
+      }
+
+      updateData.allowedOrigins = parsedOrigins.allowedOrigins;
+    }
+
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
-        { error: "Provide a name or isActive value to update" },
+        { error: "Provide a name, isActive, or allowedOrigins value to update" },
         { status: 400 },
       );
     }
@@ -107,6 +123,7 @@ export async function PATCH(
         name: true,
         keyPrefix: true,
         isActive: true,
+        allowedOrigins: true,
         createdAt: true,
         updatedAt: true,
       },

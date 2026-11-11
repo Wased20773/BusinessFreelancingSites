@@ -28,6 +28,7 @@ export async function updateBusinessApiKey(
   data: {
     name?: string;
     isActive?: boolean;
+    allowedOrigins?: string[];
   },
 ) {
   return axios

@@ -72,7 +72,12 @@ describe("/api/businesses/[businessId]/api-keys/[apiKeyId]", () => {
     it.each([
       [{ name: "  " }, "API key name must be a non-empty string"],
       [{ isActive: "false" }, "isActive must be a boolean"],
-      [{}, "Provide a name or isActive value to update"],
+      [{}, "Provide a name, isActive, or allowedOrigins value to update"],
+      [
+        { allowedOrigins: "https://example.com" },
+        "allowedOrigins must be an array of origins",
+      ],
+      [{ allowedOrigins: [42] }, "allowedOrigins must only contain strings"],
     ])("returns 400 for %p", async (body, error) => {
       mockSuccessfulAuthentication();
 
@@ -127,10 +132,59 @@ describe("/api/businesses/[businessId]/api-keys/[apiKeyId]", () => {
           name: true,
           keyPrefix: true,
           isActive: true,
+          allowedOrigins: true,
           createdAt: true,
           updatedAt: true,
         },
       });
+    });
+
+    it("normalizes and saves allowed origins", async () => {
+      mockSuccessfulAuthentication();
+      mockPrisma.businessApiKey.findFirst.mockResolvedValue({ id: "api-key-123" });
+      mockPrisma.businessApiKey.update.mockResolvedValue({ id: "api-key-123" });
+
+      const response = await patchApiKey({
+        allowedOrigins: [
+          " https://Example.com/ ",
+          "https://example.com",
+          "https://*.example.com",
+          "",
+        ],
+      });
+
+      expect(response.status).toBe(200);
+      expect(mockPrisma.businessApiKey.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: {
+            allowedOrigins: ["https://example.com", "https://*.example.com"],
+          },
+        }),
+      );
+    });
+
+    it("clears allowed origins with an empty array", async () => {
+      mockSuccessfulAuthentication();
+      mockPrisma.businessApiKey.findFirst.mockResolvedValue({ id: "api-key-123" });
+      mockPrisma.businessApiKey.update.mockResolvedValue({ id: "api-key-123" });
+
+      const response = await patchApiKey({ allowedOrigins: [] });
+
+      expect(response.status).toBe(200);
+      expect(mockPrisma.businessApiKey.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { allowedOrigins: [] } }),
+      );
+    });
+
+    it("returns 400 for an invalid allowed origin", async () => {
+      mockSuccessfulAuthentication();
+
+      const response = await patchApiKey({
+        allowedOrigins: ["http://example.com"],
+      });
+
+      expect(response.status).toBe(400);
+      expect(mockPrisma.businessApiKey.update).not.toHaveBeenCalled();
     });
 
     it("returns 500 when updating the API key fails", async () => {

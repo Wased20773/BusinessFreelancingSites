@@ -40,6 +40,8 @@ export default function ApiKeyDetailsPage() {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [selectedName, setSelectedName] = useState<string>("");
   const [selectedIsActive, setSelectedIsActive] = useState<boolean>(true);
+  // One origin per line
+  const [selectedOrigins, setSelectedOrigins] = useState<string>("");
 
   // Delete
   const [clickedDelete, setClickedDelete] = useState<boolean>(false);
@@ -92,6 +94,7 @@ export default function ApiKeyDetailsPage() {
         setApiKeyData(selectedApiKey);
         setSelectedName(selectedApiKey.name);
         setSelectedIsActive(selectedApiKey.isActive);
+        setSelectedOrigins(selectedApiKey.allowedOrigins.join("\n"));
       } catch (error) {
         console.error("Error in API Key page:", error);
 
@@ -132,6 +135,10 @@ export default function ApiKeyDetailsPage() {
         updateBusinessApiKey(businessId, apiKeyData.id, {
           name,
           isActive: selectedIsActive,
+          allowedOrigins: selectedOrigins
+            .split(/[\s,]+/)
+            .map((origin) => origin.trim())
+            .filter(Boolean),
         }),
         {
           loading: "Updating API key...",
@@ -174,6 +181,7 @@ export default function ApiKeyDetailsPage() {
 
       setSelectedName(updatedApiKey.name);
       setSelectedIsActive(updatedApiKey.isActive);
+      setSelectedOrigins(updatedApiKey.allowedOrigins.join("\n"));
 
       setIsEdit(false);
     } catch (error) {
@@ -196,6 +204,7 @@ export default function ApiKeyDetailsPage() {
 
     setSelectedName(apiKeyData.name);
     setSelectedIsActive(apiKeyData.isActive);
+    setSelectedOrigins(apiKeyData.allowedOrigins.join("\n"));
     setErrorMessage(null);
     setIsEdit(false);
   }
@@ -341,7 +350,8 @@ export default function ApiKeyDetailsPage() {
             <div>
               <h2 className="text-xl font-semibold">Settings</h2>
               <p className="text-sm text-gray-500 mt-1">
-                Change the name or availability of this API key.
+                Change the name, availability, or allowed origins of this API
+                key.
               </p>
             </div>
 
@@ -410,6 +420,41 @@ export default function ApiKeyDetailsPage() {
                 />
               </div>
 
+              {/* Allowed Origins */}
+              <div className="mt-5">
+                <label className="font-semibold" htmlFor="api-key-origins">
+                  Allowed Origins
+                </label>
+
+                <p className="text-sm text-gray-500 mt-1">
+                  Websites allowed to call the API with this key from the
+                  browser. One per line, for example https://example.com,
+                  https://*.example.com, or http://localhost:5173. Leave empty
+                  to only allow server-to-server requests.
+                </p>
+
+                <textarea
+                  id="api-key-origins"
+                  name="allowedOrigins"
+                  rows={4}
+                  value={selectedOrigins}
+                  onChange={(event) => setSelectedOrigins(event.target.value)}
+                  disabled={isSaving}
+                  spellCheck={false}
+                  placeholder="https://example.com"
+                  className="
+                    block w-full mt-2
+                    rounded-lg
+                    border-[0.1rem] border-b-[0.2rem]
+                    border-blue-400
+                    bg-gray-100
+                    px-3 py-2
+                    font-mono text-sm
+                    disabled:opacity-50
+                  "
+                />
+              </div>
+
               <div className="flex justify-end gap-2 mt-5">
                 <button
                   type="button"
@@ -456,6 +501,24 @@ export default function ApiKeyDetailsPage() {
                 <p className="font-medium mt-1">
                   {apiKeyData.isActive ? "Enabled" : "Disabled"}
                 </p>
+              </div>
+
+              <div className="sm:col-span-2">
+                <p className="text-sm text-gray-500">Allowed Origins</p>
+
+                {apiKeyData.allowedOrigins.length > 0 ? (
+                  <ul className="mt-1 space-y-1">
+                    {apiKeyData.allowedOrigins.map((origin) => (
+                      <li key={origin} className="font-mono text-sm break-all">
+                        {origin}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="font-medium mt-1">
+                    None (browser requests are blocked)
+                  </p>
+                )}
               </div>
             </div>
           )}

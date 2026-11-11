@@ -11,7 +11,7 @@ import { rateLimiterRead } from "@/app/api/route_helper";
  * `return` so TypeScript keeps type-checking the code below; code after a bare
  * `return` is treated as unreachable and fails `next build`.
  */
-const ROUTE_DISABLED: boolean = true;
+const ROUTE_DISABLED: boolean = false;
 
 // GET /api/business/menu/items/[itemId]
 export async function GET(

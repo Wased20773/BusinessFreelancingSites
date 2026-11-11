@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
-import { rateLimiterRead } from "../route_helper";
+import { rateLimiterRead, signImageKeys } from "../route_helper";
 
 // GET /api/business
 export async function GET(request: Request): Promise<NextResponse> {
@@ -35,6 +35,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         name: true,
         slug: true,
         domain: true,
+        imageKey: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -47,7 +48,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       );
     }
 
-    return NextResponse.json(business, { status: 200 });
+    return NextResponse.json(await signImageKeys(business), { status: 200 });
   } catch (error) {
     console.error("Failed to fetch business:", error);
 

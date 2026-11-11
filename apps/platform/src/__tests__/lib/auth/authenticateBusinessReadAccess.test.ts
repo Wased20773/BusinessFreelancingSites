@@ -103,6 +103,27 @@ describe("authenticateBusinessReadAccess", () => {
       await expectErrorResponse(result, 401, { error: "Unauthorized" });
     });
 
+    it("returns 403 when the API key is used from a blocked origin", async () => {
+      mockedAuthenticateBusinessApiKey.mockResolvedValue({
+        blockedOrigin: "https://evil-example.com",
+      });
+
+      const result = await authenticateBusinessReadAccess(
+        createRequest({
+          Authorization: "Bearer bp_valid-key",
+          Origin: "https://evil-example.com",
+          "x-location-id": "location-123",
+        }),
+        allowedRoles,
+      );
+
+      await expectErrorResponse(result, 403, {
+        error:
+          "Origin https://evil-example.com is not allowed for this API key. Add it to the key's allowed origins in the workspace.",
+      });
+      expect(mockedAuthenticateBusinessAccess).not.toHaveBeenCalled();
+    });
+
     it("does not fall back to the session when an invalid Authorization header is supplied", async () => {
       mockedAuthenticateBusinessApiKey.mockResolvedValue(null);
 

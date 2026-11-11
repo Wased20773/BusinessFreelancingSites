@@ -7,6 +7,14 @@ export async function getBusinesses() {
     .then((response) => response.data);
 }
 
+export async function deleteBusiness(businessId: string, confirmName: string) {
+  return axios
+    .delete<{ message: string }>(`/api/businesses/${businessId}`, {
+      data: { confirmName },
+    })
+    .then((response) => response.data);
+}
+
 export async function getBusiness(businessId: string) {
   return axios
     .get<BusinessJson>("/api/business", {

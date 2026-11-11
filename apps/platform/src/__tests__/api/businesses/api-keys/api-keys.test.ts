@@ -99,6 +99,7 @@ describe("/api/businesses/[businessId]/api-keys", () => {
           name: true,
           keyPrefix: true,
           isActive: true,
+          allowedOrigins: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -194,15 +195,53 @@ describe("/api/businesses/[businessId]/api-keys", () => {
           name: "Production Website",
           keyHash: "hashed-key",
           keyPrefix: "bp_abc1234",
+          allowedOrigins: [],
         },
         select: {
           id: true,
           name: true,
           keyPrefix: true,
           isActive: true,
+          allowedOrigins: true,
           createdAt: true,
         },
       });
+    });
+
+    it("normalizes allowed origins provided at creation", async () => {
+      mockSuccessfulAuthentication();
+      mockedGenerateBusinessApiKey.mockReturnValue({
+        apiKey: "bp_abc1234-secret",
+        keyHash: "hashed-key",
+        keyPrefix: "bp_abc1234",
+      });
+      mockPrisma.businessApiKey.create.mockResolvedValue({ id: "api-key-123" });
+
+      const response = await postApiKey({
+        name: "Production Website",
+        allowedOrigins: ["https://Example.com/", "http://localhost:5173"],
+      });
+
+      expect(response.status).toBe(201);
+      expect(mockPrisma.businessApiKey.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            allowedOrigins: ["https://example.com", "http://localhost:5173"],
+          }),
+        }),
+      );
+    });
+
+    it("returns 400 for an invalid allowed origin at creation", async () => {
+      mockSuccessfulAuthentication();
+
+      const response = await postApiKey({
+        name: "Production Website",
+        allowedOrigins: ["https://example.com/menu"],
+      });
+
+      expect(response.status).toBe(400);
+      expect(mockedGenerateBusinessApiKey).not.toHaveBeenCalled();
     });
 
     it("returns 500 when API-key creation fails", async () => {

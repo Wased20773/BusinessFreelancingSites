@@ -14,12 +14,14 @@ import { createRouteContext } from "@/__tests__/helpers/route";
 import { mockPrisma, resetPrismaMock } from "@/__tests__/mocks/prisma";
 import { Prisma } from "@business-freelancer/database";
 import { getObjectUrl } from "@/lib/s3/get-url";
+import { deleteObjects } from "@/lib/s3/delete";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 
 import { GET as GET_BUSINESSES } from "@/app/api/businesses/route";
 import {
   GET as GET_BUSINESS,
   PATCH,
+  DELETE,
 } from "@/app/api/businesses/[businessId]/route";
 
 const mockedAuth = jest.fn<Promise<Session | null>, []>();
@@ -37,6 +39,7 @@ jest.mock("@/lib/auth/authenticateBusinessAccess", () => ({
 }));
 
 const mockedGetObjectUrl = jest.mocked(getObjectUrl);
+const mockedDeleteObjects = jest.mocked(deleteObjects);
 const mockedAuthenticateBusinessAccess = jest.mocked(authenticateBusinessAccess);
 
 const URL = `http://localhost/api/businesses/${BUSINESS_ID}`;
@@ -323,6 +326,212 @@ describe("/api/businesses", () => {
         data: { name: "Tacos El Guero PDX", domain: "tacos-el-guero.com" },
         select: businessSelect,
       });
+    });
+  });
+
+  describe("DELETE /api/businesses/[businessId]", () => {
+    const existingBusiness = {
+      id: BUSINESS_ID,
+      name: "Tacos El Guero",
+      imageKey: `businesses/${BUSINESS_ID}/image.webp`,
+      originalImageKey: `businesses/${BUSINESS_ID}/original.png`,
+      locations: [
+        {
+          items: [
+            {
+              imageKey: `businesses/${BUSINESS_ID}/items/image-item-1.webp`,
+              originalImageKey: null,
+            },
+            { imageKey: null, originalImageKey: null },
+          ],
+        },
+        {
+          items: [
+            {
+              imageKey: `businesses/${BUSINESS_ID}/items/synced/group-1/image.webp`,
+              originalImageKey: `businesses/${BUSINESS_ID}/items/synced/group-1/original.jpg`,
+            },
+          ],
+        },
+      ],
+    };
+
+    function deleteBusiness(body?: unknown) {
+      return DELETE(
+        createJsonRequest({ url: URL, method: "DELETE", body }),
+        context,
+      );
+    }
+
+    it("returns 400 when businessId is missing", async () => {
+      const response = await DELETE(
+        createJsonRequest({ url: URL, method: "DELETE" }),
+        createRouteContext({ businessId: "" }),
+      );
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: "Missing businessId" });
+    });
+
+    it("returns the authentication error response", async () => {
+      mockFailedAuthentication(403, "Forbidden");
+
+      const response = await deleteBusiness({ confirmName: "Tacos El Guero" });
+
+      expect(response.status).toBe(403);
+      expect(mockPrisma.business.delete).not.toHaveBeenCalled();
+    });
+
+    it("only allows owners to delete the business", async () => {
+      mockFailedAuthentication(403, "Forbidden");
+
+      await deleteBusiness({ confirmName: "Tacos El Guero" });
+
+      expect(mockedAuthenticateBusinessAccess).toHaveBeenCalledWith(
+        expect.any(Request),
+        BUSINESS_ID,
+        ["owner"],
+      );
+    });
+
+    it.each([undefined, {}, { confirmName: "   " }, { confirmName: 42 }])(
+      "returns 400 without a confirmation name (%p)",
+      async (body) => {
+        mockSuccessfulAuthentication();
+
+        const response = await deleteBusiness(body);
+
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({
+          error: "Type the business name to confirm the deletion",
+        });
+        expect(mockPrisma.business.delete).not.toHaveBeenCalled();
+      },
+    );
+
+    it("returns 404 when the business does not exist", async () => {
+      mockSuccessfulAuthentication();
+      mockPrisma.business.findUnique.mockResolvedValue(null);
+
+      const response = await deleteBusiness({ confirmName: "Tacos El Guero" });
+
+      expect(response.status).toBe(404);
+      expect(mockPrisma.business.delete).not.toHaveBeenCalled();
+    });
+
+    it("returns 400 and deletes nothing when the name does not match", async () => {
+      mockSuccessfulAuthentication();
+      mockPrisma.business.findUnique.mockResolvedValue(existingBusiness);
+
+      const response = await deleteBusiness({ confirmName: "tacos el guero" });
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({
+        error: "The business name does not match",
+      });
+      expect(mockPrisma.business.delete).not.toHaveBeenCalled();
+      expect(mockedDeleteObjects).not.toHaveBeenCalled();
+    });
+
+    it("deletes the business and every stored image", async () => {
+      mockSuccessfulAuthentication();
+      mockPrisma.business.findUnique.mockResolvedValue(existingBusiness);
+      mockPrisma.business.delete.mockResolvedValue({ id: BUSINESS_ID });
+      mockedDeleteObjects.mockResolvedValue([]);
+
+      const response = await deleteBusiness({ confirmName: " Tacos El Guero " });
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        message: "Business deleted successfully",
+      });
+
+      expect(mockPrisma.business.delete).toHaveBeenCalledWith({
+        where: { id: BUSINESS_ID },
+      });
+
+      expect(mockedDeleteObjects).toHaveBeenCalledWith([
+        `businesses/${BUSINESS_ID}/image.webp`,
+        `businesses/${BUSINESS_ID}/original.png`,
+        `businesses/${BUSINESS_ID}/items/image-item-1.webp`,
+        `businesses/${BUSINESS_ID}/items/synced/group-1/image.webp`,
+        `businesses/${BUSINESS_ID}/items/synced/group-1/original.jpg`,
+      ]);
+    });
+
+    it("deletes the database records before touching S3", async () => {
+      const calls: string[] = [];
+
+      mockSuccessfulAuthentication();
+      mockPrisma.business.findUnique.mockResolvedValue(existingBusiness);
+      mockPrisma.business.delete.mockImplementation(async () => {
+        calls.push("database");
+        return { id: BUSINESS_ID };
+      });
+      mockedDeleteObjects.mockImplementation(async () => {
+        calls.push("s3");
+        return [];
+      });
+
+      await deleteBusiness({ confirmName: "Tacos El Guero" });
+
+      expect(calls).toEqual(["database", "s3"]);
+    });
+
+    it("skips S3 when the business has no images", async () => {
+      mockSuccessfulAuthentication();
+      mockPrisma.business.findUnique.mockResolvedValue({
+        ...existingBusiness,
+        imageKey: null,
+        originalImageKey: null,
+        locations: [],
+      });
+      mockPrisma.business.delete.mockResolvedValue({ id: BUSINESS_ID });
+
+      const response = await deleteBusiness({ confirmName: "Tacos El Guero" });
+
+      expect(response.status).toBe(200);
+      expect(mockedDeleteObjects).not.toHaveBeenCalled();
+    });
+
+    it("still succeeds when the image cleanup fails", async () => {
+      const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      mockSuccessfulAuthentication();
+      mockPrisma.business.findUnique.mockResolvedValue(existingBusiness);
+      mockPrisma.business.delete.mockResolvedValue({ id: BUSINESS_ID });
+      mockedDeleteObjects.mockRejectedValue(new Error("S3 unavailable"));
+
+      const response = await deleteBusiness({ confirmName: "Tacos El Guero" });
+
+      expect(response.status).toBe(200);
+      expect(consoleError).toHaveBeenCalled();
+
+      consoleError.mockRestore();
+    });
+
+    it("returns 500 when deleting the business fails", async () => {
+      const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      mockSuccessfulAuthentication();
+      mockPrisma.business.findUnique.mockResolvedValue(existingBusiness);
+      mockPrisma.business.delete.mockRejectedValue(
+        new Error("Database delete failed"),
+      );
+
+      const response = await deleteBusiness({ confirmName: "Tacos El Guero" });
+
+      expect(response.status).toBe(500);
+      expect(await response.json()).toEqual({
+        error: "Failed to delete business",
+      });
+      expect(mockedDeleteObjects).not.toHaveBeenCalled();
+
+      consoleError.mockRestore();
     });
   });
 });

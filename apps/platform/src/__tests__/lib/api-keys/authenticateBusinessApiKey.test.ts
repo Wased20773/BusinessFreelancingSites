@@ -75,6 +75,7 @@ describe("authenticateBusinessApiKey", () => {
       select: {
         businessId: true,
         isActive: true,
+        allowedOrigins: true,
       },
     });
   });
@@ -112,6 +113,91 @@ describe("authenticateBusinessApiKey", () => {
 
     expect(result).toEqual({
       businessId: "business-123",
+    });
+  });
+
+  describe("browser origin restrictions", () => {
+    function createBrowserRequest(origin: string): Request {
+      return new Request("http://localhost/api/business/categories", {
+        headers: {
+          Authorization: "Bearer bp_valid-key",
+          Origin: origin,
+        },
+      });
+    }
+
+    it("allows requests without an Origin header (server-to-server)", async () => {
+      mockPrisma.businessApiKey.findUnique.mockResolvedValue({
+        businessId: "business-123",
+        isActive: true,
+        allowedOrigins: [],
+      });
+
+      const request = new Request("http://localhost/api/business/categories", {
+        headers: {
+          Authorization: "Bearer bp_valid-key",
+        },
+      });
+
+      expect(await authenticateBusinessApiKey(request)).toEqual({
+        businessId: "business-123",
+      });
+    });
+
+    it("blocks browser requests when the key has no allowed origins", async () => {
+      mockPrisma.businessApiKey.findUnique.mockResolvedValue({
+        businessId: "business-123",
+        isActive: true,
+        allowedOrigins: [],
+      });
+
+      const result = await authenticateBusinessApiKey(
+        createBrowserRequest("https://example.com"),
+      );
+
+      expect(result).toEqual({ blockedOrigin: "https://example.com" });
+    });
+
+    it("allows a browser request from an allowed origin", async () => {
+      mockPrisma.businessApiKey.findUnique.mockResolvedValue({
+        businessId: "business-123",
+        isActive: true,
+        allowedOrigins: ["https://example.com", "http://localhost:5173"],
+      });
+
+      const result = await authenticateBusinessApiKey(
+        createBrowserRequest("http://localhost:5173"),
+      );
+
+      expect(result).toEqual({ businessId: "business-123" });
+    });
+
+    it("blocks a browser request from an origin that is not allowed", async () => {
+      mockPrisma.businessApiKey.findUnique.mockResolvedValue({
+        businessId: "business-123",
+        isActive: true,
+        allowedOrigins: ["https://example.com"],
+      });
+
+      const result = await authenticateBusinessApiKey(
+        createBrowserRequest("https://evil-example.com"),
+      );
+
+      expect(result).toEqual({ blockedOrigin: "https://evil-example.com" });
+    });
+
+    it("still returns null for an inactive key from an allowed origin", async () => {
+      mockPrisma.businessApiKey.findUnique.mockResolvedValue({
+        businessId: "business-123",
+        isActive: false,
+        allowedOrigins: ["https://example.com"],
+      });
+
+      const result = await authenticateBusinessApiKey(
+        createBrowserRequest("https://example.com"),
+      );
+
+      expect(result).toBeNull();
     });
   });
 

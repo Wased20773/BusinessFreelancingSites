@@ -250,6 +250,97 @@ describe("GET /api/business/socials icon URLs", () => {
   });
 });
 
+describe.each([
+  {
+    route: "GET /api/business/menu",
+    get: () => GET_MENU(createPublicRequest("/api/business/menu")),
+  },
+  {
+    route: "GET /api/business/categories/[categoryId]",
+    get: () =>
+      GET_CATEGORY(
+        createPublicRequest("/api/business/categories/category-123"),
+        createRouteContext({ categoryId: "category-123" }),
+      ),
+  },
+])("$route item image URLs", ({ get }) => {
+  const locationWithImages = {
+    categories: [
+      {
+        id: "category-1",
+        items: [
+          { id: "item-1", imageKey: "businesses/b/items/item-1.webp" },
+          { id: "item-2", imageKey: null },
+        ],
+        subcategories: [
+          {
+            id: "subcategory-1",
+            items: [
+              { id: "item-3", imageKey: "businesses/b/items/item-3.webp" },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  it("returns every item image, including subcategory items, as a signed URL", async () => {
+    mockApiKeyReadAccess();
+    mockPrisma.location.findFirst.mockResolvedValue(
+      structuredClone(locationWithImages),
+    );
+    mockedGetObjectUrl.mockImplementation(
+      async (key) => `https://signed/${key}?X-Amz-Expires=3600`,
+    );
+
+    const response = await get();
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      categories: [
+        {
+          id: "category-1",
+          items: [
+            {
+              id: "item-1",
+              imageKey:
+                "https://signed/businesses/b/items/item-1.webp?X-Amz-Expires=3600",
+            },
+            { id: "item-2", imageKey: null },
+          ],
+          subcategories: [
+            {
+              id: "subcategory-1",
+              items: [
+                {
+                  id: "item-3",
+                  imageKey:
+                    "https://signed/businesses/b/items/item-3.webp?X-Amz-Expires=3600",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(mockedGetObjectUrl).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns a JSON 500 without the raw key when signing fails", async () => {
+    mockApiKeyReadAccess();
+    mockPrisma.location.findFirst.mockResolvedValue(
+      structuredClone(locationWithImages),
+    );
+    mockedGetObjectUrl.mockRejectedValue(new Error("S3 unavailable"));
+
+    const response = await get();
+
+    expect(response.status).toBe(500);
+    expect(JSON.stringify(await response.json())).not.toContain("businesses/b");
+  });
+});
+
 describe("GET /api/business/categories/[categoryId]", () => {
   it("returns 400 when the categoryId is missing", async () => {
     const response = await GET_CATEGORY(
@@ -282,6 +373,7 @@ describe("GET /api/business", () => {
     name: "Tacos El Guero",
     slug: "tacos-el-guero",
     domain: null,
+    imageKey: "businesses/business-id/logo.webp",
   };
 
   function getBusiness() {
@@ -339,14 +431,19 @@ describe("GET /api/business", () => {
     expect(await response.json()).toEqual({ error: "Failed to fetch business" });
   });
 
-  it("returns the authenticated business", async () => {
+  it("returns the authenticated business with a signed logo URL", async () => {
     mockApiKeyReadAccess();
-    mockPrisma.business.findUnique.mockResolvedValue(business);
+    // Copy: signImageKeys mutates the object it is given
+    mockPrisma.business.findUnique.mockResolvedValue({ ...business });
+    mockedGetObjectUrl.mockImplementation(async (key) => `https://cdn/${key}`);
 
     const response = await getBusiness();
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual(business);
+    expect(await response.json()).toEqual({
+      ...business,
+      imageKey: `https://cdn/${business.imageKey}`,
+    });
 
     expect(mockPrisma.business.findUnique).toHaveBeenCalledWith({
       where: { id: BUSINESS_ID },
@@ -355,6 +452,7 @@ describe("GET /api/business", () => {
         name: true,
         slug: true,
         domain: true,
+        imageKey: true,
         createdAt: true,
         updatedAt: true,
       },

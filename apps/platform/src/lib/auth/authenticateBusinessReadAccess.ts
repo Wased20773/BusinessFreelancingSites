@@ -58,6 +58,15 @@ export async function authenticateBusinessReadAccess(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if ("blockedOrigin" in apiKeyAuthentication) {
+      return NextResponse.json(
+        {
+          error: `Origin ${apiKeyAuthentication.blockedOrigin} is not allowed for this API key. Add it to the key's allowed origins in the workspace.`,
+        },
+        { status: 403 },
+      );
+    }
+
     if (locationId) {
       return {
         businessId: apiKeyAuthentication.businessId,

@@ -4,6 +4,7 @@ import { DayOfWeek, Prisma } from "@business-freelancer/database";
 import { isSupportedImageContentType } from "@/lib/s3/keys";
 import { generateBusinessApiKey } from "@/lib/api-keys/generateBusinessApiKey";
 import { consumeToken } from "@/lib/redis/tokenBucket";
+import { getObjectUrl } from "@/lib/s3/get-url";
 import {
   BusinessReadAuthentication,
   LocationReadAuthentication,
@@ -86,14 +87,59 @@ export function getSlug(request: Request): string {
 }
 
 /*
+ *   Walks a query result and replaces every `imageKey` string with a temporary
+ *   presigned S3 URL (see getObjectUrl for the expiry). The bucket stays private:
+ *   the raw object key is never returned, and the URL stops working once it
+ *   expires. All URLs are signed in parallel; signing is local and makes no
+ *   network request to AWS.
+ **/
+export async function signImageKeys<T>(data: T): Promise<T> {
+  const pending: Promise<void>[] = [];
+
+  function visit(value: unknown): void {
+    if (Array.isArray(value)) {
+      value.forEach(visit);
+      return;
+    }
+
+    if (value === null || typeof value !== "object") {
+      return;
+    }
+
+    const record = value as Record<string, unknown>;
+
+    for (const [field, fieldValue] of Object.entries(record)) {
+      if (field === "imageKey" && typeof fieldValue === "string") {
+        pending.push(
+          getObjectUrl(fieldValue).then((url) => {
+            record.imageKey = url;
+          }),
+        );
+      } else {
+        visit(fieldValue);
+      }
+    }
+  }
+
+  visit(data);
+  await Promise.all(pending);
+
+  return data;
+}
+
+/*
  *   Gets the response of a businesses data where <T> is the object of the
  *   Corresponding select "items" in the query.
+ *
+ *   Pass `{ signImages: true }` when the select includes `imageKey` fields so
+ *   they are returned as presigned URLs instead of private object keys.
  **/
 export async function getLocationResponse<T extends Prisma.LocationSelect>(
   businessId: string,
   locationId: string,
   select: T,
   resourceName: LocationResourceName,
+  options?: { signImages?: boolean },
 ): Promise<NextResponse> {
   try {
     const location = await prisma.location.findFirst({
@@ -111,7 +157,11 @@ export async function getLocationResponse<T extends Prisma.LocationSelect>(
       );
     }
 
-    return NextResponse.json(location, { status: 200 });
+    const body = options?.signImages
+      ? await signImageKeys(location)
+      : location;
+
+    return NextResponse.json(body, { status: 200 });
   } catch (error) {
     console.error(`Failed to fetch ${resourceName} data:`, error);
 

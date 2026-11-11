@@ -19,6 +19,7 @@ jest.mock("@/lib/s3/upload", () => ({
 
 jest.mock("@/lib/s3/delete", () => ({
   deleteObject: jest.fn(),
+  deleteObjects: jest.fn(),
 }));
 
 jest.mock("@/lib/s3/copy", () => ({
