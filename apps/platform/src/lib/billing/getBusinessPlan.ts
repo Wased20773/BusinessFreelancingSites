@@ -8,7 +8,7 @@ import { NextResponse } from "next/server";
  *   past_due = grace period (Stripe is retrying the card), so it stays paid.
  *   Everything else (canceled, unpaid, incomplete, paused...) falls back to Free.
  **/
-const PAID_STATUSES: SubscriptionStatus[] = ["active", "trialing", "past_due"];
+export const PAID_STATUSES: SubscriptionStatus[] = ["active", "trialing", "past_due"];
 
 export async function getBusinessPlan(businessId: string) {
   const business = await prisma.business.findUnique({

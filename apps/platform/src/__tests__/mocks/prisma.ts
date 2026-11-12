@@ -39,6 +39,7 @@ export const mockPrisma = {
   locationDay: createMockModel(),
   role: createMockModel(),
   social: createMockModel(),
+  subscription: createMockModel(),
   user: createMockModel(),
 
   $transaction: jest.fn(),

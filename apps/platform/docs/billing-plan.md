@@ -95,7 +95,8 @@ Like Discord server boosts: **anyone in the business can pay**, regardless of ro
 - **Paying grants no permissions.** A staff member who pays is still staff.
 - **Only the payer can change or cancel the subscription**, since it is their card.
 - **Ownership and billing are separate.** Transferring ownership does not move billing; the original payer keeps paying.
-- **Taking over:** another member subscribes. Only after Stripe confirms the new payment is the old payer's subscription cancelled, with unused time credited back to them.
+- **Taking over:** another member subscribes, on any tier, and takes over immediately. Only after Stripe confirms the new payment is the old payer's subscription cancelled, with **no refund or credit** for the unused time.
+- **The payer changes tiers in place** (upgrade or downgrade, prorated by Stripe) instead of checking out again, so a business never has two subscriptions.
 - **If the payer leaves or is removed**, their subscription is cancelled at the end of the paid month so they are never charged again, and the owners are notified so someone can take over before it lapses.
 - **Billing is managed on our Billing page** (subscribe, switch tiers, take over, buy slots). The Stripe Customer Portal is used for cards, invoices, and cancelling.
 
@@ -142,7 +143,13 @@ Sync is the upgrade hook: a business with several locations sees how much easier
 - **Stripe:** Checkout in subscription mode (tiers) and payment mode (slots), Customer Portal (cards, invoices, cancel), webhooks (subscription changes, completed slot payments, disputes) to keep the database in sync. The app reads plan, status, and slots from the database only, never from Stripe during a request.
 - **UI:** a workspace Billing page (plan, usage against limits, payer badge, subscribe, switch tier, take over, buy slots).
 - **Launch migration:** existing businesses start on Free with 1 slot. Businesses that already have more than one location get matching slots for free, so nobody is over their limit at launch. No live site uses the API today, so nothing breaks.
-- **Local testing:** Stripe test mode plus the Stripe CLI (`stripe listen --forward-to localhost:3000/api/billing/webhook`).
+- **Local testing:** Stripe test mode plus the Stripe CLI. Stripe can't reach `localhost`, so events only arrive while this is running (events sent while it's off are never delivered; editing the subscription in the dashboard sends a fresh `updated` event). In PowerShell the event list must be quoted:
+
+    ```powershell
+    stripe listen --forward-to localhost:3000/api/billing/webhook --events "customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,checkout.session.completed,charge.dispute.created"
+    ```
+
+- **Production webhook:** register `https://<domain>/api/billing/webhook` in the Stripe dashboard (Developers → Webhooks) with the same events. It gets its own `whsec_` secret for the production `STRIPE_WEBHOOK_SECRET`; Stripe retries failed deliveries for up to 3 days.
 
 ## Deferred (Far Future)
 
@@ -167,6 +174,9 @@ Sync is the upgrade hook: a business with several locations sees how much easier
 | Locking locations after a lapse (owner chooses which stay editable) | Not needed: slots are owned permanently, so a lapse never affects locations. |
 | "N oldest locations stay editable" | Confusing and would draw complaints. |
 | On Free, edit a synced record locally while leaving `isSynced` / `syncGroupId` untouched | Synced items share one image in S3, so a "local" image change could overwrite or delete the image the other locations use. Detaching only the edited record (it keeps its `syncGroupId`) is safe and can be undone after upgrading. |
+| Scheduled handover (the next payer starts when the current payer's month ends) | An upgrade is usually urgent; making the business wait until next month would hurt it. |
+| Refunding or crediting the old payer's unused time on a takeover | Not needed at this stage; keep it simple and revisit if users ask. |
+| Blocking takeovers to a lower tier | Not needed at this stage; keep it simple and revisit if it becomes a problem. |
 | Refunds on location slots | Goes against "bought once, kept"; no real use case at this scale. Chargebacks are still handled. |
 | Billing pauses API keys via `isActive` | Developers can toggle `isActive`; billing must not depend on a user-editable flag. |
 
