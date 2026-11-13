@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/billing/stripe";
+import {
+  recordSlotPurchase,
+  revokeSlotPurchase,
+} from "@/lib/billing/slotPurchases";
 import { syncSubscription } from "@/lib/billing/syncSubscription";
 
 // POST /api/billing/webhook
@@ -34,6 +38,14 @@ export async function POST(request: Request): Promise<NextResponse> {
       case "customer.subscription.updated":
       case "customer.subscription.deleted":
         await syncSubscription(event.data.object.id);
+        break;
+
+      case "checkout.session.completed":
+        await recordSlotPurchase(event.data.object);
+        break;
+
+      case "charge.dispute.created":
+        await revokeSlotPurchase(event.data.object);
         break;
 
       // Every other event is acknowledged and ignored.

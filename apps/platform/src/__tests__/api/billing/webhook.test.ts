@@ -12,6 +12,16 @@ jest.mock("@/lib/billing/syncSubscription", () => ({
   syncSubscription: jest.fn(),
 }));
 
+jest.mock("@/lib/billing/slotPurchases", () => ({
+  recordSlotPurchase: jest.fn(),
+  revokeSlotPurchase: jest.fn(),
+}));
+
+import {
+  recordSlotPurchase,
+  revokeSlotPurchase,
+} from "@/lib/billing/slotPurchases";
+
 import { POST } from "@/app/api/billing/webhook/route";
 
 const mockConstructEvent = jest.fn();
@@ -69,6 +79,34 @@ describe("POST /api/billing/webhook", () => {
 
     expect(response.status).toBe(200);
     expect(mockedSyncSubscription).toHaveBeenCalledWith("sub_123");
+  });
+
+  it("records a slot purchase on checkout.session.completed", async () => {
+    const session = { id: "cs_123" };
+
+    mockConstructEvent.mockReturnValue({
+      type: "checkout.session.completed",
+      data: { object: session },
+    });
+
+    const response = await postWebhook();
+
+    expect(response.status).toBe(200);
+    expect(recordSlotPurchase).toHaveBeenCalledWith(session);
+  });
+
+  it("revokes a slot purchase on charge.dispute.created", async () => {
+    const dispute = { id: "dp_123" };
+
+    mockConstructEvent.mockReturnValue({
+      type: "charge.dispute.created",
+      data: { object: dispute },
+    });
+
+    const response = await postWebhook();
+
+    expect(response.status).toBe(200);
+    expect(revokeSlotPurchase).toHaveBeenCalledWith(dispute);
   });
 
   it("acknowledges and ignores other events", async () => {

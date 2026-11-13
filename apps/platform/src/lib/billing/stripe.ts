@@ -53,6 +53,13 @@ export function getPriceIdForTier(tier: PlanTier): string {
 }
 
 /*
+ *   The one-time price of one extra location slot.
+ **/
+export function getLocationSlotPriceId(): string {
+  return requireEnv("STRIPE_PRICE_LOCATION_SLOT");
+}
+
+/*
  *   The reverse lookup, for webhooks: Stripe tells us the price,
  *   we need the tier. Returns null for a price that isn't one of ours.
  **/

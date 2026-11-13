@@ -16,6 +16,7 @@ const MODEL_METHODS = [
   "deleteMany",
   "groupBy",
   "count",
+  "upsert",
 ] as const;
 
 type MockModel = Record<(typeof MODEL_METHODS)[number], jest.Mock>;
@@ -37,6 +38,7 @@ export const mockPrisma = {
   itemOption: createMockModel(),
   location: createMockModel(),
   locationDay: createMockModel(),
+  locationSlotPurchase: createMockModel(),
   role: createMockModel(),
   social: createMockModel(),
   subscription: createMockModel(),

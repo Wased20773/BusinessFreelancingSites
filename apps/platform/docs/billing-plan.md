@@ -146,7 +146,7 @@ Sync is the upgrade hook: a business with several locations sees how much easier
 - **Local testing:** Stripe test mode plus the Stripe CLI. Stripe can't reach `localhost`, so events only arrive while this is running (events sent while it's off are never delivered; editing the subscription in the dashboard sends a fresh `updated` event). In PowerShell the event list must be quoted:
 
     ```powershell
-    stripe listen --forward-to localhost:3000/api/billing/webhook --events "customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,checkout.session.completed,charge.dispute.created"
+    stripe listen --forward-to http://127.0.0.1:3000/api/billing/webhook --events "customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,checkout.session.completed,charge.dispute.created"
     ```
 
 - **Production webhook:** register `https://<domain>/api/billing/webhook` in the Stripe dashboard (Developers → Webhooks) with the same events. It gets its own `whsec_` secret for the production `STRIPE_WEBHOOK_SECRET`; Stripe retries failed deliveries for up to 3 days.
