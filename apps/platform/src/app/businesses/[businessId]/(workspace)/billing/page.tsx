@@ -195,9 +195,17 @@ export default function BillingPage() {
             <div className="mb-6">
               <h2>Subscription Plans</h2>
               <p className="mt-1 text-gray-500">
-                Any member of this business can subscribe to any plan below.
-                Only the original payer can make a downgrade purchase. If you
-                purchase a tier higher than the current plan it gets replaced.
+                Anyone in this business can subscribe. If someone else already
+                pays, you can take over with a higher plan; their subscription
+                is cancelled right away with no refund. Only the current payer
+                can switch to a lower plan. When the payer switches, they pay or
+                get credit only for the time left in the month.
+              </p>
+
+              <p className="mt-3 text-amber-500">
+                If the plan drops to a lower tier, nothing is removed: extra
+                members, API keys, and origins keep working. You must meet the
+                requirements your current plan is under
               </p>
             </div>
 

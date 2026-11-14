@@ -35,25 +35,25 @@ const PLAN_STYLES: Record<
 > = {
   free: {
     card: "border-gray-200 bg-white",
-    title: "text-slate-700",
+    title: "text-slate-800",
     current: "ring-2 ring-slate-400",
     button: "bg-gray-300 text-slate-900",
   },
   familyBusiness: {
     card: "border-emerald-300 bg-emerald-200/40",
-    title: "text-emerald-700",
+    title: "text-emerald-800",
     current: "ring-2 ring-emerald-500",
     button: "bg-emerald-300 text-emerald-900",
   },
   localBusiness: {
     card: "border-sky-300 bg-sky-200/40",
-    title: "text-sky-700",
+    title: "text-sky-800",
     current: "ring-2 ring-sky-500",
     button: "bg-sky-300 text-sky-900",
   },
   growingBusiness: {
     card: "border-violet-300 bg-violet-200/40",
-    title: "text-violet-700",
+    title: "text-violet-800",
     current: "ring-2 ring-violet-500",
     button: "bg-violet-300 text-violet-900",
   },
@@ -154,7 +154,7 @@ export default function PlansCard({
           >
             {/* Heading */}
             <div className="mb-3 text-center sm:text-left">
-              <h3 className="flex flex-col">
+              <h3 className={`flex flex-col ${PLAN_STYLES[planKey].title}`}>
                 {PLANS_NAMES[planKey]}
                 <span className="text-base font-normal text-gray-600">
                   {planKey === "free"
@@ -178,7 +178,7 @@ export default function PlansCard({
             {/* What it includes */}
             <div className="flex flex-col gap-2 mb-auto">
               <CheckInclude
-                content={`Up to ${PLANS[planKey].maxMembers} members`}
+                content={`Invite up to ${PLANS[planKey].maxMembers} members`}
                 variant={planKey === "free" ? "unchanged" : "included"}
               />
               <CheckInclude
@@ -186,11 +186,11 @@ export default function PlansCard({
                 variant={planKey === "free" ? "unchanged" : "included"}
               />
               <CheckInclude
-                content={`Up to ${PLANS[planKey].maxApiKeys} API keys`}
+                content={`Create up to ${PLANS[planKey].maxApiKeys} API keys`}
                 variant={planKey === "free" ? "unchanged" : "included"}
               />
               <CheckInclude
-                content={`Up to ${PLANS[planKey].maxOriginsPerKey} origins per API key`}
+                content={`Allow up to ${PLANS[planKey].maxOriginsPerKey} origins per API key`}
                 variant={planKey === "free" ? "unchanged" : "included"}
               />
               <CheckInclude
@@ -199,20 +199,24 @@ export default function PlansCard({
               />
             </div>
 
-            {planKey !== "free" && (
+            {isCurrent ? (
+              <p
+                className={`mt-5 rounded-xl py-3 text-center opacity-60 ${
+                  planKey !== "free" ? PLAN_STYLES[planKey].button : ""
+                }`}
+              >
+                Currently Active
+              </p>
+            ) : planKey !== "free" ? (
               <button
                 type="button"
-                className={`rounded-xl py-3 mt-5 ${isCurrent ? "opacity-50 " : ""}${PLAN_STYLES[planKey].button}`}
-                disabled={isCurrent || pendingTier !== null}
+                className={`rounded-xl py-3 mt-5 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-900 ${PLAN_STYLES[planKey].button}`}
+                disabled={pendingTier !== null}
                 onClick={() => void handlePlanClick(planKey)}
               >
-                {isCurrent
-                  ? "Currently Active"
-                  : pendingTier === planKey
-                    ? "Working..."
-                    : "Subscribe"}
+                {pendingTier === planKey ? "Working..." : "Subscribe"}
               </button>
-            )}
+            ) : null}
           </div>
         );
       })}

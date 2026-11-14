@@ -123,7 +123,7 @@ export default function CurrentPlanCard({
       <div className="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b-[0.15rem] border-dashed border-gray-300 pb-3">
           <div>
-            <h3 className="text-gray-900">
+            <h3 className="flex flex-col text-gray-900">
               {PLANS_NAMES[billing.planKey]}
               {isPaid && subscription && (
                 <span className="ml-2 text-base font-normal text-gray-600">
@@ -164,7 +164,7 @@ export default function CurrentPlanCard({
         {/* The usage of the plan */}
         <div className="flex flex-col gap-2 px-3">
           <CheckInclude
-            content={`Up to ${billing.limits.maxMembers} members`}
+            content={`Invite up to ${billing.limits.maxMembers} members`}
             variant="included"
           />
 
@@ -173,11 +173,11 @@ export default function CurrentPlanCard({
             variant="included"
           />
           <CheckInclude
-            content={`Up to ${billing.limits.maxApiKeys} API keys`}
+            content={`Create up to ${billing.limits.maxApiKeys} API keys`}
             variant="included"
           />
           <CheckInclude
-            content={`Up to ${billing.limits.maxOriginsPerKey} origins per API key`}
+            content={`Allow up to ${billing.limits.maxOriginsPerKey} origins per API key`}
             variant="included"
           />
           <CheckInclude
