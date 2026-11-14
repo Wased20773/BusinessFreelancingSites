@@ -127,7 +127,7 @@ export default function AccountDropdown({
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem onSelect={() => signOut()}>
+        <DropdownMenuItem onSelect={() => signOut({ redirectTo: "/login" })}>
           <LogOutIcon />
           Sign Out
         </DropdownMenuItem>
