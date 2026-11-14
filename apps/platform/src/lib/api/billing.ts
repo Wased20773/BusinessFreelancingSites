@@ -1,10 +1,21 @@
-import type { BillingJson, BillingPricesJson } from "@/types/types";
+import type {
+  AccountBillingJson,
+  BillingJson,
+  BillingPricesJson,
+} from "@/types/types";
 import type { PlanTier } from "@business-freelancer/database/generated/prisma/enums";
 import axios from "axios";
 
 export async function getBilling(businessId: string) {
   return axios
     .get<BillingJson>(`/api/businesses/${businessId}/billing`)
+    .then((response) => response.data);
+}
+
+// Everything the signed-in user pays for, across all their businesses.
+export async function getAccountBilling() {
+  return axios
+    .get<AccountBillingJson>("/api/account/billing")
     .then((response) => response.data);
 }
 

@@ -174,6 +174,10 @@ export default function DeleteBusinessSection({
                 <li>
                   All API keys. Websites using them stop working immediately.
                 </li>
+                <li>
+                  All purchased location slots. They are not refunded and
+                  can&apos;t be moved to another business.
+                </li>
               </ul>
             </div>
 

@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { SubmitEvent, useState } from "react";
 import { toast } from "sonner";
+import { planLimitAction } from "@/lib/api/planLimitAction";
 
 export default function CreateApiKeyPage() {
   const params = useParams<{
@@ -63,6 +64,7 @@ export default function CreateApiKeyPage() {
                 description:
                   error.response?.data?.error ??
                   `Status code: ${error.response?.status ?? "No response"}`,
+                ...planLimitAction(error, businessId),
               };
             }
 

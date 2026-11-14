@@ -16,6 +16,7 @@ import { Prisma } from "@business-freelancer/database";
 import { getObjectUrl } from "@/lib/s3/get-url";
 import { deleteObjects } from "@/lib/s3/delete";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
+import { cancelSubscriptionForDeletedBusiness } from "@/lib/billing/cancelSubscription";
 
 import { GET as GET_BUSINESSES } from "@/app/api/businesses/route";
 import {
@@ -41,6 +42,9 @@ jest.mock("@/lib/auth/authenticateBusinessAccess", () => ({
 const mockedGetObjectUrl = jest.mocked(getObjectUrl);
 const mockedDeleteObjects = jest.mocked(deleteObjects);
 const mockedAuthenticateBusinessAccess = jest.mocked(authenticateBusinessAccess);
+const mockedCancelSubscription = jest.mocked(
+  cancelSubscriptionForDeletedBusiness,
+);
 
 const URL = `http://localhost/api/businesses/${BUSINESS_ID}`;
 const context = createRouteContext({ businessId: BUSINESS_ID });
@@ -476,6 +480,39 @@ describe("/api/businesses", () => {
       await deleteBusiness({ confirmName: "Tacos El Guero" });
 
       expect(calls).toEqual(["database", "s3"]);
+    });
+
+    it("cancels the subscription before deleting the business", async () => {
+      const calls: string[] = [];
+
+      mockSuccessfulAuthentication();
+      mockPrisma.business.findUnique.mockResolvedValue(existingBusiness);
+      mockedCancelSubscription.mockImplementation(async () => {
+        calls.push("cancel");
+      });
+      mockPrisma.business.delete.mockImplementation(async () => {
+        calls.push("database");
+        return { id: BUSINESS_ID };
+      });
+      mockedDeleteObjects.mockResolvedValue([]);
+
+      const response = await deleteBusiness({ confirmName: "Tacos El Guero" });
+
+      expect(response.status).toBe(200);
+      expect(mockedCancelSubscription).toHaveBeenCalledWith(BUSINESS_ID);
+      expect(calls).toEqual(["cancel", "database"]);
+    });
+
+    it("returns 500 and deletes nothing when cancelling the subscription fails", async () => {
+      mockSuccessfulAuthentication();
+      mockPrisma.business.findUnique.mockResolvedValue(existingBusiness);
+      mockedCancelSubscription.mockRejectedValue(new Error("Stripe is down"));
+
+      const response = await deleteBusiness({ confirmName: "Tacos El Guero" });
+
+      expect(response.status).toBe(500);
+      expect(mockPrisma.business.delete).not.toHaveBeenCalled();
+      expect(mockedDeleteObjects).not.toHaveBeenCalled();
     });
 
     it("skips S3 when the business has no images", async () => {

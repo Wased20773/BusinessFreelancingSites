@@ -153,6 +153,20 @@ describe("POST /api/businesses/[businessId]/billing/checkout", () => {
     },
   );
 
+  it("lets another member take over with any plan once the current one is set to end", async () => {
+    mockSuccessfulAuthentication();
+    mockBusinessPlan("localBusiness");
+    mockPrisma.business.findUnique.mockResolvedValue({
+      name: "Tacos El Guero",
+      subscription: { payerId: "someone-else", cancelAtPeriodEnd: true },
+    });
+
+    const response = await postCheckout({ tier: "familyBusiness" });
+
+    expect(response.status).toBe(200);
+    expect(mockCreateSession).toHaveBeenCalled();
+  });
+
   it("lets anyone subscribe to any plan once the old subscription has ended", async () => {
     mockSuccessfulAuthentication();
     mockBusinessPlan("free");

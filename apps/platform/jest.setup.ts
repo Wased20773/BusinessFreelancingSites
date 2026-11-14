@@ -39,6 +39,17 @@ jest.mock("@/lib/s3/get-url", () => ({
  *   jest.mock("@/lib/billing/sync", () => jest.requireActual("@/lib/billing/sync"));
  * and set the plan with mockBusinessPlan() from __tests__/helpers/billing.
  */
+/*
+ * Stripe is never reached in tests. Routes that delete a business or remove a
+ * member call these first; tests assert on them (they resolve to undefined
+ * after jest.resetAllMocks()). lib/billing/cancelSubscription.test.ts tests
+ * the real module.
+ */
+jest.mock("@/lib/billing/cancelSubscription", () => ({
+  cancelSubscriptionForDeletedBusiness: jest.fn(),
+  cancelSubscriptionForDepartingPayer: jest.fn(),
+}));
+
 jest.mock("@/lib/billing/sync", () => ({
   allowSync: async (_businessId: string, requested: boolean) => requested,
 }));

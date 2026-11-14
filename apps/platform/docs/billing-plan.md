@@ -1,10 +1,13 @@
 ---
 title: Billing Plan
 code-path:
-    - platform/src/app/api/businesses/[businessId]/route.ts (TODO(billing) in DELETE)
+    - platform/src/lib/billing/
+    - platform/src/app/api/billing/
+    - platform/src/app/api/businesses/[businessId]/billing/
+    - platform/src/app/api/account/billing/route.ts
 
-last-verified: 2026-11-10
-status: planned
+last-verified: 2026-11-13
+status: in progress
 ---
 
 # Billing Plan
@@ -95,14 +98,15 @@ Like Discord server boosts: **anyone in the business can pay**, regardless of ro
 - **Paying grants no permissions.** A staff member who pays is still staff.
 - **Only the payer can change or cancel the subscription**, since it is their card.
 - **Ownership and billing are separate.** Transferring ownership does not move billing; the original payer keeps paying.
-- **Taking over:** another member subscribes to a **higher** tier and takes over immediately. Only the payer can keep or lower the tier, so nobody can downgrade the business by taking it over. Once the subscription has ended (the business is on Free), anyone can subscribe to any tier. Only after Stripe confirms the new payment is the old payer's subscription cancelled, with **no refund or credit** for the unused time.
+- **Taking over:** another member subscribes to a **higher** tier and takes over immediately. Only the payer can keep or lower the tier, so nobody can downgrade the business by taking it over. Once the plan is set to end (the payer cancelled or left) or has ended (the business is on Free), anyone can subscribe to any tier, so the business never has to drop to Free just to keep its plan. Only after Stripe confirms the new payment is the old payer's subscription cancelled, with **no refund or credit** for the unused time.
 - **The payer changes tiers in place** (upgrade or downgrade, prorated by Stripe) instead of checking out again, so a business never has two subscriptions. Every change is confirmed on a Stripe page first: subscribing and taking over go through Checkout, and switching goes through the Customer Portal's confirmation page, which shows the prorated charge or credit. Nothing is charged or changed from our page directly.
 - **How a switch is charged (no cash refunds):**
     - Stripe credits the unused part of the old tier and charges the rest of the month on the new tier.
     - **An upgrade is paid up front:** the prorated difference is invoiced immediately, so nobody gets a higher tier before paying for it.
     - **A downgrade becomes account credit:** the unused amount stays on the payer's Stripe balance and pays their next invoices. It never goes back to the card. Full refunds would be abusable: use the highest tier for a month, then downgrade and get most of it back.
     - The credit belongs to the payer's Stripe customer, not the business. After a takeover it stays with them and is used if they pay for any business later.
-- **If the payer leaves or is removed**, their subscription is cancelled at the end of the paid month so they are never charged again, and the owners are notified so someone can take over before it lapses.
+- **If the payer is removed**, their subscription is cancelled at the end of the paid month (before the membership is deleted) so they are never charged again. Owners see it on the Billing page and in a banner across the workspace until the plan ends or someone takes over. There's no email yet; add one when the app sends email.
+- **Deleting a business** cancels its subscription immediately, before anything is deleted. If Stripe fails, nothing is deleted.
 - **Billing is managed on our Billing page** (subscribe, switch tiers, take over, buy slots). The Stripe Customer Portal is used for cards, invoices, and cancelling.
 
 ## Payment Lapse
@@ -131,7 +135,7 @@ Sync is the upgrade hook: a business with several locations sees how much easier
 
 ## Business Deletion
 
-- `DELETE /api/businesses/[businessId]` has a `TODO(billing)`: cancel the business's subscription **before** deleting, so a deleted business can never keep being charged.
+- `DELETE /api/businesses/[businessId]` cancels the business's subscription immediately **before** deleting (`cancelSubscriptionForDeletedBusiness`), so a deleted business can never keep being charged. If Stripe fails, the delete stops with a 500.
 - Purchased slots are lost with the business. The danger zone warns about this.
 
 ## Implementation Outline (for the build plan)
@@ -146,8 +150,13 @@ Sync is the upgrade hook: a business with several locations sees how much easier
     - Creation checks: locations (against slots), members, API keys, origins per key (against the tier).
     - Sync: `allowSync()` in `lib/billing/sync.ts`, called inside `createSyncedResource` / `updateSyncedResource` / `deleteSyncedResource` in `route_helper.ts`, and directly in every route with its own sync code (categories, subcategories, items, item images, item options, days, hours).
 - **Stripe:** Checkout in subscription mode (tiers) and payment mode (slots), Customer Portal (cards, invoices, cancel), webhooks (subscription changes, completed slot payments, disputes) to keep the database in sync. The app reads plan, status, and slots from the database only, never from Stripe during a request.
-- **UI:** a workspace Billing page (plan, usage against limits, payer badge, subscribe, switch tier, take over, buy slots).
-- **Launch migration:** existing businesses start on Free with 1 slot. Businesses that already have more than one location get matching slots for free, so nobody is over their limit at launch. No live site uses the API today, so nothing breaks.
+- **UI:**
+    - Workspace **Billing** page: current plan and payer badge, plan cards (subscribe, switch, take over), location slots.
+    - **Settings → Billing** (`/settings/account/billing`, `GET /api/account/billing`): the user's own view across every business they pay for, with total spent, their subscriptions and next renewals, and the full payment history (from Stripe invoices and slot payments, with receipt links).
+    - Sync toggles are locked on Free (the location dashboard layout reads the plan once and passes it to `IsSyncedCheckbox` through `SyncAccessProvider`).
+    - Owners see a workspace banner when the payer left (`getPayerLeftNotice`).
+    - Hitting a limit: the create-location modal invites the user to add a slot; member and API key errors get a "Go to Billing" toast button.
+- **Launch:** no migration needed. Today's businesses are test data and the database is reset at launch. A new business is created with one location (its included slot), and every extra location needs a purchased slot.
 - **Local testing:** Stripe test mode plus the Stripe CLI. Stripe can't reach `localhost`, so events only arrive while this is running (events sent while it's off are never delivered; editing the subscription in the dashboard sends a fresh `updated` event). In PowerShell the event list must be quoted:
 
     ```powershell

@@ -49,7 +49,14 @@ export async function GET(
               currentPeriodEnd: true,
               cancelAtPeriodEnd: true,
               payer: {
-                select: { id: true, name: true, email: true, image: true },
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  image: true,
+                  // Empty once the payer left or was removed from the business.
+                  businesses: { where: { businessId }, select: { id: true } },
+                },
               },
             },
           },
@@ -68,6 +75,9 @@ export async function GET(
     }
 
     const { subscription } = business;
+    const { businesses: payerMemberships, ...payer } = subscription?.payer ?? {
+      businesses: [],
+    };
 
     return NextResponse.json(
       {
@@ -85,8 +95,9 @@ export async function GET(
           status: subscription.status,
           currentPeriodEnd: subscription.currentPeriodEnd,
           cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-          payer: subscription.payer,
+          payer,
           isPayer: subscription.payer.id === authentication.userId,
+          payerIsMember: payerMemberships.length > 0,
         },
       },
       { status: 200 },

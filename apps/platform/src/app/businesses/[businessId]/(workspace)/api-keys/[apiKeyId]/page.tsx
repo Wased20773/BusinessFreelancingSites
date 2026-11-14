@@ -15,6 +15,7 @@ import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { planLimitAction } from "@/lib/api/planLimitAction";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
 import PageHeading from "@/components/ui/PageHeader";
@@ -153,6 +154,7 @@ export default function ApiKeyDetailsPage() {
                 description:
                   error.response?.data?.error ??
                   `Status code: ${error.response?.status ?? "No response"}`,
+                ...planLimitAction(error, businessId),
               };
             }
 

@@ -1,4 +1,6 @@
 import Image from "next/image";
+import Link from "next/link";
+import { Sparkles } from "lucide-react";
 import {
   Dispatch,
   SetStateAction,
@@ -16,6 +18,7 @@ type CreateLocationModalProps = {
   setIsCreatingLocation: Dispatch<SetStateAction<boolean>>;
   handleCreateLocation(event: SubmitEvent<HTMLFormElement>): Promise<void>;
   createErrorMessage: string | null;
+  billingHref?: string; // set when the business is out of location slots
 };
 
 export default function CreateLocationModal({
@@ -23,6 +26,7 @@ export default function CreateLocationModal({
   setIsCreatingLocation,
   handleCreateLocation,
   createErrorMessage,
+  billingHref,
 }: CreateLocationModalProps) {
   const [countryCode, setCountryCode] = useState<string | null>(null);
   const [stateCode, setStateCode] = useState<string | null>(null);
@@ -209,10 +213,36 @@ export default function CreateLocationModal({
           </div>
 
           {/* Error */}
-          {createErrorMessage && (
-            <p className="text-red-500 bg-red-100 border-[0.1rem] border-red-500 rounded-lg px-2 py-1">
-              {createErrorMessage}
-            </p>
+          {/* Out of slots isn't a mistake, it's growth: invite them to add one. */}
+          {billingHref ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border-[0.1rem] border-sky-300 bg-sky-50 px-3 py-2">
+              <div className="flex items-start gap-2">
+                <Sparkles size={18} className="mt-0.5 shrink-0 text-sky-500" />
+                <div>
+                  <p className="font-medium text-sky-900">Ready to grow?</p>
+                  <p className="text-sm text-sky-800">
+                    Every location slot is in use. Add a slot to open this new
+                    location; it&apos;s a one-time purchase that stays with your
+                    business.
+                  </p>
+                </div>
+              </div>
+
+              <Link
+                href={billingHref}
+                // The layout stays mounted on navigation, so close the modal too.
+                onClick={() => setIsCreatingLocation(false)}
+                className="shrink-0 rounded-lg bg-sky-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-600"
+              >
+                Add a slot
+              </Link>
+            </div>
+          ) : (
+            createErrorMessage && (
+              <p className="text-red-500 bg-red-100 border-[0.1rem] border-red-500 rounded-lg px-2 py-1">
+                {createErrorMessage}
+              </p>
+            )
           )}
 
           {/* Actions */}

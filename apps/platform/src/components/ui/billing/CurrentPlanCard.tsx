@@ -85,6 +85,21 @@ export default function CurrentPlanCard({
       );
     }
 
+    // The payer left or was removed; their subscription stops at the period end.
+    if (!subscription.payerIsMember && subscription.cancelAtPeriodEnd) {
+      const payerName = subscription.payer.name ?? subscription.payer.email;
+
+      return (
+        <p
+          role="alert"
+          className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+        >
+          {payerName} left the business, so this plan ends on {periodEnd}.
+          Anyone in the business can subscribe to any plan below to keep it.
+        </p>
+      );
+    }
+
     if (subscription.status === "past_due") {
       return (
         <p
@@ -101,7 +116,8 @@ export default function CurrentPlanCard({
       return (
         <p className="mt-1 text-sm text-orange-400">
           Cancelled. Ends on {periodEnd}, then this business moves to the Free
-          plan.
+          plan. Anyone in the business can subscribe to any plan below to keep
+          it.
         </p>
       );
     }

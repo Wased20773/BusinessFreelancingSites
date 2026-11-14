@@ -17,6 +17,7 @@ import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { type SubmitEvent, useState } from "react";
 import { toast } from "sonner";
+import { planLimitAction } from "@/lib/api/planLimitAction";
 
 import "../../page.css";
 import PageState from "@/components/ui/PageState";
@@ -157,6 +158,7 @@ export default function SearchPage() {
                 description:
                   error.response?.data?.error ??
                   `Status code: ${error.response?.status ?? "No response"}`,
+                ...planLimitAction(error, businessId),
               };
             }
             return {

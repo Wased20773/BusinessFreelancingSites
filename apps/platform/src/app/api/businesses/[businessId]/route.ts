@@ -3,6 +3,7 @@ import {
   isUniqueConstraintError,
 } from "@/app/api/route_helper";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
+import { cancelSubscriptionForDeletedBusiness } from "@/lib/billing/cancelSubscription";
 import { prisma } from "@/lib/prisma";
 import { getObjectUrl } from "@/lib/s3/get-url";
 import { deleteObjects } from "@/lib/s3/delete";
@@ -277,8 +278,11 @@ export async function DELETE(
       );
     }
 
-    // TODO(billing): cancel the business's Stripe subscription here, before
-    // deleting, so a deleted business can never keep being charged.
+    /*
+     * Cancel the subscription first, so a deleted business can never keep
+     * being charged. If Stripe fails, this throws and nothing is deleted.
+     */
+    await cancelSubscriptionForDeletedBusiness(business.id);
 
     /*
      * Deletes the business and, through the configured cascades, its

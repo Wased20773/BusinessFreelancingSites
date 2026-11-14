@@ -1,6 +1,8 @@
 import { auth } from "@/auth";
 import DashboardLayoutClient from "@/components/layout/dashboard/DashboardLayoutClient";
 import ResponsiveToaster from "@/components/ui/ResponsiveToast";
+import { SyncAccessProvider } from "@/components/providers/SyncAccessProvider";
+import { getBusinessPlan } from "@/lib/billing/getBusinessPlan";
 import { redirect } from "next/navigation";
 import { ReactNode } from "react";
 
@@ -45,6 +47,17 @@ export default async function DashboardLayout({
 
   const { businessId, locationId } = await params;
 
+  /*
+   * Sync is a paid feature: the forms' sync toggles are locked on Free.
+   * If the check fails, leave them unlocked; the server still enforces it.
+   */
+  const syncEnabled = await getBusinessPlan(businessId)
+    .then((plan) => plan.limits.sync)
+    .catch((error: unknown) => {
+      console.error("Failed to load the business plan:", error);
+      return true;
+    });
+
   return (
     <>
       <ResponsiveToaster />
@@ -55,7 +68,12 @@ export default async function DashboardLayout({
         businessId={businessId}
         locationId={locationId}
       >
-        {children}
+        <SyncAccessProvider
+          syncEnabled={syncEnabled}
+          billingHref={`/businesses/${businessId}/billing`}
+        >
+          {children}
+        </SyncAccessProvider>
       </DashboardLayoutClient>
     </>
   );

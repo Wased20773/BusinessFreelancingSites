@@ -15,7 +15,6 @@ import Link from "next/link";
 import { SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 import CreateLocationModal from "../modal/CreateLocationModal";
-
 type EnterDashboardDropdownProps = {
   businessId: string;
   locations: LocationJson[];
@@ -30,6 +29,7 @@ export default function EnterDashboardDropdown({
     null,
   );
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isOutOfSlots, setIsOutOfSlots] = useState<boolean>(false);
 
   async function handleCreateLocation(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -60,6 +60,7 @@ export default function EnterDashboardDropdown({
 
     setIsSubmitting(true);
     setCreateErrorMessage(null);
+    setIsOutOfSlots(false);
 
     try {
       const createLocationToast = toast.promise<LocationJson>(
@@ -76,6 +77,16 @@ export default function EnterDashboardDropdown({
             description: `${data.address} was created successfully.`,
           }),
           error: (error) => {
+            if (
+              axios.isAxiosError<{ error?: string; code?: string }>(error) &&
+              error.response?.data?.code === "PLAN_LIMIT"
+            ) {
+              return {
+                message: "Time for another slot!",
+                description: "Add a location slot to open this location.",
+              };
+            }
+
             if (axios.isAxiosError<{ error?: string }>(error)) {
               return {
                 message: "Failed to create location.",
@@ -105,10 +116,12 @@ export default function EnterDashboardDropdown({
     } catch (error) {
       console.error("Failed to create the location:", error);
 
-      if (axios.isAxiosError<{ error?: string }>(error)) {
+      if (axios.isAxiosError<{ error?: string; code?: string }>(error)) {
         setCreateErrorMessage(
           error.response?.data?.error ?? "Failed to create the location.",
         );
+        // Out of location slots: the modal links to Billing to buy one.
+        setIsOutOfSlots(error.response?.data?.code === "PLAN_LIMIT");
       } else {
         setCreateErrorMessage("Failed to create the location.");
       }
@@ -131,7 +144,14 @@ export default function EnterDashboardDropdown({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-64">
-          <DropdownMenuItem onClick={() => setIsCreatingLocation(true)}>
+          <DropdownMenuItem
+            onClick={() => {
+              // Start fresh, so an old error or slot tip doesn't linger.
+              setCreateErrorMessage(null);
+              setIsOutOfSlots(false);
+              setIsCreatingLocation(true);
+            }}
+          >
             <Plus />
             Create
           </DropdownMenuItem>
@@ -155,6 +175,9 @@ export default function EnterDashboardDropdown({
           setIsCreatingLocation={setIsCreatingLocation}
           handleCreateLocation={handleCreateLocation}
           createErrorMessage={createErrorMessage}
+          billingHref={
+            isOutOfSlots ? `/businesses/${businessId}/billing` : undefined
+          }
         />
       )}
     </>

@@ -16,11 +16,14 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import LoadingBar from "@/components/ui/LoadingBar";
 import WorkspaceTour from "@/components/ui/tours/WorkspaceTour";
+import PayerLeftBanner from "@/components/ui/billing/PayerLeftBanner";
+import type { PayerLeftNotice } from "@/lib/billing/payerLeftNotice";
 
 type WorkspaceLayoutClientProps = {
   children: ReactNode;
   businessId: string;
   currentAccount: DashboardNavAccount;
+  payerLeftNotice: PayerLeftNotice | null; // only ever set for owners
 };
 
 const CURRENT_WORKSPACE_TOUR_VERSION = 1;
@@ -29,6 +32,7 @@ export default function WorkspaceLayoutClient({
   children,
   businessId,
   currentAccount,
+  payerLeftNotice,
 }: WorkspaceLayoutClientProps) {
   const [businesses, setBusinesses] = useState<BusinessOwnerShip[]>([]);
   const [locations, setLocations] = useState<LocationJson[]>([]);
@@ -37,6 +41,18 @@ export default function WorkspaceLayoutClient({
   const [navigationFrom, setNavigationFrom] = useState<string | null>(null);
 
   const pathname = usePathname();
+
+  /*
+   * Once the path changes, the navigation finished, so forget where it came
+   * from. Otherwise coming back to that page through any other link (not the
+   * sidebar) would match the stale value and show the loading bar forever.
+   */
+  const [lastPathname, setLastPathname] = useState(pathname);
+
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
+    setNavigationFrom(null);
+  }
 
   const isNavigating = navigationFrom !== null && pathname === navigationFrom;
 
@@ -140,6 +156,11 @@ export default function WorkspaceLayoutClient({
       </div>
 
       <main className="min-h-0 overflow-y-auto">
+        {/* The Billing page already explains it in the Current Plan card. */}
+        {payerLeftNotice && !pathname.endsWith("/billing") && (
+          <PayerLeftBanner notice={payerLeftNotice} businessId={businessId} />
+        )}
+
         {isNavigating ? <LoadingBar /> : children}
       </main>
     </div>

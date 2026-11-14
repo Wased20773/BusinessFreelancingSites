@@ -247,7 +247,34 @@ export type BillingJson = {
       image: string | null;
     };
     isPayer: boolean;
+    payerIsMember: boolean; // false once the payer left or was removed
   } | null;
+};
+
+// GET /api/account/billing: everything one user pays for.
+export type AccountPaymentJson = {
+  id: string;
+  kind: "subscription" | "location_slot";
+  businessId: string | null;
+  businessName: string | null; // null when the business was deleted
+  description: string;
+  amount: number; // dollars, not cents
+  currency: string;
+  paidAt: string;
+  receiptUrl: string | null;
+};
+
+export type AccountBillingJson = {
+  subscriptions: {
+    businessId: string;
+    businessName: string;
+    tier: PlanTier;
+    status: SubscriptionStatus;
+    currentPeriodEnd: string;
+    cancelAtPeriodEnd: boolean;
+  }[];
+  payments: AccountPaymentJson[];
+  totals: PriceJson[]; // one per currency
 };
 
 export type PriceJson = {

@@ -64,7 +64,9 @@ export async function POST(
         where: { id: businessId },
         select: {
           name: true,
-          subscription: { select: { payerId: true } },
+          subscription: {
+            select: { payerId: true, cancelAtPeriodEnd: true },
+          },
         },
       }),
       getBusinessPlan(businessId),
@@ -101,8 +103,15 @@ export async function POST(
      * A takeover must be to a higher plan. Only the payer can move the
      * business to the same or a lower plan, so nobody can cancel the
      * payer's subscription to downgrade the whole business.
+     *
+     * Once the plan is already set to end (the payer cancelled or left),
+     * any tier is allowed, so the business doesn't have to drop to Free first.
      */
-    if (plan.planKey !== "free" && !isHigherPlan(tier, plan.planKey)) {
+    if (
+      plan.planKey !== "free" &&
+      !business.subscription?.cancelAtPeriodEnd &&
+      !isHigherPlan(tier, plan.planKey)
+    ) {
       return NextResponse.json(
         {
           error:

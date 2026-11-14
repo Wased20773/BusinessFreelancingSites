@@ -1,6 +1,7 @@
 "use client";
 
 import CurrentPlanCard from "@/components/ui/billing/CurrentPlanCard";
+import LocationSlotsCard from "@/components/ui/billing/LocationSlotsCard";
 import PlansCard from "@/components/ui/billing/PlansCard";
 import PageState from "@/components/ui/PageState";
 import { getBilling, getBillingPrices } from "@/lib/api/billing";
@@ -198,8 +199,9 @@ export default function BillingPage() {
                 Anyone in this business can subscribe. If someone else already
                 pays, you can take over with a higher plan; their subscription
                 is cancelled right away with no refund. Only the current payer
-                can switch to a lower plan. When the payer switches, they pay or
-                get credit only for the time left in the month.
+                can switch to a lower plan, unless the plan is already set to
+                end; then anyone can pick any plan. When the payer switches,
+                they pay or get credit only for the time left in the month.
               </p>
 
               <p className="mt-3 text-amber-500">
@@ -217,6 +219,14 @@ export default function BillingPage() {
               />
             </div>
           </div>
+        </section>
+
+        <section aria-labelledby="location-slots-heading" className="mt-8">
+          <LocationSlotsCard
+            billing={currentBillingData}
+            price={billingPriceData}
+            businessId={businessId}
+          />
         </section>
       </div>
     </section>

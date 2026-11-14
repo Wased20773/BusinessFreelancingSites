@@ -38,6 +38,9 @@ const payer = {
   image: null,
 };
 
+// What Prisma returns: the payer plus their membership in this business.
+const payerRow = { ...payer, businesses: [{ id: "business-user-1" }] };
+
 function getBillingSummary() {
   return GET(
     createJsonRequest({
@@ -63,7 +66,7 @@ describe("GET /api/businesses/[businessId]/billing", () => {
         status: "active",
         currentPeriodEnd: PERIOD_END,
         cancelAtPeriodEnd: false,
-        payer,
+        payer: payerRow,
       },
       _count: { locations: 2, users: 4, apiKeys: 1 },
     });
@@ -83,8 +86,29 @@ describe("GET /api/businesses/[businessId]/billing", () => {
         cancelAtPeriodEnd: false,
         payer,
         isPayer: true,
+        payerIsMember: true,
       },
     });
+  });
+
+  it("marks payerIsMember false once the payer left the business", async () => {
+    mockSuccessfulAuthentication(BUSINESS_ID, "owner-1", "owner");
+    mockBusinessPlan("familyBusiness");
+    mockPrisma.business.findUnique.mockResolvedValue({
+      subscription: {
+        tier: "familyBusiness",
+        status: "active",
+        currentPeriodEnd: PERIOD_END,
+        cancelAtPeriodEnd: true,
+        payer: { ...payer, businesses: [] },
+      },
+      _count: { locations: 1, users: 2, apiKeys: 0 },
+    });
+
+    const body = await (await getBillingSummary()).json();
+
+    expect(body.subscription.payerIsMember).toBe(false);
+    expect(body.subscription.payer).toEqual(payer);
   });
 
   it("marks isPayer false for other members", async () => {
@@ -96,7 +120,7 @@ describe("GET /api/businesses/[businessId]/billing", () => {
         status: "active",
         currentPeriodEnd: PERIOD_END,
         cancelAtPeriodEnd: false,
-        payer,
+        payer: payerRow,
       },
       _count: { locations: 1, users: 2, apiKeys: 0 },
     });

@@ -13,6 +13,7 @@ import { createRouteContext } from "@/__tests__/helpers/route";
 import { mockPrisma, resetPrismaMock } from "@/__tests__/mocks/prisma";
 import { mockBusinessPlan } from "@/__tests__/helpers/billing";
 import { PLANS } from "@/lib/billing/plans";
+import { cancelSubscriptionForDepartingPayer } from "@/lib/billing/cancelSubscription";
 
 import { GET, POST } from "@/app/api/businesses/[businessId]/users/route";
 import {
@@ -641,6 +642,51 @@ describe("/api/businesses/[businessId]/users", () => {
       expect(mockPrisma.businessUser.delete).toHaveBeenCalledWith({
         where: { id: "business-user-456" },
       });
+    });
+
+    it("stops the removed member's subscription (if they pay) before removing them", async () => {
+      const calls: string[] = [];
+
+      mockSuccessfulAuthentication();
+      mockPrisma.businessUser.findFirst.mockResolvedValue({
+        id: "business-user-456",
+        userId: "user-456",
+        role: { accessLevel: "staff" },
+      });
+      jest.mocked(cancelSubscriptionForDepartingPayer).mockImplementation(
+        async () => {
+          calls.push("cancel");
+        },
+      );
+      mockPrisma.businessUser.delete.mockImplementation(async () => {
+        calls.push("delete");
+      });
+
+      const response = await deleteUser();
+
+      expect(response.status).toBe(200);
+      expect(cancelSubscriptionForDepartingPayer).toHaveBeenCalledWith(
+        BUSINESS_ID,
+        "user-456",
+      );
+      expect(calls).toEqual(["cancel", "delete"]);
+    });
+
+    it("returns 500 and keeps the member when stopping their subscription fails", async () => {
+      mockSuccessfulAuthentication();
+      mockPrisma.businessUser.findFirst.mockResolvedValue({
+        id: "business-user-456",
+        userId: "user-456",
+        role: { accessLevel: "staff" },
+      });
+      jest
+        .mocked(cancelSubscriptionForDepartingPayer)
+        .mockRejectedValue(new Error("Stripe is down"));
+
+      const response = await deleteUser();
+
+      expect(response.status).toBe(500);
+      expect(mockPrisma.businessUser.delete).not.toHaveBeenCalled();
     });
   });
 

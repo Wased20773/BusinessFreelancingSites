@@ -1,4 +1,5 @@
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
+import { cancelSubscriptionForDepartingPayer } from "@/lib/billing/cancelSubscription";
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
@@ -333,6 +334,13 @@ export async function DELETE(
         { status: 403 },
       );
     }
+
+    /*
+     * If they pay for this business, stop their subscription at the end of
+     * the paid month first, so they are never charged for a business they
+     * left. If Stripe fails, this throws and they stay a member.
+     */
+    await cancelSubscriptionForDepartingPayer(businessId, businessUser.userId);
 
     await prisma.businessUser.delete({
       where: {
