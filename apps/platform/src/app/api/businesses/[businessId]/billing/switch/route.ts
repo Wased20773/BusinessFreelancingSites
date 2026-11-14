@@ -4,8 +4,7 @@ import { PlanTier } from "@business-freelancer/database/generated/prisma/enums";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { PAID_STATUSES } from "@/lib/billing/getBusinessPlan";
 import { requirePayer } from "@/lib/billing/requirePayer";
-import { getPriceIdForTier, getStripe } from "@/lib/billing/stripe";
-import { syncSubscription } from "@/lib/billing/syncSubscription";
+import { getAppUrl, getPriceIdForTier, getStripe } from "@/lib/billing/stripe";
 
 type RouteContext = {
   params: Promise<{ businessId: string }>;
@@ -76,21 +75,41 @@ export async function POST(
       subscription.stripeSubscriptionId,
     );
 
+    const customerId =
+      typeof current.customer === "string"
+        ? current.customer
+        : current.customer.id;
+    const billingUrl = `${getAppUrl()}/businesses/${businessId}/billing`;
+
     /*
-     * Swap the price on the existing subscription instead of creating a new
-     * one. Stripe prorates: an upgrade adds the difference for the rest of
-     * the month to the next invoice; a downgrade credits it.
+     * Nothing changes here. The payer is sent to Stripe's confirmation page,
+     * which shows the new price and the prorated charge or credit. The
+     * subscription only changes once they confirm there, and the
+     * customer.subscription.updated webhook saves the new tier.
      */
-    await stripe.subscriptions.update(current.id, {
-      items: [{ id: current.items.data[0].id, price: getPriceIdForTier(tier) }],
-      proration_behavior: "create_prorations",
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: billingUrl,
+      flow_data: {
+        type: "subscription_update_confirm",
+        subscription_update_confirm: {
+          subscription: current.id,
+          items: [
+            {
+              id: current.items.data[0].id,
+              price: getPriceIdForTier(tier),
+              quantity: 1,
+            },
+          ],
+        },
+        after_completion: {
+          type: "redirect",
+          redirect: { return_url: `${billingUrl}?switch=success` },
+        },
+      },
     });
 
-    // Save the new tier now instead of waiting for the webhook,
-    // so the new limits apply on the very next request.
-    await syncSubscription(current.id);
-
-    return NextResponse.json({ tier }, { status: 200 });
+    return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (error) {
     console.error("Failed to switch plans:", error);
 

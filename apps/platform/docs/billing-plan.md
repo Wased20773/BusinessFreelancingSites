@@ -95,8 +95,13 @@ Like Discord server boosts: **anyone in the business can pay**, regardless of ro
 - **Paying grants no permissions.** A staff member who pays is still staff.
 - **Only the payer can change or cancel the subscription**, since it is their card.
 - **Ownership and billing are separate.** Transferring ownership does not move billing; the original payer keeps paying.
-- **Taking over:** another member subscribes, on any tier, and takes over immediately. Only after Stripe confirms the new payment is the old payer's subscription cancelled, with **no refund or credit** for the unused time.
-- **The payer changes tiers in place** (upgrade or downgrade, prorated by Stripe) instead of checking out again, so a business never has two subscriptions.
+- **Taking over:** another member subscribes to a **higher** tier and takes over immediately. Only the payer can keep or lower the tier, so nobody can downgrade the business by taking it over. Once the subscription has ended (the business is on Free), anyone can subscribe to any tier. Only after Stripe confirms the new payment is the old payer's subscription cancelled, with **no refund or credit** for the unused time.
+- **The payer changes tiers in place** (upgrade or downgrade, prorated by Stripe) instead of checking out again, so a business never has two subscriptions. Every change is confirmed on a Stripe page first: subscribing and taking over go through Checkout, and switching goes through the Customer Portal's confirmation page, which shows the prorated charge or credit. Nothing is charged or changed from our page directly.
+- **How a switch is charged (no cash refunds):**
+    - Stripe credits the unused part of the old tier and charges the rest of the month on the new tier.
+    - **An upgrade is paid up front:** the prorated difference is invoiced immediately, so nobody gets a higher tier before paying for it.
+    - **A downgrade becomes account credit:** the unused amount stays on the payer's Stripe balance and pays their next invoices. It never goes back to the card. Full refunds would be abusable: use the highest tier for a month, then downgrade and get most of it back.
+    - The credit belongs to the payer's Stripe customer, not the business. After a takeover it stays with them and is used if they pay for any business later.
 - **If the payer leaves or is removed**, their subscription is cancelled at the end of the paid month so they are never charged again, and the owners are notified so someone can take over before it lapses.
 - **Billing is managed on our Billing page** (subscribe, switch tiers, take over, buy slots). The Stripe Customer Portal is used for cards, invoices, and cancelling.
 
@@ -150,6 +155,11 @@ Sync is the upgrade hook: a business with several locations sees how much easier
     ```
 
 - **Production webhook:** register `https://<domain>/api/billing/webhook` in the Stripe dashboard (Developers → Webhooks) with the same events. It gets its own `whsec_` secret for the production `STRIPE_WEBHOOK_SECRET`; Stripe retries failed deliveries for up to 3 days.
+- **Customer Portal settings** (Settings → Billing → Customer portal). Test and live mode are configured separately, so set this up again in live mode before launch. Without it, switching plans fails with a 500:
+    - **Customers can switch plans:** on.
+    - **Products:** the 3 tiers, each with its monthly price.
+    - **Proration:** prorate, invoiced immediately (`always_invoice`).
+    - **Downgrades:** take effect immediately, not at the end of the billing period.
 
 ## Deferred (Far Future)
 
@@ -176,7 +186,6 @@ Sync is the upgrade hook: a business with several locations sees how much easier
 | On Free, edit a synced record locally while leaving `isSynced` / `syncGroupId` untouched | Synced items share one image in S3, so a "local" image change could overwrite or delete the image the other locations use. Detaching only the edited record (it keeps its `syncGroupId`) is safe and can be undone after upgrading. |
 | Scheduled handover (the next payer starts when the current payer's month ends) | An upgrade is usually urgent; making the business wait until next month would hurt it. |
 | Refunding or crediting the old payer's unused time on a takeover | Not needed at this stage; keep it simple and revisit if users ask. |
-| Blocking takeovers to a lower tier | Not needed at this stage; keep it simple and revisit if it becomes a problem. |
 | Refunds on location slots | Goes against "bought once, kept"; no real use case at this scale. Chargebacks are still handled. |
 | Billing pauses API keys via `isActive` | Developers can toggle `isActive`; billing must not depend on a user-editable flag. |
 

@@ -122,9 +122,40 @@ describe("POST /api/businesses/[businessId]/billing/checkout", () => {
     expect(mockCreateSession).not.toHaveBeenCalled();
   });
 
-  it("lets another member check out to take over a paid business", async () => {
+  it("lets another member take over with a higher plan", async () => {
     mockSuccessfulAuthentication();
     mockBusinessPlan("familyBusiness");
+    mockPrisma.business.findUnique.mockResolvedValue({
+      name: "Tacos El Guero",
+      subscription: { payerId: "someone-else" },
+    });
+
+    const response = await postCheckout({ tier: "localBusiness" });
+
+    expect(response.status).toBe(200);
+    expect(mockCreateSession).toHaveBeenCalled();
+  });
+
+  it.each(["localBusiness", "familyBusiness"])(
+    "returns 409 when another member tries to take over with the same or a lower plan (%s)",
+    async (tier) => {
+      mockSuccessfulAuthentication();
+      mockBusinessPlan("localBusiness");
+      mockPrisma.business.findUnique.mockResolvedValue({
+        name: "Tacos El Guero",
+        subscription: { payerId: "someone-else" },
+      });
+
+      const response = await postCheckout({ tier });
+
+      expect(response.status).toBe(409);
+      expect(mockCreateSession).not.toHaveBeenCalled();
+    },
+  );
+
+  it("lets anyone subscribe to any plan once the old subscription has ended", async () => {
+    mockSuccessfulAuthentication();
+    mockBusinessPlan("free");
     mockPrisma.business.findUnique.mockResolvedValue({
       name: "Tacos El Guero",
       subscription: { payerId: "someone-else" },

@@ -3,6 +3,7 @@ import { AccessLevel } from "@business-freelancer/database";
 import { PlanTier } from "@business-freelancer/database/generated/prisma/enums";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { getBusinessPlan } from "@/lib/billing/getBusinessPlan";
+import { isHigherPlan } from "@/lib/billing/plans";
 import {
   getAppUrl,
   getOrCreateStripeCustomer,
@@ -91,6 +92,21 @@ export async function POST(
         {
           error:
             "You already pay for this business. Switch plans from the Billing page instead.",
+        },
+        { status: 409 },
+      );
+    }
+
+    /*
+     * A takeover must be to a higher plan. Only the payer can move the
+     * business to the same or a lower plan, so nobody can cancel the
+     * payer's subscription to downgrade the whole business.
+     */
+    if (plan.planKey !== "free" && !isHigherPlan(tier, plan.planKey)) {
+      return NextResponse.json(
+        {
+          error:
+            "Only the current payer can keep or lower this plan. To take over, pick a higher plan.",
         },
         { status: 409 },
       );

@@ -22,6 +22,10 @@ export const workspaceLinks = (businessId: string): WorkspaceLinks[] => {
       href: `/businesses/${businessId}/api-reference`,
     },
     {
+      name: "Billing",
+      href: `/businesses/${businessId}/billing`,
+    },
+    {
       name: "Settings",
       href: `/businesses/${businessId}/settings`,
     },

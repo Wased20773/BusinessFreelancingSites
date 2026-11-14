@@ -2,12 +2,19 @@ import type { PlanTier } from "@business-freelancer/database/generated/prisma/en
 
 export type PlanKey = "free" | PlanTier;
 
-type PlanLimits = {
+export type PlanLimits = {
   rateLimit: { burst: number; perMinute: number };
   maxMembers: number;
   maxApiKeys: number;
   maxOriginsPerKey: number;
   sync: boolean;
+};
+
+export const PLANS_NAMES: Record<PlanKey, string> = {
+  free: "Free",
+  familyBusiness: "Family Business",
+  localBusiness: "Local Business",
+  growingBusiness: "Growing Business",
 };
 
 // TODO(pricing): every number here is a placeholder.
@@ -41,6 +48,14 @@ export const PLANS: Record<PlanKey, PlanLimits> = {
     sync: true,
   },
 };
+
+// PLANS is written from lowest to highest, so its key order is the plan order.
+export function isHigherPlan(plan: PlanKey, than: PlanKey): boolean {
+  return (
+    (Object.keys(PLANS) as PlanKey[]).indexOf(plan) >
+    (Object.keys(PLANS) as PlanKey[]).indexOf(than)
+  );
+}
 
 export const LOCATION_SLOTS = {
   included: 1,

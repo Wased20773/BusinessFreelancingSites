@@ -11,7 +11,6 @@ import { createJsonRequest } from "@/__tests__/helpers/request";
 import { createRouteContext } from "@/__tests__/helpers/route";
 import { mockPrisma, resetPrismaMock } from "@/__tests__/mocks/prisma";
 import { getOrCreateStripeCustomer, getStripe } from "@/lib/billing/stripe";
-import { syncSubscription } from "@/lib/billing/syncSubscription";
 
 import { POST as SWITCH } from "@/app/api/businesses/[businessId]/billing/switch/route";
 import { POST as PORTAL } from "@/app/api/businesses/[businessId]/billing/portal/route";
@@ -29,10 +28,6 @@ jest.mock("@/lib/billing/stripe", () => ({
   getOrCreateStripeCustomer: jest.fn(),
   getAppUrl: () => "http://localhost:3000",
   getPriceIdForTier: (tier: string) => `price_${tier}`,
-}));
-
-jest.mock("@/lib/billing/syncSubscription", () => ({
-  syncSubscription: jest.fn(),
 }));
 
 const mockRetrieve = jest.fn();
@@ -114,23 +109,43 @@ describe("POST /api/businesses/[businessId]/billing/switch", () => {
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it("swaps the price on the existing subscription and saves it right away", async () => {
+  it("sends the payer to Stripe to confirm, without changing the subscription", async () => {
     mockPrisma.subscription.findUnique.mockResolvedValue(paidSubscription);
     mockRetrieve.mockResolvedValue({
       id: "sub_123",
+      customer: "cus_123",
       items: { data: [{ id: "si_123" }] },
+    });
+    mockCreatePortalSession.mockResolvedValue({
+      url: "https://billing.stripe.com/p/session",
     });
 
     const response = await postSwitch({ tier: "growingBusiness" });
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ tier: "growingBusiness" });
-
-    expect(mockUpdate).toHaveBeenCalledWith("sub_123", {
-      items: [{ id: "si_123", price: "price_growingBusiness" }],
-      proration_behavior: "create_prorations",
+    expect(await response.json()).toEqual({
+      url: "https://billing.stripe.com/p/session",
     });
-    expect(syncSubscription).toHaveBeenCalledWith("sub_123");
+
+    const billingUrl = `http://localhost:3000/businesses/${BUSINESS_ID}/billing`;
+    expect(mockCreatePortalSession).toHaveBeenCalledWith({
+      customer: "cus_123",
+      return_url: billingUrl,
+      flow_data: {
+        type: "subscription_update_confirm",
+        subscription_update_confirm: {
+          subscription: "sub_123",
+          items: [
+            { id: "si_123", price: "price_growingBusiness", quantity: 1 },
+          ],
+        },
+        after_completion: {
+          type: "redirect",
+          redirect: { return_url: `${billingUrl}?switch=success` },
+        },
+      },
+    });
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 });
 

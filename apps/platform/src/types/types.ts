@@ -14,6 +14,11 @@ import {
   Item,
   ItemOption,
 } from "@business-freelancer/database/generated/prisma/client";
+import type {
+  PlanTier,
+  SubscriptionStatus,
+} from "@business-freelancer/database/generated/prisma/enums";
+import type { PlanKey, PlanLimits } from "@/lib/billing/plans";
 import { Dispatch, SetStateAction } from "react";
 
 // --------------------
@@ -217,4 +222,40 @@ export type DashboardOverviewJson = {
   items: ItemJson[];
   contacts: ContactJson[];
   socials: SocialJson[];
+};
+
+// Billing
+export type BillingJson = {
+  planKey: PlanKey;
+  limits: PlanLimits;
+  usage: {
+    locations: number;
+    locationSlots: number;
+    members: number;
+    apiKeys: number;
+  };
+  selfServeSlotCap: number;
+  subscription: {
+    tier: PlanTier;
+    status: SubscriptionStatus;
+    currentPeriodEnd: string;
+    cancelAtPeriodEnd: boolean;
+    payer: {
+      id: string;
+      name: string | null;
+      email: string;
+      image: string | null;
+    };
+    isPayer: boolean;
+  } | null;
+};
+
+export type PriceJson = {
+  amount: number;
+  currency: string;
+};
+
+export type BillingPricesJson = {
+  tiers: Record<PlanTier, PriceJson>;
+  locationSlot: PriceJson;
 };
