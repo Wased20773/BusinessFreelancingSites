@@ -7,6 +7,7 @@ import type {
   ChangeEvent,
   Dispatch,
   InputEvent,
+  ReactNode,
   SetStateAction,
   SubmitEvent,
 } from "react";
@@ -40,6 +41,9 @@ type EditItemFormParams = {
   handleEditCrop(): void;
   handleDeleteImage(): Promise<void>;
   handleDelete(): Promise<void>;
+
+  // The options editor (or read-only list), saved together with the item.
+  options: ReactNode;
 };
 
 const inputClass =
@@ -73,6 +77,7 @@ export default function EditItemForm({
   hasSyncGroup,
   handleDelete,
   isDeleting,
+  options,
 }: EditItemFormParams) {
   if (!canManage) {
     return (
@@ -146,6 +151,10 @@ export default function EditItemForm({
           <p className="mt-4 inline-flex rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-700">
             Display Order: {itemData.order}
           </p>
+
+          <Divider />
+
+          {options}
         </div>
       </section>
     );
@@ -358,6 +367,10 @@ export default function EditItemForm({
           Display Order: {itemData.order}
         </p>
 
+        <Divider />
+
+        {options}
+
         {hasSyncGroup && (
           <>
             <Divider />
@@ -368,7 +381,7 @@ export default function EditItemForm({
               isSynced={isSynced}
               setIsSynced={setIsSynced}
               isSaving={isSaving}
-              description="Apply changes to synchronized copies across locations."
+              description="Apply changes, including options, to synchronized copies across locations."
             />
           </>
         )}

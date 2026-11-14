@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import CreateBusinessModal from "@/components/ui/modal/CreateBusinessModal";
 import { BusinessOwnerShip } from "@/types/types";
 import BusinessList from "@/components/ui/businesses/BusinessList";
+import AccountDropdown from "@/components/ui/dropdown/AccountDropdown";
 
 type CreateBusinessResponse = {
   message: string;
@@ -38,7 +39,7 @@ export default function BusinessesPage() {
     null,
   );
 
-  const { update } = useSession();
+  const { data: session, update } = useSession();
   const router = useRouter();
 
   async function handleBusinessSelect(businessId: string) {
@@ -201,6 +202,19 @@ export default function BusinessesPage() {
 
   return (
     <main className="max-w-[1000px] mx-auto px-5 py-10">
+      {/* Account menu (Account, Billing, Sign Out) */}
+      {session?.user && (
+        <div className="mb-6 w-fit max-w-full">
+          <AccountDropdown
+            theme="light"
+            currentAccount={{
+              name: session.user.name,
+              image: session.user.image,
+            }}
+          />
+        </div>
+      )}
+
       {/* ######################### */}
       {/* ##### Page Heading ###### */}
       {/* ######################### */}

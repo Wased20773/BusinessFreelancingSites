@@ -7,6 +7,7 @@ import type {
   ChangeEvent,
   Dispatch,
   InputEvent,
+  ReactNode,
   SetStateAction,
   SubmitEvent,
 } from "react";
@@ -46,6 +47,9 @@ type CreateItemFormProps = {
   handleCropComplete(croppedArea: Area, croppedAreaPixels: Area): void;
   handleUseCrop(): Promise<void>;
   handleEditCrop(): void;
+
+  // The options editor, saved together with the item.
+  options: ReactNode;
 };
 
 const inputClass =
@@ -76,6 +80,7 @@ export default function CreateItemForm({
   handleCropComplete,
   handleUseCrop,
   handleEditCrop,
+  options,
 }: CreateItemFormProps) {
   return (
     <form
@@ -232,8 +237,26 @@ export default function CreateItemForm({
                 required
               />
             </div>
+
+            <label
+              htmlFor="item-available"
+              className="flex cursor-pointer items-center gap-2 text-sm font-medium text-gray-900"
+            >
+              <input
+                id="item-available"
+                name="isAvailable"
+                type="checkbox"
+                defaultChecked
+                className="size-4 accent-blue-600"
+              />
+              Available?
+            </label>
           </div>
         </fieldset>
+
+        <Divider />
+
+        {options}
 
         <Divider />
 
@@ -267,7 +290,7 @@ export default function CreateItemForm({
               isSynced={isSynced}
               setIsSynced={setIsSynced}
               isSaving={isLoading || isCreating}
-              description="Creates this item for all locations in the same synced category."
+              description="Creates this item and its options for all locations in the same synced category."
             />
           </>
         )}

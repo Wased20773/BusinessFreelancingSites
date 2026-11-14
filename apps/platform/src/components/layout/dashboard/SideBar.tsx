@@ -115,13 +115,20 @@ export default function SideBar({
           </div>
         )}
         {variant === "settings" && (
+          // No selected business: back to the business list instead.
           <Link
-            href={`/businesses/${businessId}`}
+            href={businessId ? `/businesses/${businessId}` : "/businesses"}
             className="flex items-center gap-2 px-2"
-            onClick={() => onNavigate?.(`/businesses/${businessId}`)}
+            onClick={() =>
+              onNavigate?.(
+                businessId ? `/businesses/${businessId}` : "/businesses",
+              )
+            }
           >
             <ArrowIcon direction="left" size={20} />
-            <span>Go Back to Workspace</span>
+            <span>
+              {businessId ? "Go Back to Workspace" : "Go Back to Businesses"}
+            </span>
           </Link>
         )}
         {variant === "dashboard" && (

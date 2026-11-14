@@ -16,6 +16,7 @@ import PageState from "@/components/ui/PageState";
 import Divider from "@/components/layout/Divider";
 import Cropper, { type Area } from "react-easy-crop";
 import DeleteBusinessSection from "@/components/ui/businesses/DeleteBusinessSection";
+import LeaveBusinessSection from "@/components/ui/businesses/LeaveBusinessSection";
 
 const DOMAIN_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z0-9-]+)*\.[a-z]{2,}$/;
 
@@ -1095,8 +1096,14 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {currentAccessLevel === "owner" && (
+      {/* The owner deletes the business; everyone else can leave it. */}
+      {currentAccessLevel === "owner" ? (
         <DeleteBusinessSection
+          businessId={businessId}
+          businessName={businessData.name}
+        />
+      ) : (
+        <LeaveBusinessSection
           businessId={businessId}
           businessName={businessData.name}
         />

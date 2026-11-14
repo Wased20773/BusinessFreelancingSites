@@ -84,14 +84,16 @@ export default function AccountDropdown({
               {currentAccount.name}
             </p>
 
-            <p
-              className={[
-                "text-xs capitalize truncate",
-                theme === "dark" ? "text-gray-500" : "text-gray-500",
-              ].join(" ")}
-            >
-              {currentAccount.accessLevel}
-            </p>
+            {currentAccount.accessLevel && (
+              <p
+                className={[
+                  "text-xs capitalize truncate",
+                  theme === "dark" ? "text-gray-500" : "text-gray-500",
+                ].join(" ")}
+              >
+                {currentAccount.accessLevel}
+              </p>
+            )}
           </div>
         </Button>
       </DropdownMenuTrigger>

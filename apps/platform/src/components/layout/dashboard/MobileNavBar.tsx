@@ -215,16 +215,21 @@ export default function MobileNavBar({
         )}
         {variant === "settings" && (
           <div className="p-3">
+            {/* No selected business: back to the business list instead. */}
             <Link
-              href={`/businesses/${businessId}`}
+              href={businessId ? `/businesses/${businessId}` : "/businesses"}
               className="flex items-center justify-center gap-2 px-2 py-2"
               onClick={() => {
                 setIsOpen(false);
-                onNavigate?.(`/businesses/${businessId}`);
+                onNavigate?.(
+                  businessId ? `/businesses/${businessId}` : "/businesses",
+                );
               }}
             >
               <ArrowIcon direction="left" size={20} theme="dark" />
-              <span className="text-gray-300">Go Back to Workspace</span>
+              <span className="text-gray-300">
+                {businessId ? "Go Back to Workspace" : "Go Back to Businesses"}
+              </span>
             </Link>
           </div>
         )}

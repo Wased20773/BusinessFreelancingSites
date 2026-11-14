@@ -2,24 +2,20 @@
 
 import PageHeading from "@/components/ui/PageHeader";
 import PageState from "@/components/ui/PageState";
-import EditSocialForm from "@/components/ui/socials/EditSocialForm";
-import { SOCIAL_PLATFORMS } from "@/data/socials";
+import SocialForm from "@/components/ui/socials/SocialForm";
+import {
+  buildSocialUrl,
+  getPlatformFromDomain,
+  normalizeProfileName,
+  SOCIAL_PLATFORMS,
+  type SocialPlatform,
+} from "@/data/socials";
 import { ACCESS_LEVEL, type SocialJson } from "@/types/types";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import { type SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
-
-type SocialPlatform = keyof typeof SOCIAL_PLATFORMS;
-
-function getPlatformFromDomain(domain: string): SocialPlatform | null {
-  const entry = Object.entries(SOCIAL_PLATFORMS).find(
-    ([, value]) => value.domain === domain,
-  );
-
-  return entry ? (entry[0] as SocialPlatform) : null;
-}
 
 export default function EditSocialPage() {
   const params = useParams<{
@@ -123,53 +119,38 @@ export default function EditSocialPage() {
     }
   }, [businessId, locationId, socialId, status, canManageSocials]);
 
-  const trimmedProfileName = profileName.trim();
-
-  const validPlatform =
-    selectedPlatform !== "" &&
-    Object.prototype.hasOwnProperty.call(SOCIAL_PLATFORMS, selectedPlatform);
-
-  const selectedPlatformData = validPlatform
-    ? SOCIAL_PLATFORMS[selectedPlatform as SocialPlatform]
+  const result = selectedPlatform
+    ? normalizeProfileName(selectedPlatform, profileName)
     : null;
+  const validName =
+    result && "profileName" in result ? result.profileName : null;
 
-  const previewUrl =
-    selectedPlatformData && trimmedProfileName
-      ? `https://${selectedPlatformData.domain}/${trimmedProfileName.replaceAll(
-          " ",
-          "-",
-        )}`
-      : "";
-
+  // A social saved before the link rules were fixed (e.g. TikTok without "@") can
+  // be saved as-is to rebuild its link.
   const hasChanges =
     socialData !== null &&
-    selectedPlatformData !== null &&
-    (selectedPlatformData.domain !== socialData.domain ||
-      trimmedProfileName !== socialData.profileName.trim() ||
-      isSynced !== socialData.isSynced);
+    selectedPlatform !== "" &&
+    validName !== null &&
+    (SOCIAL_PLATFORMS[selectedPlatform].domain !== socialData.domain ||
+      validName !== socialData.profileName ||
+      isSynced !== socialData.isSynced ||
+      buildSocialUrl(selectedPlatform, validName) !== socialData.url);
 
-  const canSubmit =
-    selectedPlatformData !== null && trimmedProfileName !== "" && hasChanges;
+  const canSubmit = hasChanges;
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!socialData || !selectedPlatformData || !trimmedProfileName) {
-      setErrorMessage("A social platform and profile name are required.");
+    if (!socialData || !selectedPlatform || !validName) {
+      setErrorMessage("Choose a platform and enter a valid profile name.");
       return;
     }
 
-    const changed =
-      selectedPlatformData.domain !== socialData.domain ||
-      trimmedProfileName !== socialData.profileName.trim() ||
-      isSynced !== socialData.isSynced;
-
-    if (!changed) return;
+    if (!hasChanges) return;
 
     const requestBody = {
-      domain: selectedPlatformData.domain,
-      profileName: trimmedProfileName,
-      icon: selectedPlatformData.icon,
+      platform: selectedPlatform,
+      profileName: validName,
       isSynced,
     };
 
@@ -322,22 +303,24 @@ export default function EditSocialPage() {
       />
 
       <div className="mt-[0.5rem]">
-        <EditSocialForm
-          handleSubmit={handleSubmit}
-          handleDelete={handleDelete}
-          isProcessing={isProcessing}
-          selectedPlatform={selectedPlatform}
-          setSelectedPlatform={setSelectedPlatform}
+        <SocialForm
+          onSubmit={handleSubmit}
+          platform={selectedPlatform}
+          setPlatform={setSelectedPlatform}
           profileName={profileName}
           setProfileName={setProfileName}
-          previewUrl={previewUrl}
-          errorMessage={errorMessage}
-          canSubmit={canSubmit}
-          isSaving={isSaving}
-          isDeleting={isDeleting}
-          socialData={socialData}
           isSynced={isSynced}
           setIsSynced={setIsSynced}
+          showSync={Boolean(socialData.syncGroupId)}
+          syncDescription="Synchronize this social across locations"
+          canSubmit={canSubmit}
+          isProcessing={isProcessing}
+          isSubmitting={isSaving}
+          submitLabel="Save"
+          submittingLabel="Saving..."
+          errorMessage={errorMessage}
+          onDelete={handleDelete}
+          isDeleting={isDeleting}
         />
       </div>
     </section>

@@ -1,6 +1,7 @@
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import {
   getBusinessPlan,
+  PAID_STATUSES,
   planLimitResponse,
 } from "@/lib/billing/getBusinessPlan";
 import { prisma } from "@/lib/prisma";
@@ -55,49 +56,72 @@ export async function GET(
      * If one is not provided:
      *   → return every business user except the authenticated user.
      */
-    const businessUsers = await prisma.businessUser.findMany({
-      where: {
-        businessId,
-        userId: userId
-          ? userId
-          : {
-              not: authResult.userId,
+    const [businessUsers, subscription] = await Promise.all([
+      prisma.businessUser.findMany({
+        where: {
+          businessId,
+          userId: userId
+            ? userId
+            : {
+                not: authResult.userId,
+              },
+        },
+        orderBy: {
+          user: {
+            email: "asc",
+          },
+        },
+        select: {
+          id: true,
+          businessId: true,
+          userId: true,
+          roleId: true,
+          createdAt: true,
+          updatedAt: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
+              email: true,
+              image: true,
+              createdAt: true,
+              updatedAt: true,
             },
-      },
-      orderBy: {
-        user: {
-          email: "asc",
-        },
-      },
-      select: {
-        id: true,
-        businessId: true,
-        userId: true,
-        roleId: true,
-        createdAt: true,
-        updatedAt: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            username: true,
-            email: true,
-            image: true,
-            createdAt: true,
-            updatedAt: true,
+          },
+          role: {
+            select: {
+              id: true,
+              accessLevel: true,
+              description: true,
+            },
           },
         },
-        role: {
-          select: {
-            id: true,
-            accessLevel: true,
-            description: true,
-          },
-        },
-      },
-    });
+      }),
+      prisma.subscription.findUnique({
+        where: { businessId },
+        select: { payerId: true, status: true },
+      }),
+    ]);
 
-    return NextResponse.json(businessUsers, { status: 200 });
+    // Only a plan that is still paid has a payer to show.
+    const payerId =
+      subscription && PAID_STATUSES.includes(subscription.status)
+        ? subscription.payerId
+        : null;
+
+    /*
+     * The payer gets a badge and is pinned to the top. The sort is stable,
+     * so everyone else keeps the email order.
+     */
+    const members = businessUsers
+      .map((businessUser) => ({
+        ...businessUser,
+        isPayer: payerId !== null && businessUser.userId === payerId,
+      }))
+      .sort((a, b) => Number(b.isPayer) - Number(a.isPayer));
+
+    return NextResponse.json(members, { status: 200 });
   } catch (error) {
     console.error("Failed to fetch business users:", error);
 

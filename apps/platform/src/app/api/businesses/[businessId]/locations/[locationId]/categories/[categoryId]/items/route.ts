@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 import { allowSync } from "@/lib/billing/sync";
+import { newOptionRows, parseOptions } from "@/lib/items/itemOptions";
 
 // POST /api/businesses/[businessId]/locations/[locationId]/categories/[categoryId]/items
 export async function POST(
@@ -69,6 +70,15 @@ export async function POST(
         { status: 400 },
       );
     }
+
+    // Optional: the options to create with the item, in display order.
+    const parsedOptions = parseOptions(body.options ?? [], { allowIds: false });
+
+    if ("error" in parsedOptions) {
+      return NextResponse.json({ error: parsedOptions.error }, { status: 400 });
+    }
+
+    const { options } = parsedOptions;
 
     body.isSynced = await allowSync(businessId, body.isSynced);
 
@@ -132,6 +142,7 @@ export async function POST(
         return nextOrder;
       }
 
+      // The item and its options are created together (one statement).
       const item = await prisma.item.create({
         data: {
           locationId,
@@ -146,6 +157,20 @@ export async function POST(
           slug,
           syncGroupId: null,
           isSynced: false,
+          ...(options.length > 0 && {
+            options: {
+              createMany: {
+                data: options.map((option, index) => ({
+                  name: option.name,
+                  price: option.price,
+                  order: index + 1,
+                  isAvailable: option.isAvailable,
+                  syncGroupId: null,
+                  isSynced: false,
+                })),
+              },
+            },
+          }),
         },
 
         select: {
@@ -306,8 +331,24 @@ export async function POST(
       );
     }
 
-    const createdItems = await prisma.item.createMany({
-      data: itemsToCreate,
+    /*
+     * Every copy of the item and every copy of each option, in one
+     * transaction: if any part fails, nothing is created.
+     */
+    const createdItems = await prisma.$transaction(async (tx) => {
+      const result = await tx.item.createMany({ data: itemsToCreate });
+
+      if (options.length > 0) {
+        await tx.itemOption.createMany({
+          data: newOptionRows(
+            itemsToCreate.map((item) => item.id),
+            options,
+            true,
+          ),
+        });
+      }
+
+      return result;
     });
 
     return NextResponse.json(

@@ -102,5 +102,9 @@ export async function syncSubscription(stripeSubscriptionId: string) {
     await stripe.subscriptions.cancel(old.id, { prorate: false });
   }
 
-  await prisma.subscription.update({ where: { businessId }, data: fields });
+  // A new payer starts out shown, even if the old one had hidden it.
+  await prisma.subscription.update({
+    where: { businessId },
+    data: { ...fields, hiddenByPayer: false },
+  });
 }

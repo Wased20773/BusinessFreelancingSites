@@ -18,10 +18,11 @@ export default async function SettingsLayout({
     redirect("/login");
   }
 
-  if (!session.user.accessLevel) {
-    redirect("/businesses");
-  }
-
+  /*
+   * Settings are the user's own (account, billing), so they open with or
+   * without a selected business. Without one there's no access level, and
+   * "Go Back" returns to /businesses instead of a workspace.
+   */
   const currentAccount = {
     name: session.user.name,
     image: session.user.image,

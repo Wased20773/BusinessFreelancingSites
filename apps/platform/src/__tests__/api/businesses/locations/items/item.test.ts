@@ -230,8 +230,8 @@ describe("/api/businesses/[businessId]/locations/[locationId]/items/[itemId]", (
       mockPrisma.item.findFirst
         .mockResolvedValueOnce(existingItem())
         .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(existingItem());
-      mockPrisma.item.update.mockResolvedValue(updatedItem);
+        // The saved item, read back inside the transaction.
+        .mockResolvedValueOnce(updatedItem);
 
       const response = await patchItem({ ...updateBody, isSynced: false });
 
@@ -247,8 +247,15 @@ describe("/api/businesses/[businessId]/locations/[locationId]/items/[itemId]", (
           originalImageKey: null,
           isSynced: false,
         },
+      });
+      expect(mockPrisma.item.findFirst).toHaveBeenNthCalledWith(3, {
+        where: { id: "item-123", locationId: LOCATION_ID },
         select: itemSelect,
       });
+
+      // No options in the body: the item's options aren't touched.
+      expect(mockPrisma.itemOption.findMany).not.toHaveBeenCalled();
+      expect(mockPrisma.itemOption.delete).not.toHaveBeenCalled();
 
       expect(mockedCopyObject).not.toHaveBeenCalled();
       expect(mockedDeleteObject).not.toHaveBeenCalled();
@@ -441,7 +448,6 @@ describe("/api/businesses/[businessId]/locations/[locationId]/items/[itemId]", (
       mockPrisma.item.findFirst
         .mockResolvedValueOnce(syncedItem)
         .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(syncedItem)
         .mockResolvedValueOnce({ id: "item-123", name: updateBody.name });
       mockPrisma.item.findMany.mockResolvedValue([
         { ...syncedItem },
@@ -479,6 +485,266 @@ describe("/api/businesses/[businessId]/locations/[locationId]/items/[itemId]", (
 
       expect(mockedCopyObject).not.toHaveBeenCalled();
       expect(mockedDeleteObject).not.toHaveBeenCalled();
+    });
+
+    describe("with options (saved together with the item)", () => {
+      const syncedItem = existingItem({
+        syncGroupId: "item-sync-group",
+        isSynced: true,
+      });
+
+      it.each([
+        ["not an array", "Item options must be an array"],
+        [[{ name: "Bacon" }], '"Bacon" needs a price of 0 or more'],
+        [[{ name: " ", price: 1 }], "Every option needs a name"],
+        [
+          [
+            { name: "Bacon", price: 1 },
+            { name: "bacon", price: 2 },
+          ],
+          'Two options are named "bacon"',
+        ],
+      ])("returns 400 for invalid options %p", async (options, error) => {
+        mockSuccessfulAuthentication();
+        mockLocationInBusiness();
+
+        const response = await patchItem({
+          ...updateBody,
+          isSynced: false,
+          options,
+        });
+
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({ error });
+        expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+      });
+
+      it("returns 400 when an option id isn't one of this item's options", async () => {
+        mockSuccessfulAuthentication();
+        mockLocationInBusiness();
+        mockPrisma.item.findFirst
+          .mockResolvedValueOnce(existingItem())
+          .mockResolvedValueOnce(null);
+        mockPrisma.itemOption.findMany.mockResolvedValue([
+          { id: "option-a", syncGroupId: null },
+        ]);
+
+        const response = await patchItem({
+          ...updateBody,
+          isSynced: false,
+          options: [{ id: "someone-elses-option", name: "Bacon", price: 1 }],
+        });
+
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({
+          error: "An option in the list does not belong to this item",
+        });
+        expect(mockPrisma.itemOption.update).not.toHaveBeenCalled();
+        expect(mockPrisma.itemOption.create).not.toHaveBeenCalled();
+      });
+
+      it("deletes, updates, and creates options in one transaction, in the sent order", async () => {
+        mockSuccessfulAuthentication();
+        mockLocationInBusiness();
+        mockPrisma.item.findFirst
+          .mockResolvedValueOnce(existingItem())
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce({ id: "item-123" });
+        mockPrisma.itemOption.findMany.mockResolvedValue([
+          { id: "option-a", syncGroupId: null },
+          { id: "option-b", syncGroupId: null },
+        ]);
+
+        const response = await patchItem({
+          ...updateBody,
+          isSynced: false,
+          options: [
+            { id: "option-b", name: "Large", price: 2, isAvailable: false },
+            { name: "Bacon", price: 1.5 },
+          ],
+        });
+
+        expect(response.status).toBe(200);
+        expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
+
+        // Removed from the list → deleted.
+        expect(mockPrisma.itemOption.delete).toHaveBeenCalledWith({
+          where: { id: "option-a" },
+        });
+
+        // Kept → updated, now first.
+        expect(mockPrisma.itemOption.update).toHaveBeenCalledWith({
+          where: { id: "option-b" },
+          data: {
+            name: "Large",
+            price: 2,
+            isAvailable: false,
+            order: 1,
+            isSynced: false,
+          },
+        });
+
+        // New → created second, only on this item.
+        expect(mockPrisma.itemOption.create).toHaveBeenCalledWith({
+          data: {
+            itemId: "item-123",
+            name: "Bacon",
+            price: 1.5,
+            order: 2,
+            isAvailable: true,
+            syncGroupId: null,
+            isSynced: false,
+          },
+        });
+
+        expect(mockPrisma.itemOption.updateMany).not.toHaveBeenCalled();
+        expect(mockPrisma.itemOption.createMany).not.toHaveBeenCalled();
+      });
+
+      it("applies option changes to every synced copy of the item", async () => {
+        mockSuccessfulAuthentication();
+        mockLocationInBusiness();
+        mockPrisma.item.findFirst
+          .mockResolvedValueOnce(syncedItem)
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce({ id: "item-123" });
+        mockPrisma.item.findMany.mockResolvedValue([
+          { ...syncedItem },
+          { ...syncedItem, id: "item-456", locationId: "location-456" },
+        ]);
+        mockPrisma.itemOption.findMany
+          // This item's options.
+          .mockResolvedValueOnce([
+            { id: "option-a", syncGroupId: "option-group-a" },
+            { id: "option-b", syncGroupId: "option-group-b" },
+          ])
+          // The copy's remaining options, to renumber.
+          .mockResolvedValueOnce([{ id: "copy-option-a" }]);
+
+        const response = await patchItem({
+          ...updateBody,
+          isSynced: true,
+          options: [
+            { id: "option-a", name: "Small", price: 0 },
+            { name: "Bacon", price: 1 },
+          ],
+        });
+
+        expect(response.status).toBe(200);
+
+        // Removed: every synced copy of the option goes.
+        expect(mockPrisma.itemOption.deleteMany).toHaveBeenCalledWith({
+          where: {
+            syncGroupId: "option-group-b",
+            OR: [{ isSynced: true }, { id: "option-b" }],
+          },
+        });
+
+        // Updated here, and the same change on its synced copies.
+        expect(mockPrisma.itemOption.update).toHaveBeenCalledWith({
+          where: { id: "option-a" },
+          data: {
+            name: "Small",
+            price: 0,
+            isAvailable: true,
+            order: 1,
+            isSynced: true,
+          },
+        });
+        expect(mockPrisma.itemOption.updateMany).toHaveBeenCalledWith({
+          where: {
+            syncGroupId: "option-group-a",
+            isSynced: true,
+            id: { not: "option-a" },
+          },
+          data: { name: "Small", price: 0, isAvailable: true },
+        });
+
+        // New: on this item and on the copy, sharing one sync group.
+        const createdHere = mockPrisma.itemOption.create.mock.calls[0][0].data;
+
+        expect(createdHere).toEqual(
+          expect.objectContaining({
+            itemId: "item-123",
+            name: "Bacon",
+            order: 2,
+            isSynced: true,
+            syncGroupId: expect.any(String),
+          }),
+        );
+
+        // The copy's list is renumbered, then the new option goes last.
+        expect(mockPrisma.itemOption.findMany).toHaveBeenNthCalledWith(2, {
+          where: { itemId: "item-456" },
+          orderBy: { order: "asc" },
+          select: { id: true },
+        });
+        expect(mockPrisma.itemOption.update).toHaveBeenCalledWith({
+          where: { id: "copy-option-a" },
+          data: { order: 1 },
+        });
+        expect(mockPrisma.itemOption.createMany).toHaveBeenCalledWith({
+          data: [
+            {
+              itemId: "item-456",
+              name: "Bacon",
+              price: 1,
+              order: 2,
+              isAvailable: true,
+              syncGroupId: createdHere.syncGroupId,
+              isSynced: true,
+            },
+          ],
+        });
+      });
+
+      it("keeps option changes on this item only when saved unsynced", async () => {
+        mockSuccessfulAuthentication();
+        mockLocationInBusiness();
+        mockPrisma.item.findFirst
+          .mockResolvedValueOnce(syncedItem)
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce({ id: "item-123" });
+        mockPrisma.itemOption.findMany.mockResolvedValue([
+          { id: "option-a", syncGroupId: "option-group-a" },
+        ]);
+
+        const response = await patchItem({
+          ...updateBody,
+          isSynced: false,
+          options: [],
+        });
+
+        expect(response.status).toBe(200);
+
+        // Only this item's copy of the option is deleted.
+        expect(mockPrisma.itemOption.delete).toHaveBeenCalledWith({
+          where: { id: "option-a" },
+        });
+        expect(mockPrisma.itemOption.deleteMany).not.toHaveBeenCalled();
+      });
+
+      it("returns 500 and saves nothing when an option write fails", async () => {
+        mockSuccessfulAuthentication();
+        mockLocationInBusiness();
+        mockPrisma.item.findFirst
+          .mockResolvedValueOnce(existingItem())
+          .mockResolvedValueOnce(null);
+        mockPrisma.itemOption.findMany.mockResolvedValue([]);
+        mockPrisma.itemOption.create.mockRejectedValue(
+          new Error("Database write failed"),
+        );
+
+        const response = await patchItem({
+          ...updateBody,
+          isSynced: false,
+          options: [{ name: "Bacon", price: 1 }],
+        });
+
+        // The error escapes the transaction, so Prisma rolls back the item too.
+        expect(response.status).toBe(500);
+        expect(await response.json()).toEqual({ error: "Failed to update item" });
+      });
     });
   });
 

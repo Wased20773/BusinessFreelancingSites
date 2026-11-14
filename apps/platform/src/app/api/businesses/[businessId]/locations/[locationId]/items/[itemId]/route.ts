@@ -1,9 +1,14 @@
 import {
   createSlug,
-  updateSyncedResource,
+  isUniqueConstraintError,
   validateBusinessLocationParams,
   verifyLocationInBusiness,
 } from "@/app/api/route_helper";
+import {
+  parseOptions,
+  replaceItemOptions,
+  type OptionInput,
+} from "@/lib/items/itemOptions";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { copyObject } from "@/lib/s3/copy";
@@ -17,6 +22,28 @@ import {
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 import { allowSync } from "@/lib/billing/sync";
+
+const ITEM_SELECT = {
+  id: true,
+  locationId: true,
+  categoryId: true,
+  name: true,
+  description: true,
+  containsList: true,
+  calories: true,
+  price: true,
+  order: true,
+  isAvailable: true,
+  slug: true,
+  imageKey: true,
+  originalImageKey: true,
+  syncGroupId: true,
+  isSynced: true,
+  updatedAt: true,
+} as const;
+
+// An option id in the request that isn't one of this item's options.
+class OptionNotOnItemError extends Error {}
 
 // PATCH /api/businesses/[businessId]/locations/[locationId]/items/[itemId]
 export async function PATCH(
@@ -80,6 +107,26 @@ export async function PATCH(
         { error: "Synchronization setting was not found" },
         { status: 400 },
       );
+    }
+
+    /*
+     * Optional: the item's full option list, in display order. When sent,
+     * the item's options are made to match it (see replaceItemOptions).
+     * Left out, the options aren't touched.
+     */
+    let options: OptionInput[] | null = null;
+
+    if (body.options !== undefined) {
+      const parsedOptions = parseOptions(body.options, { allowIds: true });
+
+      if ("error" in parsedOptions) {
+        return NextResponse.json(
+          { error: parsedOptions.error },
+          { status: 400 },
+        );
+      }
+
+      options = parsedOptions.options;
     }
 
     body.isSynced = await allowSync(businessId, body.isSynced);
@@ -426,43 +473,113 @@ export async function PATCH(
       nextOriginalImageKey = syncedItem?.originalImageKey ?? null;
     }
 
-    const response = await updateSyncedResource({
-      body,
-      model: prisma.item,
-      resourceName: "item",
-      businessId,
-      id: itemId,
-      locationId,
-      data: {
-        name: body.name,
-        description: body.description,
-        containsList: body.containsList,
-        calories: body.calories,
-        price: body.price,
-        isAvailable: body.isAvailable,
-        slug,
-        imageKey: nextImageKey,
-        originalImageKey: nextOriginalImageKey,
-      },
-      select: {
-        id: true,
-        locationId: true,
-        categoryId: true,
-        name: true,
-        description: true,
-        containsList: true,
-        calories: true,
-        price: true,
-        order: true,
-        isAvailable: true,
-        slug: true,
-        imageKey: true,
-        originalImageKey: true,
-        syncGroupId: true,
-        isSynced: true,
-        updatedAt: true,
-      },
-    });
+    const data = {
+      name: body.name,
+      description: body.description,
+      containsList: body.containsList,
+      calories: body.calories,
+      price: body.price,
+      isAvailable: body.isAvailable,
+      slug,
+      imageKey: nextImageKey,
+      originalImageKey: nextOriginalImageKey,
+    };
+
+    // Synced save: every synced copy of the item (and its options) changes.
+    const syncWide = Boolean(item.syncGroupId) && body.isSynced === true;
+
+    /*
+     * The item and all its option changes are saved in one transaction:
+     * if any part fails, nothing changes.
+     */
+    let response: NextResponse;
+
+    try {
+      response = await prisma.$transaction(async (tx) => {
+        if (syncWide) {
+          await tx.item.updateMany({
+            where: {
+              syncGroupId: item.syncGroupId,
+              // Only synced copies, plus this item even if it was unsynced.
+              OR: [{ isSynced: true }, { id: item.id }],
+            },
+            data: { ...data, isSynced: true },
+          });
+        } else {
+          await tx.item.update({
+            where: { id: item.id, locationId },
+            data: { ...data, isSynced: false },
+          });
+        }
+
+        if (options) {
+          const existing = await tx.itemOption.findMany({
+            where: { itemId: item.id },
+            select: { id: true, syncGroupId: true },
+          });
+          const existingIds = new Set(existing.map((option) => option.id));
+
+          if (
+            options.some((option) => option.id && !existingIds.has(option.id))
+          ) {
+            throw new OptionNotOnItemError();
+          }
+
+          await replaceItemOptions(tx, {
+            itemId: item.id,
+            existing,
+            options,
+            syncCopies: syncWide,
+            copyItemIds: syncWide
+              ? affectedItems
+                  .filter((affectedItem) => affectedItem.id !== item.id)
+                  .map((affectedItem) => affectedItem.id)
+              : [],
+          });
+        }
+
+        const updatedItem = await tx.item.findFirst({
+          where: { id: item.id, locationId },
+          select: ITEM_SELECT,
+        });
+
+        if (!updatedItem) {
+          return NextResponse.json(
+            { error: "This item could not be found after updating" },
+            { status: 404 },
+          );
+        }
+
+        return NextResponse.json(
+          syncWide
+            ? {
+                message: "Synchronized item's updated successfully",
+                ...updatedItem,
+              }
+            : updatedItem,
+          { status: 200 },
+        );
+      });
+    } catch (error) {
+      if (error instanceof OptionNotOnItemError) {
+        response = NextResponse.json(
+          { error: "An option in the list does not belong to this item" },
+          { status: 400 },
+        );
+      } else if (isUniqueConstraintError(error)) {
+        response = NextResponse.json(
+          { error: "Two options on this item can't have the same name" },
+          { status: 409 },
+        );
+      } else {
+        console.error("Failed to update item:", error);
+
+        response = NextResponse.json(
+          { error: "Failed to update item" },
+          { status: 500 },
+        );
+      }
+    }
 
     /*
      * Prisma failed after we copied one or both objects.

@@ -624,8 +624,27 @@ Removes a member from the business. The `User` record and any business data are 
 
 Rules:
 
-- You cannot remove yourself through this route (`403`).
+- You cannot remove yourself through this route (`403`). Use [leave](#post-apibusinessesbusinessidleave) instead.
 - Admins cannot remove the owner (`403`).
+- If the member pays for the business's plan, the plan is set to end after the paid month before they're removed. If Stripe fails, they stay a member (`500`).
+
+No request body.
+
+#### Response
+
+```json
+{
+  "message": "String"
+}
+```
+
+### POST /api/businesses/[businessId]/leave
+
+The signed-in user leaves the business. Their `User` record is not deleted.
+
+**Access:** `developer`, `admin`, `staff`. The owner gets `403`: a business always has one owner, so they transfer ownership first or delete the business.
+
+If they pay for the business's plan, it is set to end after the month they've paid for (it won't charge them again), and then they're removed. If Stripe fails, they stay a member (`500`).
 
 No request body.
 
@@ -1248,11 +1267,14 @@ Creates an item at the end of the category. Returns `409` if an item with the sa
   "description": "String | null",
   "containsList": "String[]",
   "calories": "Int | null",
-  "isAvailable": "Boolean"
+  "isAvailable": "Boolean",
+  "options": [{ "name": "String", "price": "Number", "isAvailable": "Boolean" }]
 }
 ```
 
 `name`, `price`, and `isSynced` are required.
+
+`options` is optional: the item's options, in display order. The item and its options are created in **one transaction**, so if any option fails, nothing is created. Option names must be unique (ignoring case), and prices must be `0` or more (`400` otherwise). A synced create adds every option to every copy of the item; each option shares one `syncGroupId` across the copies.
 
 #### Response `201`
 
@@ -1335,11 +1357,24 @@ Changing `isSynced` also moves the item's image:
   "description": "String | null",
   "containsList": "String[]",
   "calories": "Int | null",
-  "isAvailable": "Boolean"
+  "isAvailable": "Boolean",
+  "options": [
+    { "id": "UUID?", "name": "String", "price": "Number", "isAvailable": "Boolean" }
+  ]
 }
 ```
 
 `name`, `price`, and `isSynced` are required.
+
+`options` is optional. When sent, it is the item's **full** option list in display order, and the item and all option changes are saved in **one transaction** (nothing changes if any part fails):
+
+- An option with an `id` is updated, and takes the order of its place in the list. The `id` must be one of this item's options (`400` otherwise).
+- An option without an `id` is created.
+- An existing option left out of the list is deleted.
+
+Leave `options` out to change only the item; its options are untouched. With `isSynced: true`, option changes also reach the synced copies of each option on the other locations' items, and new options are added at the end of each copy's list (order stays per item). With `isSynced: false`, option changes apply to this item only. Option names must be unique (ignoring case): `400` for duplicates in the list, `409` if the database still finds a clash.
+
+The [Item Options](#item-options) routes still work for changing one option at a time.
 
 #### Response
 
@@ -1678,7 +1713,17 @@ Deletes a contact.
 
 ## Socials
 
-The `url` is built by the server as `https://{domain}/{profileName as a slug}`. `icon` is the S3 key of a supported platform icon chosen from a dropdown in the dashboard.
+The client sends only a `platform` key and the profile name. The server fills in `domain`, `icon`, and `url` from the platform list in `src/data/socials.ts`, so a social can only point to a supported platform. Any `domain`, `icon`, or `url` in the request is ignored.
+
+| `platform`  | Link built                       | Allowed name                                        |
+| ----------- | -------------------------------- | --------------------------------------------------- |
+| `instagram` | `https://instagram.com/{name}`   | 1–30 letters, numbers, periods, underscores         |
+| `facebook`  | `https://facebook.com/{name}`    | 5–50 letters, numbers, periods (usernames only)     |
+| `youtube`   | `https://youtube.com/@{name}`    | 3–30 letters, numbers, periods, underscores, hyphens |
+| `tiktok`    | `https://tiktok.com/@{name}`     | 2–24 letters, numbers, periods, underscores         |
+| `x`         | `https://x.com/{name}`           | 1–15 letters, numbers, underscores                  |
+
+A leading `@` in `profileName` is dropped. A name that breaks the platform's rules, or a pasted link, returns `400` with a message saying what to fix.
 
 ### POST /api/businesses/[businessId]/locations/[locationId]/socials `SYNC`
 
@@ -1690,9 +1735,8 @@ Creates a social link.
 
 ```json
 {
-  "domain": "instagram.com",
+  "platform": "instagram | facebook | youtube | tiktok | x",
   "profileName": "String",
-  "icon": "String",
   "isSynced": "Boolean"
 }
 ```
@@ -1716,7 +1760,7 @@ Creates a social link.
 
 ### PATCH /api/businesses/[businessId]/locations/[locationId]/socials/[socialId] `SYNC`
 
-Updates a social link and rebuilds its `url`. `domain`, `profileName`, and `icon` are all required.
+Updates a social link and rebuilds its `domain`, `icon`, and `url`. `platform` and `profileName` are both required.
 
 **Access:** `owner`, `admin`
 

@@ -18,6 +18,7 @@ import { getBusinessUsers } from "@/lib/api/users";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import { Star } from "lucide-react";
 
 const USERS_PER_PAGE = 5;
 
@@ -205,9 +206,22 @@ export default function UsersPage() {
                       />
 
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-gray-900">
-                          {businessUser.user?.name || "Missing name"}
-                        </p>
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                          <p className="truncate text-sm font-medium text-gray-900">
+                            {businessUser.user?.name || "Missing name"}
+                          </p>
+
+                          {/* The payer badge: who covers the business's plan. */}
+                          {businessUser.isPayer && (
+                            <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-amber-400 bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+                              <Star
+                                size={12}
+                                className="fill-amber-500 text-amber-500"
+                              />
+                              Pays for plan
+                            </span>
+                          )}
+                        </div>
 
                         <div className="mt-1 flex min-w-0 items-center gap-2">
                           <Image
@@ -229,6 +243,11 @@ export default function UsersPage() {
                     </>
                   );
 
+                  // The pinned payer row gets a soft golden highlight.
+                  const rowStyle = businessUser.isPayer
+                    ? "border-amber-300 bg-amber-50/60"
+                    : "border-gray-200";
+
                   if (canManageMembers) {
                     return (
                       <Link
@@ -236,7 +255,7 @@ export default function UsersPage() {
                         href={`/businesses/${businessId}/users/${
                           businessUser.user?.id || "not-found"
                         }`}
-                        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-gray-200 px-3 py-2 transition-colors hover:border-gray-300 hover:bg-gray-50"
+                        className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border px-3 py-2 transition-colors hover:border-gray-300 hover:bg-gray-50 ${rowStyle}`}
                         onClick={() => setIsLoading(true)}
                       >
                         {memberContent}
@@ -247,7 +266,7 @@ export default function UsersPage() {
                   return (
                     <div
                       key={businessUser.id}
-                      className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-gray-200 px-3 py-2"
+                      className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border px-3 py-2 ${rowStyle}`}
                     >
                       {memberContent}
                     </div>

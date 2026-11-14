@@ -145,13 +145,67 @@ describe("/api/businesses/[businessId]/users", () => {
       const response = await getUsers();
 
       expect(response.status).toBe(200);
-      expect(await response.json()).toEqual([businessUser]);
+      expect(await response.json()).toEqual([
+        { ...businessUser, isPayer: false },
+      ]);
 
       expect(mockPrisma.businessUser.findMany).toHaveBeenCalledWith({
         where: { businessId: BUSINESS_ID, userId: { not: USER_ID } },
         orderBy: { user: { email: "asc" } },
         select: businessUserSelect,
       });
+    });
+
+    it("marks the payer and pins them to the top", async () => {
+      const anna = {
+        ...businessUser,
+        id: "business-user-111",
+        userId: "user-111",
+      };
+      const payer = {
+        ...businessUser,
+        id: "business-user-999",
+        userId: "user-999",
+      };
+
+      mockSuccessfulAuthentication();
+      mockPrisma.businessUser.findMany.mockResolvedValue([
+        anna,
+        businessUser,
+        payer,
+      ]);
+      mockPrisma.subscription.findUnique.mockResolvedValue({
+        payerId: "user-999",
+        status: "active",
+      });
+
+      const response = await getUsers();
+
+      expect(
+        (await response.json()).map(
+          (member: { userId: string; isPayer: boolean }) => [
+            member.userId,
+            member.isPayer,
+          ],
+        ),
+      ).toEqual([
+        ["user-999", true],
+        ["user-111", false],
+        ["user-456", false],
+      ]);
+    });
+
+    it("shows no payer once the plan is no longer paid", async () => {
+      mockSuccessfulAuthentication();
+      mockPrisma.businessUser.findMany.mockResolvedValue([businessUser]);
+      mockPrisma.subscription.findUnique.mockResolvedValue({
+        payerId: "user-456",
+        status: "canceled",
+      });
+
+      const response = await getUsers();
+
+      expect((await response.json())[0].isPayer).toBe(false);
     });
 
     it("returns only the requested user when userId is provided", async () => {

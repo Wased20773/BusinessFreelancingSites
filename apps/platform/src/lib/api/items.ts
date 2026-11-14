@@ -1,9 +1,39 @@
 import axios from "axios";
+import type { OptionPayload } from "@/lib/items/optionDrafts";
 import type { ItemJson } from "@/types/types";
+
+// What the create and edit item forms send. The options go with the item
+// and are saved in the same transaction.
+export type ItemFormBody = {
+  name: string;
+  description: string | null;
+  containsList: string[];
+  calories: number | null;
+  price: number;
+  isAvailable: boolean;
+  isSynced: boolean;
+  options: OptionPayload[];
+};
 
 // ################
 // ##### ITEM #####
 // ################
+
+// POST: the item and all its options at once. Returns the new item's id
+// (for a synced create, the copy at this location).
+export async function createItem(
+  businessId: string,
+  locationId: string,
+  categoryId: string,
+  data: ItemFormBody,
+): Promise<{ id: string }> {
+  return axios
+    .post<{ id: string }>(
+      `/api/businesses/${businessId}/locations/${locationId}/categories/${categoryId}/items`,
+      data,
+    )
+    .then((response) => response.data);
+}
 
 // GET
 export async function getItem(
@@ -21,20 +51,12 @@ export async function getItem(
     .then((response) => response.data);
 }
 
-// UPDATE
+// UPDATE: the item and its full option list, saved together.
 export async function updateItem(
   businessId: string,
   locationId: string,
   itemId: string,
-  data: {
-    name: string;
-    description: string | null;
-    containsList: string[];
-    calories: number | null;
-    price: number;
-    isAvailable: boolean;
-    isSynced: boolean;
-  },
+  data: ItemFormBody,
 ): Promise<ItemJson> {
   return axios
     .patch<ItemJson>(

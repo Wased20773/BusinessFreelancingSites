@@ -4,15 +4,13 @@ import { ACCESS_LEVEL, type SocialJson } from "@/types/types";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
 import axios from "axios";
-import { SubmitEvent, useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 import "../../page.css";
-import { SOCIAL_PLATFORMS } from "@/data/socials";
-import CreateSocialForm from "@/components/ui/socials/CreateSocialForm";
+import { normalizeProfileName, type SocialPlatform } from "@/data/socials";
+import SocialForm from "@/components/ui/socials/SocialForm";
 import { useParams, useRouter } from "next/navigation";
 import PageHeading from "@/components/ui/PageHeader";
-
-type SocialPlatform = keyof typeof SOCIAL_PLATFORMS;
 
 export default function CreateSocialPage() {
   const params = useParams<{
@@ -27,7 +25,8 @@ export default function CreateSocialPage() {
   const [isCreating, setIsCreating] = useState<boolean>(false);
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [canSubmit, setCanSubmit] = useState<boolean>(false);
+  const [platform, setPlatform] = useState<SocialPlatform | "">("");
+  const [profileName, setProfileName] = useState<string>("");
   const [isSynced, setIsSynced] = useState<boolean>(false);
 
   const router = useRouter();
@@ -39,44 +38,26 @@ export default function CreateSocialPage() {
     currentAccessLevel === ACCESS_LEVEL.admin;
   const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
+  const result = platform ? normalizeProfileName(platform, profileName) : null;
+  const validName = result && "profileName" in result ? result.profileName : null;
+
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    setIsCreating(true);
-    setErrorMessage(null);
-
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-
-    const platform = formData.get("platform");
-    const profileName = formData.get("profileName");
-
-    if (
-      typeof platform !== "string" ||
-      !(platform in SOCIAL_PLATFORMS) ||
-      typeof profileName !== "string" ||
-      !profileName.trim()
-    ) {
-      setErrorMessage("A social platform and profile name are required");
-      setIsCreating(false);
+    if (!platform || !validName) {
+      setErrorMessage("Choose a platform and enter a valid profile name.");
       return;
     }
 
-    const selectedPlatform = SOCIAL_PLATFORMS[platform as SocialPlatform];
-
-    const requestBody = {
-      domain: selectedPlatform.domain,
-      profileName: profileName.trim(),
-      icon: selectedPlatform.icon,
-      isSynced,
-    };
+    setIsCreating(true);
+    setErrorMessage(null);
 
     try {
       const socialToast = toast.promise<SocialJson>(
         axios
           .post<SocialJson>(
             `/api/businesses/${businessId}/locations/${locationId}/socials`,
-            requestBody,
+            { platform, profileName: validName, isSynced },
           )
           .then((response) => response.data),
         {
@@ -102,9 +83,6 @@ export default function CreateSocialPage() {
 
       await socialToast.unwrap();
 
-      form.reset();
-      setCanSubmit(false);
-      setIsSynced(false);
       router.push(
         `/businesses/${businessId}/locations/${locationId}/dashboard/socials`,
       );
@@ -121,21 +99,6 @@ export default function CreateSocialPage() {
     } finally {
       setIsCreating(false);
     }
-  }
-
-  function handleFormInput(event: React.FormEvent<HTMLFormElement>) {
-    const formData = new FormData(event.currentTarget);
-
-    const platform = formData.get("platform");
-    const profileName = formData.get("profileName");
-
-    const hasPlatform =
-      typeof platform === "string" && platform in SOCIAL_PLATFORMS;
-
-    const hasProfileName =
-      typeof profileName === "string" && profileName.trim() !== "";
-
-    setCanSubmit(hasPlatform && hasProfileName);
   }
 
   const pageState = PageState({
@@ -166,14 +129,22 @@ export default function CreateSocialPage() {
       />
 
       <div className="mt-[0.5rem]">
-        <CreateSocialForm
-          handleSubmit={handleSubmit}
-          handleFormInput={handleFormInput}
-          isCreating={isCreating}
-          canSubmit={canSubmit}
-          errorMessage={errorMessage}
+        <SocialForm
+          onSubmit={handleSubmit}
+          platform={platform}
+          setPlatform={setPlatform}
+          profileName={profileName}
+          setProfileName={setProfileName}
           isSynced={isSynced}
           setIsSynced={setIsSynced}
+          showSync={true}
+          syncDescription="Add this social to all locations"
+          canSubmit={validName !== null}
+          isProcessing={isCreating}
+          isSubmitting={isCreating}
+          submitLabel="Create"
+          submittingLabel="Creating..."
+          errorMessage={errorMessage}
         />
       </div>
     </section>

@@ -3,9 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 import {
-  createSocialUrl,
   createSyncedResource,
   isUniqueConstraintError,
+  socialDataFromBody,
   validateBusinessLocationParams,
   verifyLocationInBusiness,
 } from "@/app/api/route_helper";
@@ -36,29 +36,9 @@ export async function POST(
     if (locationError) return locationError;
 
     const body = await request.json();
+    const data = socialDataFromBody(body);
 
-    if (!body.domain) {
-      return NextResponse.json(
-        { error: "Missing Domain Name" },
-        { status: 400 },
-      );
-    }
-
-    if (!body.profileName) {
-      return NextResponse.json(
-        { error: "Missing social profile name" },
-        { status: 400 },
-      );
-    }
-
-    const url = createSocialUrl(body.domain, body.profileName);
-
-    if (!body.icon) {
-      return NextResponse.json(
-        { error: "Missing social icon" },
-        { status: 400 },
-      );
-    }
+    if (data instanceof NextResponse) return data;
 
     return await createSyncedResource({
       body,
@@ -66,12 +46,7 @@ export async function POST(
       resourceName: "social",
       businessId,
       locationId,
-      data: {
-        domain: body.domain,
-        profileName: body.profileName,
-        url: url,
-        icon: body.icon,
-      },
+      data,
       select: {
         id: true,
         locationId: true,

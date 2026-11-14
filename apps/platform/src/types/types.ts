@@ -98,6 +98,7 @@ export type BusinessUserJson = {
     accessLevel?: AccessLevel;
     description?: string;
   };
+  isPayer?: boolean; // pays for the business's plan (members list only)
 };
 
 export type UserJson = Omit<
@@ -178,7 +179,8 @@ export type DashboardNavBusiness = {
  */
 export type DashboardNavAccount = {
   name?: string | null;
-  accessLevel: "developer" | "owner" | "admin" | "staff";
+  // Unset when no business is selected (e.g. Settings opened from /businesses).
+  accessLevel?: "developer" | "owner" | "admin" | "staff";
   image?: string | null;
   workspaceTourVersion?: number;
   dashboardTourVersion?: number;
@@ -254,11 +256,13 @@ export type BillingJson = {
 // GET /api/account/billing: everything one user pays for.
 export type AccountPaymentJson = {
   id: string;
-  kind: "subscription" | "location_slot";
+  // "credit": a downgrade left unused time as account credit.
+  kind: "subscription" | "location_slot" | "credit";
   businessId: string | null;
   businessName: string | null; // null when the business was deleted
   description: string;
-  amount: number; // dollars, not cents
+  amount: number; // what it cost, in dollars; negative for "credit"
+  paidFromCredit: number; // part of amount covered by account credit, in dollars
   currency: string;
   paidAt: string;
   receiptUrl: string | null;
@@ -272,9 +276,23 @@ export type AccountBillingJson = {
     status: SubscriptionStatus;
     currentPeriodEnd: string;
     cancelAtPeriodEnd: boolean;
+    paymentMethodId: string | null; // the saved payment method it bills
+    isMember: boolean; // false once the payer was removed from the business
   }[];
   payments: AccountPaymentJson[];
-  totals: PriceJson[]; // one per currency
+  totals: PriceJson[]; // charged to the card, one per currency
+  credit: PriceJson | null; // account credit still unused
+  paymentMethods: AccountPaymentMethodJson[];
+};
+
+// A saved payment method (a card, Link, ...). Card numbers are entered and
+// stored only by Stripe.
+export type AccountPaymentMethodJson = {
+  id: string;
+  type: string; // Stripe's type: "card", "link", ...
+  label: string; // "Visa •••• 4242", "Link (you@example.com)"
+  expires: string | null; // "04/29" for cards; null otherwise
+  usedBy: string[]; // names of the businesses whose plan this card pays
 };
 
 export type PriceJson = {

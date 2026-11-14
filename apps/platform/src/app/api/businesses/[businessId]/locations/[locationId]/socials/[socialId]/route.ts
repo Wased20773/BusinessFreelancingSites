@@ -1,8 +1,8 @@
 import {
-  createSocialUrl,
   deleteSyncedResource,
   updateSyncedResource,
   isUniqueConstraintError,
+  socialDataFromBody,
   validateBusinessLocationParams,
   verifyLocationInBusiness,
 } from "@/app/api/route_helper";
@@ -49,22 +49,9 @@ export async function PATCH(
     if (locationError) return locationError;
 
     const body = await request.json();
+    const data = socialDataFromBody(body);
 
-    if (!body.domain || !body.profileName) {
-      return NextResponse.json(
-        { error: "A social must include a domain and profile name" },
-        { status: 400 },
-      );
-    }
-
-    if (!body.icon) {
-      return NextResponse.json(
-        { error: "Social is missing an icon" },
-        { status: 400 },
-      );
-    }
-
-    const url = createSocialUrl(body.domain, body.profileName);
+    if (data instanceof NextResponse) return data;
 
     return await updateSyncedResource({
       body,
@@ -73,12 +60,7 @@ export async function PATCH(
       businessId,
       id: socialId,
       locationId,
-      data: {
-        domain: body.domain,
-        profileName: body.profileName,
-        url: url,
-        icon: body.icon,
-      },
+      data,
       select: {
         id: true,
         domain: true,

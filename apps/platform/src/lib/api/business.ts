@@ -15,6 +15,13 @@ export async function deleteBusiness(businessId: string, confirmName: string) {
     .then((response) => response.data);
 }
 
+// The signed-in user leaves the business (not for the owner).
+export async function leaveBusiness(businessId: string) {
+  return axios
+    .post<{ message: string }>(`/api/businesses/${businessId}/leave`)
+    .then((response) => response.data);
+}
+
 export async function getBusiness(businessId: string) {
   return axios
     .get<BusinessJson>("/api/business", {

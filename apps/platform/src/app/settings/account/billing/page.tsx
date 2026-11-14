@@ -1,7 +1,13 @@
 "use client";
 
 import LoadingBar from "@/components/ui/LoadingBar";
-import { getAccountBilling, getBillingPrices } from "@/lib/api/billing";
+import PaymentMethodsCard from "@/components/ui/billing/PaymentMethodsCard";
+import {
+  getAccountBilling,
+  getBillingPrices,
+  hideSubscription,
+  setPlanPaymentMethod,
+} from "@/lib/api/billing";
 import { requestError } from "@/lib/api/requestError";
 import { formatPrice } from "@/lib/billing/formatPrice";
 import { PLANS_NAMES } from "@/lib/billing/plans";
@@ -10,17 +16,104 @@ import type { AccountBillingJson, BillingPricesJson } from "@/types/types";
 import axios from "axios";
 import { ExternalLink, Receipt, Star } from "lucide-react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-const CARD =
-  "rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6";
+const CARD = "rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6";
+
+// Stripe sends the user back here after adding a card.
+const CARD_RETURN_TOASTS: Record<
+  string,
+  { type: "success" | "info"; message: string }
+> = {
+  added: { type: "success", message: "Card saved. Nothing was charged." },
+  cancelled: { type: "info", message: "No card was added." },
+};
 
 export default function AccountBillingPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [billing, setBilling] = useState<AccountBillingJson | null>(null);
   const [prices, setPrices] = useState<BillingPricesJson | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // The business whose plan is switching cards right now.
+  const [switchingBusinessId, setSwitchingBusinessId] = useState<string | null>(
+    null,
+  );
+
+  // The removed-from business being hidden from the list right now.
+  const [hidingBusinessId, setHidingBusinessId] = useState<string | null>(
+    null,
+  );
+
+  // Read once on arrival: did Stripe just send the user back here?
+  const [cardReturn] = useState(
+    () => CARD_RETURN_TOASTS[searchParams.get("card") ?? ""] ?? null,
+  );
+
+  useEffect(() => {
+    if (!cardReturn) return;
+
+    // The id stops the toast from showing twice in dev (Strict Mode).
+    toast[cardReturn.type](cardReturn.message, { id: "card-return" });
+
+    // Clear the query so a refresh doesn't show the toast again.
+    router.replace(pathname);
+  }, [cardReturn, router, pathname]);
+
+  // Reloads after a change, without the full-page loading bar.
+  async function refreshBilling() {
+    try {
+      setBilling(await getAccountBilling());
+    } catch (error) {
+      console.error("Error reloading account billing:", error);
+      toast.error("Failed to reload your billing. Refresh the page.");
+    }
+  }
+
+  async function handleHide(businessId: string) {
+    setHidingBusinessId(businessId);
+
+    try {
+      await toast
+        .promise(hideSubscription(businessId), {
+          loading: "Removing it from your list...",
+          success: "Removed from your list.",
+          error: requestError("Failed to remove it from your list."),
+        })
+        .unwrap();
+
+      await refreshBilling();
+    } catch (error) {
+      console.error("Error hiding the subscription:", error);
+    } finally {
+      setHidingBusinessId(null);
+    }
+  }
+
+  async function handleSwitchCard(businessId: string, paymentMethodId: string) {
+    setSwitchingBusinessId(businessId);
+
+    try {
+      await toast
+        .promise(setPlanPaymentMethod(businessId, paymentMethodId), {
+          loading: "Switching the card...",
+          success: "Card switched. Your next renewal uses it.",
+          error: requestError("Failed to switch the card."),
+        })
+        .unwrap();
+
+      await refreshBilling();
+    } catch (error) {
+      console.error("Error switching the plan's card:", error);
+    } finally {
+      setSwitchingBusinessId(null);
+    }
+  }
 
   useEffect(() => {
     async function loadBilling() {
@@ -59,6 +152,11 @@ export default function AccountBillingPage() {
     );
   }
 
+  // Credit rows aren't payments; they only move money into account credit.
+  const paymentCount = billing.payments.filter(
+    (payment) => payment.kind !== "credit",
+  ).length;
+
   return (
     <section
       className="mx-auto max-w-[1000px] p-5"
@@ -89,9 +187,15 @@ export default function AccountBillingPage() {
               : billing.totals.map(formatPrice).join(" + ")}
           </p>
           <p className="mt-1 text-sm text-gray-500">
-            {billing.payments.length}{" "}
-            {billing.payments.length === 1 ? "payment" : "payments"} in total
+            Charged to your card · {paymentCount}{" "}
+            {paymentCount === 1 ? "payment" : "payments"}
           </p>
+          {billing.credit && (
+            <p className="mt-1 text-sm font-medium text-emerald-600">
+              Account credit: {formatPrice(billing.credit)}. It&apos;s used
+              before your card on your next payments.
+            </p>
+          )}
         </section>
 
         {/* Subscriptions this user pays for, with their next renewal */}
@@ -144,19 +248,78 @@ export default function AccountBillingPage() {
                         }`}
                       >
                         {subscription.status === "past_due"
-                          ? "Payment failed. Update your card in Manage billing."
+                          ? "Payment failed. Pick another card below, or add one."
                           : subscription.cancelAtPeriodEnd
                             ? `Cancelled. Ends on ${periodEnd}`
                             : `Renews on ${periodEnd}`}
                       </p>
+
+                      {/* Which saved card pays this plan. No charge.
+                          A plan that's ending won't charge again, so no picker. */}
+                      {billing.paymentMethods.length > 0 &&
+                        !subscription.cancelAtPeriodEnd && (
+                          <label className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                            Paid with
+                            <select
+                              value={subscription.paymentMethodId ?? ""}
+                              disabled={switchingBusinessId !== null}
+                              onChange={(event) =>
+                                handleSwitchCard(
+                                  subscription.businessId,
+                                  event.target.value,
+                                )
+                              }
+                              className="max-w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 disabled:opacity-60"
+                            >
+                              {!subscription.paymentMethodId && (
+                                <option value="" disabled>
+                                  Choose a card
+                                </option>
+                              )}
+                              {billing.paymentMethods.map((paymentMethod) => (
+                                <option
+                                  key={paymentMethod.id}
+                                  value={paymentMethod.id}
+                                >
+                                  {paymentMethod.label}
+                                  {paymentMethod.expires &&
+                                    ` (exp ${paymentMethod.expires})`}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        )}
                     </div>
 
-                    <Link
-                      href={`/businesses/${subscription.businessId}/billing`}
-                      className="shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      Manage
-                    </Link>
+                    {/* A removed payer can't open the business anymore. */}
+                    {subscription.isMember ? (
+                      <Link
+                        href={`/businesses/${subscription.businessId}/billing`}
+                        className="shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        Manage
+                      </Link>
+                    ) : (
+                      <div className="flex w-full flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                        <p className="min-w-0 flex-1 text-sm text-gray-600">
+                          {/* One string, so line breaks can't eat the spaces. */}
+                          {`You were removed from this business, so you can't manage it anymore. Your plan ends on ${periodEnd} and won't charge you again.`}
+                        </p>
+
+                        {/* Only hides it from this list; the plan still
+                            runs until it ends. */}
+                        <button
+                          type="button"
+                          onClick={() => handleHide(subscription.businessId)}
+                          disabled={hidingBusinessId !== null}
+                          className="shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {hidingBusinessId === subscription.businessId
+                            ? "Removing..."
+                            : "Remove from list"}
+                        </button>
+                      </div>
+                    )}
                   </li>
                 );
               })}
@@ -189,7 +352,10 @@ export default function AccountBillingPage() {
                     <th scope="col" className="py-2 pr-3 font-medium">
                       Description
                     </th>
-                    <th scope="col" className="py-2 pr-3 text-right font-medium">
+                    <th
+                      scope="col"
+                      className="py-2 pr-3 text-right font-medium"
+                    >
                       Amount
                     </th>
                     <th scope="col" className="py-2 text-right font-medium">
@@ -212,8 +378,30 @@ export default function AccountBillingPage() {
                       </td>
                       <td className="py-2 pr-3 text-gray-600">
                         {payment.description}
+                        {payment.kind === "credit" ? (
+                          <span className="block text-xs text-gray-400">
+                            Unused time from a plan change
+                          </span>
+                        ) : (
+                          payment.paidFromCredit > 0 && (
+                            <span className="block text-xs text-emerald-600">
+                              {payment.paidFromCredit >= payment.amount
+                                ? "Paid from credit"
+                                : `${formatPrice({
+                                    amount: payment.paidFromCredit,
+                                    currency: payment.currency,
+                                  })} from credit`}
+                            </span>
+                          )
+                        )}
                       </td>
-                      <td className="py-2 pr-3 text-right font-medium whitespace-nowrap text-gray-900">
+                      <td
+                        className={`py-2 pr-3 text-right font-medium whitespace-nowrap ${
+                          payment.kind === "credit"
+                            ? "text-emerald-600"
+                            : "text-gray-900"
+                        }`}
+                      >
                         {formatPrice(payment)}
                       </td>
                       <td className="py-2 text-right">
@@ -237,6 +425,11 @@ export default function AccountBillingPage() {
             </div>
           )}
         </section>
+
+        <PaymentMethodsCard
+          paymentMethods={billing.paymentMethods}
+          onChanged={refreshBilling}
+        />
       </div>
     </section>
   );

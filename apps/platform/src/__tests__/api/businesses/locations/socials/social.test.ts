@@ -33,14 +33,15 @@ jest.mock("@/lib/auth/authenticateBusinessAccess", () => ({
 const BASE_URL = `http://localhost/api/businesses/${BUSINESS_ID}/locations/${LOCATION_ID}/socials`;
 
 const socialBody = {
-  domain: "instagram.com",
+  platform: "instagram",
   profileName: "tacos.el_guero",
-  icon: "businesses/icons/socials/instagram.webp",
 };
 
 const expectedSocialData = {
-  ...socialBody,
+  domain: "instagram.com",
+  profileName: "tacos.el_guero",
   url: "https://instagram.com/tacos.el_guero",
+  icon: "social-icons/instagram/normal.svg",
 };
 
 const locationContext = createRouteContext({
@@ -113,9 +114,11 @@ describe("/api/businesses/[businessId]/locations/[locationId]/socials", () => {
     });
 
     it.each([
-      ["domain", "Missing Domain Name"],
-      ["profileName", "Missing social profile name"],
-      ["icon", "Missing social icon"],
+      [
+        "platform",
+        "Choose a supported platform: instagram, facebook, youtube, tiktok, x",
+      ],
+      ["profileName", "Enter your Instagram name."],
     ])("returns 400 when the %s is missing", async (field, error) => {
       mockSuccessfulAuthentication();
       mockLocationInBusiness();
@@ -170,6 +173,66 @@ describe("/api/businesses/[businessId]/locations/[locationId]/socials", () => {
       expect(await response.json()).toEqual({
         error: "Failed to create social",
       });
+    });
+
+    it("ignores a domain, icon, or url sent in the request", async () => {
+      mockSuccessfulAuthentication();
+      mockLocationInBusiness();
+      mockPrisma.social.create.mockResolvedValue({ id: "social-123" });
+
+      await postSocial({
+        ...socialBody,
+        domain: "evil.com",
+        icon: "evil.svg",
+        url: "https://evil.com/phish",
+        isSynced: false,
+      });
+
+      expect(mockPrisma.social.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining(expectedSocialData),
+        }),
+      );
+    });
+
+    it("builds TikTok links with an @ and drops one the user typed", async () => {
+      mockSuccessfulAuthentication();
+      mockLocationInBusiness();
+      mockPrisma.social.create.mockResolvedValue({ id: "social-123" });
+
+      await postSocial({
+        platform: "tiktok",
+        profileName: "@TacosElGuero",
+        isSynced: false,
+      });
+
+      expect(mockPrisma.social.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            domain: "tiktok.com",
+            profileName: "TacosElGuero",
+            url: "https://tiktok.com/@TacosElGuero",
+            icon: "social-icons/tiktok/normal.svg",
+          }),
+        }),
+      );
+    });
+
+    it("returns 400 when a whole link is typed instead of the name", async () => {
+      mockSuccessfulAuthentication();
+      mockLocationInBusiness();
+
+      const response = await postSocial({
+        platform: "instagram",
+        profileName: "https://instagram.com/tacos",
+        isSynced: false,
+      });
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({
+        error: "Type just your Instagram name, not the whole link.",
+      });
+      expect(mockPrisma.social.create).not.toHaveBeenCalled();
     });
 
     it("successfully creates a social and keeps the handle's characters in the URL", async () => {
@@ -247,14 +310,15 @@ describe("/api/businesses/[businessId]/locations/[locationId]/socials", () => {
 
   describe("PATCH /[socialId]", () => {
     const updateBody = {
-      domain: "instagram.com",
+      platform: "youtube",
       profileName: "tacoselguero-PDX",
-      icon: "businesses/icons/socials/instagram.webp",
     };
 
     const expectedUpdateData = {
-      ...updateBody,
-      url: "https://instagram.com/tacoselguero-PDX",
+      domain: "youtube.com",
+      profileName: "tacoselguero-PDX",
+      url: "https://youtube.com/@tacoselguero-PDX",
+      icon: "social-icons/youtube/normal.svg",
     };
 
     const updateSelect = {
@@ -286,7 +350,7 @@ describe("/api/businesses/[businessId]/locations/[locationId]/socials", () => {
       expect(await response.json()).toEqual(LOCATION_NOT_FOUND);
     });
 
-    it("returns 400 when the domain or profile name is missing", async () => {
+    it("returns 400 when the profile name is missing", async () => {
       mockSuccessfulAuthentication();
       mockLocationInBusiness();
 
@@ -298,24 +362,26 @@ describe("/api/businesses/[businessId]/locations/[locationId]/socials", () => {
 
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual({
-        error: "A social must include a domain and profile name",
+        error: "Enter your YouTube name.",
       });
     });
 
-    it("returns 400 when the icon is missing", async () => {
+    it("returns 400 when the platform isn't supported", async () => {
       mockSuccessfulAuthentication();
       mockLocationInBusiness();
 
       const response = await patchSocial({
         ...updateBody,
-        icon: undefined,
+        platform: "twitter",
         isSynced: false,
       });
 
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual({
-        error: "Social is missing an icon",
+        error:
+          "Choose a supported platform: instagram, facebook, youtube, tiktok, x",
       });
+      expect(mockPrisma.social.update).not.toHaveBeenCalled();
     });
 
     it("returns 404 when the social is not found", async () => {

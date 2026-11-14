@@ -11,6 +11,13 @@ import {
 } from "@/lib/auth/authenticateBusinessReadAccess";
 import { getBusinessPlan } from "@/lib/billing/getBusinessPlan";
 import { allowSync } from "@/lib/billing/sync";
+import {
+  buildSocialUrl,
+  isSocialPlatform,
+  normalizeProfileName,
+  SOCIAL_PLATFORMS,
+  SOCIAL_PLATFORM_KEYS,
+} from "@/data/socials";
 
 type OrderModel = {
   findFirst: (args: {
@@ -579,21 +586,42 @@ export function createDomainSlug(value: string): string {
 }
 
 /*
- *   Builds a social profile URL from its domain and profile name. Unlike createSlug(),
- *   this keeps the characters social handles are allowed to use (letters in any case,
- *   numbers, periods, underscores, hyphens, and @) and only strips whitespace and
- *   anything else that would break the URL.
+ *   Turns a social request body ({ platform, profileName }) into the fields saved on
+ *   the Social. The domain, icon, and url always come from SOCIAL_PLATFORMS, never
+ *   from the request, so a social can't point anywhere except a supported platform.
  *
  *   Example:
- *       instagram.com + tacos.el_guero -> https://instagram.com/tacos.el_guero
- *       tiktok.com + @TacosElGuero     -> https://tiktok.com/@TacosElGuero
+ *       { platform: "tiktok", profileName: "@TacosElGuero" }
+ *           -> url https://tiktok.com/@TacosElGuero, profileName "TacosElGuero"
  **/
-export function createSocialUrl(domain: unknown, profileName: unknown): string {
-  const handle = String(profileName)
-    .trim()
-    .replace(/[^A-Za-z0-9._@-]/g, "");
+export function socialDataFromBody(
+  body: unknown,
+):
+  | { domain: string; profileName: string; url: string; icon: string }
+  | NextResponse {
+  const { platform, profileName } = (body ?? {}) as Record<string, unknown>;
 
-  return `https://${String(domain).trim()}/${handle}`;
+  if (!isSocialPlatform(platform)) {
+    return NextResponse.json(
+      {
+        error: `Choose a supported platform: ${SOCIAL_PLATFORM_KEYS.join(", ")}`,
+      },
+      { status: 400 },
+    );
+  }
+
+  const result = normalizeProfileName(platform, profileName);
+
+  if ("error" in result) {
+    return NextResponse.json({ error: result.error }, { status: 400 });
+  }
+
+  return {
+    domain: SOCIAL_PLATFORMS[platform].domain,
+    profileName: result.profileName,
+    url: buildSocialUrl(platform, result.profileName),
+    icon: SOCIAL_PLATFORMS[platform].icon,
+  };
 }
 
 /*

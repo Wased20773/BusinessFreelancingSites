@@ -96,9 +96,10 @@ describe("syncSubscription", () => {
     await syncSubscription("sub_new");
 
     expect(mockCancel).toHaveBeenCalledWith("sub_old", { prorate: false });
+    // The new payer starts out shown, even if the old payer had hidden it.
     expect(mockPrisma.subscription.update).toHaveBeenCalledWith({
       where: { businessId: "business-123" },
-      data: savedFields,
+      data: { ...savedFields, hiddenByPayer: false },
     });
   });
 

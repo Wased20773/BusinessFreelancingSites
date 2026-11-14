@@ -399,6 +399,134 @@ describe("POST /api/businesses/[businessId]/locations/[locationId]/categories/[c
       });
 
       expect(mockPrisma.item.create).not.toHaveBeenCalled();
+      // No options sent: none are created.
+      expect(mockPrisma.itemOption.createMany).not.toHaveBeenCalled();
+    });
+
+    it("creates every copy of the item and its options in one transaction", async () => {
+      jest
+        .spyOn(crypto, "randomUUID")
+        .mockReturnValueOnce("item-sync-group" as ReturnType<Crypto["randomUUID"]>)
+        .mockReturnValueOnce("new-item-a" as ReturnType<Crypto["randomUUID"]>)
+        .mockReturnValueOnce("new-item-b" as ReturnType<Crypto["randomUUID"]>)
+        .mockReturnValueOnce("small-group" as ReturnType<Crypto["randomUUID"]>)
+        .mockReturnValueOnce("cheese-group" as ReturnType<Crypto["randomUUID"]>);
+
+      mockSuccessfulAuthentication();
+      mockLocationInBusiness();
+      mockPrisma.category.findFirst.mockResolvedValue(syncedCategory);
+      mockPrisma.category.findMany.mockResolvedValue([
+        { id: "category-123", locationId: LOCATION_ID },
+        { id: "category-456", locationId: "location-456" },
+      ]);
+      mockPrisma.item.findFirst.mockResolvedValue(null);
+      mockPrisma.item.groupBy.mockResolvedValue([]);
+      mockPrisma.item.createMany.mockResolvedValue({ count: 2 });
+
+      const response = await postItem({
+        ...itemBody,
+        isSynced: true,
+        options: [
+          { name: "Small", price: 0 },
+          { name: "Extra Cheese", price: 1.5, isAvailable: false },
+        ],
+      });
+
+      expect(response.status).toBe(201);
+      expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
+
+      // Each option is shared by both copies through its own sync group.
+      const option = (itemId: string, name: string, extra: object) => ({
+        itemId,
+        name,
+        isSynced: true,
+        ...extra,
+      });
+
+      expect(mockPrisma.itemOption.createMany).toHaveBeenCalledWith({
+        data: [
+          option("new-item-a", "Small", { price: 0, order: 1, isAvailable: true, syncGroupId: "small-group" }),
+          option("new-item-a", "Extra Cheese", { price: 1.5, order: 2, isAvailable: false, syncGroupId: "cheese-group" }),
+          option("new-item-b", "Small", { price: 0, order: 1, isAvailable: true, syncGroupId: "small-group" }),
+          option("new-item-b", "Extra Cheese", { price: 1.5, order: 2, isAvailable: false, syncGroupId: "cheese-group" }),
+        ],
+      });
+    });
+
+    it("returns 500 when creating the options fails (nothing is created)", async () => {
+      mockSuccessfulAuthentication();
+      mockLocationInBusiness();
+      mockPrisma.category.findFirst.mockResolvedValue(syncedCategory);
+      mockPrisma.category.findMany.mockResolvedValue([
+        { id: "category-123", locationId: LOCATION_ID },
+      ]);
+      mockPrisma.item.findFirst.mockResolvedValue(null);
+      mockPrisma.item.groupBy.mockResolvedValue([]);
+      mockPrisma.item.createMany.mockResolvedValue({ count: 1 });
+      mockPrisma.itemOption.createMany.mockRejectedValue(
+        new Error("Database write failed"),
+      );
+
+      const response = await postItem({
+        ...itemBody,
+        isSynced: true,
+        options: [{ name: "Small", price: 0 }],
+      });
+
+      // Thrown inside the transaction, so the items are rolled back too.
+      expect(response.status).toBe(500);
+    });
+  });
+
+  describe("with options", () => {
+    it("creates the item and its options in one statement, in the sent order", async () => {
+      mockSuccessfulAuthentication();
+      mockLocationInBusiness();
+      mockPrisma.category.findFirst.mockResolvedValue(category);
+      mockPrisma.item.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      mockPrisma.item.create.mockResolvedValue({ id: "item-123" });
+
+      const response = await postItem({
+        ...itemBody,
+        isSynced: false,
+        options: [
+          { name: "Small", price: 0 },
+          { name: "Large", price: 2.499 },
+        ],
+      });
+
+      expect(response.status).toBe(201);
+      expect(mockPrisma.item.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            options: {
+              createMany: {
+                data: [
+                  { name: "Small", price: 0, order: 1, isAvailable: true, syncGroupId: null, isSynced: false },
+                  // Prices are rounded to cents.
+                  { name: "Large", price: 2.5, order: 2, isAvailable: true, syncGroupId: null, isSynced: false },
+                ],
+              },
+            },
+          }),
+        }),
+      );
+    });
+
+    it.each([
+      [[{ id: "option-1", name: "Small", price: 0 }], "Invalid option id"],
+      [[{ name: "Small", price: -1 }], '"Small" needs a price of 0 or more'],
+    ])("returns 400 for invalid options %p", async (options, error) => {
+      mockSuccessfulAuthentication();
+      mockLocationInBusiness();
+
+      const response = await postItem({ ...itemBody, isSynced: false, options });
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error });
+      expect(mockPrisma.item.create).not.toHaveBeenCalled();
     });
   });
 });

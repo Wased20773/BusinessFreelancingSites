@@ -21,7 +21,7 @@ import {
   getSlug,
   createSlug,
   createDomainSlug,
-  createSocialUrl,
+  socialDataFromBody,
   optionalString,
   isUniqueConstraintError,
   getLocationResponse,
@@ -161,14 +161,50 @@ describe("createDomainSlug", () => {
   });
 });
 
-describe("createSocialUrl", () => {
-  it.each([
-    ["instagram.com", "tacos.el_guero", "https://instagram.com/tacos.el_guero"],
-    ["tiktok.com", "@TacosElGuero", "https://tiktok.com/@TacosElGuero"],
-    ["facebook.com", "  Tacos El Guero  ", "https://facebook.com/TacosElGuero"],
-    ["x.com", "tacos/../admin?", "https://x.com/tacos..admin"],
-  ])('builds the URL for %s + "%s"', (domain, profileName, expected) => {
-    expect(createSocialUrl(domain, profileName)).toBe(expected);
+describe("socialDataFromBody", () => {
+  it("takes the domain, icon, and url from the platform list, not the request", () => {
+    expect(
+      socialDataFromBody({
+        platform: "tiktok",
+        profileName: "@TacosElGuero",
+        domain: "evil.com",
+        icon: "evil.svg",
+        url: "https://evil.com",
+      }),
+    ).toEqual({
+      domain: "tiktok.com",
+      profileName: "TacosElGuero",
+      url: "https://tiktok.com/@TacosElGuero",
+      icon: "social-icons/tiktok/normal.svg",
+    });
+  });
+
+  it("returns 400 for a platform that isn't supported", async () => {
+    const result = await expectResponse(
+      socialDataFromBody({ platform: "myspace", profileName: "tacos" }),
+    );
+
+    expect(result).toEqual({
+      status: 400,
+      body: {
+        error:
+          "Choose a supported platform: instagram, facebook, youtube, tiktok, x",
+      },
+    });
+  });
+
+  it("returns 400 when the profile name breaks the platform's rules", async () => {
+    const result = await expectResponse(
+      socialDataFromBody({
+        platform: "instagram",
+        profileName: "instagram.com/tacos",
+      }),
+    );
+
+    expect(result).toEqual({
+      status: 400,
+      body: { error: "Type just your Instagram name, not the whole link." },
+    });
   });
 });
 

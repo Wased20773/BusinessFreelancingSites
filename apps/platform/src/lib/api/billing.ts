@@ -51,6 +51,44 @@ export async function openBillingPortal(businessId: string) {
     .then((response) => response.data.url);
 }
 
+// Stripe's page that saves a new card (nothing is charged).
+export async function addPaymentMethod() {
+  return axios
+    .post<{ url: string }>("/api/account/billing/payment-methods")
+    .then((response) => response.data.url);
+}
+
+// Removes a saved payment method (and saved copies of the same card).
+export async function removePaymentMethod(paymentMethodId: string) {
+  return axios
+    .delete<{ removed: number }>(
+      `/api/account/billing/payment-methods/${paymentMethodId}`,
+    )
+    .then((response) => response.data);
+}
+
+// Hides the plan of a business the user was removed from (it still runs).
+export async function hideSubscription(businessId: string) {
+  return axios
+    .post<{ hidden: boolean }>(
+      `/api/account/billing/subscriptions/${businessId}/hide`,
+    )
+    .then((response) => response.data);
+}
+
+// Picks which saved payment method pays a business's plan. No charge.
+export async function setPlanPaymentMethod(
+  businessId: string,
+  paymentMethodId: string,
+) {
+  return axios
+    .patch<{ paymentMethodId: string }>(
+      `/api/businesses/${businessId}/billing/payment-method`,
+      { paymentMethodId },
+    )
+    .then((response) => response.data);
+}
+
 export async function switchPlan(businessId: string, tier: PlanTier) {
   return axios
     .post<{ url: string }>(`/api/businesses/${businessId}/billing/switch`, {
