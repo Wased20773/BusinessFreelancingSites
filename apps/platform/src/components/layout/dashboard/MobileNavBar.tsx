@@ -61,7 +61,7 @@ export default function MobileNavBar({
         <>
           {/* Client Logo + Name */}
           <div className="flex flex-row items-center gap-3">
-            <span className="text-gray-900 font-semibold">
+            <span className="font-script text-lg text-gray-900">
               {currentBusiness.name}
             </span>
             {currentBusiness.imageKey && (
@@ -126,7 +126,7 @@ export default function MobileNavBar({
                 />
               )}
 
-              <span className="font-semibold text-gray-100">
+              <span className="font-script text-lg text-gray-100">
                 {currentBusiness.name}
               </span>
             </div>

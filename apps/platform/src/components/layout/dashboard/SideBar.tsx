@@ -44,7 +44,7 @@ export default function SideBar({
               />
             )}
 
-            <span className="min-w-0 text-gray-900 font-semibold px-2 truncate">
+            <span className="min-w-0 font-script text-lg text-gray-900 px-2 truncate">
               {currentBusiness.name}
             </span>
           </div>
