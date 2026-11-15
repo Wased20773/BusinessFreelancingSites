@@ -21,6 +21,9 @@ import { planLimitAction } from "@/lib/api/planLimitAction";
 
 import "../../page.css";
 import PageState from "@/components/ui/PageState";
+import FormPageSkeleton from "@/components/ui/FormPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import PageHeading from "@/components/ui/PageHeader";
 
 export default function SearchPage() {
@@ -34,6 +37,8 @@ export default function SearchPage() {
 
   const [searchData, setSearchData] = useState<UserJson | null>(null);
 
+  // isSearching: a search is running. isLoading: a link was clicked.
+  const [isSearching, setIsSearching] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -58,7 +63,7 @@ export default function SearchPage() {
 
     const normalizedEmail = email.trim();
 
-    setIsLoading(true);
+    setIsSearching(true);
     setSearchData(null);
     setErrorMessage(null);
     setHasSearched(false);
@@ -125,7 +130,7 @@ export default function SearchPage() {
         setErrorMessage("Failed to search for a user.");
       }
     } finally {
-      setIsLoading(false);
+      setIsSearching(false);
     }
   }
 
@@ -187,6 +192,17 @@ export default function SearchPage() {
     }
   }
 
+  // The session is still being checked.
+  if (status === "loading") {
+    return (
+      <FormPageSkeleton
+        label="Loading add member form"
+        fields={["input"]}
+        showDelete={false}
+      />
+    );
+  }
+
   const pageState = PageState({
     status,
     isLoading,
@@ -202,7 +218,8 @@ export default function SearchPage() {
   }
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       className="max-w-[1000px] mx-auto p-5 pt-0"
       aria-labelledby="search-heading"
     >
@@ -252,13 +269,13 @@ export default function SearchPage() {
             autoComplete="email"
             aria-label="User email address"
             required
-            disabled={isLoading}
+            disabled={isSearching}
           />
 
           <button
             type="submit"
             aria-label="Search for user"
-            disabled={isLoading}
+            disabled={isSearching}
             className="
               flex
               items-center
@@ -278,7 +295,11 @@ export default function SearchPage() {
         </form>
 
         {/* Result */}
-        <div className="border-t border-gray-200 mt-5 pt-5">
+        <motion.div
+          key={searchData?.id ?? (hasSearched ? "no-result" : "empty")}
+          {...fadeInMotion}
+          className="border-t border-gray-200 mt-5 pt-5"
+        >
           {searchData ? (
             <div>
               <p className="text-sm font-medium text-gray-500 mb-2">
@@ -372,8 +393,8 @@ export default function SearchPage() {
               </p>
             </div>
           )}
-        </div>
+        </motion.div>
       </section>
-    </section>
+    </motion.section>
   );
 }

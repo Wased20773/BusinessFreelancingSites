@@ -3,6 +3,9 @@
 import ArrowIcon from "@/components/icons/arrow";
 import PageHeading from "@/components/ui/PageHeader";
 import PageState from "@/components/ui/PageState";
+import FormPageSkeleton from "@/components/ui/FormPageSkeleton";
+import { motion } from "motion/react";
+import { cardMotion, fadeInMotion } from "@/components/motion/listMotion";
 import RequiredField from "@/components/ui/RequiredField";
 import { createBusinessApiKey } from "@/lib/api/apiKeys";
 import { ACCESS_LEVEL, type CreateBusinessApiKeyResponse } from "@/types/types";
@@ -104,6 +107,18 @@ export default function CreateApiKeyPage() {
     toast.success("API key copied.");
   }
 
+  // The session is still being checked.
+  if (status === "loading") {
+    return (
+      <FormPageSkeleton
+        label="Loading new API key form"
+        fields={["input"]}
+        showDelete={false}
+        maxWidthClass="max-w-[800px]"
+      />
+    );
+  }
+
   const pageState = PageState({
     status,
     isLoading,
@@ -119,7 +134,11 @@ export default function CreateApiKeyPage() {
 
   if (createdApiKey) {
     return (
-      <section
+      <motion.section
+        // Its own key, so this screen mounts fresh and its fade-in plays
+        // (otherwise React reuses the form screen's element in this spot).
+        key="api-key-created"
+        {...fadeInMotion}
         className="max-w-[800px] mx-auto p-5"
         aria-labelledby="api-key-created-heading"
       >
@@ -134,7 +153,11 @@ export default function CreateApiKeyPage() {
           </p>
         </div>
 
-        <section className="border border-gray-200 rounded-xl shadow-sm p-5">
+        {/* The new key's card rises in just after the heading. */}
+        <motion.section
+          {...cardMotion(1)}
+          className="border border-gray-200 rounded-xl shadow-sm p-5"
+        >
           <div>
             <p className="text-sm text-gray-500">Key Name</p>
 
@@ -213,13 +236,15 @@ export default function CreateApiKeyPage() {
               Done
             </button>
           </div>
-        </section>
-      </section>
+        </motion.section>
+      </motion.section>
     );
   }
 
   return (
-    <section
+    <motion.section
+      key="create-api-key"
+      {...fadeInMotion}
       className="max-w-[800px] mx-auto p-5 pt-0"
       aria-labelledby="create-api-key-heading"
     >
@@ -326,6 +351,6 @@ export default function CreateApiKeyPage() {
           </div>
         </form>
       </section>
-    </section>
+    </motion.section>
   );
 }

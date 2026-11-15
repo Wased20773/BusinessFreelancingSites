@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+
 /*
  *   A grey placeholder block with a soft pulse, shown where content will
  *   appear once it loads. Size it with className (e.g. "h-4 w-32").
@@ -7,7 +9,11 @@ export default function Skeleton({ className = "" }: { className?: string }) {
   return (
     <div
       aria-hidden="true"
-      className={`animate-pulse rounded-md bg-gray-200 motion-reduce:animate-none ${className}`}
+      // cn() lets a className override the defaults (e.g. a red bg in a danger zone).
+      className={cn(
+        "animate-pulse rounded-md bg-gray-200 motion-reduce:animate-none",
+        className,
+      )}
     />
   );
 }

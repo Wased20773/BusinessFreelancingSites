@@ -15,6 +15,11 @@ import "../page.css";
 import { formatDateTime } from "@/lib/time/formatDateTime";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import Skeleton, { SkeletonRows } from "@/components/ui/Skeleton";
+import { motion } from "motion/react";
+import { listRowMotion } from "@/components/motion/listMotion";
+
+const MotionLink = motion.create(Link);
 
 export default function ApiKeysPage() {
   const params = useParams<{
@@ -26,7 +31,10 @@ export default function ApiKeysPage() {
   const { data: session, status } = useSession();
 
   const [apiKeyData, setApiKeyData] = useState<BusinessApiKeyJson[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the API keys are loading (shows the skeleton rows).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const currentAccessLevel = session?.user?.accessLevel;
@@ -39,7 +47,7 @@ export default function ApiKeysPage() {
 
   useEffect(() => {
     async function getApiKeyData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -80,7 +88,7 @@ export default function ApiKeysPage() {
           setErrorMessage("Failed to load API keys.");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -154,13 +162,19 @@ export default function ApiKeysPage() {
               </p>
             </div>
 
-            <span className="rounded-lg bg-gray-100 px-2.5 py-1 text-sm tabular-nums text-gray-700">
-              {apiKeyData.length} {apiKeyData.length === 1 ? "key" : "keys"}
-            </span>
+            {isFetching ? (
+              <Skeleton className="h-7 w-16 rounded-lg" />
+            ) : (
+              <span className="rounded-lg bg-gray-100 px-2.5 py-1 text-sm tabular-nums text-gray-700">
+                {apiKeyData.length} {apiKeyData.length === 1 ? "key" : "keys"}
+              </span>
+            )}
           </div>
 
           <div className="px-5 py-5 sm:px-6">
-            {errorMessage ? (
+            {isFetching ? (
+              <SkeletonRows rows={3} label="Loading API keys" />
+            ) : errorMessage ? (
               <div className="rounded-lg border border-red-200 bg-red-50 p-4">
                 <p role="alert" className="text-sm text-red-700">
                   {errorMessage}
@@ -188,7 +202,7 @@ export default function ApiKeysPage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {apiKeyData.map((apiKey) => {
+                {apiKeyData.map((apiKey, index) => {
                   const keyContent = (
                     <>
                       <div className="flex items-start justify-between gap-3">
@@ -234,24 +248,26 @@ export default function ApiKeysPage() {
 
                   if (canManageApiKeys) {
                     return (
-                      <Link
+                      <MotionLink
                         key={apiKey.id}
+                        {...listRowMotion(index)}
                         href={`/businesses/${businessId}/api-keys/${apiKey.id}`}
                         className="block rounded-lg border border-gray-200 p-3 transition-colors hover:border-gray-300 hover:bg-gray-50"
                         onClick={() => setIsLoading(true)}
                       >
                         {keyContent}
-                      </Link>
+                      </MotionLink>
                     );
                   }
 
                   return (
-                    <div
+                    <motion.div
                       key={apiKey.id}
+                      {...listRowMotion(index)}
                       className="rounded-lg border border-gray-200 p-3"
                     >
                       {keyContent}
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>

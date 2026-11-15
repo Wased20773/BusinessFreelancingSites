@@ -13,6 +13,9 @@ import { toast } from "sonner";
 import "../page.css";
 import { ExternalLink } from "lucide-react";
 import PageState from "@/components/ui/PageState";
+import DetailPageSkeleton from "@/components/ui/DetailPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import Divider from "@/components/layout/Divider";
 import Cropper, { type Area } from "react-easy-crop";
 import DeleteBusinessSection from "@/components/ui/businesses/DeleteBusinessSection";
@@ -38,7 +41,8 @@ export default function SettingsPage() {
     null,
   );
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // The business is loading (shows the page skeleton).
+  const [isFetching, setIsFetching] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // For Cropping
@@ -74,7 +78,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function getBusinessData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -122,7 +126,7 @@ export default function SettingsPage() {
           setErrorMessage("Failed to load business settings.");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -699,7 +703,6 @@ export default function SettingsPage() {
 
   const pageState = PageState({
     status,
-    isLoading,
     isDeveloper: false,
     canView: canViewSettings,
     pageTitle: "Business Settings",
@@ -708,6 +711,17 @@ export default function SettingsPage() {
 
   if (pageState) {
     return pageState;
+  }
+
+  if (isFetching) {
+    return (
+      <DetailPageSkeleton
+        label="Loading settings"
+        sections={[1, 1, 1]}
+        hasBackLink={false}
+        showDanger
+      />
+    );
   }
 
   if (errorMessage) {
@@ -719,7 +733,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       className="mx-auto max-w-[1000px] p-5"
       aria-labelledby="settings-heading"
     >
@@ -1108,6 +1123,6 @@ export default function SettingsPage() {
           businessName={businessData.name}
         />
       )}
-    </section>
+    </motion.section>
   );
 }

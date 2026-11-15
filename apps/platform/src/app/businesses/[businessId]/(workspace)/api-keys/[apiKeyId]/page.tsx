@@ -18,6 +18,9 @@ import { toast } from "sonner";
 import { planLimitAction } from "@/lib/api/planLimitAction";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import DetailPageSkeleton from "@/components/ui/DetailPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import PageHeading from "@/components/ui/PageHeader";
 
 export default function ApiKeyDetailsPage() {
@@ -33,7 +36,10 @@ export default function ApiKeyDetailsPage() {
 
   const [apiKeyData, setApiKeyData] = useState<BusinessApiKeyJson | null>(null);
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the API key is loading (shows the page skeleton).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Edit
@@ -55,7 +61,7 @@ export default function ApiKeyDetailsPage() {
 
   useEffect(() => {
     async function getApiKeyData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -107,7 +113,7 @@ export default function ApiKeyDetailsPage() {
           setErrorMessage("Failed to load API key.");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -281,12 +287,23 @@ export default function ApiKeyDetailsPage() {
     return pageState;
   }
 
+  if (isFetching) {
+    return (
+      <DetailPageSkeleton
+        label="Loading API key"
+        sections={[4, 3, 2]}
+        showDanger
+      />
+    );
+  }
+
   if (!apiKeyData) {
     return <p className="p-5">{errorMessage}</p>;
   }
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       className="max-w-[1000px] mx-auto p-5 pt-0"
       aria-labelledby="api-key-heading"
     >
@@ -692,6 +709,6 @@ export default function ApiKeyDetailsPage() {
           {errorMessage}
         </p>
       )}
-    </section>
+    </motion.section>
   );
 }

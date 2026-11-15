@@ -7,6 +7,9 @@ import { useSession } from "next-auth/react";
 import { useState } from "react";
 import PageHeading from "@/components/ui/PageHeader";
 import PageState from "@/components/ui/PageState";
+import DetailPageSkeleton from "@/components/ui/DetailPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import { ACCESS_LEVEL } from "@/types/types";
 
 export default function AccessLevelsPage() {
@@ -26,6 +29,13 @@ export default function AccessLevelsPage() {
     currentAccessLevel === ACCESS_LEVEL.admin ||
     currentAccessLevel === ACCESS_LEVEL.staff;
 
+  // The session is still being checked.
+  if (status === "loading") {
+    return (
+      <DetailPageSkeleton label="Loading access levels" sections={[4]} />
+    );
+  }
+
   const pageState = PageState({
     status,
     isLoading,
@@ -40,7 +50,8 @@ export default function AccessLevelsPage() {
   }
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       aria-labelledby="access-level-heading"
       className="max-w-[1000px] mx-auto p-5 pt-0"
     >
@@ -124,6 +135,6 @@ export default function AccessLevelsPage() {
           </article>
         </div>
       </section>
-    </section>
+    </motion.section>
   );
 }

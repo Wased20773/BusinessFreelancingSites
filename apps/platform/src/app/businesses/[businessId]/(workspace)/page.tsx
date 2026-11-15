@@ -13,6 +13,9 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import PageState from "@/components/ui/PageState";
+import WorkspaceOverviewSkeleton from "@/components/ui/businesses/WorkspaceOverviewSkeleton";
+import { motion } from "motion/react";
+import { cardMotion } from "@/components/motion/listMotion";
 
 export default function WorkspacePage() {
   const params = useParams<{
@@ -25,7 +28,8 @@ export default function WorkspacePage() {
   const [locationCount, setLocationCount] = useState<number>(0);
   const [memberCount, setMemberCount] = useState<number>(0);
   const [apiKeyCount, setApiKeyCount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // The overview is loading (shows the card skeletons).
+  const [isFetching, setIsFetching] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { data: session, status } = useSession();
@@ -54,7 +58,7 @@ export default function WorkspacePage() {
 
   useEffect(() => {
     async function getOverviewData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -134,7 +138,7 @@ export default function WorkspacePage() {
           setErrorMessage("Failed to load business overview.");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -152,7 +156,6 @@ export default function WorkspacePage() {
 
   const pageState = PageState({
     status,
-    isLoading,
     isDeveloper: false,
     canView: canViewOverview,
     pageTitle: "Overview",
@@ -162,6 +165,8 @@ export default function WorkspacePage() {
   if (pageState) {
     return pageState;
   }
+
+  if (isFetching) return <WorkspaceOverviewSkeleton />;
 
   if (errorMessage) {
     return <p className="p-5">{errorMessage}</p>;
@@ -188,7 +193,8 @@ export default function WorkspacePage() {
 
       <div className="space-y-5">
         {/* Business Identity */}
-        <section
+        <motion.section
+          {...cardMotion(0)}
           aria-labelledby="business-identity-heading"
           className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
         >
@@ -222,10 +228,11 @@ export default function WorkspacePage() {
               Created {formatDateTime(businessData.createdAt, "date")}
             </p>
           </div>
-        </section>
+        </motion.section>
 
         {/* Workspace Summary */}
-        <section
+        <motion.section
+          {...cardMotion(1)}
           aria-labelledby="workspace-summary-heading"
           className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
         >
@@ -270,7 +277,7 @@ export default function WorkspacePage() {
               </div>
             )}
           </div>
-        </section>
+        </motion.section>
       </div>
     </section>
   );

@@ -4,6 +4,9 @@ import CurrentPlanCard from "@/components/ui/billing/CurrentPlanCard";
 import LocationSlotsCard from "@/components/ui/billing/LocationSlotsCard";
 import PlansCard from "@/components/ui/billing/PlansCard";
 import PageState from "@/components/ui/PageState";
+import BillingPageSkeleton from "@/components/ui/billing/BillingPageSkeleton";
+import { motion } from "motion/react";
+import { cardMotion } from "@/components/motion/listMotion";
 import { getBilling, getBillingPrices } from "@/lib/api/billing";
 import type { BillingJson, BillingPricesJson } from "@/types/types";
 import axios from "axios";
@@ -54,7 +57,8 @@ export default function BillingPage() {
 
   const { data: session, status } = useSession();
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // Billing is loading (shows the page skeleton).
+  const [isFetching, setIsFetching] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [currentBillingData, setCurrentBillingData] =
     useState<BillingJson | null>(null);
@@ -118,7 +122,7 @@ export default function BillingPage() {
           setErrorMessage("Failed to load current billing info");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -147,7 +151,6 @@ export default function BillingPage() {
 
   const pageState = PageState({
     status,
-    isLoading,
     canView: canManageBilling,
     pageTitle: "Billing",
     reason: "Something might've gone wrong, please try again later.",
@@ -156,6 +159,8 @@ export default function BillingPage() {
   if (pageState) {
     return pageState;
   }
+
+  if (isFetching) return <BillingPageSkeleton />;
 
   if (errorMessage) {
     return <p className="p-5">{errorMessage}</p>;
@@ -186,13 +191,15 @@ export default function BillingPage() {
 
       <div className="space-y-5">
         <section aria-labelledby="business-billing-heading">
-          <CurrentPlanCard
-            billing={currentBillingData}
-            price={billingPriceData}
-            businessId={businessId}
-          />
+          <motion.div {...cardMotion(0)}>
+            <CurrentPlanCard
+              billing={currentBillingData}
+              price={billingPriceData}
+              businessId={businessId}
+            />
+          </motion.div>
 
-          <div className="mt-8">
+          <motion.div {...cardMotion(1)} className="mt-8">
             <div className="mb-6">
               <h2>Subscription Plans</h2>
               <p className="mt-1 text-gray-500">
@@ -218,16 +225,20 @@ export default function BillingPage() {
                 businessId={businessId}
               />
             </div>
-          </div>
+          </motion.div>
         </section>
 
-        <section aria-labelledby="location-slots-heading" className="mt-8">
+        <motion.section
+          {...cardMotion(2)}
+          aria-labelledby="location-slots-heading"
+          className="mt-8"
+        >
           <LocationSlotsCard
             billing={currentBillingData}
             price={billingPriceData}
             businessId={businessId}
           />
-        </section>
+        </motion.section>
       </div>
     </section>
   );

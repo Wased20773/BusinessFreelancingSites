@@ -79,16 +79,19 @@ export default function FormPageSkeleton({
   label,
   fields,
   showDelete = true,
+  maxWidthClass = "max-w-[1000px]",
 }: {
   label: string;
   fields: SkeletonField[];
   showDelete?: boolean;
+  // Match the real page's width (most are 1000px).
+  maxWidthClass?: string;
 }) {
   return (
     <section
       aria-busy="true"
       aria-label={label}
-      className="max-w-[1000px] mx-auto p-5 pt-0"
+      className={`${maxWidthClass} mx-auto p-5 pt-0`}
     >
       {/* Same height as the page heading */}
       <div className="flex h-[70px] items-center gap-3">

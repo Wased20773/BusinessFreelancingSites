@@ -24,6 +24,9 @@ import { formatDateTime } from "@/lib/time/formatDateTime";
 import { useSession } from "next-auth/react";
 import PageHeading from "@/components/ui/PageHeader";
 import PageState from "@/components/ui/PageState";
+import DetailPageSkeleton from "@/components/ui/DetailPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 
 export default function UserDetailsPage() {
   const params = useParams<{
@@ -35,7 +38,10 @@ export default function UserDetailsPage() {
   const userId = params.userId;
 
   const [userData, setUserData] = useState<BusinessUserJson | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the member is loading (shows the page skeleton).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [isEdit, setIsEdit] = useState<boolean>(false);
@@ -286,7 +292,7 @@ export default function UserDetailsPage() {
 
   useEffect(() => {
     async function getUserData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -349,7 +355,7 @@ export default function UserDetailsPage() {
           setErrorMessage("Failed to load business user data.");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -371,6 +377,16 @@ export default function UserDetailsPage() {
     return pageState;
   }
 
+  if (isFetching) {
+    return (
+      <DetailPageSkeleton
+        label="Loading member"
+        sections={[4, 1, 2]}
+        showDanger
+      />
+    );
+  }
+
   if (errorMessage && !userData) {
     return <p className="p-5">{errorMessage}</p>;
   }
@@ -380,7 +396,8 @@ export default function UserDetailsPage() {
   }
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       className="max-w-[1000px] mx-auto p-5 pt-0"
       aria-labelledby="user-details-heading"
     >
@@ -722,6 +739,6 @@ export default function UserDetailsPage() {
           {errorMessage}
         </p>
       )}
-    </section>
+    </motion.section>
   );
 }

@@ -9,6 +9,9 @@ code-path:
   - /platform/src/components/ui/locations/LocationPageSkeleton.tsx
   - /platform/src/components/ui/overview/OverviewSkeleton.tsx
   - /platform/src/components/ui/ListCard.tsx
+  - /platform/src/components/ui/DetailPageSkeleton.tsx
+  - /platform/src/components/ui/billing/BillingPageSkeleton.tsx
+  - /platform/src/components/ui/businesses/WorkspaceOverviewSkeleton.tsx
   - /platform/src/app/page.tsx
 
 last-verified: 2026-11-14
@@ -72,6 +75,8 @@ Skeletons should match the size and layout of the real content, so the page does
 | `listRowMotion(index)` | Spread onto `motion.li` or `motion.tr`. Rows fade and rise in one after another (capped at 8 rows, so long lists still appear quickly) and slide to their new spot when reordered. |
 | `fadeInMotion` | Fades a section in once its data has loaded. |
 | `cardMotion(index)` | Spread onto a dashboard card. Cards fade and rise in one after another. |
+| `DetailPageSkeleton` | Placeholder for a page showing one record: heading, a card split into sections of label/value pairs (`sections={[4, 1, 2]}`), and an optional red danger zone. |
+| `motion.create(Link)` | Use for list rows that are links (API keys, members), so the `Link` itself animates. |
 | `FormPageSkeleton` | Placeholder for an edit or create page: heading, a form card built from a list of field kinds (`input`, `textarea`, `checkbox`, `image`, `rows`, `day`), and the button bar. |
 
 Pages that load their data in the browser keep two separate flags:
@@ -91,6 +96,15 @@ Pages that load their data in the browser keep two separate flags:
 - **Contacts and Socials**: skeleton rows on the list, rows animate in (`ListCard` takes an `index`), and form skeletons on the edit and create pages. The create pages have nothing to load, so their skeleton covers the session check.
 - **Location**: a page skeleton (`LocationPageSkeleton`) on the first load only, so the page stays on screen while it reloads after business days are turned on or removed. Form skeletons on Edit Location and Edit Business Days (the `day` field kind), then the form fades in.
 - **Overview**: the heading shows straight away, the cards are skeletons (`OverviewSkeleton`), then the four cards fade and rise in one after another (`cardMotion`).
+
+- **Workspace**:
+  - **Overview**: the heading shows straight away, then the Business and Workspace Summary cards come in one after another (`WorkspaceOverviewSkeleton`).
+  - **API Keys and Members**: the header and actions show straight away; the list and its count are skeletons, then the rows come in one after another. Rows added by Members' "Load More" stagger as their own group.
+  - **API key and member details**: a details skeleton (`DetailPageSkeleton`) including the red danger zone, then the page fades in.
+  - **Billing**: a skeleton of the current plan, the four plans, and location slots (`BillingPageSkeleton`), then those three come in one after another.
+  - **Settings**: a details skeleton, then the page fades in.
+  - **Create API Key, Add Member, and Access Levels**: nothing to load, so a skeleton covers the session check. The "key created" screen and each Add Member search result fade in.
+  - **API Reference** is static and has nothing to animate.
 
 ### Next
 

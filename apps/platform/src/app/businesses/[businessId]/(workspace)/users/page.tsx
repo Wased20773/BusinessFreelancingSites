@@ -18,6 +18,11 @@ import { getBusinessUsers } from "@/lib/api/users";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import Skeleton, { SkeletonRows } from "@/components/ui/Skeleton";
+import { motion } from "motion/react";
+import { listRowMotion } from "@/components/motion/listMotion";
+
+const MotionLink = motion.create(Link);
 import { Star } from "lucide-react";
 
 const USERS_PER_PAGE = 5;
@@ -33,7 +38,10 @@ export default function UsersPage() {
     [],
   );
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the members are loading (shows the skeleton rows).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [visibleUsers, setVisibleUsers] = useState<number>(USERS_PER_PAGE);
 
@@ -46,7 +54,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     async function getBusinessUserData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -88,7 +96,7 @@ export default function UsersPage() {
           setErrorMessage("Failed to load business user data.");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -175,14 +183,20 @@ export default function UsersPage() {
               </p>
             </div>
 
-            <span className="rounded-lg bg-gray-100 px-2.5 py-1 text-sm tabular-nums text-gray-700">
-              {businessUserData.length}{" "}
-              {businessUserData.length === 1 ? "member" : "members"}
-            </span>
+            {isFetching ? (
+              <Skeleton className="h-7 w-24 rounded-lg" />
+            ) : (
+              <span className="rounded-lg bg-gray-100 px-2.5 py-1 text-sm tabular-nums text-gray-700">
+                {businessUserData.length}{" "}
+                {businessUserData.length === 1 ? "member" : "members"}
+              </span>
+            )}
           </div>
 
           <div className="px-5 py-5 sm:px-6">
-            {businessUserData.length === 0 ? (
+            {isFetching ? (
+              <SkeletonRows rows={3} label="Loading members" />
+            ) : businessUserData.length === 0 ? (
               <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-5 py-8 text-center">
                 <p className="font-semibold text-gray-900">No members found</p>
 
@@ -194,7 +208,9 @@ export default function UsersPage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {businessUserData.slice(0, visibleUsers).map((businessUser) => {
+                {businessUserData.slice(0, visibleUsers).map((businessUser, index) => {
+                  // Rows from "Load More" stagger as their own group, not after the earlier ones.
+                  const rowMotion = listRowMotion(index % USERS_PER_PAGE);
                   const memberContent = (
                     <>
                       <Image
@@ -250,8 +266,9 @@ export default function UsersPage() {
 
                   if (canManageMembers) {
                     return (
-                      <Link
+                      <MotionLink
                         key={businessUser.id}
+                        {...rowMotion}
                         href={`/businesses/${businessId}/users/${
                           businessUser.user?.id || "not-found"
                         }`}
@@ -259,17 +276,18 @@ export default function UsersPage() {
                         onClick={() => setIsLoading(true)}
                       >
                         {memberContent}
-                      </Link>
+                      </MotionLink>
                     );
                   }
 
                   return (
-                    <div
+                    <motion.div
                       key={businessUser.id}
+                      {...rowMotion}
                       className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border px-3 py-2 ${rowStyle}`}
                     >
                       {memberContent}
-                    </div>
+                    </motion.div>
                   );
                 })}
 
