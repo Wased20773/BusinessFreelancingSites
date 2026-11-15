@@ -238,11 +238,13 @@ model Location {
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  days       LocationDay[]
-  categories Category[]
-  contacts   Contact[]
-  socials    Social[]
-  items      Item[]
+  days        LocationDay[]
+  categories  Category[]
+  contacts    Contact[]
+  socials     Social[]
+  items       Item[]
+  addOnGroups AddOnGroup[]
+  addOns      AddOn[]
 
   @@unique([businessId, address])
   @@index([businessId])
@@ -352,28 +354,33 @@ model Social {
 }
 
 model Item {
-  id               String   @id @default(uuid())
-  locationId       String
-  categoryId       String
-  name             String
-  description      String?
-  containsList     String[]
-  calories         Int?
-  price            Decimal  @db.Decimal(10, 2)
-  order            Int      @default(1)
-  isAvailable      Boolean  @default(true)
-  slug             String
-  imageKey         String?
-  originalImageKey String?
-  syncGroupId      String?
-  isSynced         Boolean  @default(false)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  locationId         String
+  categoryId         String
+  name               String
+  description        String?
+  containsList       String[]
+  calories           Int?
+  price              Decimal  @db.Decimal(10, 2)
+  order              Int      @default(1)
+  isAvailable        Boolean  @default(true)
+  // Which add-on links are used (Both stay saved): 
+  // - false = ItemAddOn (one list for the item)
+  // - true = ItemOptionAddOn (a list per option)
+  addOnsVaryByOption Boolean  @default(false)
+  slug               String
+  imageKey           String?
+  originalImageKey   String?
+  syncGroupId        String?
+  isSynced           Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
   category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   options ItemOption[]
+  addOns  ItemAddOn[]
 
   @@unique([locationId, slug])
   @@index([locationId])
@@ -395,7 +402,96 @@ model ItemOption {
 
   item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
+  addOns ItemOptionAddOn[]
+
   @@unique([itemId, name])
   @@index([itemId])
   @@index([syncGroupId])
+}
+
+/**
+ * Add-ons: extras that add to an item's price (toppings, sauces, gift wrap).
+ * Each location has groups of add-ons; items pick the ones that apply.
+ * See apps/platform/docs/add-ons-plan.md.
+ */
+
+model AddOnGroup {
+  id          String   @id @default(uuid())
+  locationId  String
+  name        String
+  order       Int      @default(1)
+  syncGroupId String?
+  isSynced    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  addOns AddOn[]
+
+  @@unique([locationId, name])
+  @@index([locationId])
+  @@index([syncGroupId])
+}
+
+model AddOn {
+  id          String   @id @default(uuid())
+  locationId  String
+  groupId     String
+  name        String
+  description String?
+  calories    Int?
+  // The default price. An item can set its own on its link.
+  price       Decimal  @db.Decimal(10, 2)
+  order       Int      @default(1)
+  isAvailable Boolean  @default(true)
+  syncGroupId String?
+  isSynced    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  location Location   @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  group    AddOnGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  itemLinks   ItemAddOn[]
+  optionLinks ItemOptionAddOn[]
+
+  @@unique([groupId, name])
+  @@index([locationId])
+  @@index([groupId])
+  @@index([syncGroupId])
+}
+
+// An add-on used by the whole item (when addOnsVaryByOption is false).
+model ItemAddOn {
+  itemId    String
+  addOnId   String
+  // null = use the add-on's default price.
+  price     Decimal? @db.Decimal(10, 2)
+  order     Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  item  Item  @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  addOn AddOn @relation(fields: [addOnId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, addOnId])
+  @@index([addOnId])
+}
+
+// An add-on used by one option (when addOnsVaryByOption is true).
+model ItemOptionAddOn {
+  optionId  String
+  addOnId   String
+  // null = use the add-on's default price.
+  price     Decimal? @db.Decimal(10, 2)
+  order     Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  option ItemOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  addOn  AddOn      @relation(fields: [addOnId], references: [id], onDelete: Cascade)
+
+  @@id([optionId, addOnId])
+  @@index([addOnId])
 }
