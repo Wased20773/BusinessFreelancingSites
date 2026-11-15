@@ -22,7 +22,7 @@ export default function SideBar({
   const pathname = usePathname();
 
   return (
-    <aside className="hidden h-screen w-[250px] grid-rows-[auto_minmax(0,1fr)_auto] md:grid bg-gray-50 border-r-[0.1rem] border-gray-300">
+    <aside className="hidden h-screen supports-[height:100dvh]:h-dvh w-[250px] grid-rows-[auto_minmax(0,1fr)_auto] md:grid bg-gray-50 border-r-[0.1rem] border-gray-300">
       {variant === "workspace" && businesses && (
         <>
           {/* Business Select */}

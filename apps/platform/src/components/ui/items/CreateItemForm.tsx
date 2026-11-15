@@ -170,6 +170,10 @@ export default function CreateItemForm({
                   <div className="relative mt-3 h-[400px] w-full overflow-hidden rounded-lg bg-black">
                     <Cropper
                       image={cropImageSrc}
+                      // Load the image with CORS, the same way the crop step does.
+                      // A saved image comes from S3 (another domain); without this
+                      // the browser may reuse a non-CORS copy and the crop fails.
+                      mediaProps={{ crossOrigin: "anonymous" }}
                       crop={crop}
                       zoom={zoom}
                       aspect={1}

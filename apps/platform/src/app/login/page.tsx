@@ -17,7 +17,7 @@ export default async function Login() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8 sm:px-6 sm:py-12">
+    <main className="flex min-h-screen supports-[height:100dvh]:min-h-dvh items-center justify-center bg-slate-50 px-4 py-8 sm:px-6 sm:py-12">
       <section
         aria-labelledby="login-heading"
         className="grid w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-xl shadow-gray-200 md:min-h-[520px] md:grid-cols-2"

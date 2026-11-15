@@ -105,6 +105,13 @@ fieldset {
   display: flex;
   flex-direction: column;
   gap: 15px;
+
+  /*
+   * Browsers give fieldsets `min-inline-size: min-content`, so a fieldset never
+   * gets narrower than its content (e.g. a "youtube.com/@" prefix next to an
+   * input). On phones that made it wider than its card, and the card cut it off.
+   */
+  min-width: 0;
 }
 
 legend {

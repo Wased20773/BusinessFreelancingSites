@@ -6,10 +6,12 @@ import { formatDateTime } from "@/lib/time/formatDateTime";
 import axios from "axios";
 import Image from "next/image";
 import { SubmitEvent, useEffect, useState } from "react";
+import DetailPageSkeleton from "@/components/ui/DetailPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { UserJson } from "@/types/types";
-import LoadingBar from "@/components/ui/LoadingBar";
 import Divider from "@/components/layout/Divider";
 
 export default function AccountPage() {
@@ -245,7 +247,15 @@ export default function AccountPage() {
   }
 
   if (isLoading) {
-    return <LoadingBar />;
+    return (
+      <DetailPageSkeleton
+        label="Loading account"
+        sections={[1, 1, 1]}
+        hasBackLink={false}
+        showAvatar
+        showDanger
+      />
+    );
   }
 
   if (errorMessage) {
@@ -257,7 +267,8 @@ export default function AccountPage() {
   }
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       className="mx-auto max-w-[1000px] p-5"
       aria-labelledby="account-heading"
     >
@@ -526,6 +537,6 @@ export default function AccountPage() {
           </button>
         </div>
       </section>
-    </section>
+    </motion.section>
   );
 }

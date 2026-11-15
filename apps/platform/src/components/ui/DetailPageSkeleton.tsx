@@ -13,6 +13,7 @@ export default function DetailPageSkeleton({
   sections,
   hasBackLink = true,
   showDanger = false,
+  showAvatar = false,
   maxWidthClass = "max-w-[1000px]",
 }: {
   label: string;
@@ -20,6 +21,8 @@ export default function DetailPageSkeleton({
   // true: the page has a back arrow heading (PageHeading); false: a plain title.
   hasBackLink?: boolean;
   showDanger?: boolean;
+  // A profile picture, name, and email above the sections (the Account page).
+  showAvatar?: boolean;
   maxWidthClass?: string;
 }) {
   return (
@@ -40,6 +43,16 @@ export default function DetailPageSkeleton({
       <Skeleton className="mt-3 h-4 w-80 max-w-full" />
 
       <div className="mt-5 divide-y divide-gray-200 rounded-2xl border border-gray-200 bg-white shadow-sm">
+        {showAvatar && (
+          <div className="flex items-center gap-4 p-5 sm:p-6">
+            <Skeleton className="size-16 shrink-0 rounded-full" />
+            <div className="min-w-0 space-y-2">
+              <Skeleton className="h-5 w-40 max-w-full" />
+              <Skeleton className="h-4 w-52 max-w-full" />
+            </div>
+          </div>
+        )}
+
         {sections.map((rows, sectionIndex) => (
           <div key={sectionIndex} className="space-y-4 p-5 sm:p-6">
             <Skeleton className="h-6 w-44" />

@@ -117,8 +117,11 @@ export default function WorkspaceLayoutClient({
 
   const navLinks = workspaceLinks(businessId);
 
+  // The layout is exactly the visible screen height (dvh). 100vh is taller
+  // than the screen on phones while the address bar shows, which let the whole
+  // page scroll one extra step and take the header with it. vh is the fallback.
   return (
-    <div className="h-screen grid grid-rows-[auto_1fr] md:grid-cols-[auto_1fr] md:grid-rows-[auto_1fr]">
+    <div className="h-screen supports-[height:100dvh]:h-dvh grid grid-cols-1 grid-rows-[auto_1fr] md:grid-cols-[auto_minmax(0,1fr)] md:grid-rows-[auto_1fr]">
       <div className="relative z-20 md:static md:z-auto md:col-start-1 md:row-start-1 md:row-span-2">
         <SideBar
           variant="workspace"
@@ -155,7 +158,13 @@ export default function WorkspaceLayoutClient({
         <EnterDashboardDropdown businessId={businessId} locations={locations} />
       </div>
 
-      <main className="min-h-0 overflow-y-auto">
+      {/* The content column may shrink below its content (minmax(0, 1fr) and
+          min-w-0), so wide content like a table scrolls inside its own box
+          instead of stretching the whole page sideways on phones.
+          relative: absolutely positioned elements in a page (like sr-only
+          labels) are placed inside main, so they scroll with it instead of
+          making the whole document taller and scrolling the header away. */}
+      <main className="relative min-h-0 min-w-0 overflow-y-auto">
         {/* The Billing page already explains it in the Current Plan card. */}
         {payerLeftNotice && !pathname.endsWith("/billing") && (
           <PayerLeftBanner notice={payerLeftNotice} businessId={businessId} />

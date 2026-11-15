@@ -1,6 +1,8 @@
 import ArrowIcon from "@/components/icons/arrow";
 import { BusinessOwnerShip } from "@/types/types";
 import { Dispatch, SetStateAction } from "react";
+import { motion } from "motion/react";
+import { cardMotion } from "@/components/motion/listMotion";
 
 type BusinessListProps = {
   businesses: BusinessOwnerShip[];
@@ -35,8 +37,12 @@ export default function BusinessList({
         /* ########################### */
         <section>
           <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {businesses.map((businessUser) => (
-              <li key={businessUser.id}>
+            {businesses.map((businessUser, index) => (
+              <motion.li
+                key={businessUser.id}
+                layout="position"
+                {...cardMotion(index)}
+              >
                 <button
                   type="button"
                   onClick={() =>
@@ -65,7 +71,7 @@ export default function BusinessList({
                     </p>
                   </div>
                 </button>
-              </li>
+              </motion.li>
             ))}
           </ul>
         </section>

@@ -1,7 +1,10 @@
 "use client";
 
-import LoadingBar from "@/components/ui/LoadingBar";
+import AccountBillingSkeleton from "@/components/ui/billing/AccountBillingSkeleton";
+import { motion } from "motion/react";
+import { cardMotion, listRowMotion } from "@/components/motion/listMotion";
 import PaymentMethodsCard from "@/components/ui/billing/PaymentMethodsCard";
+import PaymentHistory from "@/components/ui/billing/PaymentHistory";
 import {
   getAccountBilling,
   getBillingPrices,
@@ -14,7 +17,7 @@ import { PLANS_NAMES } from "@/lib/billing/plans";
 import { formatDateTime } from "@/lib/time/formatDateTime";
 import type { AccountBillingJson, BillingPricesJson } from "@/types/types";
 import axios from "axios";
-import { ExternalLink, Receipt, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -144,7 +147,7 @@ export default function AccountBillingPage() {
     void loadBilling();
   }, []);
 
-  if (isLoading) return <LoadingBar />;
+  if (isLoading) return <AccountBillingSkeleton />;
 
   if (errorMessage || !billing || !prices) {
     return (
@@ -174,7 +177,11 @@ export default function AccountBillingPage() {
 
       <div className="space-y-5">
         {/* Total spent */}
-        <section aria-labelledby="total-spent-heading" className={CARD}>
+        <motion.section
+          {...cardMotion(0)}
+          aria-labelledby="total-spent-heading"
+          className={CARD}
+        >
           <h2
             id="total-spent-heading"
             className="text-sm font-medium text-gray-500"
@@ -196,10 +203,14 @@ export default function AccountBillingPage() {
               before your card on your next payments.
             </p>
           )}
-        </section>
+        </motion.section>
 
         {/* Subscriptions this user pays for, with their next renewal */}
-        <section aria-labelledby="subscriptions-heading" className={CARD}>
+        <motion.section
+          {...cardMotion(1)}
+          aria-labelledby="subscriptions-heading"
+          className={CARD}
+        >
           <h2
             id="subscriptions-heading"
             className="text-base font-semibold text-gray-900"
@@ -213,15 +224,16 @@ export default function AccountBillingPage() {
             </p>
           ) : (
             <ul className="mt-3 divide-y divide-gray-200">
-              {billing.subscriptions.map((subscription) => {
+              {billing.subscriptions.map((subscription, index) => {
                 const periodEnd = formatDateTime(
                   subscription.currentPeriodEnd,
                   "date",
                 );
 
                 return (
-                  <li
+                  <motion.li
                     key={subscription.businessId}
+                    {...listRowMotion(index)}
                     className="flex flex-wrap items-center justify-between gap-3 py-3"
                   >
                     <div className="min-w-0">
@@ -320,116 +332,28 @@ export default function AccountBillingPage() {
                         </button>
                       </div>
                     )}
-                  </li>
+                  </motion.li>
                 );
               })}
             </ul>
           )}
-        </section>
+        </motion.section>
 
-        {/* Every payment, newest first */}
-        <section aria-labelledby="payment-history-heading" className={CARD}>
-          <h2
-            id="payment-history-heading"
-            className="text-base font-semibold text-gray-900"
-          >
-            Payment history
-          </h2>
+        {/* Every payment, newest first, 10 per page with date filters */}
+        <motion.section
+          {...cardMotion(2)}
+          aria-labelledby="payment-history-heading"
+          className={CARD}
+        >
+          <PaymentHistory payments={billing.payments} />
+        </motion.section>
 
-          {billing.payments.length === 0 ? (
-            <p className="mt-2 text-sm text-gray-600">No payments yet.</p>
-          ) : (
-            <div className="mt-3 overflow-x-auto">
-              <table className="w-full min-w-[560px] text-left text-sm">
-                <thead className="border-b border-gray-200 text-gray-500">
-                  <tr>
-                    <th scope="col" className="py-2 pr-3 font-medium">
-                      Date
-                    </th>
-                    <th scope="col" className="py-2 pr-3 font-medium">
-                      Business
-                    </th>
-                    <th scope="col" className="py-2 pr-3 font-medium">
-                      Description
-                    </th>
-                    <th
-                      scope="col"
-                      className="py-2 pr-3 text-right font-medium"
-                    >
-                      Amount
-                    </th>
-                    <th scope="col" className="py-2 text-right font-medium">
-                      <span className="sr-only">Receipt</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {billing.payments.map((payment) => (
-                    <tr key={payment.id}>
-                      <td className="py-2 pr-3 whitespace-nowrap text-gray-600">
-                        {formatDateTime(payment.paidAt, "date")}
-                      </td>
-                      <td className="py-2 pr-3 text-gray-900">
-                        {payment.businessName ?? (
-                          <span className="italic text-gray-400">
-                            Deleted business
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2 pr-3 text-gray-600">
-                        {payment.description}
-                        {payment.kind === "credit" ? (
-                          <span className="block text-xs text-gray-400">
-                            Unused time from a plan change
-                          </span>
-                        ) : (
-                          payment.paidFromCredit > 0 && (
-                            <span className="block text-xs text-emerald-600">
-                              {payment.paidFromCredit >= payment.amount
-                                ? "Paid from credit"
-                                : `${formatPrice({
-                                    amount: payment.paidFromCredit,
-                                    currency: payment.currency,
-                                  })} from credit`}
-                            </span>
-                          )
-                        )}
-                      </td>
-                      <td
-                        className={`py-2 pr-3 text-right font-medium whitespace-nowrap ${
-                          payment.kind === "credit"
-                            ? "text-emerald-600"
-                            : "text-gray-900"
-                        }`}
-                      >
-                        {formatPrice(payment)}
-                      </td>
-                      <td className="py-2 text-right">
-                        {payment.receiptUrl && (
-                          <a
-                            href={payment.receiptUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-sky-600 hover:underline"
-                          >
-                            <Receipt size={14} />
-                            Receipt
-                            <ExternalLink size={12} />
-                          </a>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
-        <PaymentMethodsCard
-          paymentMethods={billing.paymentMethods}
-          onChanged={refreshBilling}
-        />
+        <motion.div {...cardMotion(3)}>
+          <PaymentMethodsCard
+            paymentMethods={billing.paymentMethods}
+            onChanged={refreshBilling}
+          />
+        </motion.div>
       </div>
     </section>
   );

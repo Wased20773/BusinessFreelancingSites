@@ -187,6 +187,31 @@ This approach provides:
 - No permanent public URLs
 - Stable object keys
 
+### Bucket CORS
+
+Re-cropping a saved image (an item image or the business image) loads the original from its presigned URL into a canvas in the browser. A canvas can only read an image from another domain when that domain allows it with CORS, so the bucket needs a CORS rule that allows `GET` from the platform. Without it, the crop fails with "Failed to load image." Picking a new file doesn't need CORS, because that image is a local `blob:` URL.
+
+Set it in the S3 console under **Bucket → Permissions → Cross-origin resource sharing (CORS)**:
+
+```json
+[
+  {
+    "AllowedHeaders": [],
+    "AllowedMethods": ["GET"],
+    "AllowedOrigins": [
+      "http://localhost:3000",
+      "https://<your-ngrok-domain>.ngrok-free.dev"
+    ],
+    "ExposeHeaders": [],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+Add the live platform domain to `AllowedOrigins` before launch. Uploads and deletes don't need CORS, because they go through the backend.
+
+The croppers (`react-easy-crop`) load the image with `crossOrigin="anonymous"` too, the same way the crop step does. Otherwise the browser can reuse a cached copy loaded without CORS, and the crop fails even with the rule in place.
+
 ## Supported Upload Types
 
 ### Accepted Upload Types

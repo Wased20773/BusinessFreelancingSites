@@ -12,6 +12,8 @@ code-path:
   - /platform/src/components/ui/DetailPageSkeleton.tsx
   - /platform/src/components/ui/billing/BillingPageSkeleton.tsx
   - /platform/src/components/ui/businesses/WorkspaceOverviewSkeleton.tsx
+  - /platform/src/components/ui/businesses/BusinessListSkeleton.tsx
+  - /platform/src/components/ui/billing/AccountBillingSkeleton.tsx
   - /platform/src/app/page.tsx
 
 last-verified: 2026-11-14
@@ -105,6 +107,10 @@ Pages that load their data in the browser keep two separate flags:
   - **Settings**: a details skeleton, then the page fades in.
   - **Create API Key, Add Member, and Access Levels**: nothing to load, so a skeleton covers the session check. The "key created" screen and each Add Member search result fade in.
   - **API Reference** is static and has nothing to animate.
+- **Your businesses** (`/businesses`): the account menu, heading, and Create Business button show straight away; the business cards are skeletons (`BusinessListSkeleton`), then come in one after another. Picking a business shows the loading bar while the session switches to it.
+- **Account settings**:
+  - **Account**: a details skeleton with the profile picture (`showAvatar`), then the page fades in.
+  - **Billing**: a skeleton of all four cards (`AccountBillingSkeleton`), then total spent, subscriptions, payment history, and payment methods come in one after another. Subscription and payment rows come in one after another, and the rest slide up when a subscription is removed from the list.
 
 ### Next
 

@@ -10,6 +10,8 @@ import CreateBusinessModal from "@/components/ui/modal/CreateBusinessModal";
 import { BusinessOwnerShip } from "@/types/types";
 import BusinessList from "@/components/ui/businesses/BusinessList";
 import AccountDropdown from "@/components/ui/dropdown/AccountDropdown";
+import BusinessListSkeleton from "@/components/ui/businesses/BusinessListSkeleton";
+import LoadingBar from "@/components/ui/LoadingBar";
 
 type CreateBusinessResponse = {
   message: string;
@@ -30,7 +32,10 @@ type CreateBusinessResponse = {
 export default function BusinessesPage() {
   const [businesses, setBusinesses] = useState<BusinessOwnerShip[]>([]);
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the businesses are loading (shows the card skeletons).
+  // isLoading: a business was picked and its workspace is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isCreatingBusiness, setIsCreatingBusiness] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -43,11 +48,20 @@ export default function BusinessesPage() {
   const router = useRouter();
 
   async function handleBusinessSelect(businessId: string) {
-    await update({
-      businessId,
-    });
+    setIsLoading(true);
 
-    router.push(`/businesses/${businessId}`);
+    try {
+      await update({
+        businessId,
+      });
+
+      router.push(`/businesses/${businessId}`);
+    } catch (error) {
+      // Put the list back so they can try again.
+      console.error("Failed to open the business:", error);
+      toast.error("Failed to open the business. Try again.");
+      setIsLoading(false);
+    }
   }
 
   async function getBusinesses() {
@@ -66,7 +80,7 @@ export default function BusinessesPage() {
         setErrorMessage("Failed to load your businesses.");
       }
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
     }
   }
 
@@ -88,7 +102,7 @@ export default function BusinessesPage() {
         }
       })
       .finally(() => {
-        setIsLoading(false);
+        setIsFetching(false);
       });
   }, []);
 
@@ -182,13 +196,7 @@ export default function BusinessesPage() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <main className="max-w-[1000px] mx-auto px-5 py-10">
-        <p>Loading businesses...</p>
-      </main>
-    );
-  }
+  if (isLoading) return <LoadingBar />;
 
   if (errorMessage) {
     return (
@@ -236,12 +244,16 @@ export default function BusinessesPage() {
           </div>
         </div>
         <div className="px-3 py-2">
-          <BusinessList
-            businesses={businesses}
-            setCreateErrorMessage={setCreateErrorMessage}
-            setIsCreatingBusiness={setIsCreatingBusiness}
-            handleBusinessSelect={handleBusinessSelect}
-          />
+          {isFetching ? (
+            <BusinessListSkeleton />
+          ) : (
+            <BusinessList
+              businesses={businesses}
+              setCreateErrorMessage={setCreateErrorMessage}
+              setIsCreatingBusiness={setIsCreatingBusiness}
+              handleBusinessSelect={handleBusinessSelect}
+            />
+          )}
         </div>
       </div>
       {isCreatingBusiness && (
