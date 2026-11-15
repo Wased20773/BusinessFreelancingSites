@@ -1,20 +1,15 @@
 import ArrowIcon from "@/components/icons/arrow";
 import { BusinessOwnerShip } from "@/types/types";
-import { Dispatch, SetStateAction } from "react";
 import { motion } from "motion/react";
 import { cardMotion } from "@/components/motion/listMotion";
 
 type BusinessListProps = {
   businesses: BusinessOwnerShip[];
-  setCreateErrorMessage: Dispatch<SetStateAction<string | null>>;
-  setIsCreatingBusiness: Dispatch<SetStateAction<boolean>>;
   handleBusinessSelect(businessId: string): Promise<void>;
 };
 
 export default function BusinessList({
   businesses,
-  setCreateErrorMessage,
-  setIsCreatingBusiness,
   handleBusinessSelect,
 }: BusinessListProps) {
   return (

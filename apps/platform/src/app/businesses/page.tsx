@@ -3,7 +3,6 @@
 import axios from "axios";
 import { SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
-import ArrowIcon from "@/components/icons/arrow";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import CreateBusinessModal from "@/components/ui/modal/CreateBusinessModal";
@@ -249,8 +248,6 @@ export default function BusinessesPage() {
           ) : (
             <BusinessList
               businesses={businesses}
-              setCreateErrorMessage={setCreateErrorMessage}
-              setIsCreatingBusiness={setIsCreatingBusiness}
               handleBusinessSelect={handleBusinessSelect}
             />
           )}
