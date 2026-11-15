@@ -2,6 +2,8 @@ import EditIcon from "@/components/icons/edit.svg";
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import type { Dispatch, SetStateAction } from "react";
+import { motion } from "motion/react";
+import { listRowMotion } from "@/components/motion/listMotion";
 
 type ListCardProps = {
   variant: string;
@@ -15,6 +17,8 @@ type ListCardProps = {
     isActive: boolean;
   };
   setIsLoading: Dispatch<SetStateAction<boolean>>;
+  // Position in the list, so rows animate in one after another.
+  index?: number;
 };
 
 export default function ListCard({
@@ -27,6 +31,7 @@ export default function ListCard({
   isLast,
   status,
   setIsLoading,
+  index = 0,
 }: ListCardProps) {
   const mobileContent = (
     <>
@@ -70,7 +75,8 @@ export default function ListCard({
   return (
     <>
       {variant === "mobile" && (
-        <li
+        <motion.li
+          {...listRowMotion(index)}
           className={isLast ? "border-b border-gray-200" : undefined}
           key={id}
         >
@@ -88,11 +94,11 @@ export default function ListCard({
               {mobileContent}
             </div>
           )}
-        </li>
+        </motion.li>
       )}
 
       {variant === "desktop" && (
-        <tr className="text-gray-700">
+        <motion.tr {...listRowMotion(index)} className="text-gray-700">
           {status ? (
             <>
               <th scope="row" className="px-3 py-2 font-normal">
@@ -140,7 +146,7 @@ export default function ListCard({
               </Link>
             </td>
           )}
-        </tr>
+        </motion.tr>
       )}
     </>
   );

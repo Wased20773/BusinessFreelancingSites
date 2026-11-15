@@ -3,6 +3,7 @@ import PersonalIcon from "@/components/icons/placeholder-account-black.svg";
 import type { ContactJson } from "@/types/types";
 import type { Dispatch, SetStateAction } from "react";
 import ListCard from "../ListCard";
+import { SkeletonRows } from "../Skeleton";
 
 type ContactsListParams = {
   isLoading: boolean;
@@ -22,9 +23,7 @@ export default function ContactsList({
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       {isLoading ? (
-        <p className="px-5 py-8 text-sm text-gray-600 sm:px-6">
-          Loading contacts...
-        </p>
+        <SkeletonRows label="Loading contacts" />
       ) : errorMessage ? (
         <p role="alert" className="px-5 py-8 text-sm text-red-700 sm:px-6">
           {errorMessage}
@@ -45,6 +44,7 @@ export default function ContactsList({
             {contactData.map((contact, idx) => (
               <ListCard
                 key={contact.id}
+                index={idx}
                 variant="mobile"
                 id={contact.id}
                 path={canManage ? `contacts/${contact.id}` : undefined}
@@ -76,9 +76,10 @@ export default function ContactsList({
               </thead>
 
               <tbody className="divide-y divide-gray-200">
-                {contactData.map((contact) => (
+                {contactData.map((contact, idx) => (
                   <ListCard
                     key={contact.id}
+                    index={idx}
                     variant="desktop"
                     id={contact.id}
                     path={canManage ? `contacts/${contact.id}` : undefined}

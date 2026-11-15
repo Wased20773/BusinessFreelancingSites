@@ -13,6 +13,9 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import LocationPageSkeleton from "@/components/ui/locations/LocationPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 
 const MONDAY_SUNDAY = [
   "Monday",
@@ -41,7 +44,10 @@ export default function LocationPage() {
   const [locationData, setLocationData] = useState<LocationJson | null>(null);
   const [locationCount, setLocationCount] = useState<number>(0);
   const [isActivatingDays, setIsActivatingDays] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the location is loading the first time (shows the page skeleton).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
@@ -59,7 +65,7 @@ export default function LocationPage() {
   }, [businessId, locationId, status, canViewLocation]);
 
   async function getLocationData() {
-    setIsLoading(true);
+    setIsFetching(true);
     setErrorMessage(null);
 
     try {
@@ -138,7 +144,7 @@ export default function LocationPage() {
         setErrorMessage("Failed to load location data.");
       }
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
     }
   }
 
@@ -272,6 +278,10 @@ export default function LocationPage() {
     return pageState;
   }
 
+  if (isFetching && !locationData) {
+    return <LocationPageSkeleton />;
+  }
+
   if (errorMessage && !locationData) {
     return (
       <p role="alert" className="p-5">
@@ -285,7 +295,8 @@ export default function LocationPage() {
   }
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       aria-labelledby="location-heading"
       className="max-w-[1000px] mx-auto p-5"
     >
@@ -323,6 +334,6 @@ export default function LocationPage() {
           </p>
         )}
       </div>
-    </section>
+    </motion.section>
   );
 }

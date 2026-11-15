@@ -1,6 +1,7 @@
 import type { SocialJson } from "@/types/types";
 import type { Dispatch, SetStateAction } from "react";
 import ListCard from "../ListCard";
+import { SkeletonRows } from "../Skeleton";
 
 type SocialListParams = {
   socialsData: SocialJson[];
@@ -20,9 +21,7 @@ export default function SocialsList({
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       {isLoading ? (
-        <p className="px-5 py-8 text-sm text-gray-600 sm:px-6">
-          Loading socials...
-        </p>
+        <SkeletonRows label="Loading socials" />
       ) : errorMessage ? (
         <p role="alert" className="px-5 py-8 text-sm text-red-700 sm:px-6">
           {errorMessage}
@@ -43,6 +42,7 @@ export default function SocialsList({
             {socialsData.map((social, idx) => (
               <ListCard
                 key={social.id}
+                index={idx}
                 variant="mobile"
                 id={social.id}
                 path={canManage ? `socials/${social.id}` : undefined}
@@ -74,9 +74,10 @@ export default function SocialsList({
               </thead>
 
               <tbody className="divide-y divide-gray-200">
-                {socialsData.map((social) => (
+                {socialsData.map((social, idx) => (
                   <ListCard
                     key={social.id}
+                    index={idx}
                     variant="desktop"
                     id={social.id}
                     path={canManage ? `socials/${social.id}` : undefined}

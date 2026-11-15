@@ -13,6 +13,9 @@ import ItemsList from "@/components/ui/items/ItemsList";
 import CategoryInfo from "@/components/ui/categories/CategoryInfo";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import CategoryPageSkeleton from "@/components/ui/categories/CategoryPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import PageHeading from "@/components/ui/PageHeader";
 
 export default function CategoryPage() {
@@ -32,7 +35,10 @@ export default function CategoryPage() {
     null,
   );
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the subcategory is loading (shows the page skeleton).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { data: session, status } = useSession();
@@ -47,7 +53,7 @@ export default function CategoryPage() {
 
   useEffect(() => {
     async function getCategoryData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -116,7 +122,7 @@ export default function CategoryPage() {
           setErrorMessage("Failed to load category data.");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -138,6 +144,12 @@ export default function CategoryPage() {
     return pageState;
   }
 
+  if (isFetching) {
+    return (
+      <CategoryPageSkeleton canManage={canManageMenu} showSubcategories={false} />
+    );
+  }
+
   if (errorMessage && !subcategoryData) {
     return (
       <p role="alert" className="p-5">
@@ -151,7 +163,8 @@ export default function CategoryPage() {
   }
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       aria-labelledby="subcategory-heading"
       className="max-w-[1000px] mx-auto p-5 pt-0"
     >
@@ -199,6 +212,6 @@ export default function CategoryPage() {
           canManage={canManageMenu}
         />
       </div>
-    </section>
+    </motion.section>
   );
 }

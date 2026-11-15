@@ -10,6 +10,9 @@ import CreateCategoryForm from "@/components/ui/categories/CreateCategoryForm";
 import { ACCESS_LEVEL } from "@/types/types";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import FormPageSkeleton from "@/components/ui/FormPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import PageHeading from "@/components/ui/PageHeader";
 
 export default function CreateCategoryPage() {
@@ -23,7 +26,10 @@ export default function CreateCategoryPage() {
   const locationId = params.locationId;
   const categoryId = params.categoryId;
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the next subcategory order is loading (shows the form skeleton).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
@@ -43,7 +49,7 @@ export default function CreateCategoryPage() {
 
   useEffect(() => {
     async function getLatestOrder() {
-      setIsLoading(true);
+      setIsFetching(true);
 
       try {
         const response = await axios.get<{
@@ -79,7 +85,7 @@ export default function CreateCategoryPage() {
       } catch (error) {
         console.error("Failed to get latest subcategory order:", error);
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -188,8 +194,19 @@ export default function CreateCategoryPage() {
     return pageState;
   }
 
+  if (isFetching) {
+    return (
+      <FormPageSkeleton
+        label="Loading new subcategory form"
+        fields={["input", "textarea", "checkbox"]}
+        showDelete={false}
+      />
+    );
+  }
+
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       aria-labelledby="create-category-heading"
       className="max-w-[1000px] mx-auto p-5 pt-0"
     >
@@ -207,7 +224,7 @@ export default function CreateCategoryPage() {
           legend="Subcategory info"
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}
-          isLoading={isLoading}
+          isLoading={isCreating}
           errorMessage={errorMessage}
           canSubmit={canSubmit}
           isCreating={isCreating}
@@ -217,6 +234,6 @@ export default function CreateCategoryPage() {
           hasSyncGroup={hasSyncGroup}
         />
       </div>
-    </section>
+    </motion.section>
   );
 }

@@ -24,7 +24,10 @@ export default function ContactsPage() {
   const { data: session, status } = useSession();
 
   const [contactData, setContactData] = useState<ContactJson[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the contacts are loading (shows the skeleton rows).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const accessLevel = session?.user?.accessLevel;
@@ -34,7 +37,7 @@ export default function ContactsPage() {
 
   useEffect(() => {
     async function getContactData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -81,7 +84,7 @@ export default function ContactsPage() {
           setErrorMessage("Failed to load contact data.");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -128,7 +131,7 @@ export default function ContactsPage() {
 
         <section aria-label="Contacts list">
           <ContactsList
-            isLoading={isLoading}
+            isLoading={isFetching}
             contactData={contactData}
             errorMessage={errorMessage}
             canManage={canManageContacts}

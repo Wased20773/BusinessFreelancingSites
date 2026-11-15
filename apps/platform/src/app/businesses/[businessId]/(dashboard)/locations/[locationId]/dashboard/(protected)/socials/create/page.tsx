@@ -3,6 +3,9 @@
 import { ACCESS_LEVEL, type SocialJson } from "@/types/types";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import FormPageSkeleton from "@/components/ui/FormPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import axios from "axios";
 import { type SubmitEvent, useState } from "react";
 import { toast } from "sonner";
@@ -101,6 +104,17 @@ export default function CreateSocialPage() {
     }
   }
 
+  // The session is still being checked.
+  if (status === "loading") {
+    return (
+      <FormPageSkeleton
+        label="Loading new social form"
+        fields={["input", "input", "checkbox"]}
+        showDelete={false}
+      />
+    );
+  }
+
   const pageState = PageState({
     status,
     isLoading,
@@ -115,7 +129,8 @@ export default function CreateSocialPage() {
   }
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       aria-labelledby="create-social-heading"
       className="max-w-[1000px] mx-auto p-5 pt-0"
     >
@@ -147,6 +162,6 @@ export default function CreateSocialPage() {
           errorMessage={errorMessage}
         />
       </div>
-    </section>
+    </motion.section>
   );
 }

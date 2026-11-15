@@ -8,6 +8,9 @@ import { useParams } from "next/navigation";
 import { type Dispatch, type SetStateAction, useState } from "react";
 import { toast } from "sonner";
 import ReorderControls from "../controls/ReorderControls";
+import { motion } from "motion/react";
+import { listRowMotion } from "@/components/motion/listMotion";
+import { SkeletonRows } from "../Skeleton";
 
 type CategoryListParams = {
   isLoading: boolean;
@@ -141,9 +144,10 @@ export default function CategoryList({
       </div>
 
       {isLoading ? (
-        <p className="px-5 py-8 text-sm text-gray-600 sm:px-6">
-          Loading {isSubcategory ? "subcategories" : "categories"}...
-        </p>
+        <SkeletonRows
+          showReorder={canManage}
+          label={`Loading ${isSubcategory ? "subcategories" : "categories"}`}
+        />
       ) : errorMessage ? (
         <p role="alert" className="px-5 py-8 text-sm text-red-700 sm:px-6">
           {errorMessage}
@@ -169,7 +173,7 @@ export default function CategoryList({
               const isLast = idx === categoryData.length - 1;
 
               return (
-                <li key={category.id}>
+                <motion.li key={category.id} {...listRowMotion(idx)}>
                   <div className="flex min-w-0 items-center gap-3 px-3 py-2">
                     {canManage && (
                       <ReorderControls
@@ -205,7 +209,7 @@ export default function CategoryList({
                       </span>
                     </Link>
                   </div>
-                </li>
+                </motion.li>
               );
             })}
           </ul>
@@ -238,7 +242,7 @@ export default function CategoryList({
                   const isLast = idx === categoryData.length - 1;
 
                   return (
-                    <tr key={category.id}>
+                    <motion.tr key={category.id} {...listRowMotion(idx)}>
                       <th
                         scope="row"
                         className="px-3 py-2 font-medium text-gray-900"
@@ -275,7 +279,7 @@ export default function CategoryList({
                           <ChevronIcon direction="right" size={22} />
                         </Link>
                       </td>
-                    </tr>
+                    </motion.tr>
                   );
                 })}
               </tbody>

@@ -4,6 +4,9 @@ import CreateContactForm from "@/components/ui/contacts/CreateContactForm";
 import { ACCESS_LEVEL, type ContactJson } from "@/types/types";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import FormPageSkeleton from "@/components/ui/FormPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
 import { InputEvent, SubmitEvent, useState } from "react";
@@ -139,6 +142,17 @@ export default function CreateContactPage() {
     setCanSubmit(hasPhoneNumber || hasEmail);
   }
 
+  // The session is still being checked.
+  if (status === "loading") {
+    return (
+      <FormPageSkeleton
+        label="Loading new contact form"
+        fields={["input", "input", "checkbox", "checkbox"]}
+        showDelete={false}
+      />
+    );
+  }
+
   const pageState = PageState({
     status,
     isLoading,
@@ -153,7 +167,8 @@ export default function CreateContactPage() {
   }
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       aria-labelledby="create-contact-heading"
       className="max-w-[1000px] mx-auto p-5 pt-0"
     >
@@ -177,6 +192,6 @@ export default function CreateContactPage() {
           errorMessage={errorMessage}
         />
       </div>
-    </section>
+    </motion.section>
   );
 }

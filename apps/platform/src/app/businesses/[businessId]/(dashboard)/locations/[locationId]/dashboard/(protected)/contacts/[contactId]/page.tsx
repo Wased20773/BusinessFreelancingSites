@@ -3,6 +3,9 @@
 import EditContactForm from "@/components/ui/contacts/EditContactForm";
 import PageHeading from "@/components/ui/PageHeader";
 import PageState from "@/components/ui/PageState";
+import FormPageSkeleton from "@/components/ui/FormPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import { ACCESS_LEVEL, type ContactJson } from "@/types/types";
 import axios from "axios";
 import { useSession } from "next-auth/react";
@@ -56,7 +59,10 @@ export default function EditContactPage() {
   const [contactData, setContactData] = useState<ContactJson | null>(null);
   const [draft, setDraft] = useState<ContactDraft | null>(null);
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the contact is loading (shows the form skeleton).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isSynced, setIsSynced] = useState<boolean>(false);
@@ -73,7 +79,7 @@ export default function EditContactPage() {
 
   useEffect(() => {
     async function getContactData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -131,7 +137,7 @@ export default function EditContactPage() {
           setErrorMessage("Failed to load contact data.");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -301,6 +307,15 @@ export default function EditContactPage() {
 
   if (pageState) return pageState;
 
+  if (isFetching) {
+    return (
+      <FormPageSkeleton
+        label="Loading contact"
+        fields={["input", "input", "checkbox", "checkbox"]}
+      />
+    );
+  }
+
   if (errorMessage && !contactData) {
     return (
       <p role="alert" className="p-5">
@@ -327,7 +342,8 @@ export default function EditContactPage() {
   const isProcessing = isSaving || isDeleting;
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       aria-labelledby="edit-contact-heading"
       className="max-w-[1000px] mx-auto p-5 pt-0"
     >
@@ -354,6 +370,6 @@ export default function EditContactPage() {
           handleDelete={handleDelete}
         />
       </div>
-    </section>
+    </motion.section>
   );
 }

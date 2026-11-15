@@ -2,6 +2,9 @@
 
 import PageHeading from "@/components/ui/PageHeader";
 import PageState from "@/components/ui/PageState";
+import FormPageSkeleton from "@/components/ui/FormPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import SocialForm from "@/components/ui/socials/SocialForm";
 import {
   buildSocialUrl,
@@ -31,7 +34,10 @@ export default function EditSocialPage() {
   const socialId = params.socialId;
 
   const [socialData, setSocialData] = useState<SocialJson | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the social is loading (shows the form skeleton).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isSynced, setIsSynced] = useState<boolean>(false);
@@ -53,7 +59,7 @@ export default function EditSocialPage() {
 
   useEffect(() => {
     async function getSocialData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -110,7 +116,7 @@ export default function EditSocialPage() {
           setErrorMessage("Failed to load social data.");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -275,6 +281,15 @@ export default function EditSocialPage() {
 
   if (pageState) return pageState;
 
+  if (isFetching) {
+    return (
+      <FormPageSkeleton
+        label="Loading social"
+        fields={["input", "input", "checkbox"]}
+      />
+    );
+  }
+
   if (errorMessage && !socialData) {
     return (
       <p role="alert" className="p-5">
@@ -290,7 +305,8 @@ export default function EditSocialPage() {
   const isProcessing = isSaving || isDeleting;
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       aria-labelledby="edit-social-heading"
       className="max-w-[1000px] mx-auto p-5 pt-0"
     >
@@ -323,6 +339,6 @@ export default function EditSocialPage() {
           isDeleting={isDeleting}
         />
       </div>
-    </section>
+    </motion.section>
   );
 }

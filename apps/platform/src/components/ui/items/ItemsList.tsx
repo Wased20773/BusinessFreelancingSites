@@ -10,6 +10,8 @@ import { getCategories } from "@/lib/api/categories";
 import ReorderControls from "../controls/ReorderControls";
 import { useParams } from "next/navigation";
 import ChevronIcon from "@/components/icons/chevron";
+import { motion } from "motion/react";
+import { listRowMotion } from "@/components/motion/listMotion";
 
 type ItemsListParams = {
   categoryId: string;
@@ -129,7 +131,7 @@ export default function ItemsList({
               const isLast = idx === (categoryData.items?.length ?? 0) - 1;
 
               return (
-                <li key={item.id}>
+                <motion.li key={item.id} {...listRowMotion(idx)}>
                   <div className="flex min-w-0 items-center gap-3 px-3 py-2">
                     {canManage && (
                       <ReorderControls
@@ -204,7 +206,7 @@ export default function ItemsList({
                       </span>
                     </Link>
                   </div>
-                </li>
+                </motion.li>
               );
             })}
           </ul>
@@ -242,7 +244,7 @@ export default function ItemsList({
                   const isLast = idx === (categoryData.items?.length ?? 0) - 1;
 
                   return (
-                    <tr key={item.id}>
+                    <motion.tr key={item.id} {...listRowMotion(idx)}>
                       <th
                         scope="row"
                         className="px-3 py-2 font-medium text-gray-900"
@@ -320,7 +322,7 @@ export default function ItemsList({
                           )}
                         </Link>
                       </td>
-                    </tr>
+                    </motion.tr>
                   );
                 })}
               </tbody>

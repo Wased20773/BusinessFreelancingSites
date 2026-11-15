@@ -2,6 +2,9 @@
 
 import ArrowIcon from "@/components/icons/arrow";
 import PageState from "@/components/ui/PageState";
+import OverviewSkeleton from "@/components/ui/overview/OverviewSkeleton";
+import { motion } from "motion/react";
+import { cardMotion } from "@/components/motion/listMotion";
 import { formatTime } from "@/lib/time/formatTime";
 import { ACCESS_LEVEL, type DashboardOverviewJson } from "@/types/types";
 import axios from "axios";
@@ -29,7 +32,8 @@ export default function OverviewPage() {
 
   const [overviewData, setOverviewData] =
     useState<DashboardOverviewJson | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // The overview is loading (shows the card skeletons).
+  const [isFetching, setIsFetching] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { data: session, status } = useSession();
@@ -49,7 +53,7 @@ export default function OverviewPage() {
     if (status !== "authenticated" || !canViewOverview) return;
 
     async function getOverviewData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -92,7 +96,7 @@ export default function OverviewPage() {
             : "Failed to load dashboard overview.",
         );
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -101,7 +105,6 @@ export default function OverviewPage() {
 
   const pageState = PageState({
     status,
-    isLoading,
     isDeveloper,
     canView: canViewOverview,
     pageTitle: "Overview",
@@ -110,6 +113,8 @@ export default function OverviewPage() {
   });
 
   if (pageState) return pageState;
+
+  if (isFetching) return <OverviewSkeleton />;
 
   if (errorMessage && !overviewData) {
     return (
@@ -163,7 +168,11 @@ export default function OverviewPage() {
 
       <div className="space-y-6">
         {/* Location and business hours */}
-        <section aria-labelledby="location-heading" className={cardClass}>
+        <motion.section
+          {...cardMotion(0)}
+          aria-labelledby="location-heading"
+          className={cardClass}
+        >
           <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-5 py-4 sm:px-6">
             <div className="min-w-0">
               <h2
@@ -259,11 +268,12 @@ export default function OverviewPage() {
               </div>
             </div>
           )}
-        </section>
+        </motion.section>
 
         {/* Summary cards */}
         <div className="grid gap-4 md:grid-cols-3">
-          <section
+          <motion.section
+            {...cardMotion(1)}
             aria-labelledby="menu-heading"
             className={`${cardClass} flex flex-col`}
           >
@@ -303,9 +313,10 @@ export default function OverviewPage() {
                 </div>
               </div>
             </div>
-          </section>
+          </motion.section>
 
-          <section
+          <motion.section
+            {...cardMotion(2)}
             aria-labelledby="contacts-heading"
             className={`${cardClass} flex flex-col`}
           >
@@ -345,9 +356,10 @@ export default function OverviewPage() {
                 </div>
               </div>
             </div>
-          </section>
+          </motion.section>
 
-          <section
+          <motion.section
+            {...cardMotion(3)}
             aria-labelledby="socials-heading"
             className={`${cardClass} flex flex-col`}
           >
@@ -372,7 +384,7 @@ export default function OverviewPage() {
                 {pluralize(socials.length, "social profile")}
               </p>
             </div>
-          </section>
+          </motion.section>
         </div>
       </div>
     </section>

@@ -20,6 +20,12 @@ export default function PageState({
   pageTitle,
   reason,
 }: PageStateProps) {
+  // Checked first: until the session loads there's no access level, so the
+  // check below would briefly show "unavailable" to users who do have access.
+  if (status === "loading") {
+    return <LoadingBar />;
+  }
+
   if (isDeveloper || !canView) {
     return (
       <section
@@ -39,7 +45,7 @@ export default function PageState({
     );
   }
 
-  if (status === "loading" || isLoading) {
+  if (isLoading) {
     return <LoadingBar />;
   }
 

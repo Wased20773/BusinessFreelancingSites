@@ -9,6 +9,9 @@ import CreateCategoryForm from "@/components/ui/categories/CreateCategoryForm";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import FormPageSkeleton from "@/components/ui/FormPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import PageHeading from "@/components/ui/PageHeader";
 
 export default function CreateCategoryPage() {
@@ -20,7 +23,10 @@ export default function CreateCategoryPage() {
   const businessId = params.businessId;
   const locationId = params.locationId;
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the next category order is loading (shows the form skeleton).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
   const [latestOrder, setLatestOrder] = useState<number>(0);
@@ -37,7 +43,7 @@ export default function CreateCategoryPage() {
 
   useEffect(() => {
     async function getLatestOrder() {
-      setIsLoading(true);
+      setIsFetching(true);
 
       try {
         const response = await axios.get<{
@@ -64,19 +70,19 @@ export default function CreateCategoryPage() {
       } catch (error) {
         console.error("Failed to get latest category order:", error);
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
     if (status === "authenticated" && canCreateCategory) {
       void getLatestOrder();
     }
-  }, [businessId, locationId]);
+  }, [businessId, locationId, status, canCreateCategory]);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    setIsLoading(true);
+    setIsCreating(true);
     setErrorMessage(null);
 
     const form = event.currentTarget;
@@ -96,12 +102,11 @@ export default function CreateCategoryPage() {
 
     if (!requestBody.name) {
       setErrorMessage("A category name is required.");
-      setIsLoading(false);
+      setIsCreating(false);
       return;
     }
 
     try {
-      setIsCreating(true);
       const categoryToast = toast.promise<CategoryJson>(
         axios
           .post<CategoryJson>(
@@ -150,7 +155,7 @@ export default function CreateCategoryPage() {
         setErrorMessage("Failed to create the category.");
       }
     } finally {
-      setIsLoading(false);
+      setIsCreating(false);
     }
   }
 
@@ -176,8 +181,19 @@ export default function CreateCategoryPage() {
     return pageState;
   }
 
+  if (isFetching) {
+    return (
+      <FormPageSkeleton
+        label="Loading new category form"
+        fields={["input", "textarea", "checkbox"]}
+        showDelete={false}
+      />
+    );
+  }
+
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       aria-labelledby="create-category-heading"
       className="max-w-[1000px] mx-auto p-5 pt-0"
     >
@@ -195,7 +211,7 @@ export default function CreateCategoryPage() {
           legend="Category info"
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}
-          isLoading={isLoading}
+          isLoading={isCreating}
           errorMessage={errorMessage}
           canSubmit={canSubmit}
           latestOrder={latestOrder || 1}
@@ -205,6 +221,6 @@ export default function CreateCategoryPage() {
           hasSyncGroup={true}
         />
       </div>
-    </section>
+    </motion.section>
   );
 }

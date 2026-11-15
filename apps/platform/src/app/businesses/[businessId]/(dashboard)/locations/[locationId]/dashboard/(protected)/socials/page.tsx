@@ -24,7 +24,10 @@ export default function SocialsPage() {
   const { data: session, status } = useSession();
 
   const [socialsData, setSocialsData] = useState<SocialJson[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the socials are loading (shows the skeleton rows).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const accessLevel = session?.user?.accessLevel;
@@ -34,7 +37,7 @@ export default function SocialsPage() {
 
   useEffect(() => {
     async function getSocialsData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -81,7 +84,7 @@ export default function SocialsPage() {
           setErrorMessage("Failed to load social data.");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -129,7 +132,7 @@ export default function SocialsPage() {
         <section aria-label="Socials list">
           <SocialsList
             socialsData={socialsData}
-            isLoading={isLoading}
+            isLoading={isFetching}
             errorMessage={errorMessage}
             canManage={canManageSocials}
             setIsLoading={setIsLoading}

@@ -24,7 +24,10 @@ export default function CategoriesPage() {
   const { data: session, status } = useSession();
 
   const [categoryData, setCategoryData] = useState<CategoryJson[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the categories are loading (shows skeleton rows).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const accessLevel = session?.user?.accessLevel;
@@ -34,7 +37,7 @@ export default function CategoriesPage() {
 
   useEffect(() => {
     async function getCategoriesData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -83,7 +86,7 @@ export default function CategoriesPage() {
           setErrorMessage("Failed to load categories.");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -132,7 +135,7 @@ export default function CategoriesPage() {
         )}
 
         <CategoryList
-          isLoading={isLoading}
+          isLoading={isFetching}
           setIsLoading={setIsLoading}
           categoryData={categoryData}
           setCategoryData={setCategoryData}

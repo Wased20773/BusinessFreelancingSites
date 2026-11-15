@@ -8,6 +8,9 @@ import { InputEvent, SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import FormPageSkeleton from "@/components/ui/FormPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import PageHeading from "@/components/ui/PageHeader";
 
 export default function EditCategoryPage() {
@@ -25,7 +28,10 @@ export default function EditCategoryPage() {
 
   const [categoryData, setCategoryData] = useState<CategoryJson | null>(null);
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the category is loading (shows the form skeleton).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isSynced, setIsSynced] = useState<boolean>(false);
@@ -45,7 +51,7 @@ export default function EditCategoryPage() {
 
   useEffect(() => {
     async function getCategoryData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -104,7 +110,7 @@ export default function EditCategoryPage() {
           setErrorMessage("Failed to load category data.");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -267,6 +273,12 @@ export default function EditCategoryPage() {
     return pageState;
   }
 
+  if (isFetching) {
+    return (
+      <FormPageSkeleton label="Loading category" fields={["input", "textarea", "checkbox", "checkbox"]} />
+    );
+  }
+
   if (errorMessage && !categoryData) {
     return <p>{errorMessage}</p>;
   }
@@ -278,7 +290,8 @@ export default function EditCategoryPage() {
   const isProcessing = isSaving || isDeleting;
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       aria-labelledby="edit-category-heading"
       className="max-w-[1000px] mx-auto p-5 pt-0"
     >
@@ -306,6 +319,6 @@ export default function EditCategoryPage() {
           setIsSynced={setIsSynced}
         />
       </div>
-    </section>
+    </motion.section>
   );
 }

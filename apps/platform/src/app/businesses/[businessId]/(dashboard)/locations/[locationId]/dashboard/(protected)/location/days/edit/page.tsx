@@ -8,6 +8,9 @@ import { toast } from "sonner";
 import "../../../page.css";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import FormPageSkeleton from "@/components/ui/FormPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import BusinessDaysForm from "@/components/ui/days/BusinessDaysForm";
 import PageHeading from "@/components/ui/PageHeader";
 
@@ -60,7 +63,10 @@ export default function EditBusinessDaysPage() {
   const [locationData, setLocationData] = useState<LocationJson | null>(null);
   const [days, setDays] = useState<Record<DayOfWeek, DayHours> | null>(null);
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the business days are loading (shows the form skeleton).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -83,7 +89,7 @@ export default function EditBusinessDaysPage() {
 
   useEffect(() => {
     async function getLocationData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -184,7 +190,7 @@ export default function EditBusinessDaysPage() {
           setErrorMessage("Failed to load business days.");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -782,6 +788,16 @@ export default function EditBusinessDaysPage() {
     return pageState;
   }
 
+  if (isFetching) {
+    return (
+      <FormPageSkeleton
+        label="Loading business days"
+        fields={["checkbox", "day", "day", "day", "day", "day", "day", "day"]}
+        showDelete={false}
+      />
+    );
+  }
+
   if (errorMessage && (!locationData || !days)) {
     return (
       <p role="alert" className="p-5">
@@ -795,7 +811,8 @@ export default function EditBusinessDaysPage() {
   }
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       aria-labelledby="business-days-heading"
       className="max-w-[1000px] mx-auto p-5 pt-0"
     >
@@ -826,6 +843,6 @@ export default function EditBusinessDaysPage() {
           removeSpecialHour={removeSpecialHour}
         />
       </div>
-    </section>
+    </motion.section>
   );
 }

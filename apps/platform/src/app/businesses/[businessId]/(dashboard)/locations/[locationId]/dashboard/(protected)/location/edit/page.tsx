@@ -10,6 +10,9 @@ import { type InputEvent, type SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import FormPageSkeleton from "@/components/ui/FormPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import PageHeading from "@/components/ui/PageHeader";
 
 export default function EditLocationPage() {
@@ -24,7 +27,10 @@ export default function EditLocationPage() {
   const locationId = params.locationId;
 
   const [locationData, setLocationData] = useState<LocationJson | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the location is loading (shows the form skeleton).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -43,7 +49,7 @@ export default function EditLocationPage() {
 
   useEffect(() => {
     async function getLocationData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -110,7 +116,7 @@ export default function EditLocationPage() {
           setErrorMessage("Failed to load location data.");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -328,6 +334,24 @@ export default function EditLocationPage() {
     return pageState;
   }
 
+  if (isFetching) {
+    return (
+      <FormPageSkeleton
+        label="Loading location"
+        fields={[
+          "input",
+          "input",
+          "input",
+          "input",
+          "input",
+          "checkbox",
+          "checkbox",
+          "checkbox",
+        ]}
+      />
+    );
+  }
+
   if (errorMessage && !locationData) {
     return (
       <p role="alert" className="p-5">
@@ -343,7 +367,8 @@ export default function EditLocationPage() {
   const isProcessing = isSaving || isDeleting;
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       aria-labelledby="edit-location-heading"
       className="max-w-[1000px] mx-auto p-5 pt-0"
     >
@@ -387,6 +412,6 @@ export default function EditLocationPage() {
         onCancel={() => setShowDeleteModal(false)}
         onConfirm={handleDelete}
       />
-    </section>
+    </motion.section>
   );
 }

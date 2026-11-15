@@ -9,6 +9,9 @@ import { toast } from "sonner";
 import "../../../../../page.css";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
+import FormPageSkeleton from "@/components/ui/FormPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import PageHeading from "@/components/ui/PageHeader";
 
 export default function EditSubcategoryPage() {
@@ -30,7 +33,10 @@ export default function EditSubcategoryPage() {
     null,
   );
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the subcategory is loading (shows the form skeleton).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isSynced, setIsSynced] = useState<boolean>(false);
@@ -50,7 +56,7 @@ export default function EditSubcategoryPage() {
 
   useEffect(() => {
     async function getSubcategoryData() {
-      setIsLoading(true);
+      setIsFetching(true);
       setErrorMessage(null);
 
       try {
@@ -122,7 +128,7 @@ export default function EditSubcategoryPage() {
           setErrorMessage("Failed to load subcategory data.");
         }
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -298,6 +304,15 @@ export default function EditSubcategoryPage() {
     return pageState;
   }
 
+  if (isFetching) {
+    return (
+      <FormPageSkeleton
+        label="Loading subcategory"
+        fields={["input", "textarea", "checkbox", "checkbox"]}
+      />
+    );
+  }
+
   if (errorMessage && !subcategoryData) {
     return (
       <p role="alert" className="p-5">
@@ -313,7 +328,8 @@ export default function EditSubcategoryPage() {
   const isProcessing = isSaving || isDeleting;
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       aria-labelledby="edit-subcategory-heading"
       className="max-w-[1000px] mx-auto p-5 pt-0"
     >
@@ -341,6 +357,6 @@ export default function EditSubcategoryPage() {
           setIsSynced={setIsSynced}
         />
       </div>
-    </section>
+    </motion.section>
   );
 }

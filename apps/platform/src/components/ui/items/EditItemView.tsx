@@ -2,6 +2,9 @@
 
 import PageHeading from "@/components/ui/PageHeader";
 import PageState from "@/components/ui/PageState";
+import FormPageSkeleton from "@/components/ui/FormPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import EditItemForm from "@/components/ui/items/EditItemForm";
 import ItemOptionsEditor from "@/components/ui/items/ItemOptionsEditor";
 import { useItemImage } from "@/components/ui/items/useItemImage";
@@ -54,7 +57,10 @@ export default function EditItemView({
   const [itemData, setItemData] = useState<ItemJson | null>(null);
   const [optionDrafts, setOptionDrafts] = useState<OptionDraft[]>([]);
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the item is loading (shows the form skeleton).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isUpdatingImage, setIsUpdatingImage] = useState<boolean>(false);
@@ -88,7 +94,7 @@ export default function EditItemView({
 
   useEffect(() => {
     async function loadItem() {
-      setIsLoading(true);
+      setIsFetching(true);
       setLoadError(null);
 
       try {
@@ -108,7 +114,7 @@ export default function EditItemView({
         console.error("Error loading item:", error);
         setLoadError("Failed to load item data.");
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -281,6 +287,25 @@ export default function EditItemView({
 
   if (pageState) return pageState;
 
+  if (isFetching) {
+    return (
+      <FormPageSkeleton
+        label="Loading item"
+        fields={[
+          "input",
+          "textarea",
+          "input",
+          "input",
+          "input",
+          "image",
+          "checkbox",
+          "rows",
+        ]}
+        showDelete={canManageItem}
+      />
+    );
+  }
+
   if (loadError) {
     return (
       <p role="alert" className="p-5">
@@ -296,7 +321,8 @@ export default function EditItemView({
   const isProcessing = isSaving || isDeleting || isUpdatingImage;
 
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       aria-labelledby="edit-item-heading"
       className="mx-auto max-w-[1000px] p-5 pt-0"
     >
@@ -356,6 +382,6 @@ export default function EditItemView({
           }
         />
       </div>
-    </section>
+    </motion.section>
   );
 }

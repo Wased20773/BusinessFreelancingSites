@@ -1,10 +1,18 @@
 ---
 title: Animations
 code-path:
+  - /platform/src/components/motion/MotionProvider.tsx
+  - /platform/src/components/motion/listMotion.ts
+  - /platform/src/components/ui/Skeleton.tsx
+  - /platform/src/components/ui/categories/CategoryPageSkeleton.tsx
+  - /platform/src/components/ui/FormPageSkeleton.tsx
+  - /platform/src/components/ui/locations/LocationPageSkeleton.tsx
+  - /platform/src/components/ui/overview/OverviewSkeleton.tsx
+  - /platform/src/components/ui/ListCard.tsx
   - /platform/src/app/page.tsx
 
 last-verified: 2026-11-14
-status: planned
+status: in-progress
 ---
 
 # Animations
@@ -55,10 +63,36 @@ Skeletons should match the size and layout of the real content, so the page does
 - **Client components only.** Motion components need `"use client"`. Keep data fetching in server components and put the animated part in a small client component.
 - **Import from `motion/react`.** For example: `import { motion, AnimatePresence } from "motion/react";`
 
-## Not Yet Built
+## Building Blocks
 
-Motion is not installed yet. When work starts:
+| Piece | What it does |
+| --- | --- |
+| `MotionProvider` | Wraps the app in the root layout with `<MotionConfig reducedMotion="user">`. |
+| `Skeleton` / `SkeletonRows` | Grey pulsing placeholders. `SkeletonRows` matches the height of a list card's rows. |
+| `listRowMotion(index)` | Spread onto `motion.li` or `motion.tr`. Rows fade and rise in one after another (capped at 8 rows, so long lists still appear quickly) and slide to their new spot when reordered. |
+| `fadeInMotion` | Fades a section in once its data has loaded. |
+| `cardMotion(index)` | Spread onto a dashboard card. Cards fade and rise in one after another. |
+| `FormPageSkeleton` | Placeholder for an edit or create page: heading, a form card built from a list of field kinds (`input`, `textarea`, `checkbox`, `image`, `rows`, `day`), and the button bar. |
 
-1. Install it in the platform app: `npm install motion --workspace=apps/platform`.
-2. Add `MotionConfig` with `reducedMotion="user"` near the root layout.
-3. Start with the Menu tab's loading skeleton, then the homepage.
+Pages that load their data in the browser keep two separate flags:
+
+- `isFetching`: the page's data is loading. Shows the skeleton.
+- `isLoading`: a link was clicked and the next page is opening. Shows the existing loading bar.
+
+## Status
+
+### Done
+
+- **Menu** (`/menu`): category rows show as skeletons while loading, then animate in. Reordering slides the rows.
+- **Category and subcategory pages**: a full-page skeleton in the same layout as the page, then the page fades in. Item and subcategory rows animate in and slide when reordered.
+- **Edit category, edit subcategory, and edit item**: a form skeleton (`FormPageSkeleton`) with the same fields as the real form, then the form fades in.
+- **Create category, create subcategory, and create item**: the same form skeleton while the page loads what it needs (the next order number and the category's sync setting), then the form fades in. Submitting keeps the form on screen.
+
+- **Contacts and Socials**: skeleton rows on the list, rows animate in (`ListCard` takes an `index`), and form skeletons on the edit and create pages. The create pages have nothing to load, so their skeleton covers the session check.
+- **Location**: a page skeleton (`LocationPageSkeleton`) on the first load only, so the page stays on screen while it reloads after business days are turned on or removed. Form skeletons on Edit Location and Edit Business Days (the `day` field kind), then the form fades in.
+- **Overview**: the heading shows straight away, the cards are skeletons (`OverviewSkeleton`), then the four cards fade and rise in one after another (`cardMotion`).
+
+### Next
+
+- Modals and dropdowns.
+- The homepage (`/`).

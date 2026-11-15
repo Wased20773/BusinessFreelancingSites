@@ -4,6 +4,8 @@ import { newOptionDraft, type OptionDraft } from "@/lib/items/optionDrafts";
 import { Plus, Trash2 } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 import ReorderControls from "../controls/ReorderControls";
+import { motion } from "motion/react";
+import { listRowMotion } from "@/components/motion/listMotion";
 import RequiredField from "../RequiredField";
 
 type ItemOptionsEditorProps = {
@@ -89,9 +91,10 @@ export default function ItemOptionsEditor({
       {/* Read-only list for members who can't edit the item. */}
       {!canManage && drafts.length > 0 && (
         <ul className="mt-4 divide-y divide-gray-200">
-          {drafts.map((draft) => (
-            <li
+          {drafts.map((draft, index) => (
+            <motion.li
               key={draft.key}
+              {...listRowMotion(index)}
               className="flex items-center justify-between gap-4 py-3"
             >
               <div className="min-w-0">
@@ -105,7 +108,7 @@ export default function ItemOptionsEditor({
               <p className="text-sm font-medium whitespace-nowrap text-gray-900">
                 ${Number(draft.price).toFixed(2)}
               </p>
-            </li>
+            </motion.li>
           ))}
         </ul>
       )}
@@ -113,8 +116,10 @@ export default function ItemOptionsEditor({
       {canManage && drafts.length > 0 && (
         <ol className="mt-4 space-y-3">
           {drafts.map((draft, index) => (
-            <li
+            <motion.li
               key={draft.key}
+              // Saved options come in one after another; one just added shows straight away.
+              {...listRowMotion(draft.id ? index : 0)}
               className="rounded-lg border border-gray-200 bg-white p-3"
             >
               <div className="grid grid-cols-[minmax(0,1fr)_110px] gap-3">
@@ -203,7 +208,7 @@ export default function ItemOptionsEditor({
                   Remove
                 </button>
               </div>
-            </li>
+            </motion.li>
           ))}
         </ol>
       )}

@@ -2,6 +2,9 @@
 
 import PageHeading from "@/components/ui/PageHeader";
 import PageState from "@/components/ui/PageState";
+import FormPageSkeleton from "@/components/ui/FormPageSkeleton";
+import { motion } from "motion/react";
+import { fadeInMotion } from "@/components/motion/listMotion";
 import CreateItemForm from "@/components/ui/items/CreateItemForm";
 import ItemOptionsEditor from "@/components/ui/items/ItemOptionsEditor";
 import { useItemImage } from "@/components/ui/items/useItemImage";
@@ -48,7 +51,10 @@ export default function CreateItemView({
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // isFetching: the category is loading (shows the form skeleton).
+  // isLoading: a link was clicked and the next page is opening.
+  const [isFetching, setIsFetching] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
@@ -68,7 +74,7 @@ export default function CreateItemView({
   // The category's sync settings and the next display order.
   useEffect(() => {
     async function loadCategory() {
-      setIsLoading(true);
+      setIsFetching(true);
 
       try {
         const response = await axios.get<{ categories: MenuCategory[] }>(
@@ -101,7 +107,7 @@ export default function CreateItemView({
       } catch (error) {
         console.error("Failed to load the category:", error);
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
     }
 
@@ -207,8 +213,29 @@ export default function CreateItemView({
 
   if (pageState) return pageState;
 
+  if (isFetching) {
+    return (
+      <FormPageSkeleton
+        label="Loading new item form"
+        fields={[
+          "input",
+          "textarea",
+          "input",
+          "input",
+          "image",
+          "input",
+          "checkbox",
+          "rows",
+          "checkbox",
+        ]}
+        showDelete={false}
+      />
+    );
+  }
+
   return (
-    <section
+    <motion.section
+      {...fadeInMotion}
       aria-labelledby="create-item-heading"
       className="mx-auto max-w-[1000px] p-5 pt-0"
     >
@@ -254,6 +281,6 @@ export default function CreateItemView({
           }
         />
       </div>
-    </section>
+    </motion.section>
   );
 }
