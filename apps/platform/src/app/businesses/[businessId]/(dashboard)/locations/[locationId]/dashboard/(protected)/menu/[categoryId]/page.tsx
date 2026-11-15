@@ -128,7 +128,10 @@ export default function CategoryPage() {
 
   if (isFetching) {
     return (
-      <CategoryPageSkeleton canManage={canManageMenu} showSubcategories={true} />
+      <CategoryPageSkeleton
+        canManage={canManageMenu}
+        showSubcategories={true}
+      />
     );
   }
 
@@ -148,17 +151,17 @@ export default function CategoryPage() {
     <motion.section
       {...fadeInMotion}
       aria-labelledby="category-heading"
-      className="max-w-[1000px] mx-auto p-5 pt-0"
+      className="relative max-w-[1000px] mx-auto"
     >
       <PageHeading
         path={`/businesses/${businessId}/locations/${locationId}/dashboard/menu`}
         ariaLabel="Return to menu"
         setIsLoading={setIsLoading}
         headingId="category-heading"
-        heading={categoryData.name}
+        heading="Go Back"
       />
 
-      <div className="mt-[0.5rem] space-y-5">
+      <div className="mt-6 space-y-5 p-5 pt-0">
         {canManageMenu && (
           <nav
             aria-label="Category actions"

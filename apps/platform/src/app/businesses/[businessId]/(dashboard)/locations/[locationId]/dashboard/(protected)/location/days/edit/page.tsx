@@ -814,7 +814,7 @@ export default function EditBusinessDaysPage() {
     <motion.section
       {...fadeInMotion}
       aria-labelledby="business-days-heading"
-      className="max-w-[1000px] mx-auto p-5 pt-0"
+      className="relative max-w-[1000px] mx-auto"
     >
       {/* HEADER */}
       <PageHeading
@@ -822,10 +822,10 @@ export default function EditBusinessDaysPage() {
         ariaLabel="Return to location"
         setIsLoading={setIsLoading}
         headingId="business-days-heading"
-        heading={canManageBusinessDays ? "Edit Business Days" : "Business Days"}
+        heading="Go Back"
       />
 
-      <div className="mt-[0.5rem]">
+      <div className="mt-6 p-5 pt-0">
         <BusinessDaysForm
           locationData={locationData}
           days={days}

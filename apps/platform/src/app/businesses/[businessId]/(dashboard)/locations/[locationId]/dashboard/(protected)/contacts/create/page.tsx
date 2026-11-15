@@ -170,7 +170,7 @@ export default function CreateContactPage() {
     <motion.section
       {...fadeInMotion}
       aria-labelledby="create-contact-heading"
-      className="max-w-[1000px] mx-auto p-5 pt-0"
+      className="relative max-w-[1000px] mx-auto"
     >
       {/* HEADER */}
       <PageHeading
@@ -178,10 +178,10 @@ export default function CreateContactPage() {
         ariaLabel="Return to contacts"
         setIsLoading={setIsLoading}
         headingId="create-contact-heading"
-        heading="Create Contact"
+        heading="Go Back"
       />
 
-      <div className="mt-[0.5rem]">
+      <div className="mt-6 p-5 pt-0">
         <CreateContactForm
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}

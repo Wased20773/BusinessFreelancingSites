@@ -245,7 +245,7 @@ export default function CreateApiKeyPage() {
     <motion.section
       key="create-api-key"
       {...fadeInMotion}
-      className="max-w-[800px] mx-auto p-5 pt-0"
+      className="relative max-w-[800px] mx-auto"
       aria-labelledby="create-api-key-heading"
     >
       {/* Heading */}
@@ -254,103 +254,105 @@ export default function CreateApiKeyPage() {
         ariaLabel="Return to api keys"
         setIsLoading={setIsLoading}
         headingId="create-api-key-heading"
-        heading="Create API Key"
+        heading="Go Back"
       />
 
-      <p className="text-gray-500 mt-2">
-        Generate a new key for accessing this business through the Business
-        Platform API.
-      </p>
+      <div className="p-5 pt-0">
+        <p className="text-gray-500 mt-2">
+          Generate a new key for accessing this business through the Business
+          Platform API.
+        </p>
 
-      {/* Form */}
-      <section className="border border-gray-200 rounded-xl shadow-sm mt-5 p-5">
-        <form onSubmit={handleSubmit}>
-          <div>
-            <label className="font-semibold" htmlFor="api-key-name">
-              Key Name <RequiredField />
-            </label>
+        {/* Form */}
+        <section className="border border-gray-200 rounded-xl shadow-sm mt-6 p-5">
+          <form onSubmit={handleSubmit}>
+            <div>
+              <label className="font-semibold" htmlFor="api-key-name">
+                Key Name <RequiredField />
+              </label>
 
-            <p className="text-sm text-gray-500 mt-1 mb-2">
-              Use a name that describes where this key will be used.
-            </p>
+              <p className="text-sm text-gray-500 mt-1 mb-2">
+                Use a name that describes where this key will be used.
+              </p>
 
-            <input
-              id="api-key-name"
-              name="name"
-              type="text"
-              placeholder="Production Website"
-              disabled={isSubmitting}
-              required
-              className="
-                block w-full
-                rounded-lg
-                border-[0.1rem] border-b-[0.2rem]
-                border-blue-400
-                bg-gray-100
-                px-3 py-2
-                disabled:opacity-50
-              "
-            />
-          </div>
+              <input
+                id="api-key-name"
+                name="name"
+                type="text"
+                placeholder="Production Website"
+                disabled={isSubmitting}
+                required
+                className="
+                  block w-full
+                  rounded-lg
+                  border-[0.1rem] border-b-[0.2rem]
+                  border-blue-400
+                  bg-gray-100
+                  px-3 py-2
+                  disabled:opacity-50
+                "
+              />
+            </div>
 
-          <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <p className="font-semibold">Keep API keys private</p>
+            <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <p className="font-semibold">Keep API keys private</p>
 
-            <p className="text-sm text-gray-500 mt-1">
-              API keys provide access to your business data. Do not place them
-              directly in public client-side code or share them with people who
-              should not have access.
-            </p>
-          </div>
+              <p className="text-sm text-gray-500 mt-1">
+                API keys provide access to your business data. Do not place them
+                directly in public client-side code or share them with people who
+                should not have access.
+              </p>
+            </div>
 
-          {errorMessage && (
-            <p
-              role="alert"
-              className="
-                mt-4
-                rounded-lg
-                border border-red-200
-                bg-red-50
-                px-3 py-2
-                text-red-700
-              "
-            >
-              {errorMessage}
-            </p>
-          )}
+            {errorMessage && (
+              <p
+                role="alert"
+                className="
+                  mt-4
+                  rounded-lg
+                  border border-red-200
+                  bg-red-50
+                  px-3 py-2
+                  text-red-700
+                "
+              >
+                {errorMessage}
+              </p>
+            )}
 
-          <div className="flex justify-end gap-2 mt-5">
-            <Link
-              href={`/businesses/${businessId}/api-keys`}
-              className="
-                rounded-lg
-                border border-gray-300
-                px-4 py-2
-                hover:bg-gray-100
-                transition-colors
-              "
-            >
-              Cancel
-            </Link>
+            <div className="flex justify-end gap-2 mt-5">
+              <Link
+                href={`/businesses/${businessId}/api-keys`}
+                className="
+                  rounded-lg
+                  border border-gray-300
+                  px-4 py-2
+                  hover:bg-gray-100
+                  transition-colors
+                "
+              >
+                Cancel
+              </Link>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="
-                rounded-lg
-                border border-green-500
-                bg-emerald-300
-                px-4 py-2
-                text-green-900
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
-            >
-              {isSubmitting ? "Creating..." : "Create API Key"}
-            </button>
-          </div>
-        </form>
-      </section>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="
+                  rounded-lg
+                  border border-green-500
+                  bg-emerald-300
+                  px-4 py-2
+                  text-green-900
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
+              >
+                {isSubmitting ? "Creating..." : "Create API Key"}
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
     </motion.section>
   );
 }

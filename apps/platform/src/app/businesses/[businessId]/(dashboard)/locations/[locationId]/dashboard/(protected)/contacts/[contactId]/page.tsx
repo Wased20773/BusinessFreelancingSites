@@ -345,17 +345,17 @@ export default function EditContactPage() {
     <motion.section
       {...fadeInMotion}
       aria-labelledby="edit-contact-heading"
-      className="max-w-[1000px] mx-auto p-5 pt-0"
+      className="relative max-w-[1000px] mx-auto"
     >
       <PageHeading
         path={`/businesses/${businessId}/locations/${locationId}/dashboard/contacts`}
         ariaLabel="Return to contacts"
         setIsLoading={setIsLoading}
         headingId="edit-contact-heading"
-        heading="Edit Contact"
+        heading="Go Back"
       />
 
-      <div className="mt-[0.5rem]">
+      <div className="mt-6 p-5 pt-0">
         <EditContactForm
           contactData={contactData}
           isProcessing={isProcessing}

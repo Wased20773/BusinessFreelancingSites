@@ -166,7 +166,7 @@ export default function CategoryPage() {
     <motion.section
       {...fadeInMotion}
       aria-labelledby="subcategory-heading"
-      className="max-w-[1000px] mx-auto p-5 pt-0"
+      className="relative max-w-[1000px] mx-auto"
     >
       {/* HEADER */}
       <PageHeading
@@ -174,10 +174,10 @@ export default function CategoryPage() {
         ariaLabel="Return to parent category"
         setIsLoading={setIsLoading}
         headingId="subcategory-heading"
-        heading={subcategoryData.name}
+        heading="Go Back"
       />
 
-      <div className="mt-[0.5rem] space-y-5">
+      <div className="mt-6 space-y-5 p-5 pt-0">
         {/* ACTIONS */}
         {canManageMenu && (
           <>

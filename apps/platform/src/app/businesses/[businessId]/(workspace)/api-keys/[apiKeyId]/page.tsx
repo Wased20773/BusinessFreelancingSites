@@ -304,7 +304,7 @@ export default function ApiKeyDetailsPage() {
   return (
     <motion.section
       {...fadeInMotion}
-      className="max-w-[1000px] mx-auto p-5 pt-0"
+      className="relative max-w-[1000px] mx-auto"
       aria-labelledby="api-key-heading"
     >
       {/* Heading */}
@@ -313,402 +313,404 @@ export default function ApiKeyDetailsPage() {
         ariaLabel="Return to API keys"
         setIsLoading={setIsLoading}
         headingId="api-key-heading"
-        heading={apiKeyData.name}
+        heading="Go Back"
       />
 
-      <p className="text-gray-500 mt-2">
-        View and manage this Business Platform API key.
-      </p>
+      <div className="p-5 pt-0">
+        <p className="text-gray-500 mt-2">
+          View and manage this Business Platform API key.
+        </p>
 
-      {/* Main Information */}
-      <section className="border border-gray-200 rounded-xl shadow-sm mt-5 p-5">
-        {/* Key Information */}
-        <div>
-          <h2 className="text-xl font-semibold">API Key Information</h2>
+        {/* Main Information */}
+        <section className="border border-gray-200 rounded-xl shadow-sm mt-6 p-5">
+          {/* Key Information */}
+          <div>
+            <h2 className="text-xl font-semibold">API Key Information</h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
-            <div>
-              <p className="text-sm text-gray-500">Name</p>
-              <p className="font-medium mt-1">{apiKeyData.name}</p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-500">Status</p>
-
-              <span
-                className={`
-                  inline-flex mt-1
-                  rounded-md border
-                  px-2 py-1
-                  text-sm font-medium
-                  ${
-                    apiKeyData.isActive
-                      ? "border-green-200 bg-green-50 text-green-700"
-                      : "border-gray-200 bg-gray-100 text-gray-500"
-                  }
-                `}
-              >
-                {apiKeyData.isActive ? "Active" : "Inactive"}
-              </span>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-500">Key Identifier</p>
-              <p className="font-mono text-sm mt-1 break-all">
-                {apiKeyData.keyPrefix}••••••••
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t border-gray-200 my-6" />
-
-        {/* Settings */}
-        <div>
-          <div className="flex justify-between items-start gap-4">
-            <div>
-              <h2 className="text-xl font-semibold">Settings</h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Change the name, availability, or allowed origins of this API
-                key.
-              </p>
-            </div>
-
-            {!isEdit && (
-              <button
-                type="button"
-                aria-label="Edit API key"
-                className="shrink-0 rounded-lg p-2 hover:bg-gray-100 transition-colors"
-                onClick={() => setIsEdit(true)}
-              >
-                <Image src={EditIcon} alt="" width={22} height={22} />
-              </button>
-            )}
-          </div>
-
-          {isEdit ? (
-            <form className="mt-5" onSubmit={handleSubmit}>
-              {/* Name */}
-              <div>
-                <label className="font-semibold" htmlFor="api-key-name">
-                  Key Name <RequiredField />
-                </label>
-
-                <input
-                  id="api-key-name"
-                  name="name"
-                  type="text"
-                  value={selectedName}
-                  onChange={(event) => setSelectedName(event.target.value)}
-                  disabled={isSaving}
-                  required
-                  className="
-                    block w-full mt-1
-                    rounded-lg
-                    border-[0.1rem] border-b-[0.2rem]
-                    border-blue-400
-                    bg-gray-100
-                    px-3 py-2
-                    disabled:opacity-50
-                  "
-                />
-              </div>
-
-              {/* Active */}
-              <div className="flex items-start justify-between gap-5 mt-5">
-                <div>
-                  <label className="font-semibold" htmlFor="api-key-active">
-                    API Key Active
-                  </label>
-
-                  <p className="text-sm text-gray-500 mt-1">
-                    An inactive key can no longer be used to access this
-                    business through the API.
-                  </p>
-                </div>
-
-                <input
-                  id="api-key-active"
-                  type="checkbox"
-                  checked={selectedIsActive}
-                  onChange={(event) =>
-                    setSelectedIsActive(event.target.checked)
-                  }
-                  disabled={isSaving}
-                  className="size-5 shrink-0"
-                />
-              </div>
-
-              {/* Allowed Origins */}
-              <div className="mt-5">
-                <label className="font-semibold" htmlFor="api-key-origins">
-                  Allowed Origins
-                </label>
-
-                <p className="text-sm text-gray-500 mt-1">
-                  Websites allowed to call the API with this key from the
-                  browser. One per line, for example https://example.com,
-                  https://*.example.com, or http://localhost:5173. Leave empty
-                  to only allow server-to-server requests.
-                </p>
-
-                <textarea
-                  id="api-key-origins"
-                  name="allowedOrigins"
-                  rows={4}
-                  value={selectedOrigins}
-                  onChange={(event) => setSelectedOrigins(event.target.value)}
-                  disabled={isSaving}
-                  spellCheck={false}
-                  placeholder="https://example.com"
-                  className="
-                    block w-full mt-2
-                    rounded-lg
-                    border-[0.1rem] border-b-[0.2rem]
-                    border-blue-400
-                    bg-gray-100
-                    px-3 py-2
-                    font-mono text-sm
-                    disabled:opacity-50
-                  "
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 mt-5">
-                <button
-                  type="button"
-                  disabled={isSaving}
-                  onClick={cancelEdit}
-                  className="
-                    rounded-lg
-                    border border-gray-300
-                    px-4 py-2
-                    hover:bg-gray-100
-                    transition-colors
-                    disabled:opacity-50
-                  "
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="
-                    rounded-lg
-                    border border-green-500
-                    bg-emerald-300
-                    px-4 py-2
-                    text-green-900
-                    disabled:cursor-not-allowed
-                    disabled:opacity-50
-                  "
-                >
-                  {isSaving ? "Saving..." : "Save Changes"}
-                </button>
-              </div>
-            </form>
-          ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
               <div>
-                <p className="text-sm text-gray-500">Key Name</p>
+                <p className="text-sm text-gray-500">Name</p>
                 <p className="font-medium mt-1">{apiKeyData.name}</p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-500">Availability</p>
-                <p className="font-medium mt-1">
-                  {apiKeyData.isActive ? "Enabled" : "Disabled"}
-                </p>
+                <p className="text-sm text-gray-500">Status</p>
+
+                <span
+                  className={`
+                    inline-flex mt-1
+                    rounded-md border
+                    px-2 py-1
+                    text-sm font-medium
+                    ${
+                      apiKeyData.isActive
+                        ? "border-green-200 bg-green-50 text-green-700"
+                        : "border-gray-200 bg-gray-100 text-gray-500"
+                    }
+                  `}
+                >
+                  {apiKeyData.isActive ? "Active" : "Inactive"}
+                </span>
               </div>
 
-              <div className="sm:col-span-2">
-                <p className="text-sm text-gray-500">Allowed Origins</p>
-
-                {apiKeyData.allowedOrigins.length > 0 ? (
-                  <ul className="mt-1 space-y-1">
-                    {apiKeyData.allowedOrigins.map((origin) => (
-                      <li key={origin} className="font-mono text-sm break-all">
-                        {origin}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="font-medium mt-1">
-                    None (browser requests are blocked)
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="border-t border-gray-200 my-6" />
-
-        {/* Activity */}
-        <div>
-          <h2 className="text-xl font-semibold">Activity</h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
-            <div>
-              <p className="text-sm text-gray-500">Created</p>
-              <p className="mt-1">
-                {formatDateTime(apiKeyData.createdAt, "date")}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-500">Last Updated</p>
-              <p className="mt-1">
-                {formatDateTime(apiKeyData.updatedAt, "date")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Danger Zone */}
-      <section className="border border-red-400 bg-red-50 rounded-xl shadow-red-400 shadow-sm p-5 mt-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold text-red-700">
-              Delete API Key
-            </h2>
-
-            <p className="text-sm text-red-400 mt-1">
-              Permanently delete this API key. Any application using it will
-              immediately lose access.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            className="
-              shrink-0
-              rounded-lg
-              border border-red-400
-              bg-red-100
-              px-4 py-2
-              font-medium text-red-700
-              hover:bg-red-200
-              transition-colors
-            "
-            onClick={() => setClickedDelete(true)}
-          >
-            Delete API Key
-          </button>
-        </div>
-      </section>
-
-      {/* Delete Modal */}
-      {clickedDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
-          <div className="w-full max-w-[500px] rounded-xl border border-gray-300 bg-white p-5">
-            <div className="flex justify-between items-start gap-5">
               <div>
-                <h2 className="text-xl font-semibold">Delete API Key?</h2>
-                <p className="text-gray-500 mt-1">
-                  This action cannot be undone.
+                <p className="text-sm text-gray-500">Key Identifier</p>
+                <p className="font-mono text-sm mt-1 break-all">
+                  {apiKeyData.keyPrefix}••••••••
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-200 my-6" />
+
+          {/* Settings */}
+          <div>
+            <div className="flex justify-between items-start gap-4">
+              <div>
+                <h2 className="text-xl font-semibold">Settings</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Change the name, availability, or allowed origins of this API
+                  key.
                 </p>
               </div>
 
-              <button
-                type="button"
-                aria-label="Close delete API key modal"
-                disabled={loadingDelete}
-                className="p-1"
-                onClick={() => {
-                  setClickedDelete(false);
-                  setDeleteVerification("");
-                }}
-              >
-                <Image src={ExitIconBlack} alt="" width={22} height={22} />
-              </button>
-            </div>
-
-            <form
-              className="mt-5"
-              onSubmit={handleDelete}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                }
-              }}
-            >
-              <p className="text-sm text-gray-600">
-                To confirm, type the API key name:
-              </p>
-
-              <p className="font-semibold mt-1 break-all">{apiKeyData.name}</p>
-
-              <input
-                id="delete-api-key"
-                name="delete-api-key"
-                type="text"
-                value={deleteVerification}
-                onChange={(event) => setDeleteVerification(event.target.value)}
-                autoComplete="off"
-                spellCheck={false}
-                disabled={loadingDelete}
-                className="
-                  w-full mt-3
-                  rounded-lg
-                  border border-gray-300
-                  bg-gray-100
-                  px-3 py-2
-                  disabled:opacity-50
-                "
-              />
-
-              <div className="flex justify-end gap-2 mt-5">
+              {!isEdit && (
                 <button
                   type="button"
+                  aria-label="Edit API key"
+                  className="shrink-0 rounded-lg p-2 hover:bg-gray-100 transition-colors"
+                  onClick={() => setIsEdit(true)}
+                >
+                  <Image src={EditIcon} alt="" width={22} height={22} />
+                </button>
+              )}
+            </div>
+
+            {isEdit ? (
+              <form className="mt-5" onSubmit={handleSubmit}>
+                {/* Name */}
+                <div>
+                  <label className="font-semibold" htmlFor="api-key-name">
+                    Key Name <RequiredField />
+                  </label>
+
+                  <input
+                    id="api-key-name"
+                    name="name"
+                    type="text"
+                    value={selectedName}
+                    onChange={(event) => setSelectedName(event.target.value)}
+                    disabled={isSaving}
+                    required
+                    className="
+                      block w-full mt-1
+                      rounded-lg
+                      border-[0.1rem] border-b-[0.2rem]
+                      border-blue-400
+                      bg-gray-100
+                      px-3 py-2
+                      disabled:opacity-50
+                    "
+                  />
+                </div>
+
+                {/* Active */}
+                <div className="flex items-start justify-between gap-5 mt-5">
+                  <div>
+                    <label className="font-semibold" htmlFor="api-key-active">
+                      API Key Active
+                    </label>
+
+                    <p className="text-sm text-gray-500 mt-1">
+                      An inactive key can no longer be used to access this
+                      business through the API.
+                    </p>
+                  </div>
+
+                  <input
+                    id="api-key-active"
+                    type="checkbox"
+                    checked={selectedIsActive}
+                    onChange={(event) =>
+                      setSelectedIsActive(event.target.checked)
+                    }
+                    disabled={isSaving}
+                    className="size-5 shrink-0"
+                  />
+                </div>
+
+                {/* Allowed Origins */}
+                <div className="mt-5">
+                  <label className="font-semibold" htmlFor="api-key-origins">
+                    Allowed Origins
+                  </label>
+
+                  <p className="text-sm text-gray-500 mt-1">
+                    Websites allowed to call the API with this key from the
+                    browser. One per line, for example https://example.com,
+                    https://*.example.com, or http://localhost:5173. Leave empty
+                    to only allow server-to-server requests.
+                  </p>
+
+                  <textarea
+                    id="api-key-origins"
+                    name="allowedOrigins"
+                    rows={4}
+                    value={selectedOrigins}
+                    onChange={(event) => setSelectedOrigins(event.target.value)}
+                    disabled={isSaving}
+                    spellCheck={false}
+                    placeholder="https://example.com"
+                    className="
+                      block w-full mt-2
+                      rounded-lg
+                      border-[0.1rem] border-b-[0.2rem]
+                      border-blue-400
+                      bg-gray-100
+                      px-3 py-2
+                      font-mono text-sm
+                      disabled:opacity-50
+                    "
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 mt-5">
+                  <button
+                    type="button"
+                    disabled={isSaving}
+                    onClick={cancelEdit}
+                    className="
+                      rounded-lg
+                      border border-gray-300
+                      px-4 py-2
+                      hover:bg-gray-100
+                      transition-colors
+                      disabled:opacity-50
+                    "
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="
+                      rounded-lg
+                      border border-green-500
+                      bg-emerald-300
+                      px-4 py-2
+                      text-green-900
+                      disabled:cursor-not-allowed
+                      disabled:opacity-50
+                    "
+                  >
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
+                <div>
+                  <p className="text-sm text-gray-500">Key Name</p>
+                  <p className="font-medium mt-1">{apiKeyData.name}</p>
+                </div>
+
+                <div>
+                  <p className="text-sm text-gray-500">Availability</p>
+                  <p className="font-medium mt-1">
+                    {apiKeyData.isActive ? "Enabled" : "Disabled"}
+                  </p>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <p className="text-sm text-gray-500">Allowed Origins</p>
+
+                  {apiKeyData.allowedOrigins.length > 0 ? (
+                    <ul className="mt-1 space-y-1">
+                      {apiKeyData.allowedOrigins.map((origin) => (
+                        <li key={origin} className="font-mono text-sm break-all">
+                          {origin}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="font-medium mt-1">
+                      None (browser requests are blocked)
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-gray-200 my-6" />
+
+          {/* Activity */}
+          <div>
+            <h2 className="text-xl font-semibold">Activity</h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
+              <div>
+                <p className="text-sm text-gray-500">Created</p>
+                <p className="mt-1">
+                  {formatDateTime(apiKeyData.createdAt, "date")}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500">Last Updated</p>
+                <p className="mt-1">
+                  {formatDateTime(apiKeyData.updatedAt, "date")}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Danger Zone */}
+        <section className="border border-red-400 bg-red-50 rounded-xl shadow-red-400 shadow-sm p-5 mt-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold text-red-700">
+                Delete API Key
+              </h2>
+
+              <p className="text-sm text-red-400 mt-1">
+                Permanently delete this API key. Any application using it will
+                immediately lose access.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="
+                shrink-0
+                rounded-lg
+                border border-red-400
+                bg-red-100
+                px-4 py-2
+                font-medium text-red-700
+                hover:bg-red-200
+                transition-colors
+              "
+              onClick={() => setClickedDelete(true)}
+            >
+              Delete API Key
+            </button>
+          </div>
+        </section>
+
+        {/* Delete Modal */}
+        {clickedDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
+            <div className="w-full max-w-[500px] rounded-xl border border-gray-300 bg-white p-5">
+              <div className="flex justify-between items-start gap-5">
+                <div>
+                  <h2 className="text-xl font-semibold">Delete API Key?</h2>
+                  <p className="text-gray-500 mt-1">
+                    This action cannot be undone.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  aria-label="Close delete API key modal"
                   disabled={loadingDelete}
-                  className="
-                    rounded-lg
-                    border border-gray-300
-                    px-4 py-2
-                    disabled:opacity-50
-                  "
+                  className="p-1"
                   onClick={() => {
                     setClickedDelete(false);
                     setDeleteVerification("");
                   }}
                 >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={
-                    deleteVerification !== apiKeyData.name || loadingDelete
-                  }
-                  className="
-                    rounded-lg
-                    border border-red-400
-                    bg-red-100
-                    px-4 py-2
-                    font-medium text-red-700
-                    disabled:cursor-not-allowed
-                    disabled:opacity-50
-                  "
-                >
-                  {loadingDelete ? "Deleting..." : "Delete API Key"}
+                  <Image src={ExitIconBlack} alt="" width={22} height={22} />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
 
-      {errorMessage && (
-        <p
-          role="alert"
-          className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700"
-        >
-          {errorMessage}
-        </p>
-      )}
+              <form
+                className="mt-5"
+                onSubmit={handleDelete}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                  }
+                }}
+              >
+                <p className="text-sm text-gray-600">
+                  To confirm, type the API key name:
+                </p>
+
+                <p className="font-semibold mt-1 break-all">{apiKeyData.name}</p>
+
+                <input
+                  id="delete-api-key"
+                  name="delete-api-key"
+                  type="text"
+                  value={deleteVerification}
+                  onChange={(event) => setDeleteVerification(event.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                  disabled={loadingDelete}
+                  className="
+                    w-full mt-3
+                    rounded-lg
+                    border border-gray-300
+                    bg-gray-100
+                    px-3 py-2
+                    disabled:opacity-50
+                  "
+                />
+
+                <div className="flex justify-end gap-2 mt-5">
+                  <button
+                    type="button"
+                    disabled={loadingDelete}
+                    className="
+                      rounded-lg
+                      border border-gray-300
+                      px-4 py-2
+                      disabled:opacity-50
+                    "
+                    onClick={() => {
+                      setClickedDelete(false);
+                      setDeleteVerification("");
+                    }}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={
+                      deleteVerification !== apiKeyData.name || loadingDelete
+                    }
+                    className="
+                      rounded-lg
+                      border border-red-400
+                      bg-red-100
+                      px-4 py-2
+                      font-medium text-red-700
+                      disabled:cursor-not-allowed
+                      disabled:opacity-50
+                    "
+                  >
+                    {loadingDelete ? "Deleting..." : "Delete API Key"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {errorMessage && (
+          <p
+            role="alert"
+            className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700"
+          >
+            {errorMessage}
+          </p>
+        )}
+      </div>
     </motion.section>
   );
 }

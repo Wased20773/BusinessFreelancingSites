@@ -331,7 +331,7 @@ export default function EditSubcategoryPage() {
     <motion.section
       {...fadeInMotion}
       aria-labelledby="edit-subcategory-heading"
-      className="max-w-[1000px] mx-auto p-5 pt-0"
+      className="relative max-w-[1000px] mx-auto"
     >
       {/* HEADER */}
       <PageHeading
@@ -339,10 +339,10 @@ export default function EditSubcategoryPage() {
         ariaLabel="Return to subcategory"
         setIsLoading={setIsLoading}
         headingId="edit-subcategory-heading"
-        heading="Edit Subcategory"
+        heading="Go Back"
       />
 
-      <div className="mt-[0.5rem]">
+      <div className="mt-6 p-5 pt-0">
         <EditCategoryForm
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}

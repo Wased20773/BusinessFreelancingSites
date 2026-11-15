@@ -19,22 +19,22 @@ export default function PageHeading({
 }: PageHeadingProps) {
   return (
     <>
-      <header className="h-[70px] z-10 w-full fixed flex items-center gap-3 bg-white shadow-lg shadow-white">
+      <header className="z-10 w-full sticky top-0 bg-white shadow-lg shadow-white px-5 md:pt-5">
         <Link
+          className="flex items-center gap-3"
           href={path}
           aria-label={ariaLabel}
           onClick={() => setIsLoading(true)}
         >
           <ArrowIcon direction="left" size={50} />
+          <h1 id={headingId} className="truncate">
+            {heading}
+          </h1>
         </Link>
-
-        <h1 id={headingId} className="truncate">
-          {heading}
-        </h1>
       </header>
 
-      {/* Reserves the fixed header’s space */}
-      <div aria-hidden="true" className="h-[70px]" />
+      {/* Reserves the fixed header’s space
+      // <div aria-hidden="true" className="h-[70px]" /> */}
     </>
   );
 }

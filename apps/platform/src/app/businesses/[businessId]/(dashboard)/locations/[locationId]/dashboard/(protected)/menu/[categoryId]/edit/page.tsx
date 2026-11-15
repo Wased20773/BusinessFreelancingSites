@@ -293,7 +293,7 @@ export default function EditCategoryPage() {
     <motion.section
       {...fadeInMotion}
       aria-labelledby="edit-category-heading"
-      className="max-w-[1000px] mx-auto p-5 pt-0"
+      className="relative max-w-[1000px] mx-auto"
     >
       {/* HEADER */}
       <PageHeading
@@ -301,10 +301,10 @@ export default function EditCategoryPage() {
         ariaLabel="Return to category"
         setIsLoading={setIsLoading}
         headingId="edit-category-heading"
-        heading="Edit Category"
+        heading="Go Back"
       />
 
-      <div className="mt-[0.5rem]">
+      <div className="mt-6 p-5 pt-0">
         <EditCategoryForm
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}

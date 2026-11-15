@@ -237,17 +237,17 @@ export default function CreateItemView({
     <motion.section
       {...fadeInMotion}
       aria-labelledby="create-item-heading"
-      className="mx-auto max-w-[1000px] p-5 pt-0"
+      className="relative mx-auto max-w-[1000px]"
     >
       <PageHeading
         path={backPath}
         ariaLabel={backLabel}
         setIsLoading={setIsLoading}
         headingId="create-item-heading"
-        heading="Create Item"
+        heading="Go Back"
       />
 
-      <div className="mt-[0.5rem]">
+      <div className="mt-6 p-5 pt-0">
         <CreateItemForm
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}

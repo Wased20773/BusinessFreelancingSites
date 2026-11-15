@@ -208,7 +208,7 @@ export default function CreateCategoryPage() {
     <motion.section
       {...fadeInMotion}
       aria-labelledby="create-category-heading"
-      className="max-w-[1000px] mx-auto p-5 pt-0"
+      className="relative max-w-[1000px] mx-auto"
     >
       {/* HEADER */}
       <PageHeading
@@ -216,10 +216,10 @@ export default function CreateCategoryPage() {
         ariaLabel="Return to category"
         setIsLoading={setIsLoading}
         headingId="create-category-heading"
-        heading="Create Subcategory"
+        heading="Go Back"
       />
 
-      <div className="mt-[0.5rem]">
+      <div className="mt-6 p-5 pt-0">
         <CreateCategoryForm
           legend="Subcategory info"
           handleSubmit={handleSubmit}

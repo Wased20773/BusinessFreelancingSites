@@ -132,7 +132,7 @@ export default function CreateSocialPage() {
     <motion.section
       {...fadeInMotion}
       aria-labelledby="create-social-heading"
-      className="max-w-[1000px] mx-auto p-5 pt-0"
+      className="relative max-w-[1000px] mx-auto"
     >
       {/* HEADER */}
       <PageHeading
@@ -140,10 +140,10 @@ export default function CreateSocialPage() {
         ariaLabel="Return to socials"
         setIsLoading={setIsLoading}
         headingId="create-social-heading"
-        heading="Create Social"
+        heading="Go Back"
       />
 
-      <div className="mt-[0.5rem]">
+      <div className="mt-6 p-5 pt-0">
         <SocialForm
           onSubmit={handleSubmit}
           platform={platform}

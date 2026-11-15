@@ -324,63 +324,65 @@ export default function EditItemView({
     <motion.section
       {...fadeInMotion}
       aria-labelledby="edit-item-heading"
-      className="mx-auto max-w-[1000px] p-5 pt-0"
+      className="relative mx-auto max-w-[1000px]"
     >
       <PageHeading
         path={backPath}
         ariaLabel={backLabel}
         setIsLoading={setIsLoading}
         headingId="edit-item-heading"
-        heading={canManageItem ? "Edit Item" : "Item"}
+        heading="Go Back"
       />
 
-      {errorMessage && (
-        <p
-          role="alert"
-          className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-        >
-          {errorMessage}
-        </p>
-      )}
+      <div className="p-5 pt-0">
+        {errorMessage && (
+          <p
+            role="alert"
+            className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          >
+            {errorMessage}
+          </p>
+        )}
 
-      <div className="mt-[0.5rem]">
-        <EditItemForm
-          canManage={canManageItem}
-          itemData={itemData}
-          imagePreview={itemImage.imagePreview}
-          cropImageSrc={itemImage.cropImageSrc}
-          crop={itemImage.crop}
-          zoom={itemImage.zoom}
-          croppedAreaPixels={itemImage.croppedAreaPixels}
-          errorMessageImage={itemImage.errorMessageImage}
-          canSubmit={canSubmit}
-          isProcessing={isProcessing}
-          isSaving={isSaving}
-          isDeleting={isDeleting}
-          isSynced={isSynced}
-          setIsSynced={setIsSynced}
-          hasSyncGroup={hasSyncGroup}
-          handleSubmit={handleSubmit}
-          handleFormInput={handleFormInput}
-          handleImageChange={(event) =>
-            itemImage.handleImageChange(event, itemData.imageKey ?? null)
-          }
-          setCrop={itemImage.setCrop}
-          setZoom={itemImage.setZoom}
-          handleCropComplete={itemImage.handleCropComplete}
-          handleUseCrop={itemImage.handleUseCrop}
-          handleEditCrop={itemImage.handleEditCrop}
-          handleDeleteImage={handleDeleteImage}
-          handleDelete={handleDelete}
-          options={
-            <ItemOptionsEditor
-              canManage={canManageItem}
-              drafts={optionDrafts}
-              setDrafts={setOptionDrafts}
-              disabled={isProcessing}
-            />
-          }
-        />
+        <div className="mt-6">
+          <EditItemForm
+            canManage={canManageItem}
+            itemData={itemData}
+            imagePreview={itemImage.imagePreview}
+            cropImageSrc={itemImage.cropImageSrc}
+            crop={itemImage.crop}
+            zoom={itemImage.zoom}
+            croppedAreaPixels={itemImage.croppedAreaPixels}
+            errorMessageImage={itemImage.errorMessageImage}
+            canSubmit={canSubmit}
+            isProcessing={isProcessing}
+            isSaving={isSaving}
+            isDeleting={isDeleting}
+            isSynced={isSynced}
+            setIsSynced={setIsSynced}
+            hasSyncGroup={hasSyncGroup}
+            handleSubmit={handleSubmit}
+            handleFormInput={handleFormInput}
+            handleImageChange={(event) =>
+              itemImage.handleImageChange(event, itemData.imageKey ?? null)
+            }
+            setCrop={itemImage.setCrop}
+            setZoom={itemImage.setZoom}
+            handleCropComplete={itemImage.handleCropComplete}
+            handleUseCrop={itemImage.handleUseCrop}
+            handleEditCrop={itemImage.handleEditCrop}
+            handleDeleteImage={handleDeleteImage}
+            handleDelete={handleDelete}
+            options={
+              <ItemOptionsEditor
+                canManage={canManageItem}
+                drafts={optionDrafts}
+                setDrafts={setOptionDrafts}
+                disabled={isProcessing}
+              />
+            }
+          />
+        </div>
       </div>
     </motion.section>
   );

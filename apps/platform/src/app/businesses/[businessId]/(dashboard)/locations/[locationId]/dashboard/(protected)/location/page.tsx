@@ -2,7 +2,6 @@
 
 import "../page.css";
 
-import Divider from "@/components/layout/Divider";
 import CreateDaysForm from "@/components/ui/days/CreateDaysForm";
 import LocationInfo from "@/components/ui/locations/LocationInfo";
 import type { LocationJson } from "@/types/types";
@@ -303,7 +302,7 @@ export default function LocationPage() {
       {/* HEADER */}
       <header className="flex items-center gap-3">
         <h1 className="truncate" id="location-heading">
-          {locationData.address}
+          Location
         </h1>
       </header>
 

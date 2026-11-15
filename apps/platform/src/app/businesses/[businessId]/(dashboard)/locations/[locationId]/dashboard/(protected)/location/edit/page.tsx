@@ -370,7 +370,7 @@ export default function EditLocationPage() {
     <motion.section
       {...fadeInMotion}
       aria-labelledby="edit-location-heading"
-      className="max-w-[1000px] mx-auto p-5 pt-0"
+      className="relative max-w-[1000px] mx-auto"
     >
       {/* HEADER */}
       <PageHeading
@@ -378,10 +378,10 @@ export default function EditLocationPage() {
         ariaLabel="Return to location"
         setIsLoading={setIsLoading}
         headingId="edit-location-heading"
-        heading="Edit Location"
+        heading="Go Back"
       />
 
-      <div className="mt-[0.5rem]">
+      <div className="mt-6 p-5 pt-0">
         <EditLocationForm
           handleSubmit={handleSubmit}
           handleFormInput={handleFormInput}

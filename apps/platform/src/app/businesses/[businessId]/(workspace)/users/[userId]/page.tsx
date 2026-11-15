@@ -398,7 +398,7 @@ export default function UserDetailsPage() {
   return (
     <motion.section
       {...fadeInMotion}
-      className="max-w-[1000px] mx-auto p-5 pt-0"
+      className="relative max-w-[1000px] mx-auto"
       aria-labelledby="user-details-heading"
     >
       {/* Heading */}
@@ -407,338 +407,340 @@ export default function UserDetailsPage() {
         ariaLabel="Return to members"
         setIsLoading={setIsLoading}
         headingId="user-details-heading"
-        heading={userData.user?.name ?? "Member Details"}
+        heading="Go Back"
       />
 
-      <p className="text-gray-500 mt-2">
-        View account information and manage this member&apos;s access.
-      </p>
+      <div className="p-5 pt-0">
+        <p className="text-gray-500 mt-2">
+          View account information and manage this member&apos;s access.
+        </p>
 
-      {/* Member Information */}
-      <section className="border border-gray-200 rounded-xl shadow-sm mt-5 p-5">
-        {/* General */}
-        <div>
-          <h2 className="text-xl font-semibold">Member Information</h2>
+        {/* Member Information */}
+        <section className="border border-gray-200 rounded-xl shadow-sm mt-6 p-5">
+          {/* General */}
+          <div>
+            <h2 className="text-xl font-semibold">Member Information</h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
-            <div>
-              <p className="text-sm text-gray-500">Name</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
+              <div>
+                <p className="text-sm text-gray-500">Name</p>
 
-              <p className="font-medium mt-1">
-                {userData.user?.name ?? "Missing name"}
-              </p>
-            </div>
+                <p className="font-medium mt-1">
+                  {userData.user?.name ?? "Missing name"}
+                </p>
+              </div>
 
-            <div>
-              <p className="text-sm text-gray-500">Email</p>
+              <div>
+                <p className="text-sm text-gray-500">Email</p>
 
-              <p className="font-medium mt-1 break-all">
-                {userData.user?.email ?? "Missing email"}
-              </p>
-            </div>
+                <p className="font-medium mt-1 break-all">
+                  {userData.user?.email ?? "Missing email"}
+                </p>
+              </div>
 
-            <div>
-              <p className="text-sm text-gray-500">Username</p>
+              <div>
+                <p className="text-sm text-gray-500">Username</p>
 
-              <p className="font-medium mt-1">
-                {userData.user?.username ?? "Not provided"}
-              </p>
-            </div>
+                <p className="font-medium mt-1">
+                  {userData.user?.username ?? "Not provided"}
+                </p>
+              </div>
 
-            <div>
-              <p className="text-sm text-gray-500">Access Level</p>
+              <div>
+                <p className="text-sm text-gray-500">Access Level</p>
 
-              <span className="inline-flex mt-1 capitalize rounded-md border border-gray-300 bg-gray-100 px-2 py-1 text-sm font-medium">
-                {userData.role?.accessLevel ?? "Missing role"}
-              </span>
+                <span className="inline-flex mt-1 capitalize rounded-md border border-gray-300 bg-gray-100 px-2 py-1 text-sm font-medium">
+                  {userData.role?.accessLevel ?? "Missing role"}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="border-t border-gray-200 my-6" />
+          <div className="border-t border-gray-200 my-6" />
 
-        {/* Permissions */}
-        <div>
-          <div className="flex justify-between items-start gap-4">
-            <div>
-              <h2 className="text-xl font-semibold">Permissions</h2>
+          {/* Permissions */}
+          <div>
+            <div className="flex justify-between items-start gap-4">
+              <div>
+                <h2 className="text-xl font-semibold">Permissions</h2>
 
-              <p className="text-sm text-gray-500 mt-1">
-                Control what this member can access within the business.
-              </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Control what this member can access within the business.
+                </p>
+              </div>
+
+              {canModifySelectedUser && !isEdit && (
+                <button
+                  type="button"
+                  aria-label="Edit user permissions"
+                  className="shrink-0 rounded-lg p-2 hover:bg-gray-100 transition-colors"
+                  onClick={() => setIsEdit(true)}
+                >
+                  <Image src={EditIcon} alt="" width={22} height={22} />
+                </button>
+              )}
             </div>
 
-            {canModifySelectedUser && !isEdit && (
-              <button
-                type="button"
-                aria-label="Edit user permissions"
-                className="shrink-0 rounded-lg p-2 hover:bg-gray-100 transition-colors"
-                onClick={() => setIsEdit(true)}
-              >
-                <Image src={EditIcon} alt="" width={22} height={22} />
-              </button>
+            {isEdit && canModifySelectedUser ? (
+              <form className="mt-4" onSubmit={handleSubmit}>
+                <label className="font-semibold" htmlFor="user-access-level">
+                  Access Level <RequiredField />
+                </label>
+
+                <select
+                  id="user-access-level"
+                  className="block w-full mt-1 border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
+                  name="access-level"
+                  value={selectedAccessLevel ?? ""}
+                  onChange={(event) =>
+                    setSelectedAccessLevel(event.target.value as AccessLevel)
+                  }
+                  disabled={isSaving}
+                  required
+                >
+                  <option value={ACCESS_LEVEL.developer}>Developer</option>
+                  <option value={ACCESS_LEVEL.admin}>Admin</option>
+                  <option value={ACCESS_LEVEL.staff}>Staff</option>
+                  {canTransferOwnership && (
+                    <option value={ACCESS_LEVEL.owner}>Owner</option>
+                  )}
+                </select>
+
+                {isOwnershipTransfer && (
+                  <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-3">
+                    <p className="font-semibold text-amber-900">
+                      Transfer Ownership
+                    </p>
+
+                    <p className="text-sm text-amber-800 mt-1">
+                      This member will become the business owner and your access
+                      level will change to Admin.
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 mt-4">
+                  <button
+                    type="button"
+                    className="border border-gray-300 rounded-lg px-3 py-2 hover:bg-gray-100 transition-colors"
+                    disabled={isSaving}
+                    onClick={() => {
+                      setSelectedAccessLevel(userData.role?.accessLevel ?? null);
+
+                      setIsEdit(false);
+                    }}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="bg-emerald-300 border border-green-500 rounded-lg text-green-900 px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    type="submit"
+                    disabled={isSaving || !accessLevelChanged}
+                  >
+                    {isSaving
+                      ? isOwnershipTransfer
+                        ? "Transferring..."
+                        : "Saving..."
+                      : isOwnershipTransfer
+                        ? "Transfer Ownership"
+                        : "Save Changes"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="mt-4">
+                <p className="text-sm text-gray-500">Current Access</p>
+
+                <span className="inline-flex mt-1 capitalize rounded-md border border-gray-300 bg-gray-100 px-3 py-1.5 font-medium">
+                  {userData.role?.accessLevel ?? "Missing role"}
+                </span>
+
+                {isCurrentUser && (
+                  <p className="text-sm text-gray-500 mt-3">
+                    You cannot change your own access level through member
+                    management.
+                  </p>
+                )}
+
+                {currentAccessLevel === ACCESS_LEVEL.admin && targetIsOwner && (
+                  <p className="text-sm text-amber-400 font-semibold mt-3">
+                    Only the business owner can manage ownership.
+                  </p>
+                )}
+              </div>
             )}
           </div>
 
-          {isEdit && canModifySelectedUser ? (
-            <form className="mt-4" onSubmit={handleSubmit}>
-              <label className="font-semibold" htmlFor="user-access-level">
-                Access Level <RequiredField />
-              </label>
+          <div className="border-t border-gray-200 my-6" />
 
-              <select
-                id="user-access-level"
-                className="block w-full mt-1 border-[0.1rem] border-b-[0.2rem] rounded-lg border-blue-400 bg-gray-100 px-3 py-2"
-                name="access-level"
-                value={selectedAccessLevel ?? ""}
-                onChange={(event) =>
-                  setSelectedAccessLevel(event.target.value as AccessLevel)
-                }
-                disabled={isSaving}
-                required
-              >
-                <option value={ACCESS_LEVEL.developer}>Developer</option>
-                <option value={ACCESS_LEVEL.admin}>Admin</option>
-                <option value={ACCESS_LEVEL.staff}>Staff</option>
-                {canTransferOwnership && (
-                  <option value={ACCESS_LEVEL.owner}>Owner</option>
-                )}
-              </select>
+          {/* Timestamps */}
+          <div>
+            <h2 className="text-xl font-semibold">Activity</h2>
 
-              {isOwnershipTransfer && (
-                <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-3">
-                  <p className="font-semibold text-amber-900">
-                    Transfer Ownership
-                  </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
+              <div>
+                <p className="text-sm text-gray-500">Account Created</p>
 
-                  <p className="text-sm text-amber-800 mt-1">
-                    This member will become the business owner and your access
-                    level will change to Admin.
-                  </p>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2 mt-4">
-                <button
-                  type="button"
-                  className="border border-gray-300 rounded-lg px-3 py-2 hover:bg-gray-100 transition-colors"
-                  disabled={isSaving}
-                  onClick={() => {
-                    setSelectedAccessLevel(userData.role?.accessLevel ?? null);
-
-                    setIsEdit(false);
-                  }}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  className="bg-emerald-300 border border-green-500 rounded-lg text-green-900 px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  type="submit"
-                  disabled={isSaving || !accessLevelChanged}
-                >
-                  {isSaving
-                    ? isOwnershipTransfer
-                      ? "Transferring..."
-                      : "Saving..."
-                    : isOwnershipTransfer
-                      ? "Transfer Ownership"
-                      : "Save Changes"}
-                </button>
+                <p className="mt-1">
+                  {userData.user?.createdAt
+                    ? formatDateTime(userData.user.createdAt, "date")
+                    : "Unavailable"}
+                </p>
               </div>
-            </form>
-          ) : (
-            <div className="mt-4">
-              <p className="text-sm text-gray-500">Current Access</p>
 
-              <span className="inline-flex mt-1 capitalize rounded-md border border-gray-300 bg-gray-100 px-3 py-1.5 font-medium">
-                {userData.role?.accessLevel ?? "Missing role"}
-              </span>
+              <div>
+                <p className="text-sm text-gray-500">Account Updated</p>
 
-              {isCurrentUser && (
-                <p className="text-sm text-gray-500 mt-3">
-                  You cannot change your own access level through member
-                  management.
+                <p className="mt-1">
+                  {userData.user?.updatedAt
+                    ? formatDateTime(userData.user.updatedAt, "date")
+                    : "Unavailable"}
                 </p>
-              )}
+              </div>
 
-              {currentAccessLevel === ACCESS_LEVEL.admin && targetIsOwner && (
-                <p className="text-sm text-amber-400 font-semibold mt-3">
-                  Only the business owner can manage ownership.
+              <div>
+                <p className="text-sm text-gray-500">Added to Business</p>
+
+                <p className="mt-1">
+                  {userData.createdAt
+                    ? formatDateTime(userData.createdAt, "date")
+                    : "Unavailable"}
                 </p>
-              )}
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500">Membership Updated</p>
+
+                <p className="mt-1">
+                  {userData.updatedAt
+                    ? formatDateTime(userData.updatedAt, "date")
+                    : "Unavailable"}
+                </p>
+              </div>
             </div>
-          )}
-        </div>
-
-        <div className="border-t border-gray-200 my-6" />
-
-        {/* Timestamps */}
-        <div>
-          <h2 className="text-xl font-semibold">Activity</h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-4">
-            <div>
-              <p className="text-sm text-gray-500">Account Created</p>
-
-              <p className="mt-1">
-                {userData.user?.createdAt
-                  ? formatDateTime(userData.user.createdAt, "date")
-                  : "Unavailable"}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-500">Account Updated</p>
-
-              <p className="mt-1">
-                {userData.user?.updatedAt
-                  ? formatDateTime(userData.user.updatedAt, "date")
-                  : "Unavailable"}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-500">Added to Business</p>
-
-              <p className="mt-1">
-                {userData.createdAt
-                  ? formatDateTime(userData.createdAt, "date")
-                  : "Unavailable"}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-500">Membership Updated</p>
-
-              <p className="mt-1">
-                {userData.updatedAt
-                  ? formatDateTime(userData.updatedAt, "date")
-                  : "Unavailable"}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Danger Zone */}
-      {canDeleteSelectedUser && (
-        <section className="border border-red-400 bg-red-50 rounded-xl shadow-red-400 shadow-sm p-5 mt-5">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-semibold text-red-700">
-                Remove Member
-              </h2>
-
-              <p className="text-sm text-red-400 mt-1">
-                Remove this member&apos;s access to the business and its
-                content.
-              </p>
-            </div>
-
-            <button
-              className="shrink-0 border border-red-400 rounded-lg bg-red-100 text-red-700 font-medium px-4 py-2 hover:bg-red-200 transition-colors"
-              type="button"
-              onClick={() => setClickedDelete(true)}
-            >
-              Remove Member
-            </button>
           </div>
         </section>
-      )}
 
-      {/* Delete Modal */}
-      {clickedDelete && canDeleteSelectedUser && (
-        <div className="fixed inset-0 z-50 flex justify-center items-center bg-black/40 px-5">
-          <div className="w-full max-w-[500px] bg-white border border-gray-300 rounded-xl p-5">
-            <div className="flex justify-between items-start gap-5">
+        {/* Danger Zone */}
+        {canDeleteSelectedUser && (
+          <section className="border border-red-400 bg-red-50 rounded-xl shadow-red-400 shadow-sm p-5 mt-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h2 className="text-xl font-semibold">Remove Member?</h2>
+                <h2 className="text-xl font-semibold text-red-700">
+                  Remove Member
+                </h2>
 
-                <p className="text-gray-500 mt-1">
-                  This member will immediately lose access to this business.
+                <p className="text-sm text-red-400 mt-1">
+                  Remove this member&apos;s access to the business and its
+                  content.
                 </p>
               </div>
 
               <button
+                className="shrink-0 border border-red-400 rounded-lg bg-red-100 text-red-700 font-medium px-4 py-2 hover:bg-red-200 transition-colors"
                 type="button"
-                className="p-1"
-                aria-label="Close remove member modal"
-                disabled={loadingDelete}
-                onClick={() => {
-                  setClickedDelete(false);
-                  setDeleteVerification("");
-                }}
+                onClick={() => setClickedDelete(true)}
               >
-                <Image src={ExitIconBlack} alt="" width={22} height={22} />
+                Remove Member
               </button>
             </div>
+          </section>
+        )}
 
-            <form
-              className="mt-5"
-              onSubmit={handleDelete}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                }
-              }}
-            >
-              <p className="text-sm text-gray-600">
-                To confirm, type the member&apos;s email address:
-              </p>
+        {/* Delete Modal */}
+        {clickedDelete && canDeleteSelectedUser && (
+          <div className="fixed inset-0 z-50 flex justify-center items-center bg-black/40 px-5">
+            <div className="w-full max-w-[500px] bg-white border border-gray-300 rounded-xl p-5">
+              <div className="flex justify-between items-start gap-5">
+                <div>
+                  <h2 className="text-xl font-semibold">Remove Member?</h2>
 
-              <p className="font-semibold break-all mt-1">
-                {userData.user.email}
-              </p>
+                  <p className="text-gray-500 mt-1">
+                    This member will immediately lose access to this business.
+                  </p>
+                </div>
 
-              <input
-                type="text"
-                id="remove-user"
-                name="remove"
-                value={deleteVerification}
-                onChange={(event) => setDeleteVerification(event.target.value)}
-                autoComplete="off"
-                spellCheck={false}
-                disabled={loadingDelete}
-                className="w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 mt-3 disabled:opacity-50"
-              />
-
-              <div className="flex justify-end gap-2 mt-5">
                 <button
                   type="button"
-                  className="border border-gray-300 rounded-lg px-3 py-2"
+                  className="p-1"
+                  aria-label="Close remove member modal"
                   disabled={loadingDelete}
                   onClick={() => {
                     setClickedDelete(false);
                     setDeleteVerification("");
                   }}
                 >
-                  Cancel
-                </button>
-
-                <button
-                  className="rounded-lg border border-red-400 bg-red-100 text-red-700 font-medium px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  type="submit"
-                  disabled={
-                    deleteVerification !== userData.user.email || loadingDelete
-                  }
-                >
-                  {loadingDelete ? "Removing..." : "Remove Member"}
+                  <Image src={ExitIconBlack} alt="" width={22} height={22} />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
 
-      {errorMessage && (
-        <p
-          role="alert"
-          className="text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mt-4"
-        >
-          {errorMessage}
-        </p>
-      )}
+              <form
+                className="mt-5"
+                onSubmit={handleDelete}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                  }
+                }}
+              >
+                <p className="text-sm text-gray-600">
+                  To confirm, type the member&apos;s email address:
+                </p>
+
+                <p className="font-semibold break-all mt-1">
+                  {userData.user.email}
+                </p>
+
+                <input
+                  type="text"
+                  id="remove-user"
+                  name="remove"
+                  value={deleteVerification}
+                  onChange={(event) => setDeleteVerification(event.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                  disabled={loadingDelete}
+                  className="w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 mt-3 disabled:opacity-50"
+                />
+
+                <div className="flex justify-end gap-2 mt-5">
+                  <button
+                    type="button"
+                    className="border border-gray-300 rounded-lg px-3 py-2"
+                    disabled={loadingDelete}
+                    onClick={() => {
+                      setClickedDelete(false);
+                      setDeleteVerification("");
+                    }}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="rounded-lg border border-red-400 bg-red-100 text-red-700 font-medium px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    type="submit"
+                    disabled={
+                      deleteVerification !== userData.user.email || loadingDelete
+                    }
+                  >
+                    {loadingDelete ? "Removing..." : "Remove Member"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {errorMessage && (
+          <p
+            role="alert"
+            className="text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mt-4"
+          >
+            {errorMessage}
+          </p>
+        )}
+      </div>
     </motion.section>
   );
 }

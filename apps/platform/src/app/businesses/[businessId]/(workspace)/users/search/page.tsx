@@ -220,7 +220,7 @@ export default function SearchPage() {
   return (
     <motion.section
       {...fadeInMotion}
-      className="max-w-[1000px] mx-auto p-5 pt-0"
+      className="relative max-w-[1000px] mx-auto"
       aria-labelledby="search-heading"
     >
       {/* Heading */}
@@ -232,169 +232,171 @@ export default function SearchPage() {
         heading="Add Member"
       />
 
-      <p className="text-gray-500 mt-2">
-        Search for an existing account and add them to this business.
-      </p>
+      <div className="p-5 pt-0">
+        <p className="text-gray-500 mt-2">
+          Search for an existing account and add them to this business.
+        </p>
 
-      {/* Search */}
-      <section className="border border-gray-200 rounded-xl shadow-sm mt-5 p-5">
-        <div className="mb-5">
-          <h2 className="text-xl font-semibold">Find By Email</h2>
+        {/* Search */}
+        <section className="border border-gray-200 rounded-xl shadow-sm mt-6 p-5">
+          <div className="mb-5">
+            <h2 className="text-xl font-semibold">Find By Email</h2>
 
-          <p className="text-sm text-gray-500 mt-1">
-            Accounts are uniquely identified by their email address.
-          </p>
-        </div>
+            <p className="text-sm text-gray-500 mt-1">
+              Accounts are uniquely identified by their email address.
+            </p>
+          </div>
 
-        <form
-          className="flex items-stretch gap-2"
-          role="search"
-          onSubmit={searchUser}
-        >
-          <input
-            id="user-email"
-            name="email"
-            className="
-              min-w-0 flex-1
-              rounded-lg
-              border-[0.1rem]
-              border-b-[0.2rem]
-              border-blue-400
-              bg-gray-50
-              px-3 py-2
-              disabled:opacity-50
-            "
-            type="email"
-            placeholder="user@email.com"
-            autoComplete="email"
-            aria-label="User email address"
-            required
-            disabled={isSearching}
-          />
-
-          <button
-            type="submit"
-            aria-label="Search for user"
-            disabled={isSearching}
-            className="
-              flex
-              items-center
-              justify-center
-              rounded-lg
-              border
-              border-gray-300
-              px-4
-              hover:bg-gray-100
-              transition-colors
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
+          <form
+            className="flex items-stretch gap-2"
+            role="search"
+            onSubmit={searchUser}
           >
-            <Image src={SearchIcon} alt="" width={20} height={20} />
-          </button>
-        </form>
+            <input
+              id="user-email"
+              name="email"
+              className="
+                min-w-0 flex-1
+                rounded-lg
+                border-[0.1rem]
+                border-b-[0.2rem]
+                border-blue-400
+                bg-gray-50
+                px-3 py-2
+                disabled:opacity-50
+              "
+              type="email"
+              placeholder="user@email.com"
+              autoComplete="email"
+              aria-label="User email address"
+              required
+              disabled={isSearching}
+            />
 
-        {/* Result */}
-        <motion.div
-          key={searchData?.id ?? (hasSearched ? "no-result" : "empty")}
-          {...fadeInMotion}
-          className="border-t border-gray-200 mt-5 pt-5"
-        >
-          {searchData ? (
-            <div>
-              <p className="text-sm font-medium text-gray-500 mb-2">
-                Search Result
-              </p>
+            <button
+              type="submit"
+              aria-label="Search for user"
+              disabled={isSearching}
+              className="
+                flex
+                items-center
+                justify-center
+                rounded-lg
+                border
+                border-gray-300
+                px-4
+                hover:bg-gray-100
+                transition-colors
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
+            >
+              <Image src={SearchIcon} alt="" width={20} height={20} />
+            </button>
+          </form>
 
-              <div
-                className="
-                  grid
-                  grid-cols-[auto_minmax(0,1fr)_auto]
-                  items-center
-                  gap-3
-                  border
-                  border-gray-200
-                  rounded-lg
-                  p-3
-                "
-              >
-                {/* Profile */}
-                <Image
-                  className="rounded-full border border-gray-300 shrink-0"
-                  src={searchData.image || PlaceholderAccountIcon}
-                  alt="Profile picture"
-                  width={42}
-                  height={42}
-                />
+          {/* Result */}
+          <motion.div
+            key={searchData?.id ?? (hasSearched ? "no-result" : "empty")}
+            {...fadeInMotion}
+            className="border-t border-gray-200 mt-5 pt-5"
+          >
+            {searchData ? (
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-2">
+                  Search Result
+                </p>
 
-                {/* Account */}
-                <div className="min-w-0">
-                  <p className="font-medium truncate">
-                    {searchData.name || "Unnamed Account"}
-                  </p>
+                <div
+                  className="
+                    grid
+                    grid-cols-[auto_minmax(0,1fr)_auto]
+                    items-center
+                    gap-3
+                    border
+                    border-gray-200
+                    rounded-lg
+                    p-3
+                  "
+                >
+                  {/* Profile */}
+                  <Image
+                    className="rounded-full border border-gray-300 shrink-0"
+                    src={searchData.image || PlaceholderAccountIcon}
+                    alt="Profile picture"
+                    width={42}
+                    height={42}
+                  />
 
-                  <div className="flex items-center gap-1.5 mt-1 min-w-0">
-                    <Image
-                      src={GoogleLogoIcon}
-                      alt="Google account provider"
-                      width={14}
-                      height={14}
-                    />
+                  {/* Account */}
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">
+                      {searchData.name || "Unnamed Account"}
+                    </p>
 
-                    <span className="text-sm text-gray-500 truncate">
-                      {searchData.email}
-                    </span>
+                    <div className="flex items-center gap-1.5 mt-1 min-w-0">
+                      <Image
+                        src={GoogleLogoIcon}
+                        alt="Google account provider"
+                        width={14}
+                        height={14}
+                      />
+
+                      <span className="text-sm text-gray-500 truncate">
+                        {searchData.email}
+                      </span>
+                    </div>
                   </div>
+
+                  {/* Add */}
+                  <button
+                    type="button"
+                    className="
+                      flex
+                      items-center
+                      justify-center
+                      rounded-lg
+                      border
+                      border-gray-300
+                      p-2
+                      hover:bg-gray-100
+                      transition-colors
+                      disabled:cursor-not-allowed
+                      disabled:opacity-50
+                    "
+                    aria-label={`Add ${searchData.email}`}
+                    disabled={addingUserEmail !== null}
+                    onClick={() => void addUser(searchData.email)}
+                  >
+                    <Image src={AddIcon} alt="" width={18} height={18} />
+                  </button>
                 </div>
 
-                {/* Add */}
-                <button
-                  type="button"
-                  className="
-                    flex
-                    items-center
-                    justify-center
-                    rounded-lg
-                    border
-                    border-gray-300
-                    p-2
-                    hover:bg-gray-100
-                    transition-colors
-                    disabled:cursor-not-allowed
-                    disabled:opacity-50
-                  "
-                  aria-label={`Add ${searchData.email}`}
-                  disabled={addingUserEmail !== null}
-                  onClick={() => void addUser(searchData.email)}
-                >
-                  <Image src={AddIcon} alt="" width={18} height={18} />
-                </button>
+                <p className="text-sm text-gray-500 mt-2">
+                  New members are added with Staff access by default.
+                </p>
               </div>
+            ) : hasSearched ? (
+              <div className="py-8 text-center">
+                <p className="font-medium">No account found</p>
 
-              <p className="text-sm text-gray-500 mt-2">
-                New members are added with Staff access by default.
-              </p>
-            </div>
-          ) : hasSearched ? (
-            <div className="py-8 text-center">
-              <p className="font-medium">No account found</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {errorMessage ??
+                    "Check the email address and try your search again."}
+                </p>
+              </div>
+            ) : (
+              <div className="py-8 text-center">
+                <p className="font-medium">Search for an account</p>
 
-              <p className="text-sm text-gray-500 mt-1">
-                {errorMessage ??
-                  "Check the email address and try your search again."}
-              </p>
-            </div>
-          ) : (
-            <div className="py-8 text-center">
-              <p className="font-medium">Search for an account</p>
-
-              <p className="text-sm text-gray-500 mt-1">
-                Enter an email address above to get started.
-              </p>
-            </div>
-          )}
-        </motion.div>
-      </section>
+                <p className="text-sm text-gray-500 mt-1">
+                  Enter an email address above to get started.
+                </p>
+              </div>
+            )}
+          </motion.div>
+        </section>
+      </div>
     </motion.section>
   );
 }
