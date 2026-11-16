@@ -161,13 +161,13 @@ export default function ItemOptionsEditor({
             )}
 
             {canManage && drafts.length > 0 && (
-              <ol className="mt-4 space-y-3">
+              <ol className="mt-4 space-y-3 rounded-md border border-blue-200 bg-blue-50/40 p-2">
                 {drafts.map((draft, index) => (
                   <motion.li
                     key={draft.key}
                     // Saved options come in one after another; one just added shows straight away.
                     {...listRowMotion(draft.id ? index : 0)}
-                    className="rounded-lg border border-gray-200 bg-white p-3"
+                    className={`p-3 mb-0${drafts.at(-1) !== draft && " border-b"}`}
                   >
                     <div className="grid grid-cols-[minmax(0,1fr)_110px] gap-3">
                       <div className="min-w-0">

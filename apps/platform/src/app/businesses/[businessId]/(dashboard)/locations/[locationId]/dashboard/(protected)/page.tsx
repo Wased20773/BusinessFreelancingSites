@@ -132,12 +132,8 @@ export default function OverviewPage() {
     );
   }
 
-  const { categories, items, contacts, socials, days, address } = overviewData;
-
-  const subcategoryCount = categories.reduce(
-    (total, category) => total + (category.subcategories?.length ?? 0),
-    0,
-  );
+  const { categories, items, contacts, socials, days, address, _count } =
+    overviewData;
 
   const businessContactCount = contacts.filter(
     (contact) => !contact.isPersonal,
@@ -306,9 +302,9 @@ export default function OverviewPage() {
                   </span>
                 </div>
                 <div className="flex justify-between gap-3">
-                  <span className="text-gray-600">Subcategories</span>
+                  <span className="text-gray-600">Add-ons</span>
                   <span className="font-medium tabular-nums text-gray-900">
-                    {subcategoryCount}
+                    {_count.addOns}
                   </span>
                 </div>
               </div>

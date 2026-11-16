@@ -98,6 +98,9 @@ export async function GET(
           },
         },
 
+        // The Menu card shows how many add-ons this location has.
+        _count: { select: { addOns: true } },
+
         items: {
           select: {
             id: true,

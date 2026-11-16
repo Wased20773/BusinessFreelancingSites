@@ -75,7 +75,7 @@ export default function BusinessDaysForm({
 }: BusinessDaysFormProps) {
   return (
     <form
-      className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm pt-4"
+      className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm py-4"
       onSubmit={handleSubmit}
     >
       <fieldset className="px-5">

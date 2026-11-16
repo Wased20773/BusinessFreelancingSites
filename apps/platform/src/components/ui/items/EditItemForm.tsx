@@ -85,13 +85,22 @@ export default function EditItemForm({
         <div className="p-5 sm:p-6">
           <h2 className="text-base font-semibold text-gray-900">Item info</h2>
 
-          <dl className="mt-4 space-y-4 text-sm">
+          <dl className="grid sm:grid-cols-2 mt-4 space-y-5 text-sm">
             <div>
               <dt className="font-medium text-gray-600">Name</dt>
               <dd className="mt-1 text-gray-900">{itemData.name}</dd>
             </div>
 
             <div>
+              <dt className="font-medium text-gray-600">Price</dt>
+              <dd className="mt-1 font-medium text-gray-900">
+                {Number(itemData.price).toFixed(2) == "0.00"
+                  ? "Uses Options"
+                  : `$${Number(itemData.price).toFixed(2)}`}
+              </dd>
+            </div>
+
+            <div className="sm:col-span-2">
               <dt className="font-medium text-gray-600">Description</dt>
               <dd className="mt-1 whitespace-pre-wrap text-gray-900">
                 {itemData.description ?? "No description provided."}
@@ -108,18 +117,11 @@ export default function EditItemForm({
             </div>
 
             <div>
-              <dt className="font-medium text-gray-600">Calories</dt>
+              <dt className="font-medium text-gray-600">Calories (kcal)</dt>
               <dd className="mt-1 text-gray-900">
                 {itemData.calories !== null
                   ? `${itemData.calories} kcal`
                   : "Not provided"}
-              </dd>
-            </div>
-
-            <div>
-              <dt className="font-medium text-gray-600">Price</dt>
-              <dd className="mt-1 font-medium text-gray-900">
-                ${Number(itemData.price).toFixed(2)}
               </dd>
             </div>
           </dl>
@@ -173,19 +175,38 @@ export default function EditItemForm({
           </legend>
 
           <div className="mt-4 space-y-4">
-            <div>
-              <label htmlFor="item-name" className={labelClass}>
-                Name
-                <RequiredField />
-              </label>
-              <input
-                className={inputClass}
-                id="item-name"
-                name="name"
-                type="text"
-                defaultValue={itemData.name}
-                required
-              />
+            <div className="grid sm:grid-cols-[1fr_100px] gap-5">
+              <div>
+                <label htmlFor="item-name" className={labelClass}>
+                  Name
+                  <RequiredField />
+                </label>
+                <input
+                  className={inputClass}
+                  id="item-name"
+                  name="name"
+                  type="text"
+                  defaultValue={itemData.name}
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="item-price" className={labelClass}>
+                  Price
+                  <RequiredField />
+                </label>
+                <input
+                  className={inputClass}
+                  id="item-price"
+                  name="price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  defaultValue={Number(itemData.price)}
+                  required
+                />
+              </div>
             </div>
 
             <div>
@@ -201,50 +222,35 @@ export default function EditItemForm({
               />
             </div>
 
-            <div>
-              <label htmlFor="item-contains" className={labelClass}>
-                What does the item contain? Please separate with a comma.
-              </label>
-              <input
-                className={inputClass}
-                id="item-contains"
-                name="containsList"
-                type="text"
-                defaultValue={itemData.containsList.join(", ")}
-                placeholder="pepper, salt, onions ..."
-              />
-            </div>
+            <div className="grid sm:grid-cols-[1fr_100px] gap-5">
+              <div className="flex flex-col justify-end">
+                <label htmlFor="item-contains" className={labelClass}>
+                  What does the item contain? Please separate with a comma.
+                </label>
+                <input
+                  className={inputClass}
+                  id="item-contains"
+                  name="containsList"
+                  type="text"
+                  defaultValue={itemData.containsList.join(", ")}
+                  placeholder="pepper, salt, onions ..."
+                />
+              </div>
 
-            <div>
-              <label htmlFor="item-calories" className={labelClass}>
-                Calories (kcal)
-              </label>
-              <input
-                className={inputClass}
-                id="item-calories"
-                name="calories"
-                type="number"
-                min="0"
-                step="5"
-                defaultValue={itemData.calories ?? ""}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="item-price" className={labelClass}>
-                Price
-                <RequiredField />
-              </label>
-              <input
-                className={inputClass}
-                id="item-price"
-                name="price"
-                type="number"
-                min="0"
-                step="0.01"
-                defaultValue={Number(itemData.price)}
-                required
-              />
+              <div className="flex flex-col justify-end">
+                <label htmlFor="item-calories" className={labelClass}>
+                  Calories (kcal)
+                </label>
+                <input
+                  className={inputClass}
+                  id="item-calories"
+                  name="calories"
+                  type="number"
+                  min="0"
+                  step="5"
+                  defaultValue={itemData.calories ?? ""}
+                />
+              </div>
             </div>
           </div>
         </fieldset>

@@ -652,6 +652,8 @@ describe("/api/businesses/[businessId]/locations", () => {
       expect(query.select.contacts.select).toEqual(
         expect.objectContaining({ syncGroupId: true, isSynced: true }),
       );
+      // The Menu card's add-on count.
+      expect(query.select._count).toEqual({ select: { addOns: true } });
     });
   });
 });

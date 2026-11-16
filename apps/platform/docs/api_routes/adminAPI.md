@@ -863,11 +863,12 @@ Fetches everything the dashboard overview needs for one location in a single req
       "createdAt": "DateTime",
       "updatedAt": "DateTime"
     }
-  ]
+  ],
+  "_count": { "addOns": "Int" }
 }
 ```
 
-`hour` is the day's regular hour (or `null`). Special hours are not included. In `categories`, `items` and `subcategories` are the full related records.
+`hour` is the day's regular hour (or `null`). Special hours are not included. In `categories`, `items` and `subcategories` are the full related records. `_count.addOns` is how many add-ons the location has (shown on the Menu card).
 
 #### Used For
 

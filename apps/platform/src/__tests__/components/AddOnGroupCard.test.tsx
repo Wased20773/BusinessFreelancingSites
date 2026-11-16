@@ -54,6 +54,13 @@ function renderCard(canManage = true) {
   );
 }
 
+// Groups start closed; this opens one.
+function openGroup(name = "Sauces") {
+  fireEvent.click(
+    screen.getByRole("button", { name: new RegExp(`^${name}.*add-ons`) }),
+  );
+}
+
 // Opens the group's ⋮ menu and picks an action.
 function pickAction(name: string) {
   fireEvent.keyDown(screen.getByRole("button", { name: "Sauces actions" }), {
@@ -65,6 +72,7 @@ function pickAction(name: string) {
 describe("AddOnGroupCard", () => {
   it("lists the add-ons with their details, usage, and unavailable ones", () => {
     renderCard();
+    openGroup();
 
     expect(screen.getByRole("heading", { name: /^Sauces/ })).toBeInTheDocument();
     expect(screen.getByText("2 add-ons · Synced")).toBeInTheDocument();
@@ -79,13 +87,16 @@ describe("AddOnGroupCard", () => {
 
     const toggle = screen.getByRole("button", { name: /^Sauces.*add-ons/ });
 
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
-    fireEvent.click(toggle);
+    // Closed on load, so a page of groups stays short.
     expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Ranch")).not.toBeInTheDocument();
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
   });
 
   it("warns how many items use an add-on and suggests turning it off instead", () => {
     renderCard();
+    openGroup();
 
     fireEvent.click(screen.getByRole("button", { name: "Edit Ranch" }));
     fireEvent.click(screen.getByRole("button", { name: "Delete add-on" }));
@@ -108,9 +119,9 @@ describe("AddOnGroupCard", () => {
   });
 
   it("opens the new add-on form at the top of the list, even when folded", () => {
+    // The group starts folded; Create add-on opens it.
     renderCard();
 
-    fireEvent.click(screen.getByRole("button", { name: /^Sauces.*add-ons/ }));
     pickAction("Create add-on");
 
     const form = screen.getByRole("form", { name: "New add-on" });
@@ -152,6 +163,7 @@ describe("AddOnGroupCard", () => {
         onChanged={jest.fn()}
       />,
     );
+    openGroup();
 
     expect(screen.getByText(`Add-on ${ADD_ONS_PER_PAGE}`)).toBeInTheDocument();
     expect(screen.queryByText(`Add-on ${ADD_ONS_PER_PAGE + 1}`)).not.toBeInTheDocument();

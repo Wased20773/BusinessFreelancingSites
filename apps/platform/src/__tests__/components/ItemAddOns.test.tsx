@@ -64,7 +64,13 @@ describe("AddOnPicker", () => {
   it("shows the default price as a hint in a picked add-on's price box", () => {
     renderPicker([{ addOnId: "Buffalo", price: "" }]);
 
-    // The group starts open because something in it is picked.
+    // Groups start closed; the header shows how many are picked.
+    const toggle = screen.getByRole("button", { name: /sauces/i });
+
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).toHaveTextContent("1/2");
+    fireEvent.click(toggle);
+
     const priceBox = screen.getByLabelText("+$");
 
     expect(priceBox).toHaveValue(null);

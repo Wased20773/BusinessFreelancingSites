@@ -137,7 +137,7 @@ export default function CategoriesPage() {
           <ActionItem
             href="menu/add-ons"
             icon={AddIcon}
-            label="View add-ons"
+            label="View Add-ons"
             setIsLoading={setIsLoading}
           />
         </nav>

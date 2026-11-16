@@ -250,6 +250,7 @@ export type DashboardOverviewJson = {
   items: ItemJson[];
   contacts: ContactJson[];
   socials: SocialJson[];
+  _count: { addOns: number };
 };
 
 // Billing

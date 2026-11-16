@@ -95,18 +95,36 @@ export default function CreateItemForm({
           </legend>
 
           <div className="mt-4 space-y-4">
-            <div>
-              <label htmlFor="item-name" className={labelClass}>
-                Name
-                <RequiredField />
-              </label>
-              <input
-                className={inputClass}
-                id="item-name"
-                name="name"
-                type="text"
-                required
-              />
+            <div className="grid sm:grid-cols-[1fr_100px] gap-5">
+              <div>
+                <label htmlFor="item-name" className={labelClass}>
+                  Name
+                  <RequiredField />
+                </label>
+                <input
+                  className={inputClass}
+                  id="item-name"
+                  name="name"
+                  type="text"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="item-price" className={labelClass}>
+                  Price
+                  <RequiredField />
+                </label>
+                <input
+                  className={inputClass}
+                  id="item-price"
+                  name="price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  required
+                />
+              </div>
             </div>
 
             <div>
@@ -121,31 +139,33 @@ export default function CreateItemForm({
               />
             </div>
 
-            <div>
-              <label htmlFor="item-contains" className={labelClass}>
-                What does the item contain? Please separate with a comma.
-              </label>
-              <input
-                className={inputClass}
-                id="item-contains"
-                name="containsList"
-                type="text"
-                placeholder="pepper, salt, onions ..."
-              />
-            </div>
+            <div className="grid sm:grid-cols-[1fr_100px] gap-5">
+              <div className="flex flex-col justify-end">
+                <label htmlFor="item-contains" className={labelClass}>
+                  What does the item contain? Please separate with a comma.
+                </label>
+                <input
+                  className={inputClass}
+                  id="item-contains"
+                  name="containsList"
+                  type="text"
+                  placeholder="pepper, salt, onions ..."
+                />
+              </div>
 
-            <div>
-              <label htmlFor="item-calories" className={labelClass}>
-                Calories (kcal)
-              </label>
-              <input
-                className={inputClass}
-                id="item-calories"
-                name="calories"
-                type="number"
-                min="0"
-                step="5"
-              />
+              <div className="flex flex-col justify-end">
+                <label htmlFor="item-calories" className={labelClass}>
+                  Calories (kcal)
+                </label>
+                <input
+                  className={inputClass}
+                  id="item-calories"
+                  name="calories"
+                  type="number"
+                  min="0"
+                  step="5"
+                />
+              </div>
             </div>
 
             <div>
@@ -226,35 +246,25 @@ export default function CreateItemForm({
               )}
             </div>
 
-            <div>
-              <label htmlFor="item-price" className={labelClass}>
-                Price
-                <RequiredField />
-              </label>
-              <input
-                className={inputClass}
-                id="item-price"
-                name="price"
-                type="number"
-                min="0"
-                step="0.01"
-                required
-              />
-            </div>
+            <fieldset disabled={isLoading || isCreating}>
+              <legend className="text-sm font-medium text-gray-900">
+                Availability
+              </legend>
 
-            <label
-              htmlFor="item-available"
-              className="flex cursor-pointer items-center gap-2 text-sm font-medium text-gray-900"
-            >
-              <input
-                id="item-available"
-                name="isAvailable"
-                type="checkbox"
-                defaultChecked
-                className="size-4 accent-blue-600"
-              />
-              Available?
-            </label>
+              <label
+                htmlFor="item-available"
+                className="mt-3 flex cursor-pointer items-center gap-2 text-sm font-medium text-gray-900"
+              >
+                <input
+                  id="item-available"
+                  name="isAvailable"
+                  type="checkbox"
+                  defaultChecked
+                  className="size-4 accent-blue-600"
+                />
+                Available?
+              </label>
+            </fieldset>
           </div>
         </fieldset>
 

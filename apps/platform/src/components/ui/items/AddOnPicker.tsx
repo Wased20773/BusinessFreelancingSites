@@ -46,15 +46,9 @@ export default function AddOnPicker({
 
   const picked = new Map(value.map((link) => [link.addOnId, link]));
 
-  // Groups start open when something in them is picked.
-  const [openGroups, setOpenGroups] = useState<Set<string>>(
-    () =>
-      new Set(
-        visibleGroups
-          .filter((group) => group.addOns.some((addOn) => picked.has(addOn.id)))
-          .map((group) => group.id),
-      ),
-  );
+  // Every group starts closed, so the form stays short; each header shows
+  // how many of its add-ons are picked.
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
 
   function toggleGroup(groupId: string) {
     setOpenGroups((current) => {
