@@ -3,6 +3,7 @@ import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessR
 import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { rateLimiterRead, signImageKeys } from "../route_helper";
+import { BUSINESS_FIELDS } from "@/lib/businessData/selects";
 
 // GET /api/business
 export async function GET(request: Request): Promise<NextResponse> {
@@ -30,15 +31,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       where: {
         id: authentication.businessId,
       },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        domain: true,
-        imageKey: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: BUSINESS_FIELDS,
     });
 
     if (!business) {

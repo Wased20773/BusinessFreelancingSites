@@ -32,8 +32,8 @@ export default function SocialsPage() {
 
   const accessLevel = session?.user?.accessLevel;
   const canManageSocials = accessLevel === "owner" || accessLevel === "admin";
-  const canViewSocials = canManageSocials || accessLevel === "staff";
-  const isDeveloper = accessLevel === "developer";
+  const canViewSocials =
+    canManageSocials || accessLevel === "staff" || accessLevel === "developer";
 
   useEffect(() => {
     async function getSocialsData() {
@@ -96,7 +96,6 @@ export default function SocialsPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canViewSocials,
     pageTitle: "Socials",
     reason:

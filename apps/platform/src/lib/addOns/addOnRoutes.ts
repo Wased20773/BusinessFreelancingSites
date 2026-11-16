@@ -17,6 +17,7 @@ export const VIEW_LEVELS = [
   AccessLevel.owner,
   AccessLevel.admin,
   AccessLevel.staff,
+  AccessLevel.developer,
 ];
 
 export const ADD_ON_GROUP_SELECT = {

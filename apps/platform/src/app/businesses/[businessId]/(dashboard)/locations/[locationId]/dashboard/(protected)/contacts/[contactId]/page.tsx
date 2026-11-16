@@ -75,7 +75,6 @@ export default function EditContactPage() {
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin;
 
-  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
     async function getContactData() {
@@ -299,7 +298,6 @@ export default function EditContactPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canManageContacts,
     pageTitle: "Contacts",
     reason: "Your current access level does not allow contact management.",

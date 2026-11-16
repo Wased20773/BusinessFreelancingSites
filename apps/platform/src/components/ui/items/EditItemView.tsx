@@ -83,8 +83,9 @@ export default function EditItemView({
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin;
   const canViewItem =
-    canManageItem || currentAccessLevel === ACCESS_LEVEL.staff;
-  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
+    canManageItem ||
+    currentAccessLevel === ACCESS_LEVEL.staff ||
+    currentAccessLevel === ACCESS_LEVEL.developer;
 
   const addOns = useItemAddOns(
     businessId,
@@ -308,7 +309,6 @@ export default function EditItemView({
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canViewItem,
     pageTitle: "Menu",
     reason: "Your current access level does not include item access.",

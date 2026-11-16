@@ -27,6 +27,7 @@ export async function GET(
       AccessLevel.owner,
       AccessLevel.admin,
       AccessLevel.staff,
+      AccessLevel.developer,
     ]);
 
     if (authResult instanceof NextResponse) {

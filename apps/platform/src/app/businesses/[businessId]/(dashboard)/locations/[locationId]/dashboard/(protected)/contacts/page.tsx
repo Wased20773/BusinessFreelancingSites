@@ -32,8 +32,8 @@ export default function ContactsPage() {
 
   const accessLevel = session?.user?.accessLevel;
   const canManageContacts = accessLevel === "owner" || accessLevel === "admin";
-  const canViewContacts = canManageContacts || accessLevel === "staff";
-  const isDeveloper = accessLevel === "developer";
+  const canViewContacts =
+    canManageContacts || accessLevel === "staff" || accessLevel === "developer";
 
   useEffect(() => {
     async function getContactData() {
@@ -96,7 +96,6 @@ export default function ContactsPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canViewContacts,
     pageTitle: "Contacts",
     reason:

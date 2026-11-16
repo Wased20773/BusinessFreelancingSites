@@ -65,7 +65,6 @@ export default function UserDetailsPage() {
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin;
 
-  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   /*
    * Nobody can modify themselves.
@@ -367,7 +366,6 @@ export default function UserDetailsPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canManageMembers,
     pageTitle: "Member Management",
     reason: "Your current access level does not include member management.",

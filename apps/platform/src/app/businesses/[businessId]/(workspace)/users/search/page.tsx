@@ -5,11 +5,7 @@ import GoogleLogoIcon from "@/components/icons/google-logo.svg";
 import PlaceholderAccountIcon from "@/components/icons/placeholder-account-black.svg";
 import SearchIcon from "@/components/icons/search.svg";
 import { addUserToBusiness, searchForUser } from "@/lib/api/users";
-import {
-  ACCESS_LEVEL,
-  type BusinessUserJson,
-  type UserJson,
-} from "@/types/types";
+import { type BusinessUserJson, type UserJson } from "@/types/types";
 
 import axios from "axios";
 import Image from "next/image";
@@ -48,7 +44,6 @@ export default function SearchPage() {
   const currentAccessLevel = session?.user?.accessLevel;
   const canAccessSearch =
     currentAccessLevel === "owner" || currentAccessLevel === "admin";
-  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   async function searchUser(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -206,7 +201,6 @@ export default function SearchPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canAccessSearch,
     pageTitle: "Adding People",
     reason:

@@ -42,8 +42,10 @@ export default function CategoryPage() {
   const currentAccessLevel = session?.user?.accessLevel;
   const canManageMenu =
     currentAccessLevel === "owner" || currentAccessLevel === "admin";
-  const canViewMenu = canManageMenu || currentAccessLevel === "staff";
-  const isDeveloper = currentAccessLevel === "developer";
+  const canViewMenu =
+    canManageMenu ||
+    currentAccessLevel === "staff" ||
+    currentAccessLevel === "developer";
 
   useEffect(() => {
     async function getCategoryData() {
@@ -116,7 +118,6 @@ export default function CategoryPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canViewMenu,
     pageTitle: "Menu",
     reason: "Your current access level does not include dashboard menu access.",

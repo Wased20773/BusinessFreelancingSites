@@ -3,6 +3,7 @@ import { getLocationResponse, rateLimiterRead } from "../../route_helper";
 import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
 import { AccessLevel } from "@business-freelancer/database";
 import { getObjectUrl } from "@/lib/s3/get-url";
+import { socialsQuery } from "@/lib/businessData/selects";
 
 type SocialResponse = {
   id: string;
@@ -34,31 +35,9 @@ export async function GET(request: Request): Promise<NextResponse> {
       authentication.businessId,
       authentication.locationId,
       {
-        socials: {
-          orderBy: [
-            {
-              domain: "asc",
-            },
-            {
-              createdAt: "desc",
-            },
-          ],
-          select: {
-            id: true,
-            locationId: true,
-            domain: true,
-            profileName: true,
-            url: true,
-            icon: true,
-
-            ...(authentication.authenticationType === "session"
-              ? { syncGroupId: true, isSynced: true }
-              : {}),
-
-            createdAt: true,
-            updatedAt: true,
-          },
-        },
+        socials: socialsQuery(
+          authentication.authenticationType === "session",
+        ),
       },
       "social",
     );

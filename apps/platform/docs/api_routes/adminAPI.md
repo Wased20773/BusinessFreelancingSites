@@ -5,6 +5,8 @@ code-paths
   - apps/platform/src/app/api/businesses
   - apps/platform/src/app/api/businesses/[businessId]
   - apps/platform/src/app/api/businesses/[businessId]/api-keys
+  - apps/platform/src/app/api/businesses/[businessId]/export
+  - apps/platform/src/lib/businessData
   - apps/platform/src/app/api/businesses/[businessId]/image
   - apps/platform/src/app/api/businesses/[businessId]/users
   - apps/platform/src/app/api/businesses/[businessId]/locations
@@ -278,6 +280,63 @@ Websites using the business's API keys stop working immediately.
 }
 ```
 
+## Business Export
+
+### GET /api/businesses/[businessId]/export
+
+Downloads all of the business's dashboard data as one JSON file, grouped by location. This is the **Download Business JSON** button on the API Reference page.
+
+Each location is built from the same selects as the public API (`lib/businessData/selects.ts`), so every section has the same shape as its public endpoint:
+
+| Location field | Same shape as |
+| --- | --- |
+| location fields, `days` | `GET /api/business/locations/schedule` (Monday first) |
+| `categories` | `GET /api/business/menu` (add-ons resolved into `addOnGroups`) |
+| `contacts` | `GET /api/business/contacts` |
+| `socials` | `GET /api/business/socials` |
+
+Differences from the public API:
+
+- `syncGroupId` and `isSynced` are included, like any dashboard request.
+- Each location also has `addOnGroups`: every add-on group with all of its add-ons, available or not, as the Add-ons page shows them.
+
+Never included: API keys, billing, or the business's users.
+
+Session only: an API key can't call this route. Images (`imageKey`, social `icon`) are signed URLs that expire after 1 hour, like the public API's.
+
+**Access:** `owner`, `admin`, `staff`, `developer`
+
+#### Response
+
+Sent with `Content-Disposition: attachment; filename="{slug}-{YYYY-MM-DD}.json"`.
+
+```json
+{
+  "exportedAt": "DateTime",
+  "business": {
+    "id": "UUID",
+    "name": "String",
+    "slug": "String",
+    "domain": "String | null",
+    "imageKey": "String (URL) | null",
+    "createdAt": "DateTime",
+    "updatedAt": "DateTime"
+  },
+  "locations": [
+    {
+      "id": "UUID",
+      "address": "String",
+      "...": "the other location fields",
+      "days": ["Schedule days, with hour and specialHours"],
+      "categories": ["Menu categories, with items, options and subcategories"],
+      "addOnGroups": ["Every add-on group, with all of its add-ons"],
+      "contacts": ["Contacts"],
+      "socials": ["Socials"]
+    }
+  ]
+}
+```
+
 ## Business Image
 
 Business images are stored as two files: the cropped `image` shown on the site and the uncropped `originalImage` used to re-crop later.
@@ -469,7 +528,7 @@ A `BusinessUser` links a `User` to a business with a role. The logged-in user's 
 
 Fetches every other user in the business, sorted by email. The logged-in user is excluded.
 
-**Access:** `owner`, `admin`, `staff`
+**Access:** `owner`, `admin`, `staff`, `developer`
 
 #### Query Params
 
@@ -760,7 +819,7 @@ No request body.
 
 Fetches everything the dashboard overview needs for one location in a single request. Days are sorted Monday to Sunday and top-level categories by `order`.
 
-**Access:** `owner`, `admin`, `staff`
+**Access:** `owner`, `admin`, `staff`, `developer`
 
 #### Response
 
@@ -1671,7 +1730,7 @@ Extras that add to an item's price (toppings, sauces). Each location has **group
 
 Every group with all of its add-ons (available or not), in order. Each add-on has `usedByItems`: how many items use it, counting an item once even when several of its options use it.
 
-**Access:** `owner`, `admin`, `staff`
+**Access:** `owner`, `admin`, `staff`, `developer`
 
 #### Response
 

@@ -52,7 +52,6 @@ export default function EditSubcategoryPage() {
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin;
 
-  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
     async function getSubcategoryData() {
@@ -294,7 +293,6 @@ export default function EditSubcategoryPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canManageSubcategory,
     pageTitle: "Menu",
     reason: "Your current access level does not allow subcategory management.",

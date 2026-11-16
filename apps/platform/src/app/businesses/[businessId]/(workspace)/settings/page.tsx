@@ -703,7 +703,6 @@ export default function SettingsPage() {
 
   const pageState = PageState({
     status,
-    isDeveloper: false,
     canView: canViewSettings,
     pageTitle: "Business Settings",
     reason: "Your current access level does not include business settings.",

@@ -48,8 +48,10 @@ export default function AddOnsPage() {
   const accessLevel = session?.user?.accessLevel;
   const canManage =
     accessLevel === ACCESS_LEVEL.owner || accessLevel === ACCESS_LEVEL.admin;
-  const canView = canManage || accessLevel === ACCESS_LEVEL.staff;
-  const isDeveloper = accessLevel === ACCESS_LEVEL.developer;
+  const canView =
+    canManage ||
+    accessLevel === ACCESS_LEVEL.staff ||
+    accessLevel === ACCESS_LEVEL.developer;
 
   const reload = useCallback(async () => {
     setGroups(await getAddOnGroups(businessId, locationId));
@@ -135,7 +137,6 @@ export default function AddOnsPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView,
     pageTitle: "Add-ons",
     reason: "Your current access level does not include dashboard menu access.",

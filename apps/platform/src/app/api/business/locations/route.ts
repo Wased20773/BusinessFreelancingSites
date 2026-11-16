@@ -3,6 +3,7 @@ import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessR
 import { AccessLevel } from "@business-freelancer/database";
 import { prisma } from "@/lib/prisma";
 import { rateLimiterRead } from "../../route_helper";
+import { LOCATION_FIELDS, LOCATION_ORDER } from "@/lib/businessData/selects";
 
 // GET /api/business/locations
 export async function GET(request: Request): Promise<NextResponse> {
@@ -28,20 +29,8 @@ export async function GET(request: Request): Promise<NextResponse> {
       where: {
         businessId: authentication.businessId,
       },
-      orderBy: [{ isActive: "desc" }, { createdAt: "asc" }],
-      select: {
-        id: true,
-        address: true,
-        zip: true,
-        country: true,
-        state: true,
-        city: true,
-        parking: true,
-        isActive: true,
-        enableHours: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      orderBy: LOCATION_ORDER,
+      select: LOCATION_FIELDS,
     });
 
     return NextResponse.json(locations, { status: 200 });

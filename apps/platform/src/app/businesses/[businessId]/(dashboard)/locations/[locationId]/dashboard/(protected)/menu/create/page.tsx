@@ -39,7 +39,6 @@ export default function CreateCategoryPage() {
   const accessLevel = session?.user?.accessLevel;
   const canCreateCategory =
     accessLevel === ACCESS_LEVEL.owner || accessLevel === ACCESS_LEVEL.admin;
-  const isDeveloper = accessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
     async function getLatestOrder() {
@@ -171,7 +170,6 @@ export default function CreateCategoryPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canCreateCategory,
     pageTitle: "Menu",
     reason: "Your current access level does not allow category creation.",

@@ -49,8 +49,10 @@ export default function UsersPage() {
   const currentAccessLevel = session?.user?.accessLevel;
   const canManageMembers =
     currentAccessLevel === "owner" || currentAccessLevel === "admin";
-  const canViewMembers = canManageMembers || currentAccessLevel === "staff";
-  const isDeveloper = currentAccessLevel === "developer";
+  const canViewMembers =
+    canManageMembers ||
+    currentAccessLevel === "staff" ||
+    currentAccessLevel === "developer";
 
   useEffect(() => {
     async function getBusinessUserData() {
@@ -108,7 +110,6 @@ export default function UsersPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canViewMembers,
     pageTitle: "Members",
     reason: "Your current access level does not include members access.",

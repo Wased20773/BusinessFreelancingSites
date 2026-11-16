@@ -73,7 +73,7 @@ describe("GET add-on groups", () => {
     expect(mockPrisma.addOnGroup.findMany).not.toHaveBeenCalled();
   });
 
-  it("lets staff view the add-ons", async () => {
+  it("lets staff and developers view the add-ons", async () => {
     mockSuccessfulAuthentication(BUSINESS_ID, "user-1", "staff");
     mockLocationInBusiness();
     mockPrisma.addOnGroup.findMany.mockResolvedValue([]);
@@ -83,7 +83,7 @@ describe("GET add-on groups", () => {
     expect(jest.mocked(authenticateBusinessAccess)).toHaveBeenCalledWith(
       expect.any(Request),
       BUSINESS_ID,
-      ["owner", "admin", "staff"],
+      ["owner", "admin", "staff", "developer"],
     );
   });
 

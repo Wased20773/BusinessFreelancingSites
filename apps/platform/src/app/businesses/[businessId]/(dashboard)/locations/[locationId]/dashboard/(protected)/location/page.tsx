@@ -54,8 +54,8 @@ export default function LocationPage() {
 
   const accessLevel = session?.user?.accessLevel;
   const canManageLocation = accessLevel === "owner" || accessLevel === "admin";
-  const canViewLocation = canManageLocation || accessLevel === "staff";
-  const isDeveloper = accessLevel === "developer";
+  const canViewLocation =
+    canManageLocation || accessLevel === "staff" || accessLevel === "developer";
 
   useEffect(() => {
     if (status === "authenticated" && canViewLocation) {
@@ -266,7 +266,6 @@ export default function LocationPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canViewLocation,
     pageTitle: "Location",
     reason:

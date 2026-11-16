@@ -44,12 +44,14 @@ export default function WorkspacePage() {
   const canViewLocations =
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin ||
-    currentAccessLevel === ACCESS_LEVEL.staff;
+    currentAccessLevel === ACCESS_LEVEL.staff ||
+    currentAccessLevel === ACCESS_LEVEL.developer;
 
   const canViewMembers =
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin ||
-    currentAccessLevel === ACCESS_LEVEL.staff;
+    currentAccessLevel === ACCESS_LEVEL.staff ||
+    currentAccessLevel === ACCESS_LEVEL.developer;
 
   const canViewApiKeys =
     currentAccessLevel === ACCESS_LEVEL.owner ||
@@ -156,7 +158,6 @@ export default function WorkspacePage() {
 
   const pageState = PageState({
     status,
-    isDeveloper: false,
     canView: canViewOverview,
     pageTitle: "Overview",
     reason: "Your current access level does not include overview information.",

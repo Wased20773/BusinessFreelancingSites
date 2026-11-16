@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getLocationResponse, rateLimiterRead } from "../../route_helper";
 import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
 import { AccessLevel } from "@business-freelancer/database";
+import { contactsQuery } from "@/lib/businessData/selects";
 
 // GET /api/business/contacts
 export async function GET(request: Request): Promise<NextResponse> {
@@ -23,30 +24,9 @@ export async function GET(request: Request): Promise<NextResponse> {
       authentication.businessId,
       authentication.locationId,
       {
-        contacts: {
-          orderBy: [
-            {
-              isPersonal: "asc",
-            },
-            {
-              createdAt: "desc",
-            },
-          ],
-          select: {
-            id: true,
-            locationId: true,
-            phoneNumber: true,
-            email: true,
-            isPersonal: true,
-
-            ...(authentication.authenticationType === "session"
-              ? { syncGroupId: true, isSynced: true }
-              : {}),
-
-            createdAt: true,
-            updatedAt: true,
-          },
-        },
+        contacts: contactsQuery(
+          authentication.authenticationType === "session",
+        ),
       },
       "contact",
     );

@@ -3,16 +3,11 @@ import { AccessLevel } from "@business-freelancer/database";
 import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
 import { prisma } from "@/lib/prisma";
 import { rateLimiterRead } from "@/app/api/route_helper";
-
-const DAY_ORDER = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-] as const;
+import {
+  LOCATION_FIELDS,
+  SCHEDULE_DAYS_QUERY,
+  sortDays,
+} from "@/lib/businessData/selects";
 
 // GET /api/business/locations/schedule
 export async function GET(request: Request): Promise<NextResponse> {
@@ -40,56 +35,8 @@ export async function GET(request: Request): Promise<NextResponse> {
         businessId: authentication.businessId,
       },
       select: {
-        id: true,
-        address: true,
-        zip: true,
-        country: true,
-        state: true,
-        city: true,
-        parking: true,
-        isActive: true,
-        enableHours: true,
-        createdAt: true,
-        updatedAt: true,
-        days: {
-          select: {
-            id: true,
-            locationId: true,
-            dayOfWeek: true,
-            isClosed: true,
-            createdAt: true,
-            updatedAt: true,
-            hour: {
-              select: {
-                id: true,
-                regularDayId: true,
-                openTime: true,
-                closeTime: true,
-                title: true,
-                note: true,
-                isDisabled: true,
-                createdAt: true,
-                updatedAt: true,
-              },
-            },
-            specialHours: {
-              orderBy: {
-                openTime: "asc",
-              },
-              select: {
-                id: true,
-                specialDayId: true,
-                openTime: true,
-                closeTime: true,
-                title: true,
-                note: true,
-                isDisabled: true,
-                createdAt: true,
-                updatedAt: true,
-              },
-            },
-          },
-        },
+        ...LOCATION_FIELDS,
+        days: SCHEDULE_DAYS_QUERY,
       },
     });
 
@@ -100,9 +47,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       );
     }
 
-    location.days.sort(
-      (a, b) => DAY_ORDER.indexOf(a.dayOfWeek) - DAY_ORDER.indexOf(b.dayOfWeek),
-    );
+    sortDays(location.days);
 
     return NextResponse.json(location, { status: 200 });
   } catch (error) {

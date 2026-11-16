@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import Link from "next/link";
+import DownloadBusinessJsonButton from "@/components/ui/api-reference/DownloadBusinessJsonButton";
 import DownloadJsonButton from "@/components/ui/api-reference/DownloadJsonButton";
 import FieldTree from "@/components/ui/api-reference/FieldTree";
 import {
@@ -14,7 +15,7 @@ type ApiReferencePageProps = {
 /*
  *   Developer reference for the public client-website API: the structure of
  *   every endpoint plus downloadable SAMPLE responses. No business data is
- *   read or shown on this page.
+ *   shown on this page; "Download Business JSON" fetches it on click.
  **/
 export default async function ApiReferencePage({
   params,
@@ -27,13 +28,6 @@ export default async function ApiReferencePage({
     requestHeaders.get("x-forwarded-proto") ??
     (host.startsWith("localhost") ? "http" : "https");
   const baseUrl = `${protocol}://${host}`;
-
-  const allExamples = Object.fromEntries(
-    PUBLIC_API_ENDPOINTS.map((endpoint) => [
-      `${endpoint.method} ${endpoint.path}`,
-      endpoint.example,
-    ]),
-  );
 
   const fetchSnippet = `const response = await fetch("${baseUrl}/api/business/menu", {
   headers: {
@@ -61,12 +55,7 @@ const menu = await response.json();`;
           </p>
         </div>
 
-        <DownloadJsonButton
-          fileName="business-platform-api.examples.json"
-          data={allExamples}
-          label="Download all examples"
-          variant="primary"
-        />
+        <DownloadBusinessJsonButton businessId={businessId} />
       </div>
 
       <div className="space-y-5">

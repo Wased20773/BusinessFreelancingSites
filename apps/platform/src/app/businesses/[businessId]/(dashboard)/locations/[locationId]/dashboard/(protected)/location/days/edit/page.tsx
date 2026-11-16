@@ -83,9 +83,10 @@ export default function EditBusinessDaysPage() {
     currentAccessLevel === ACCESS_LEVEL.admin;
 
   const canViewBusinessDays =
-    canManageBusinessDays || currentAccessLevel === ACCESS_LEVEL.staff;
+    canManageBusinessDays ||
+    currentAccessLevel === ACCESS_LEVEL.staff ||
+    currentAccessLevel === ACCESS_LEVEL.developer;
 
-  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
     async function getLocationData() {
@@ -777,7 +778,6 @@ export default function EditBusinessDaysPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canViewBusinessDays,
     pageTitle: "Location",
     reason:

@@ -43,7 +43,6 @@ export default function CreateCategoryPage() {
   const canCreateSubcategory =
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin;
-  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   const router = useRouter();
 
@@ -184,7 +183,6 @@ export default function CreateCategoryPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canCreateSubcategory,
     pageTitle: "Menu",
     reason: "Your current access level does not allow subcategory creation.",

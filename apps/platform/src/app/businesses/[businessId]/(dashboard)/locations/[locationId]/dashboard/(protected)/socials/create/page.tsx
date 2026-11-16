@@ -39,7 +39,6 @@ export default function CreateSocialPage() {
   const canCreateSocial =
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin;
-  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   const result = platform ? normalizeProfileName(platform, profileName) : null;
   const validName = result && "profileName" in result ? result.profileName : null;
@@ -118,7 +117,6 @@ export default function CreateSocialPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canCreateSocial,
     pageTitle: "Socials",
     reason: "Your current access level does not allow social creation.",

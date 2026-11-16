@@ -277,7 +277,6 @@ export default function ApiKeyDetailsPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper: false,
     canView: canManageApiKeys,
     pageTitle: "Api Key Management",
     reason: "Your current access level does not include api key management.",

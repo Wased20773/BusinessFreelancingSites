@@ -3,19 +3,15 @@ import LoadingBar from "@/components/ui/LoadingBar";
 type PageStateProps = {
   status?: "loading" | "authenticated" | "unauthenticated";
   isLoading?: boolean;
-  isDeveloper?: boolean | null;
   canView?: boolean;
   pageTitle: string;
   reason?: string;
 };
 
 // TODO: Make classname 'dashboard-card' component defined; `${variant}-card`
-// TODO: The title and heading for the (isDeveloper || !canView) condition should
-//       be different. Maybe only include one after verifying...
 export default function PageState({
   status,
   isLoading,
-  isDeveloper,
   canView,
   pageTitle,
   reason,
@@ -26,7 +22,7 @@ export default function PageState({
     return <LoadingBar />;
   }
 
-  if (isDeveloper || !canView) {
+  if (!canView) {
     return (
       <section
         aria-labelledby="restricted-heading"

@@ -39,7 +39,6 @@ export default function CreateContactPage() {
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin;
 
-  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -156,7 +155,6 @@ export default function CreateContactPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canCreateContact,
     pageTitle: "Contacts",
     reason: "Your current access level does not allow contact creation.",

@@ -122,7 +122,6 @@ export default function CreateApiKeyPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper: false,
     canView: canManageApiKeys,
     pageTitle: "Creating Api Keys",
     reason: "Your current access level denies access to creating api keys.",

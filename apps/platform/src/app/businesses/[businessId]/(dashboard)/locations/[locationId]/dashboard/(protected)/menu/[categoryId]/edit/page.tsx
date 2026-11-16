@@ -47,7 +47,6 @@ export default function EditCategoryPage() {
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin;
 
-  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
     async function getCategoryData() {
@@ -263,7 +262,6 @@ export default function EditCategoryPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canManageCategory,
     pageTitle: "Menu",
     reason: "Your current access level does not allow category management.",

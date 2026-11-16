@@ -39,7 +39,6 @@ export default function AccessLevelsPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper: false,
     canView: canViewAccessLevel,
     pageTitle: "Access Level",
     reason: "Your current access level does not include access level viewing.",
@@ -86,7 +85,8 @@ export default function AccessLevelsPage() {
               <p className="text-gray-700">
                 Responsible for the technical integration of the business website.
                 Can create, view, rotate, deactivate, and delete Business API keys
-                used by the website.
+                used by the website. Can view business information, but cannot
+                add, update, or delete business content.
               </p>
             </article>
 

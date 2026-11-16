@@ -55,7 +55,6 @@ export default function EditSocialPage() {
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin;
 
-  const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
     async function getSocialData() {
@@ -273,7 +272,6 @@ export default function EditSocialPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper,
     canView: canManageSocials,
     pageTitle: "Socials",
     reason: "Your current access level does not include social management.",

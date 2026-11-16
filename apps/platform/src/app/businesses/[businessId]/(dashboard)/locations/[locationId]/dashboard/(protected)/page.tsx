@@ -42,12 +42,12 @@ export default function OverviewPage() {
   const canViewOverview =
     accessLevel === ACCESS_LEVEL.owner ||
     accessLevel === ACCESS_LEVEL.admin ||
-    accessLevel === ACCESS_LEVEL.staff;
+    accessLevel === ACCESS_LEVEL.staff ||
+    accessLevel === ACCESS_LEVEL.developer;
 
   const canManage =
     accessLevel === ACCESS_LEVEL.owner || accessLevel === ACCESS_LEVEL.admin;
 
-  const isDeveloper = accessLevel === ACCESS_LEVEL.developer;
 
   useEffect(() => {
     if (status !== "authenticated" || !canViewOverview) return;
@@ -105,7 +105,6 @@ export default function OverviewPage() {
 
   const pageState = PageState({
     status,
-    isDeveloper,
     canView: canViewOverview,
     pageTitle: "Overview",
     reason:

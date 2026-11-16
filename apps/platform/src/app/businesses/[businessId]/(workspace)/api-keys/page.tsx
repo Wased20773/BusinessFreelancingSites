@@ -43,7 +43,6 @@ export default function ApiKeysPage() {
     currentAccessLevel === "developer" ||
     currentAccessLevel === "owner" ||
     currentAccessLevel === "admin";
-  const isStaff = currentAccessLevel === "staff";
 
   useEffect(() => {
     async function getApiKeyData() {
@@ -100,7 +99,6 @@ export default function ApiKeysPage() {
   const pageState = PageState({
     status,
     isLoading,
-    isDeveloper: isStaff,
     canView: canViewApiKeys,
     pageTitle: "API Keys",
     reason: "Your current access level does not include API key information.",
