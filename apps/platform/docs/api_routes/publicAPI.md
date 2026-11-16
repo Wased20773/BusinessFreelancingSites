@@ -365,7 +365,25 @@ route.
               "order": "Int",
               "isAvailable": "Boolean",
               "createdAt": "DateTime",
-              "updatedAt": "DateTime"
+              "updatedAt": "DateTime",
+              "addOnGroups": "AddOnGroup[] (same shape as the item's)"
+            }
+          ],
+          "addOnGroups": [
+            {
+              "id": "UUID",
+              "name": "String",
+              "order": "Int",
+              "addOns": [
+                {
+                  "id": "UUID",
+                  "name": "String",
+                  "description": "String | null",
+                  "calories": "Int | null",
+                  "price": "String",
+                  "order": "Int"
+                }
+              ]
             }
           ]
         }
@@ -379,6 +397,13 @@ route.
 ```
 
 `subcategories` is the exact same as a category entry
+
+#### Add-ons
+
+Each item's `addOnGroups` lists the extras it offers (toppings, sauces), grouped and ordered like the business's Add-ons page. Only available add-ons are listed, and a group with none isn't. Each add-on's `price` is already set for this item.
+
+- Total price = the item's price (or the chosen option's price, when the item's price is `0`) + every add-on picked.
+- When the add-ons depend on the option (for example pepperoni costs more on a large), the item's `addOnGroups` is empty and each option has its own `addOnGroups` instead.
 
 #### Used For
 
@@ -439,7 +464,25 @@ NOTICE: If you only need one of the categories, please use [/api/business/catego
               "order": "Int",
               "isAvailable": "Boolean",
               "createdAt": "DateTime",
-              "updatedAt": "DateTime"
+              "updatedAt": "DateTime",
+              "addOnGroups": "AddOnGroup[] (same shape as the item's)"
+            }
+          ],
+          "addOnGroups": [
+            {
+              "id": "UUID",
+              "name": "String",
+              "order": "Int",
+              "addOns": [
+                {
+                  "id": "UUID",
+                  "name": "String",
+                  "description": "String | null",
+                  "calories": "Int | null",
+                  "price": "String",
+                  "order": "Int"
+                }
+              ]
             }
           ]
         }
@@ -453,6 +496,8 @@ NOTICE: If you only need one of the categories, please use [/api/business/catego
 ```
 
 `subcategories` is the exact same as a category entry
+
+Items have `addOnGroups` too; see [Add-ons](#add-ons) above.
 
 #### Used For
 

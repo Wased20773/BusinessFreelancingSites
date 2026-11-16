@@ -265,6 +265,7 @@ describe("POST /api/businesses/[businessId]/locations/[locationId]/categories/[c
         categoryId: "category-123",
         ...itemBody,
         order: 4,
+        addOnsVaryByOption: false,
         slug: "al-pastor-taco",
         syncGroupId: null,
         isSynced: false,
@@ -381,6 +382,7 @@ describe("POST /api/businesses/[businessId]/locations/[locationId]/categories/[c
             categoryId: "category-123",
             ...itemBody,
             order: 4,
+            addOnsVaryByOption: false,
             slug: "al-pastor-taco",
             syncGroupId: "item-sync-group",
             isSynced: true,
@@ -391,6 +393,7 @@ describe("POST /api/businesses/[businessId]/locations/[locationId]/categories/[c
             categoryId: "category-456",
             ...itemBody,
             order: 1,
+            addOnsVaryByOption: false,
             slug: "al-pastor-taco",
             syncGroupId: "item-sync-group",
             isSynced: true,
@@ -436,12 +439,14 @@ describe("POST /api/businesses/[businessId]/locations/[locationId]/categories/[c
       expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
 
       // Each option is shared by both copies through its own sync group.
-      const option = (itemId: string, name: string, extra: object) => ({
-        itemId,
-        name,
-        isSynced: true,
-        ...extra,
-      });
+      // Each option also gets its own id up front (for add-on links).
+      const option = (itemId: string, name: string, extra: object) =>
+        expect.objectContaining({
+          itemId,
+          name,
+          isSynced: true,
+          ...extra,
+        });
 
       expect(mockPrisma.itemOption.createMany).toHaveBeenCalledWith({
         data: [
@@ -504,9 +509,9 @@ describe("POST /api/businesses/[businessId]/locations/[locationId]/categories/[c
             options: {
               createMany: {
                 data: [
-                  { name: "Small", price: 0, order: 1, isAvailable: true, syncGroupId: null, isSynced: false },
+                  expect.objectContaining({ name: "Small", price: 0, order: 1, isAvailable: true, syncGroupId: null, isSynced: false }),
                   // Prices are rounded to cents.
-                  { name: "Large", price: 2.5, order: 2, isAvailable: true, syncGroupId: null, isSynced: false },
+                  expect.objectContaining({ name: "Large", price: 2.5, order: 2, isAvailable: true, syncGroupId: null, isSynced: false }),
                 ],
               },
             },

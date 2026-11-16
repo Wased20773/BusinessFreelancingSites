@@ -7,10 +7,17 @@ import { motion } from "motion/react";
 import { fadeInMotion } from "@/components/motion/listMotion";
 import CreateItemForm from "@/components/ui/items/CreateItemForm";
 import ItemOptionsEditor from "@/components/ui/items/ItemOptionsEditor";
+import AddOnPicker from "@/components/ui/items/AddOnPicker";
+import ItemAddOnsSection from "@/components/ui/items/ItemAddOnsSection";
+import { useItemAddOns } from "@/components/ui/items/useItemAddOns";
 import { useItemImage } from "@/components/ui/items/useItemImage";
 import { createItem, createItemImage } from "@/lib/api/items";
 import { requestError } from "@/lib/api/requestError";
-import { draftsToPayload, type OptionDraft } from "@/lib/items/optionDrafts";
+import {
+  draftsToPayload,
+  type AddOnLinkDraft,
+  type OptionDraft,
+} from "@/lib/items/optionDrafts";
 import { readItemFields } from "@/lib/items/readItemFields";
 import { ACCESS_LEVEL, type ItemJson } from "@/types/types";
 import axios from "axios";
@@ -70,6 +77,21 @@ export default function CreateItemView({
     currentAccessLevel === ACCESS_LEVEL.owner ||
     currentAccessLevel === ACCESS_LEVEL.admin;
   const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
+
+  const addOns = useItemAddOns(
+    businessId,
+    locationId,
+    status === "authenticated" && canCreateItem,
+  );
+
+  // One option's picked add-ons (used when add-ons vary by option).
+  function setOptionAddOns(key: string, next: AddOnLinkDraft[]) {
+    setOptionDrafts((current) =>
+      current.map((draft) =>
+        draft.key === key ? { ...draft, addOns: next } : draft,
+      ),
+    );
+  }
 
   // The category's sync settings and the next display order.
   useEffect(() => {
@@ -147,6 +169,13 @@ export default function CreateItemView({
       return;
     }
 
+    const addOnFields = addOns.toPayload();
+
+    if ("error" in addOnFields) {
+      setErrorMessage(addOnFields.error);
+      return;
+    }
+
     setIsCreating(true);
 
     const { image, selectedImage } = itemImage;
@@ -158,6 +187,7 @@ export default function CreateItemView({
             ...item.fields,
             isSynced,
             options: options.options,
+            ...addOnFields,
           }),
           {
             loading: "Creating item...",
@@ -272,12 +302,43 @@ export default function CreateItemView({
           handleUseCrop={itemImage.handleUseCrop}
           handleEditCrop={itemImage.handleEditCrop}
           options={
-            <ItemOptionsEditor
-              canManage
-              drafts={optionDrafts}
-              setDrafts={setOptionDrafts}
-              disabled={isLoading || isCreating}
-            />
+            <>
+              <ItemOptionsEditor
+                canManage={true}
+                drafts={optionDrafts}
+                setDrafts={setOptionDrafts}
+                disabled={isLoading || isCreating}
+                renderOptionExtras={
+                  addOns.varyByOption
+                    ? (draft) => (
+                        <AddOnPicker
+                          idPrefix={`option-${draft.key}`}
+                          groups={addOns.groups}
+                          value={draft.addOns}
+                          onChange={(next) => setOptionAddOns(draft.key, next)}
+                          canManage={true}
+                          disabled={isLoading || isCreating}
+                        />
+                      )
+                    : undefined
+                }
+              />
+
+              <div className="mt-6">
+                <ItemAddOnsSection
+                  groups={addOns.groups}
+                  groupsError={addOns.groupsError}
+                  addOnsHref={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/add-ons`}
+                  varyByOption={addOns.varyByOption}
+                  setVaryByOption={addOns.setVaryByOption}
+                  itemAddOns={addOns.itemAddOns}
+                  setItemAddOns={addOns.setItemAddOns}
+                  optionDrafts={optionDrafts}
+                  canManage={true}
+                  disabled={isLoading || isCreating}
+                />
+              </div>
+            </>
           }
         />
       </div>

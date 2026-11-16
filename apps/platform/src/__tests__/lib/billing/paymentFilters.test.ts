@@ -103,12 +103,18 @@ describe("paginate", () => {
       items: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
       page: 1,
       pageCount: 3,
+      start: 0,
     });
     expect(paginate(items, 3).items).toEqual([20, 21, 22]);
   });
 
   it("moves a page past the end back to the last page", () => {
     expect(paginate(items, 9).page).toBe(3);
-    expect(paginate([], 4)).toEqual({ items: [], page: 1, pageCount: 1 });
+    expect(paginate([], 4)).toEqual({
+      items: [],
+      page: 1,
+      pageCount: 1,
+      start: 0,
+    });
   });
 });

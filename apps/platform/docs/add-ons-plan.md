@@ -7,7 +7,7 @@ code-path:
   - platform/src/app/api/business/menu/route.ts
 
 last-verified: 2026-11-15
-status: planned
+status: built, being tested in the browser
 ---
 
 # Add-ons Plan
@@ -140,7 +140,7 @@ Add-ons
 
 ## Admin API and Client Website
 
-The public menu response (`GET /api/business/menu`) gains add-ons on each item. The client website shouldn't have to know which table they came from, so the API returns them already resolved:
+The public menu response (`GET /api/business/menu`), the single category (`GET /api/business/categories/[categoryId]`), and the single item route all return add-ons on each item. The client website shouldn't have to know which table they came from, so the API returns them already resolved:
 
 - **Checkbox off**: `item.addOnGroups`, the groups with the add-ons this item uses. Each add-on's `price` is already resolved: the item's own price if set, otherwise the default.
 - **Checkbox on**: the same shape on each option, `option.addOnGroups`, with that option's prices.
@@ -182,3 +182,15 @@ None. The number of groups and add-ons doesn't depend on the billing tier, the s
 4. The Add-ons section of the item form (per-option pickers inside each option card), saved in the item's transaction.
 5. Add-ons in the public menu response and the API Reference.
 6. Tests for each step, the same as the existing item and option tests.
+
+## Where It's Built
+
+| Part | Where |
+|---|---|
+| Group and add-on routes | `src/app/api/businesses/[businessId]/locations/[locationId]/add-on-groups/` and `.../add-ons/` |
+| Shared route checks and parsing | `src/lib/addOns/addOnRoutes.ts` |
+| Saving item links, copying them to synced items | `src/lib/addOns/addOnLinks.ts`, used by the item create and edit routes |
+| Resolving links into `addOnGroups` | `src/lib/addOns/resolveAddOns.ts` |
+| Add-ons page | `menu/add-ons/page.tsx`, `src/components/ui/addOns/` |
+| Item form | `ItemAddOnsSection.tsx`, `AddOnPicker.tsx`, `useItemAddOns.ts` in `src/components/ui/items/` |
+| Route docs | `docs/api_routes/adminAPI.md` (Add-ons, Item add-ons) and `publicAPI.md` |

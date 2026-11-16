@@ -55,6 +55,49 @@ const priceField: ApiField = {
     'Sent as a string to keep exact cents, and trailing zeros may be dropped ("3.5" means 3.50). Format with Number(price).toFixed(2).',
 };
 
+// The add-ons an item (or option) offers, grouped like the Add-ons page.
+const addOnFields: ApiField[] = [
+  idField,
+  { name: "name", type: "string" },
+  {
+    name: "description",
+    type: "string | null",
+    description: 'For example "Medium heat" or "Contains dairy".',
+  },
+  { name: "calories", type: "number | null" },
+  {
+    ...priceField,
+    description:
+      "What this add-on adds to the item's or option's price, already set for this item. " +
+      priceField.description,
+  },
+  { name: "order", type: "number", description: "Display order, ascending." },
+];
+
+export const ADD_ON_GROUP_FIELDS: ApiField[] = [
+  idField,
+  {
+    name: "name",
+    type: "string",
+    description: 'The heading, for example "Sauces" or "Toppings".',
+  },
+  { name: "order", type: "number", description: "Display order, ascending." },
+  {
+    name: "addOns",
+    type: "AddOn[]",
+    description:
+      "Only add-ons that are available. A group with none isn't listed.",
+    fields: addOnFields,
+  },
+];
+
+const addOnGroupsField = (description: string): ApiField => ({
+  name: "addOnGroups",
+  type: "AddOnGroup[]",
+  description,
+  fields: ADD_ON_GROUP_FIELDS,
+});
+
 const optionFields: ApiField[] = [
   idField,
   { name: "itemId", type: UUID },
@@ -63,6 +106,9 @@ const optionFields: ApiField[] = [
   { name: "order", type: "number", description: "Display order, ascending." },
   { name: "isAvailable", type: "boolean" },
   ...timestampFields,
+  addOnGroupsField(
+    "Add-ons for this option, priced for it. Empty unless the item's add-ons depend on the option (then the item's own addOnGroups is empty).",
+  ),
 ];
 
 const itemFields: ApiField[] = [
@@ -95,9 +141,13 @@ const itemFields: ApiField[] = [
   {
     name: "options",
     type: "ItemOption[]",
-    description: "Add-ons or variations, ordered by order.",
+    description:
+      "Variations such as sizes, ordered by order. If the item's price is 0, the chosen option's price is the full price.",
     fields: optionFields,
   },
+  addOnGroupsField(
+    "Extras that add to the price, such as toppings. Total = item price (or the chosen option's price) + every add-on picked. Empty when the add-ons depend on the option: then each option has its own addOnGroups.",
+  ),
 ];
 
 const categoryBaseFields: ApiField[] = [
@@ -210,6 +260,26 @@ const ASADA_ID = "b2c3d4e5-0001-4b6c-9d7e-8f9a0b1c2d3e";
 const PASTOR_ID = "b2c3d4e5-0002-4b6c-9d7e-8f9a0b1c2d3e";
 const HORCHATA_ID = "b2c3d4e5-0003-4b6c-9d7e-8f9a0b1c2d3e";
 const SODA_ID = "b2c3d4e5-0004-4b6c-9d7e-8f9a0b1c2d3e";
+const COFFEE_ID = "b2c3d4e5-0005-4b6c-9d7e-8f9a0b1c2d3e";
+const JAMAICA_ID = "b2c3d4e5-0006-4b6c-9d7e-8f9a0b1c2d3e";
+
+// One "Extras" group with a single add-on, for the examples below.
+function sampleExtras(
+  id: string,
+  name: string,
+  price: string,
+  description: string | null = null,
+  calories: number | null = null,
+) {
+  return [
+    {
+      id: "e5f6a7b8-0002-4e9f-8a0b-1c2d3e4f5a6b",
+      name: "Extras",
+      order: 2,
+      addOns: [{ id, name, description, calories, price, order: 1 }],
+    },
+  ];
+}
 
 function sampleImageUrl(itemId: string): string {
   return (
@@ -242,6 +312,7 @@ const sampleAsada = {
       order: 1,
       isAvailable: true,
       ...timestamps,
+      addOnGroups: [],
     },
     {
       id: "c3d4e5f6-0002-4c7d-8e9f-0a1b2c3d4e5f",
@@ -251,6 +322,32 @@ const sampleAsada = {
       order: 2,
       isAvailable: true,
       ...timestamps,
+      addOnGroups: [],
+    },
+  ],
+  addOnGroups: [
+    {
+      id: "e5f6a7b8-0001-4e9f-8a0b-1c2d3e4f5a6b",
+      name: "Salsas",
+      order: 1,
+      addOns: [
+        {
+          id: "f6a7b8c9-0001-4f0a-9b1c-2d3e4f5a6b7c",
+          name: "Salsa roja",
+          description: "Medium heat",
+          calories: 10,
+          price: "0.5",
+          order: 1,
+        },
+        {
+          id: "f6a7b8c9-0002-4f0a-9b1c-2d3e4f5a6b7c",
+          name: "Guacamole",
+          description: null,
+          calories: 60,
+          price: "1.25",
+          order: 2,
+        },
+      ],
     },
   ],
 };
@@ -270,6 +367,7 @@ const samplePastor = {
   imageKey: null,
   ...timestamps,
   options: [],
+  addOnGroups: [],
 };
 
 const sampleHorchata = {
@@ -295,8 +393,28 @@ const sampleHorchata = {
       order: 1,
       isAvailable: true,
       ...timestamps,
+      // This item's add-ons depend on the option, so they're listed here
+      // and the item's own addOnGroups is empty.
+      addOnGroups: [
+        {
+          id: "e5f6a7b8-0002-4e9f-8a0b-1c2d3e4f5a6b",
+          name: "Extras",
+          order: 2,
+          addOns: [
+            {
+              id: "f6a7b8c9-0003-4f0a-9b1c-2d3e4f5a6b7c",
+              name: "Boba",
+              description: "Tapioca pearls",
+              calories: 120,
+              price: "1",
+              order: 1,
+            },
+          ],
+        },
+      ],
     },
   ],
+  addOnGroups: [],
 };
 
 const sampleAguas = {
@@ -346,8 +464,72 @@ const sampleSoda = {
       order: 1,
       isAvailable: false,
       ...timestamps,
+      addOnGroups: [],
     },
   ],
+  addOnGroups: sampleExtras(
+    "f6a7b8c9-0004-4f0a-9b1c-2d3e4f5a6b7c",
+    "Lime wedge",
+    "0",
+  ),
+};
+
+// Add-ons that depend on the option: listed on the option, not the item.
+const sampleCoffee = {
+  id: COFFEE_ID,
+  locationId: LOCATION_ID,
+  categoryId: DRINKS_ID,
+  name: "Café de Olla",
+  description: "Coffee brewed with cinnamon and piloncillo.",
+  containsList: ["coffee", "cinnamon"],
+  calories: 90,
+  price: "0",
+  order: 2,
+  isAvailable: true,
+  slug: "cafe-de-olla",
+  imageKey: null,
+  ...timestamps,
+  options: [
+    {
+      id: "c3d4e5f6-0005-4c7d-8e9f-0a1b2c3d4e5f",
+      itemId: COFFEE_ID,
+      name: "Small",
+      price: "2.5",
+      order: 1,
+      isAvailable: true,
+      ...timestamps,
+      addOnGroups: sampleExtras(
+        "f6a7b8c9-0005-4f0a-9b1c-2d3e4f5a6b7c",
+        "Extra shot",
+        "0.75",
+      ),
+    },
+  ],
+  addOnGroups: [],
+};
+
+const sampleJamaica = {
+  id: JAMAICA_ID,
+  locationId: LOCATION_ID,
+  categoryId: AGUAS_ID,
+  name: "Agua de Jamaica",
+  description: null,
+  containsList: ["hibiscus"],
+  calories: 120,
+  price: "3.5",
+  order: 2,
+  isAvailable: true,
+  slug: "agua-de-jamaica",
+  imageKey: null,
+  ...timestamps,
+  options: [],
+  addOnGroups: sampleExtras(
+    "f6a7b8c9-0006-4f0a-9b1c-2d3e4f5a6b7c",
+    "Chia seeds",
+    "0.5",
+    null,
+    60,
+  ),
 };
 
 const sampleDrinksCategory = {
@@ -359,8 +541,8 @@ const sampleDrinksCategory = {
   order: 2,
   isVisible: true,
   ...timestamps,
-  items: [sampleSoda],
-  subcategories: [{ ...sampleAguas, items: [sampleHorchata] }],
+  items: [sampleSoda, sampleCoffee],
+  subcategories: [{ ...sampleAguas, items: [sampleHorchata, sampleJamaica] }],
 };
 
 const sampleLocation = {

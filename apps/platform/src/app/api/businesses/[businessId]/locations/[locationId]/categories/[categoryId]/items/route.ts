@@ -10,6 +10,15 @@ import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 import { allowSync } from "@/lib/billing/sync";
 import { newOptionRows, parseOptions } from "@/lib/items/itemOptions";
+import {
+  addOnIdsInSave,
+  copyAddOnLinksToCopies,
+  hasAddOnsOutsideLocation,
+  readItemAddOnFields,
+  replaceItemAddOns,
+  replaceOptionAddOns,
+} from "@/lib/addOns/addOnLinks";
+import type { Prisma } from "@business-freelancer/database";
 
 // POST /api/businesses/[businessId]/locations/[locationId]/categories/[categoryId]/items
 export async function POST(
@@ -80,6 +89,47 @@ export async function POST(
 
     const { options } = parsedOptions;
 
+    // Optional: the item's add-ons (see docs/add-ons-plan.md).
+    const addOnFields = readItemAddOnFields(body);
+
+    if ("error" in addOnFields) {
+      return NextResponse.json({ error: addOnFields.error }, { status: 400 });
+    }
+
+    const addOnsVaryByOption = addOnFields.addOnsVaryByOption ?? false;
+    const itemAddOns = addOnFields.addOns;
+
+    if (
+      await hasAddOnsOutsideLocation(
+        prisma,
+        locationId,
+        addOnIdsInSave(itemAddOns, options),
+      )
+    ) {
+      return NextResponse.json(
+        { error: "An add-on in the list does not belong to this location" },
+        { status: 400 },
+      );
+    }
+
+    // Links the new item's (and its options') add-ons, in the item's
+    // transaction. optionIds are this item's options, in `options` order.
+    async function linkAddOns(
+      tx: Prisma.TransactionClient,
+      itemId: string,
+      optionIds: string[],
+    ) {
+      if (itemAddOns) {
+        await replaceItemAddOns(tx, itemId, itemAddOns);
+      }
+
+      for (const [index, option] of options.entries()) {
+        if (option.addOns) {
+          await replaceOptionAddOns(tx, optionIds[index], option.addOns);
+        }
+      }
+    }
+
     body.isSynced = await allowSync(businessId, body.isSynced);
 
     const slug = createSlug(body.name);
@@ -142,55 +192,65 @@ export async function POST(
         return nextOrder;
       }
 
-      // The item and its options are created together (one statement).
-      const item = await prisma.item.create({
-        data: {
-          locationId,
-          categoryId: category.id,
-          name: body.name,
-          description: body.description,
-          containsList: body.containsList,
-          calories: body.calories,
-          price: body.price,
-          order: nextOrder,
-          isAvailable: body.isAvailable,
-          slug,
-          syncGroupId: null,
-          isSynced: false,
-          ...(options.length > 0 && {
-            options: {
-              createMany: {
-                data: options.map((option, index) => ({
-                  name: option.name,
-                  price: option.price,
-                  order: index + 1,
-                  isAvailable: option.isAvailable,
-                  syncGroupId: null,
-                  isSynced: false,
-                })),
-              },
-            },
-          }),
-        },
+      const optionIds = options.map(() => crypto.randomUUID());
 
-        select: {
-          id: true,
-          locationId: true,
-          categoryId: true,
-          name: true,
-          description: true,
-          containsList: true,
-          calories: true,
-          price: true,
-          order: true,
-          isAvailable: true,
-          slug: true,
-          imageKey: true,
-          syncGroupId: true,
-          isSynced: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+      // The item, its options, and its add-ons are created together.
+      const item = await prisma.$transaction(async (tx) => {
+        const created = await tx.item.create({
+          data: {
+            locationId,
+            categoryId: category.id,
+            name: body.name,
+            description: body.description,
+            containsList: body.containsList,
+            calories: body.calories,
+            price: body.price,
+            order: nextOrder,
+            isAvailable: body.isAvailable,
+            addOnsVaryByOption,
+            slug,
+            syncGroupId: null,
+            isSynced: false,
+            ...(options.length > 0 && {
+              options: {
+                createMany: {
+                  data: options.map((option, index) => ({
+                    id: optionIds[index],
+                    name: option.name,
+                    price: option.price,
+                    order: index + 1,
+                    isAvailable: option.isAvailable,
+                    syncGroupId: null,
+                    isSynced: false,
+                  })),
+                },
+              },
+            }),
+          },
+
+          select: {
+            id: true,
+            locationId: true,
+            categoryId: true,
+            name: true,
+            description: true,
+            containsList: true,
+            calories: true,
+            price: true,
+            order: true,
+            isAvailable: true,
+            slug: true,
+            imageKey: true,
+            syncGroupId: true,
+            isSynced: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
+
+        await linkAddOns(tx, created.id, optionIds);
+
+        return created;
       });
 
       return NextResponse.json(item, {
@@ -311,6 +371,7 @@ export async function POST(
       order: (orderByCategoryId.get(parentCategory.id) ?? 0) + 1,
 
       isAvailable: body.isAvailable,
+      addOnsVaryByOption,
       slug,
       syncGroupId,
       isSynced: true,
@@ -338,15 +399,32 @@ export async function POST(
     const createdItems = await prisma.$transaction(async (tx) => {
       const result = await tx.item.createMany({ data: itemsToCreate });
 
+      const optionRows = newOptionRows(
+        itemsToCreate.map((item) => item.id),
+        options,
+        true,
+      );
+
       if (options.length > 0) {
-        await tx.itemOption.createMany({
-          data: newOptionRows(
-            itemsToCreate.map((item) => item.id),
-            options,
-            true,
-          ),
-        });
+        await tx.itemOption.createMany({ data: optionRows });
       }
+
+      // Add-ons are linked on this location's item, then copied to the
+      // other locations' copies (each linked to its own location's add-ons).
+      await linkAddOns(
+        tx,
+        selectedItem.id,
+        optionRows
+          .filter((row) => row.itemId === selectedItem.id)
+          .map((row) => row.id),
+      );
+
+      await copyAddOnLinksToCopies(tx, {
+        sourceItemId: selectedItem.id,
+        copyItemIds: itemsToCreate
+          .filter((item) => item.id !== selectedItem.id)
+          .map((item) => item.id),
+      });
 
       return result;
     });

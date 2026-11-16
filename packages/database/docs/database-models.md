@@ -269,6 +269,7 @@ A shared PostgreSQL database stores business information for all client websites
 | `price`            | Decimal                     | Price with precision 10, scale 2           |
 | `order`            | Int                         | Display order; defaults to 1               |
 | `isAvailable`      | Boolean                     | Defaults to true                           |
+| `addOnsVaryByOption` | Boolean                   | Defaults to false. Which add-on links are used: the item's (`false`) or each option's (`true`). Both stay saved |
 | `slug`             | String                      | Unique within the location                 |
 | `imageKey`         | String?                     | Optional image storage key                 |
 | `originalImageKey` | String?                     | Optional original image key                |
@@ -279,6 +280,7 @@ A shared PostgreSQL database stores business information for all client websites
 | `location`         | [Location](#location)       | Relation; deletes cascade                  |
 | `category`         | [Category](#category)       | Relation; deletes cascade                  |
 | `options`          | [ItemOption](#itemoption)[] | Options for this item                      |
+| `addOns`           | [ItemAddOn](#itemaddon)[]   | The item's own add-on links                |
 
 **Constraints and indexes:** `@@unique([locationId, slug])`; `@@index([locationId])`; `@@index([categoryId])`; `@@index([syncGroupId])`.
 
@@ -297,8 +299,73 @@ A shared PostgreSQL database stores business information for all client websites
 | `createdAt`   | DateTime      | Creation timestamp                         |
 | `updatedAt`   | DateTime      | Last update timestamp                      |
 | `item`        | [Item](#item) | Relation; deletes cascade                  |
+| `addOns`      | [ItemOptionAddOn](#itemoptionaddon)[] | This option's add-on links |
 
 **Constraints and indexes:** `@@unique([itemId, name])`; `@@index([itemId])`; `@@index([syncGroupId])`.
+
+### AddOnGroup
+
+A heading on a location's Add-ons page, for example "Sauces". See `apps/platform/docs/add-ons-plan.md`.
+
+| Field         | Type                  | Notes                                      |
+| ------------- | --------------------- | ------------------------------------------ |
+| `id`          | String                | Primary key (UUID)                         |
+| `locationId`  | String                | Owning location                            |
+| `name`        | String                | Unique within the location                 |
+| `order`       | Int                   | Display order; defaults to 1               |
+| `syncGroupId` | String?               | Optional group used to synchronize records |
+| `isSynced`    | Boolean               | Defaults to false                          |
+| `createdAt`   | DateTime              | Creation timestamp                         |
+| `updatedAt`   | DateTime              | Last update timestamp                      |
+| `location`    | [Location](#location) | Relation; deletes cascade                  |
+| `addOns`      | [AddOn](#addon)[]     | The group's add-ons                        |
+
+**Constraints and indexes:** `@@unique([locationId, name])`; `@@index([locationId])`; `@@index([syncGroupId])`.
+
+### AddOn
+
+An extra that adds to an item's price. Every add-on belongs to a group.
+
+| Field         | Type                      | Notes                                                     |
+| ------------- | ------------------------- | --------------------------------------------------------- |
+| `id`          | String                    | Primary key (UUID)                                        |
+| `locationId`  | String                    | Owning location (also on the group; kept for sync lookups) |
+| `groupId`     | String                    | Owning group                                              |
+| `name`        | String                    | Unique within the group                                   |
+| `description` | String?                   |                                                           |
+| `calories`    | Int?                      |                                                           |
+| `price`       | Decimal                   | The default price; items can set their own on their link  |
+| `order`       | Int                       | Display order within the group; defaults to 1             |
+| `isAvailable` | Boolean                   | Defaults to true. Off hides it but keeps its links        |
+| `syncGroupId` | String?                   | Optional group used to synchronize records                |
+| `isSynced`    | Boolean                   | Defaults to false                                         |
+| `createdAt`   | DateTime                  | Creation timestamp                                        |
+| `updatedAt`   | DateTime                  | Last update timestamp                                     |
+| `location`    | [Location](#location)     | Relation; deletes cascade                                 |
+| `group`       | [AddOnGroup](#addongroup) | Relation; deletes cascade                                 |
+
+**Constraints and indexes:** `@@unique([groupId, name])`; `@@index([locationId])`; `@@index([groupId])`; `@@index([syncGroupId])`.
+
+### ItemAddOn
+
+An add-on used by a whole item (when `Item.addOnsVaryByOption` is false).
+
+| Field       | Type            | Notes                                         |
+| ----------- | --------------- | --------------------------------------------- |
+| `itemId`    | String          | Part of the primary key                       |
+| `addOnId`   | String          | Part of the primary key                       |
+| `price`     | Decimal?        | This item's own price; null = the add-on's default |
+| `order`     | Int             | Defaults to 1                                 |
+| `item`      | [Item](#item)   | Relation; deletes cascade                     |
+| `addOn`     | [AddOn](#addon) | Relation; deletes cascade                     |
+
+**Constraints and indexes:** `@@id([itemId, addOnId])`; `@@index([addOnId])`.
+
+### ItemOptionAddOn
+
+An add-on used by one option (when `Item.addOnsVaryByOption` is true). Same fields as [ItemAddOn](#itemaddon), with `optionId` instead of `itemId`; deleting the option deletes its links.
+
+**Constraints and indexes:** `@@id([optionId, addOnId])`; `@@index([addOnId])`.
 
 ## Enums
 
@@ -404,7 +471,12 @@ Business
     │   └── items[]
     ├── Contact[]
     ├── Social[]
-    └── Item[]
+    ├── Item[]
+    │   ├── addOns[] → ItemAddOn → AddOn
+    │   └── options[] → ItemOption
+    │       └── addOns[] → ItemOptionAddOn → AddOn
+    └── AddOnGroup[]
+        └── addOns[] → AddOn
 ```
 
 `Item` has both `locationId` and `categoryId`. `Location.items` and `Category.items` refer to item records through those separate foreign keys. Category, Contact, Social, and Item records belong to locations, not directly to businesses.
@@ -430,3 +502,10 @@ Business
 | `Item.locationId`           | `Location.id`    | Cascade   |
 | `Item.categoryId`           | `Category.id`    | Cascade   |
 | `ItemOption.itemId`         | `Item.id`        | Cascade   |
+| `AddOnGroup.locationId`     | `Location.id`    | Cascade   |
+| `AddOn.locationId`          | `Location.id`    | Cascade   |
+| `AddOn.groupId`             | `AddOnGroup.id`  | Cascade   |
+| `ItemAddOn.itemId`          | `Item.id`        | Cascade   |
+| `ItemAddOn.addOnId`         | `AddOn.id`       | Cascade   |
+| `ItemOptionAddOn.optionId`  | `ItemOption.id`  | Cascade   |
+| `ItemOptionAddOn.addOnId`   | `AddOn.id`       | Cascade   |

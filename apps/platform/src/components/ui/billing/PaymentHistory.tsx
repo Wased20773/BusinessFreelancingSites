@@ -12,7 +12,8 @@ import {
 } from "@/lib/billing/paymentFilters";
 import { formatDateTime } from "@/lib/time/formatDateTime";
 import type { AccountPaymentJson } from "@/types/types";
-import { ChevronLeft, ChevronRight, ExternalLink, Receipt } from "lucide-react";
+import { ExternalLink, Receipt } from "lucide-react";
+import PageNav from "@/components/ui/controls/PageNav";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 
@@ -34,9 +35,6 @@ const MONTHS = Array.from({ length: 12 }, (_, month) =>
 
 const selectClass =
   "mt-1 block rounded-lg border-[0.1rem] border-b-[0.2rem] border-blue-400 bg-gray-100 px-3 py-2 text-sm disabled:opacity-50";
-
-const pageButtonClass =
-  "flex size-9 items-center justify-center rounded-lg border border-gray-300 text-gray-700 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40";
 
 /*
  *   The heading, filters, table, and page buttons of Settings → Billing's
@@ -329,39 +327,12 @@ export default function PaymentHistory({
           )}
 
           {/* Page buttons, centered under the table */}
-          {current.pageCount > 1 && (
-            <nav
-              aria-label="Payment history pages"
-              className="mt-4 flex items-center justify-center gap-3"
-            >
-              <button
-                type="button"
-                className={pageButtonClass}
-                aria-label="Previous page"
-                disabled={current.page === 1}
-                onClick={() => setPage(current.page - 1)}
-              >
-                <ChevronLeft size={18} />
-              </button>
-
-              <span
-                className="text-sm tabular-nums text-gray-600"
-                aria-live="polite"
-              >
-                Page {current.page} of {current.pageCount}
-              </span>
-
-              <button
-                type="button"
-                className={pageButtonClass}
-                aria-label="Next page"
-                disabled={current.page === current.pageCount}
-                onClick={() => setPage(current.page + 1)}
-              >
-                <ChevronRight size={18} />
-              </button>
-            </nav>
-          )}
+          <PageNav
+            page={current.page}
+            pageCount={current.pageCount}
+            onChange={setPage}
+            label="Payment history pages"
+          />
         </>
       )}
     </>

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import "../page.css";
 import ActionItem from "@/components/ui/ActionItem";
 import CreateButtonIcon from "@/components/icons/create-button.svg";
+import AddIcon from "@/components/icons/add.svg";
 import CategoryList from "@/components/ui/categories/CategoriesList";
 import { useSession } from "next-auth/react";
 import PageState from "@/components/ui/PageState";
@@ -120,19 +121,26 @@ export default function CategoriesPage() {
       <h1 id="menu-heading">Menu</h1>
 
       <div className="mt-6 space-y-5">
-        {canManageMenu && (
-          <nav
-            aria-label="Category actions"
-            className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 shadow-sm"
-          >
+        <nav
+          aria-label="Menu actions"
+          className="divide-y divide-gray-200 overflow-hidden rounded-2xl border border-gray-200 bg-white px-3 shadow-sm [&>*]:py-3"
+        >
+          {canManageMenu && (
             <ActionItem
               href="menu/create"
               icon={CreateButtonIcon}
               label="Create Category"
               setIsLoading={setIsLoading}
             />
-          </nav>
-        )}
+          )}
+          {/* Staff can view add-ons too */}
+          <ActionItem
+            href="menu/add-ons"
+            icon={AddIcon}
+            label="View add-ons"
+            setIsLoading={setIsLoading}
+          />
+        </nav>
 
         <CategoryList
           isLoading={isFetching}

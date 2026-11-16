@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { AccessLevel } from "@business-freelancer/database";
 import { NextResponse } from "next/server";
 import { rateLimiterRead } from "@/app/api/route_helper";
+import {
+  ADD_ON_LINKS_QUERY,
+  resolveItemAddOns,
+} from "@/lib/addOns/resolveAddOns";
 
 // TODO: Must support filtering with locationSlug, CategorySlug, and ItemSlug for easy client lookup
 /*
@@ -81,6 +85,8 @@ export async function GET(
 
         createdAt: true,
         updatedAt: true,
+        addOnsVaryByOption: true,
+        addOns: ADD_ON_LINKS_QUERY,
         options: {
           orderBy: {
             order: "asc",
@@ -99,6 +105,7 @@ export async function GET(
 
             createdAt: true,
             updatedAt: true,
+            addOns: ADD_ON_LINKS_QUERY,
           },
         },
       },
@@ -124,8 +131,14 @@ export async function GET(
         ? await getObjectUrl(item.originalImageKey)
         : null;
 
+    /*
+     * Add-ons come back as addOnGroups (see docs/add-ons-plan.md). The
+     * dashboard also gets the saved links, so the item form can show them.
+     */
     const itemWithImageUrl = {
-      ...item,
+      ...resolveItemAddOns(item, {
+        keepSavedLinks: authentication.authenticationType === "session",
+      }),
       imageKey: imageUrl,
 
       ...(authentication.authenticationType === "session"

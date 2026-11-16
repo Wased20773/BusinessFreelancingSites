@@ -2,6 +2,10 @@ import { getLocationResponse, rateLimiterRead } from "../../route_helper";
 import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
 import { NextResponse } from "next/server";
 import { AccessLevel } from "@business-freelancer/database";
+import {
+  ADD_ON_LINKS_QUERY,
+  resolveMenuAddOns,
+} from "@/lib/addOns/resolveAddOns";
 
 // GET /api/business/menu
 export async function GET(request: Request): Promise<NextResponse> {
@@ -64,6 +68,9 @@ export async function GET(request: Request): Promise<NextResponse> {
                 imageKey: true,
                 createdAt: true,
                 updatedAt: true,
+                // Resolved into addOnGroups before sending.
+                addOnsVaryByOption: true,
+                addOns: ADD_ON_LINKS_QUERY,
 
                 options: {
                   orderBy: {
@@ -79,6 +86,7 @@ export async function GET(request: Request): Promise<NextResponse> {
                     isAvailable: true,
                     createdAt: true,
                     updatedAt: true,
+                    addOns: ADD_ON_LINKS_QUERY,
                   },
                 },
               },
@@ -126,6 +134,9 @@ export async function GET(request: Request): Promise<NextResponse> {
                     imageKey: true,
                     createdAt: true,
                     updatedAt: true,
+                    // Resolved into addOnGroups before sending.
+                    addOnsVaryByOption: true,
+                    addOns: ADD_ON_LINKS_QUERY,
 
                     options: {
                       orderBy: {
@@ -141,6 +152,7 @@ export async function GET(request: Request): Promise<NextResponse> {
                         isAvailable: true,
                         createdAt: true,
                         updatedAt: true,
+                        addOns: ADD_ON_LINKS_QUERY,
                       },
                     },
                   },
@@ -151,7 +163,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         },
       },
       "menu",
-      { signImages: true },
+      { signImages: true, transform: resolveMenuAddOns },
     );
   } catch (error) {
     console.error("Failed to fetch business menu:", error);

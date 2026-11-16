@@ -71,6 +71,34 @@ function selectToShape(select: Record<string, unknown>): Shape {
   return shape;
 }
 
+/*
+ * Item add-on links are selected raw and resolved into addOnGroups before the
+ * response is sent (lib/addOns/resolveAddOns.ts). This turns the selected
+ * link shape into the shape that's sent: each group with its add-ons, minus
+ * isAvailable (unavailable add-ons are left out) and the setting itself.
+ * lib/addOns/resolveAddOns.test.ts checks the resolver returns this shape.
+ */
+function withResolvedAddOns(shape: Shape): Shape {
+  const resolved: Shape = {};
+
+  for (const [field, value] of Object.entries(shape)) {
+    resolved[field] = value === null ? null : withResolvedAddOns(value);
+  }
+
+  const links = shape.addOns;
+
+  if (links && links.addOn) {
+    const { group, ...addOn } = links.addOn;
+
+    delete addOn.isAvailable;
+    delete resolved.addOns;
+    delete resolved.addOnsVaryByOption;
+    resolved.addOnGroups = { ...(group ?? {}), addOns: addOn };
+  }
+
+  return resolved;
+}
+
 function fieldsToShape(fields: ApiField[]): Shape {
   const shape: Shape = {};
 
@@ -218,7 +246,7 @@ describe.each(PUBLIC_API_ENDPOINTS.map((endpoint) => [endpoint.path, endpoint]))
     it("documents exactly the fields the route returns to API-key requests", async () => {
       const select = await routeSelects[endpoint.id]();
 
-      expect(documented).toEqual(selectToShape(select));
+      expect(documented).toEqual(withResolvedAddOns(selectToShape(select)));
     });
 
     it("has an example with exactly the documented fields", () => {

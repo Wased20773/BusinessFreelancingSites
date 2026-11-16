@@ -9,6 +9,14 @@ import {
   replaceItemOptions,
   type OptionInput,
 } from "@/lib/items/itemOptions";
+import {
+  addOnIdsInSave,
+  copyAddOnLinksToCopies,
+  hasAddOnsOutsideLocation,
+  readItemAddOnFields,
+  replaceItemAddOns,
+  replaceOptionAddOns,
+} from "@/lib/addOns/addOnLinks";
 import { authenticateBusinessAccess } from "@/lib/auth/authenticateBusinessAccess";
 import { prisma } from "@/lib/prisma";
 import { copyObject } from "@/lib/s3/copy";
@@ -34,6 +42,7 @@ const ITEM_SELECT = {
   price: true,
   order: true,
   isAvailable: true,
+  addOnsVaryByOption: true,
   slug: true,
   imageKey: true,
   originalImageKey: true,
@@ -127,6 +136,29 @@ export async function PATCH(
       }
 
       options = parsedOptions.options;
+    }
+
+    /*
+     * Optional: the item's add-on setting and its own add-on list. Each
+     * option's list comes inside its option. Left out, they aren't touched.
+     */
+    const addOnFields = readItemAddOnFields(body);
+
+    if ("error" in addOnFields) {
+      return NextResponse.json({ error: addOnFields.error }, { status: 400 });
+    }
+
+    if (
+      await hasAddOnsOutsideLocation(
+        prisma,
+        locationId,
+        addOnIdsInSave(addOnFields.addOns, options ?? []),
+      )
+    ) {
+      return NextResponse.json(
+        { error: "An add-on in the list does not belong to this location" },
+        { status: 400 },
+      );
     }
 
     body.isSynced = await allowSync(businessId, body.isSynced);
@@ -480,6 +512,9 @@ export async function PATCH(
       calories: body.calories,
       price: body.price,
       isAvailable: body.isAvailable,
+      ...(addOnFields.addOnsVaryByOption !== undefined
+        ? { addOnsVaryByOption: addOnFields.addOnsVaryByOption }
+        : {}),
       slug,
       imageKey: nextImageKey,
       originalImageKey: nextOriginalImageKey,
@@ -487,6 +522,11 @@ export async function PATCH(
 
     // Synced save: every synced copy of the item (and its options) changes.
     const syncWide = Boolean(item.syncGroupId) && body.isSynced === true;
+    const copyItemIds = syncWide
+      ? affectedItems
+          .filter((affectedItem) => affectedItem.id !== item.id)
+          .map((affectedItem) => affectedItem.id)
+      : [];
 
     /*
      * The item and all its option changes are saved in one transaction:
@@ -525,16 +565,30 @@ export async function PATCH(
             throw new OptionNotOnItemError();
           }
 
-          await replaceItemOptions(tx, {
+          const optionIds = await replaceItemOptions(tx, {
             itemId: item.id,
             existing,
             options,
             syncCopies: syncWide,
-            copyItemIds: syncWide
-              ? affectedItems
-                  .filter((affectedItem) => affectedItem.id !== item.id)
-                  .map((affectedItem) => affectedItem.id)
-              : [],
+            copyItemIds,
+          });
+
+          for (const [index, option] of options.entries()) {
+            if (option.addOns) {
+              await replaceOptionAddOns(tx, optionIds[index], option.addOns);
+            }
+          }
+        }
+
+        if (addOnFields.addOns) {
+          await replaceItemAddOns(tx, item.id, addOnFields.addOns);
+        }
+
+        // Synced copies get the same links, to their own location's add-ons.
+        if (syncWide) {
+          await copyAddOnLinksToCopies(tx, {
+            sourceItemId: item.id,
+            copyItemIds,
           });
         }
 

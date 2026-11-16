@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+import {
+  ADD_ON_LINKS_QUERY,
+  resolveMenuAddOns,
+} from "@/lib/addOns/resolveAddOns";
 import { getLocationResponse, rateLimiterRead } from "../../../route_helper";
 import { authenticateBusinessReadAccess } from "@/lib/auth/authenticateBusinessReadAccess";
 import { AccessLevel } from "@business-freelancer/database";
@@ -75,6 +79,9 @@ export async function GET(
                 imageKey: true,
                 createdAt: true,
                 updatedAt: true,
+                // Resolved into addOnGroups before sending.
+                addOnsVaryByOption: true,
+                addOns: ADD_ON_LINKS_QUERY,
 
                 options: {
                   orderBy: {
@@ -90,6 +97,7 @@ export async function GET(
                     isAvailable: true,
                     createdAt: true,
                     updatedAt: true,
+                    addOns: ADD_ON_LINKS_QUERY,
                   },
                 },
               },
@@ -137,6 +145,9 @@ export async function GET(
                     imageKey: true,
                     createdAt: true,
                     updatedAt: true,
+                    // Resolved into addOnGroups before sending.
+                    addOnsVaryByOption: true,
+                    addOns: ADD_ON_LINKS_QUERY,
 
                     options: {
                       orderBy: {
@@ -152,6 +163,7 @@ export async function GET(
                         isAvailable: true,
                         createdAt: true,
                         updatedAt: true,
+                        addOns: ADD_ON_LINKS_QUERY,
                       },
                     },
                   },
@@ -162,7 +174,7 @@ export async function GET(
         },
       },
       "category",
-      { signImages: true },
+      { signImages: true, transform: resolveMenuAddOns },
     );
   } catch (error) {
     console.error("Failed to fetch category:", error);

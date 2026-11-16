@@ -66,6 +66,7 @@ const itemSelect = {
   price: true,
   order: true,
   isAvailable: true,
+  addOnsVaryByOption: true,
   slug: true,
   imageKey: true,
   originalImageKey: true,
@@ -587,6 +588,8 @@ describe("/api/businesses/[businessId]/locations/[locationId]/items/[itemId]", (
         // New → created second, only on this item.
         expect(mockPrisma.itemOption.create).toHaveBeenCalledWith({
           data: {
+            // Each new option gets its id up front, so add-ons can link to it.
+            id: expect.any(String),
             itemId: "item-123",
             name: "Bacon",
             price: 1.5,

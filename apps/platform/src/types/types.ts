@@ -11,6 +11,8 @@ import type {
 } from "@business-freelancer/database";
 export type AccessLevel = (typeof ACCESS_LEVEL)[keyof typeof ACCESS_LEVEL];
 import {
+  AddOn,
+  AddOnGroup,
   Item,
   ItemOption,
 } from "@business-freelancer/database/generated/prisma/client";
@@ -123,11 +125,35 @@ export type ItemJson = Omit<Item, "createdAt" | "updatedAt"> & {
   createdAt: string;
   updatedAt: string;
   options: ItemOptionsJson[];
+  // Dashboard only: the item's own saved add-on links (see add-ons-plan.md).
+  addOns?: AddOnLinkJson[];
 };
 
 export type ItemOptionsJson = Omit<ItemOption, "createdAt" | "updatedAt"> & {
   createdAt: string;
   updatedAt: string;
+  // Dashboard only: this option's saved add-on links.
+  addOns?: AddOnLinkJson[];
+};
+
+// Add-ons
+// A saved link from an item or option. price null = the add-on's default.
+export type AddOnLinkJson = {
+  addOnId: string;
+  price: string | number | null;
+};
+
+export type AddOnJson = Omit<AddOn, "createdAt" | "updatedAt"> & {
+  createdAt: string;
+  updatedAt: string;
+  // How many items use it (counted once per item).
+  usedByItems: number;
+};
+
+export type AddOnGroupJson = Omit<AddOnGroup, "createdAt" | "updatedAt"> & {
+  createdAt: string;
+  updatedAt: string;
+  addOns: AddOnJson[];
 };
 
 // Contact

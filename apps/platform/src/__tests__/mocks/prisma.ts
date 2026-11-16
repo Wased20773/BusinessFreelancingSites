@@ -28,6 +28,8 @@ function createMockModel(): MockModel {
 }
 
 export const mockPrisma = {
+  addOn: createMockModel(),
+  addOnGroup: createMockModel(),
   business: createMockModel(),
   businessApiKey: createMockModel(),
   businessUser: createMockModel(),
@@ -35,7 +37,9 @@ export const mockPrisma = {
   contact: createMockModel(),
   hour: createMockModel(),
   item: createMockModel(),
+  itemAddOn: createMockModel(),
   itemOption: createMockModel(),
+  itemOptionAddOn: createMockModel(),
   location: createMockModel(),
   locationDay: createMockModel(),
   locationSlotPurchase: createMockModel(),

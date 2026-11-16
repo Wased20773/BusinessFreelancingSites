@@ -1,5 +1,8 @@
 import axios from "axios";
-import type { OptionPayload } from "@/lib/items/optionDrafts";
+import type {
+  AddOnLinkPayload,
+  OptionPayload,
+} from "@/lib/items/optionDrafts";
 import type { ItemJson } from "@/types/types";
 
 // What the create and edit item forms send. The options go with the item
@@ -13,6 +16,9 @@ export type ItemFormBody = {
   isAvailable: boolean;
   isSynced: boolean;
   options: OptionPayload[];
+  // Which add-on list is used: the item's own, or each option's.
+  addOnsVaryByOption: boolean;
+  addOns: AddOnLinkPayload[];
 };
 
 // ################

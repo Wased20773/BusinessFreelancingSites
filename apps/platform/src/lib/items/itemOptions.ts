@@ -1,4 +1,8 @@
 import type { Prisma } from "@business-freelancer/database";
+import {
+  parseAddOnLinks,
+  type AddOnLinkInput,
+} from "@/lib/addOns/addOnLinks";
 
 /*
  *   Item options are saved together with their item, in the same
@@ -11,6 +15,9 @@ export type OptionInput = {
   name: string;
   price: number;
   isAvailable: boolean;
+  // The option's own add-on list (used when the item's add-ons vary by
+  // option). Left out, the option's saved add-ons aren't touched.
+  addOns?: AddOnLinkInput[];
 };
 
 /*
@@ -36,7 +43,10 @@ export function parseOptions(
       return { error: "Each item option must be an object" };
     }
 
-    const { id, name, price, isAvailable } = entry as Record<string, unknown>;
+    const { id, name, price, isAvailable, addOns } = entry as Record<
+      string,
+      unknown
+    >;
 
     if (typeof name !== "string" || !name.trim()) {
       return { error: "Every option needs a name" };
@@ -67,11 +77,24 @@ export function parseOptions(
       ids.add(id);
     }
 
+    let addOnLinks: AddOnLinkInput[] | undefined;
+
+    if (addOns !== undefined) {
+      const parsedAddOns = parseAddOnLinks(addOns);
+
+      if ("error" in parsedAddOns) {
+        return { error: `"${name.trim()}": ${parsedAddOns.error}` };
+      }
+
+      addOnLinks = parsedAddOns.links;
+    }
+
     options.push({
       ...(typeof id === "string" ? { id } : {}),
       name: name.trim(),
       price: Math.round(price * 100) / 100,
       isAvailable: isAvailable !== false,
+      ...(addOnLinks ? { addOns: addOnLinks } : {}),
     });
   }
 
@@ -80,19 +103,21 @@ export function parseOptions(
 
 /*
  *   Options for a brand-new item, or for each synced copy of it.
- *   A synced option shares one syncGroupId across the copies.
+ *   A synced option shares one syncGroupId across the copies. Each row
+ *   gets its id up front, so add-ons can be linked to it afterwards.
  **/
 export function newOptionRows(
   itemIds: string[],
   options: OptionInput[],
   isSynced: boolean,
-): Prisma.ItemOptionCreateManyInput[] {
+): (Prisma.ItemOptionCreateManyInput & { id: string })[] {
   const syncGroupIds = options.map(() =>
     isSynced ? crypto.randomUUID() : null,
   );
 
   return itemIds.flatMap((itemId) =>
     options.map((option, index) => ({
+      id: crypto.randomUUID(),
       itemId,
       name: option.name,
       price: option.price,
@@ -116,6 +141,8 @@ type ExistingOption = { id: string; syncGroupId: string | null };
  *   new options are added to every synced copy of the item. Order stays
  *   per item, like everywhere else.
  *
+ *   Returns this item's option ids, in the same order as `options`.
+ *
  *   Run inside the item's transaction.
  **/
 export async function replaceItemOptions(
@@ -134,7 +161,7 @@ export async function replaceItemOptions(
     // The other locations' synced copies of this item.
     copyItemIds: string[];
   },
-) {
+): Promise<string[]> {
   const keptIds = new Set(options.flatMap((option) => option.id ?? []));
   const existingById = new Map(existing.map((option) => [option.id, option]));
   const syncWide = syncCopies && copyItemIds.length > 0;
@@ -196,6 +223,9 @@ export async function replaceItemOptions(
    *    when a location joins the group later).
    */
   const newSyncGroupIds = new Map<OptionInput, string>();
+  const optionIds = options.map((option) =>
+    option.id && existingById.has(option.id) ? option.id : crypto.randomUUID(),
+  );
 
   for (const [index, option] of options.entries()) {
     if (option.id && existingById.has(option.id)) continue;
@@ -206,6 +236,7 @@ export async function replaceItemOptions(
 
     await tx.itemOption.create({
       data: {
+        id: optionIds[index],
         itemId,
         name: option.name,
         price: option.price,
@@ -217,7 +248,7 @@ export async function replaceItemOptions(
     });
   }
 
-  if (!syncWide) return;
+  if (!syncWide) return optionIds;
 
   // 4. Synced copies: renumber each copy so deletes leave no gaps, then
   //    add the new options at the end of its list.
@@ -251,4 +282,6 @@ export async function replaceItemOptions(
       });
     }
   }
+
+  return optionIds;
 }

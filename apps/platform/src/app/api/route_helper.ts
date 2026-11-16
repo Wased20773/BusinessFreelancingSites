@@ -142,13 +142,19 @@ export async function signImageKeys<T>(data: T): Promise<T> {
  *
  *   Pass `{ signImages: true }` when the select includes `imageKey` fields so
  *   they are returned as presigned URLs instead of private object keys.
+ *
+ *   Pass `transform` to reshape the location before it's sent (the menu
+ *   uses it to resolve item add-ons).
  **/
 export async function getLocationResponse<T extends Prisma.LocationSelect>(
   businessId: string,
   locationId: string,
   select: T,
   resourceName: LocationResourceName,
-  options?: { signImages?: boolean },
+  options?: {
+    signImages?: boolean;
+    transform?: (location: Record<string, unknown>) => unknown;
+  },
 ): Promise<NextResponse> {
   try {
     const location = await prisma.location.findFirst({
@@ -166,7 +172,12 @@ export async function getLocationResponse<T extends Prisma.LocationSelect>(
       );
     }
 
-    const body = options?.signImages ? await signImageKeys(location) : location;
+    const signed = options?.signImages
+      ? await signImageKeys(location)
+      : location;
+    const body = options?.transform
+      ? options.transform(signed as Record<string, unknown>)
+      : signed;
 
     return NextResponse.json(body, { status: 200 });
   } catch (error) {

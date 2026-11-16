@@ -5,6 +5,8 @@
  *   Dates use the viewer's local time, the same as the dates shown in the table.
  **/
 
+import { paginate as paginateList } from "@/lib/paginate";
+
 export const PAYMENTS_PER_PAGE = 10;
 
 export type RecentRange = "week" | "month" | "year";
@@ -91,22 +93,11 @@ export function paymentYears(payments: { paidAt: string }[]): number[] {
   ].sort((a, b) => b - a);
 }
 
-/*
- *   One page of items. A page past the end (e.g. after filtering shrinks the
- *   list) is moved back to the last page.
- **/
+// One page of payments (see lib/paginate.ts).
 export function paginate<T>(
   items: T[],
   page: number,
   perPage: number = PAYMENTS_PER_PAGE,
-): { items: T[]; page: number; pageCount: number } {
-  const pageCount = Math.max(1, Math.ceil(items.length / perPage));
-  const currentPage = Math.min(Math.max(1, page), pageCount);
-  const start = (currentPage - 1) * perPage;
-
-  return {
-    items: items.slice(start, start + perPage),
-    page: currentPage,
-    pageCount,
-  };
+) {
+  return paginateList(items, page, perPage);
 }

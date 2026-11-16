@@ -7,6 +7,9 @@ import { motion } from "motion/react";
 import { fadeInMotion } from "@/components/motion/listMotion";
 import EditItemForm from "@/components/ui/items/EditItemForm";
 import ItemOptionsEditor from "@/components/ui/items/ItemOptionsEditor";
+import AddOnPicker from "@/components/ui/items/AddOnPicker";
+import ItemAddOnsSection from "@/components/ui/items/ItemAddOnsSection";
+import { useItemAddOns } from "@/components/ui/items/useItemAddOns";
 import { useItemImage } from "@/components/ui/items/useItemImage";
 import {
   createItemImage,
@@ -20,6 +23,7 @@ import { requestError } from "@/lib/api/requestError";
 import {
   draftsFromOptions,
   draftsToPayload,
+  type AddOnLinkDraft,
   type OptionDraft,
 } from "@/lib/items/optionDrafts";
 import { readItemFields } from "@/lib/items/readItemFields";
@@ -29,6 +33,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { InputEvent, SubmitEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
+import Divider from "@/components/layout/Divider";
 
 type EditItemViewProps = {
   businessId: string;
@@ -81,10 +86,26 @@ export default function EditItemView({
     canManageItem || currentAccessLevel === ACCESS_LEVEL.staff;
   const isDeveloper = currentAccessLevel === ACCESS_LEVEL.developer;
 
-  // Shows a freshly loaded item: its fields, options, and saved image.
+  const addOns = useItemAddOns(
+    businessId,
+    locationId,
+    status === "authenticated" && canViewItem,
+  );
+
+  // One option's picked add-ons (used when add-ons vary by option).
+  function setOptionAddOns(key: string, next: AddOnLinkDraft[]) {
+    setOptionDrafts((current) =>
+      current.map((draft) =>
+        draft.key === key ? { ...draft, addOns: next } : draft,
+      ),
+    );
+  }
+
+  // Shows a freshly loaded item: its fields, options, add-ons, and image.
   function showItem(item: ItemJson, keepOriginalImage = false) {
     setItemData(item);
     setOptionDrafts(draftsFromOptions(item.options ?? []));
+    addOns.showSaved(item);
     itemImage.showSavedImage(
       item.imageKey ?? null,
       item.originalImageKey ?? null,
@@ -160,6 +181,13 @@ export default function EditItemView({
       return;
     }
 
+    const addOnFields = addOns.toPayload();
+
+    if ("error" in addOnFields) {
+      setErrorMessage(addOnFields.error);
+      return;
+    }
+
     setIsSaving(true);
 
     const { image, selectedImage } = itemImage;
@@ -173,6 +201,7 @@ export default function EditItemView({
               ...item.fields,
               isSynced,
               options: options.options,
+              ...addOnFields,
             });
 
             // Images use their own route.
@@ -374,12 +403,45 @@ export default function EditItemView({
             handleDeleteImage={handleDeleteImage}
             handleDelete={handleDelete}
             options={
-              <ItemOptionsEditor
-                canManage={canManageItem}
-                drafts={optionDrafts}
-                setDrafts={setOptionDrafts}
-                disabled={isProcessing}
-              />
+              <>
+                <ItemOptionsEditor
+                  canManage={canManageItem}
+                  drafts={optionDrafts}
+                  setDrafts={setOptionDrafts}
+                  disabled={isProcessing}
+                  renderOptionExtras={
+                    addOns.varyByOption
+                      ? (draft) => (
+                          <AddOnPicker
+                            idPrefix={`option-${draft.key}`}
+                            groups={addOns.groups}
+                            value={draft.addOns}
+                            onChange={(next) =>
+                              setOptionAddOns(draft.key, next)
+                            }
+                            canManage={canManageItem}
+                            disabled={isProcessing}
+                          />
+                        )
+                      : undefined
+                  }
+                />
+
+                <Divider />
+
+                <ItemAddOnsSection
+                  groups={addOns.groups}
+                  groupsError={addOns.groupsError}
+                  addOnsHref={`/businesses/${businessId}/locations/${locationId}/dashboard/menu/add-ons`}
+                  varyByOption={addOns.varyByOption}
+                  setVaryByOption={addOns.setVaryByOption}
+                  itemAddOns={addOns.itemAddOns}
+                  setItemAddOns={addOns.setItemAddOns}
+                  optionDrafts={optionDrafts}
+                  canManage={canManageItem}
+                  disabled={isProcessing}
+                />
+              </>
             }
           />
         </div>

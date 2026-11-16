@@ -52,7 +52,7 @@ Any other params (`categoryId`, `itemId`, etc.) are listed per route. Every chil
 
 ## Sync Fields
 
-Contacts, socials, categories, items, item options, location days, and hours can be **synchronized** across every location of a business. Synced records share a `syncGroupId`.
+Contacts, socials, categories, items, item options, add-on groups, add-ons, location days, and hours can be **synchronized** across every location of a business. Synced records share a `syncGroupId`.
 
 Routes that support this are marked with a `SYNC` badge and require one of these body fields:
 
@@ -1268,11 +1268,22 @@ Creates an item at the end of the category. Returns `409` if an item with the sa
   "containsList": "String[]",
   "calories": "Int | null",
   "isAvailable": "Boolean",
-  "options": [{ "name": "String", "price": "Number", "isAvailable": "Boolean" }]
+  "options": [
+    {
+      "name": "String",
+      "price": "Number",
+      "isAvailable": "Boolean",
+      "addOns": [{ "addOnId": "UUID", "price": "Number | null" }]
+    }
+  ],
+  "addOnsVaryByOption": "Boolean",
+  "addOns": [{ "addOnId": "UUID", "price": "Number | null" }]
 }
 ```
 
 `name`, `price`, and `isSynced` are required.
+
+`addOnsVaryByOption`, `addOns`, and each option's `addOns` are optional. See [Item add-ons](#item-add-ons).
 
 `options` is optional: the item's options, in display order. The item and its options are created in **one transaction**, so if any option fails, nothing is created. Option names must be unique (ignoring case), and prices must be `0` or more (`400` otherwise). A synced create adds every option to every copy of the item; each option shares one `syncGroupId` across the copies.
 
@@ -1359,8 +1370,16 @@ Changing `isSynced` also moves the item's image:
   "calories": "Int | null",
   "isAvailable": "Boolean",
   "options": [
-    { "id": "UUID?", "name": "String", "price": "Number", "isAvailable": "Boolean" }
-  ]
+    {
+      "id": "UUID?",
+      "name": "String",
+      "price": "Number",
+      "isAvailable": "Boolean",
+      "addOns": [{ "addOnId": "UUID", "price": "Number | null" }]
+    }
+  ],
+  "addOnsVaryByOption": "Boolean",
+  "addOns": [{ "addOnId": "UUID", "price": "Number | null" }]
 }
 ```
 
@@ -1375,6 +1394,17 @@ Changing `isSynced` also moves the item's image:
 Leave `options` out to change only the item; its options are untouched. With `isSynced: true`, option changes also reach the synced copies of each option on the other locations' items, and new options are added at the end of each copy's list (order stays per item). With `isSynced: false`, option changes apply to this item only. Option names must be unique (ignoring case): `400` for duplicates in the list, `409` if the database still finds a clash.
 
 The [Item Options](#item-options) routes still work for changing one option at a time.
+
+#### Item add-ons
+
+Items pick from the location's [Add-ons](#add-ons). Each list is optional: left out, it isn't changed (on create, `addOnsVaryByOption` defaults to `false`).
+
+- `addOnsVaryByOption` picks which list is used: `false` uses the item's own `addOns`; `true` uses each option's `addOns`. **Both lists stay saved** whatever it says, so switching back never loses prices.
+- Each list is saved in the order sent, in the item's transaction. `price: null` (or left out) means the add-on's default price; a number is this item's own price and doesn't follow the default.
+- Every `addOnId` must be an add-on at this location (`400` otherwise). Duplicates or negative prices are `400`.
+- With `isSynced: true`, each synced copy of the item gets the same links to **synced** add-ons, pointing at its own location's copy of each one (skipped where that location has none). A copy's links to its location's own add-ons are kept.
+
+The single item route (`GET /api/business/menu/items/[itemId]`) returns `addOnsVaryByOption`, the item's `addOns`, and each option's `addOns` to dashboard sessions, so the item form can show both lists.
 
 #### Response
 
@@ -1629,6 +1659,176 @@ Deletes an option and re-numbers the remaining options on the item.
 ```json
 {
   "message": "String"
+}
+```
+
+## Add-ons
+
+Extras that add to an item's price (toppings, sauces). Each location has **groups** of add-ons; items pick from them (see [Item add-ons](#item-add-ons)). Groups and add-ons sync like categories. Order is per location (groups) and per group (add-ons). See [add-ons-plan.md](../add-ons-plan.md).
+
+### GET /api/businesses/[businessId]/locations/[locationId]/add-on-groups
+
+Every group with all of its add-ons (available or not), in order. Each add-on has `usedByItems`: how many items use it, counting an item once even when several of its options use it.
+
+**Access:** `owner`, `admin`, `staff`
+
+#### Response
+
+```json
+{
+  "groups": [
+    {
+      "id": "UUID",
+      "locationId": "UUID",
+      "name": "String",
+      "order": "Int",
+      "syncGroupId": "UUID | null",
+      "isSynced": "Boolean",
+      "createdAt": "DateTime",
+      "updatedAt": "DateTime",
+      "addOns": [
+        {
+          "id": "UUID",
+          "locationId": "UUID",
+          "groupId": "UUID",
+          "name": "String",
+          "description": "String | null",
+          "calories": "Int | null",
+          "price": "String",
+          "order": "Int",
+          "isAvailable": "Boolean",
+          "syncGroupId": "UUID | null",
+          "isSynced": "Boolean",
+          "createdAt": "DateTime",
+          "updatedAt": "DateTime",
+          "usedByItems": "Int"
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Used For
+
+- The Add-ons page, and the item form's add-on picker.
+
+### POST /api/businesses/[businessId]/locations/[locationId]/add-on-groups `SYNC`
+
+Creates a group at the end of the location's list. When synced, the group is created at every location of the business, each at the end of its own list.
+
+**Access:** `owner`, `admin`
+
+#### Request Body
+
+```json
+{
+  "name": "String",
+  "isSynced": "Boolean"
+}
+```
+
+Both are required. Names are unique per location (`409`).
+
+#### Response `201`
+
+The created group (unsynced), or `{ "message", "count", "syncGroupId" }` (synced).
+
+### PATCH /api/businesses/[businessId]/locations/[locationId]/add-on-groups/[groupId] `SYNC`
+
+Renames a group. With `isSynced: true` on a synced group, every synced copy is renamed.
+
+**Access:** `owner`, `admin`
+
+#### Request Body
+
+```json
+{
+  "name": "String",
+  "isSynced": "Boolean"
+}
+```
+
+#### Response
+
+The updated group.
+
+### PATCH /api/businesses/[businessId]/locations/[locationId]/add-on-groups/[groupId]/move-up
+
+Swaps the group with the one above it. `400` when it's already at the top. `move-down` works the same way.
+
+**Access:** `owner`, `admin`
+
+### DELETE /api/businesses/[businessId]/locations/[locationId]/add-on-groups/[groupId] `SYNC`
+
+Deletes a group, **with** its add-ons; items using them lose them. Unlike categories this is allowed when the group isn't empty, so warn the user first. The remaining groups are re-numbered.
+
+**Access:** `owner`, `admin`
+
+#### Request Body
+
+```json
+{
+  "deleteAllSynced": "Boolean"
+}
+```
+
+### POST /api/businesses/[businessId]/locations/[locationId]/add-on-groups/[groupId]/add-ons `SYNC`
+
+Creates an add-on at the end of the group. When synced, the group must belong to a sync group (`400` otherwise) and the add-on is created in every synced copy of it.
+
+**Access:** `owner`, `admin`
+
+#### Request Body
+
+```json
+{
+  "name": "String",
+  "price": "Number",
+  "isSynced": "Boolean",
+  "description": "String | null",
+  "calories": "Int | null",
+  "isAvailable": "Boolean"
+}
+```
+
+`name`, `price` (`0` or more, rounded to cents), and `isSynced` are required. `price` is the add-on's **default**; items can set their own. Names are unique per group (`409`).
+
+#### Response `201`
+
+The created add-on (unsynced), or `{ "message", "count", "id", "syncGroupId" }` (synced; `id` is this location's copy).
+
+### PATCH /api/businesses/[businessId]/locations/[locationId]/add-ons/[addOnId] `SYNC`
+
+Updates an add-on. Same body as create.
+
+- **Synced add-on, `isSynced: true`:** every synced copy changes.
+- **A location's own add-on (never synced), `isSynced: true`:** it joins the other locations: a copy is added to each synced copy of its group. Its group must be synced (`400` otherwise).
+- **`isSynced: false`:** only this location's add-on changes. It keeps its `syncGroupId` so it can rejoin later.
+
+**Access:** `owner`, `admin`
+
+#### Response
+
+The updated add-on.
+
+### PATCH /api/businesses/[businessId]/locations/[locationId]/add-ons/[addOnId]/move-up
+
+Swaps the add-on with the one above it in its group. `400` when it's already at the top. `move-down` works the same way.
+
+**Access:** `owner`, `admin`
+
+### DELETE /api/businesses/[businessId]/locations/[locationId]/add-ons/[addOnId] `SYNC`
+
+Deletes an add-on; items using it lose it. Warn the user first with its `usedByItems`, and suggest turning `isAvailable` off instead, which keeps it saved. The rest of its group is re-numbered.
+
+**Access:** `owner`, `admin`
+
+#### Request Body
+
+```json
+{
+  "deleteAllSynced": "Boolean"
 }
 ```
 
